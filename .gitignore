@@ -216,3 +216,12 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+.env
+.venv/
+venv/
+*.db
+*.sqlite
+.pytest_cache/
+.ruff_cache/
+htmlcov/
+.coverage
