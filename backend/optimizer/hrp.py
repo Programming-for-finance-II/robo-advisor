@@ -1,15 +1,16 @@
 from __future__ import annotations
-from typing import TypedDict, Literal
+
+from typing import Literal, TypedDict
 
 
 class OptimizationResult(TypedDict):
     algorithm: Literal["HRP", "MV", "ERC"]
-    weights: dict[str, float]              # ticker -> weight, sum = 1.0
-    expected_return: float                 # annualized
-    expected_volatility: float             # annualized
-    sharpe_ratio: float                    # configurable risk-free rate
-    risk_contributions: dict[str, float]   # for XAI and LLM narrator, sum = 1.0
-    optimizer_version: str                 # e.g. "pypfopt-1.5.5-HRP"
+    weights: dict[str, float]
+    expected_return: float
+    expected_volatility: float
+    sharpe_ratio: float
+    risk_contributions: dict[str, float]
+    optimizer_version: str
     solver_status: Literal["optimal", "infeasible", "fallback"]
-    ucits_tickers_used: list[str]          # UCITS tickers actually used
-    fallback_tickers_applied: list[str]    # e.g. ["CSPX.L→IVV"]
+    ucits_tickers_used: list[str]
+    fallback_tickers_applied: list[str]
