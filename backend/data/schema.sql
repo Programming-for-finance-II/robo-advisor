@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS recommendations (
     questionnaire_snapshot      TEXT NOT NULL,       -- JSON string
     profile_label               TEXT NOT NULL CHECK (
                                     profile_label IN (
-                                        'Conservativo', 'Bilanciato', 'Aggressivo'
+                                        'CONSERVATIVE', 'MODERATE', 'AGGRESSIVE'
                                     )
                                 ),
     profile_confidence          REAL NOT NULL,
