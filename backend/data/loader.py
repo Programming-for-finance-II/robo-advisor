@@ -25,7 +25,6 @@ import hashlib
 import logging
 from dataclasses import dataclass, field
 from datetime import date
-from typing import Optional
 
 import pandas as pd
 import yfinance as yf
