@@ -33,7 +33,7 @@ from typing import Literal
 ClusterLabel = Literal["risk_assets", "real_assets", "safe_haven", "cash"]
 
 # Asset-level weight constraints (post-optimisation guardrails)
-ASSET_WEIGHT_MIN: float = 0.03
+ASSET_WEIGHT_MIN: float = 0.05
 ASSET_WEIGHT_MAX: float = 0.40
 
 # Cluster-level weight constraints
