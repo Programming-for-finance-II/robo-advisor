@@ -32,17 +32,9 @@ from backend.data.universe_config import get_fallback_map, get_ucits_tickers
 logger = logging.getLogger(__name__)
 
 
-# ---------------------------------------------------------------------------
-# Exceptions
-# ---------------------------------------------------------------------------
-
 class DataQualityError(Exception):
     """Raised when downloaded data fails quality checks."""
 
-
-# ---------------------------------------------------------------------------
-# DataQualityReport — returned alongside prices for audit trail
-# ---------------------------------------------------------------------------
 
 @dataclass
 class DataQualityReport:
@@ -52,6 +44,7 @@ class DataQualityReport:
     Stored in the DB as part of the recommendation audit trail.
     All fields map directly to columns in the recommendations table.
     """
+
     nan_ratio: float
     missing_tickers: list[str]
     date_range: tuple[date, date]
@@ -75,10 +68,6 @@ class DataQualityReport:
             "fallback_tickers_applied": self.fallback_tickers_applied,
         }
 
-
-# ---------------------------------------------------------------------------
-# ValidatedDataLoader
-# ---------------------------------------------------------------------------
 
 class ValidatedDataLoader:
     """
@@ -117,10 +106,6 @@ class ValidatedDataLoader:
         self._fallback_map = get_fallback_map()
         self._ucits_tickers = set(get_ucits_tickers())
 
-    # ------------------------------------------------------------------
-    # Public interface
-    # ------------------------------------------------------------------
-
     def load(
         self,
         tickers: list[str],
@@ -143,7 +128,6 @@ class ValidatedDataLoader:
         -------
         prices : pd.DataFrame
             Cleaned adjusted close prices. Index is DatetimeIndex (UTC).
-            Columns are the active tickers (primary or fallback).
         report : DataQualityReport
             Quality metrics and provenance metadata for audit trail.
         """
@@ -152,10 +136,6 @@ class ValidatedDataLoader:
         prices = self._clean(prices)
         report = self._build_report(prices, active_tickers, fallback_applied)
         return prices, report
-
-    # ------------------------------------------------------------------
-    # Internal steps
-    # ------------------------------------------------------------------
 
     def _resolve_tickers(
         self,
