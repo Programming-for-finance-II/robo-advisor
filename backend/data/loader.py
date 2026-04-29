@@ -190,7 +190,7 @@ class ValidatedDataLoader:
                     progress=False,
                 )
                 close = self._extract_close(raw, ticker)
-                nan_ratio = close.isna().mean()
+                nan_ratio = float(close.isna().mean().mean())
 
                 if nan_ratio > self.nan_threshold:
                     logger.warning(
