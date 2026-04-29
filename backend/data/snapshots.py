@@ -2,7 +2,7 @@
 snapshots.py — Audit trail persistence for market data and recommendations.
 
 Provides three public functions consumed by the FastAPI layer:
-  - init_db(db_path)              → sqlite3.Connection
+  - init_db(db_path)                       → sqlite3.Connection
   - save_market_snapshot(conn, df, report) → str  (hash PK)
   - save_recommendation(conn, rec)         → str  (UUID)
 
@@ -12,26 +12,19 @@ not by this module. All functions accept an open sqlite3.Connection.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
 import json
-from pathlib import Path
 import sqlite3
 import uuid
+from datetime import datetime, timezone
+from pathlib import Path
 
 import pandas as pd
 
 from backend.data.loader import DataQualityReport
 
 
-# ---------------------------------------------------------------------------
-# DB initialisation
-# ---------------------------------------------------------------------------
-
 def init_db(db_path: str | Path) -> sqlite3.Connection:
     """Open (or create) the SQLite DB and ensure schema is up to date.
-
-    Runs the schema.sql migrations idempotently via CREATE TABLE IF NOT EXISTS.
-    Returns an open connection with WAL mode enabled.
 
     Args:
         db_path: Path to the SQLite file. Use ":memory:" for tests.
@@ -44,17 +37,11 @@ def init_db(db_path: str | Path) -> sqlite3.Connection:
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA journal_mode = WAL;")
     conn.execute("PRAGMA foreign_keys = ON;")
-
     with open(schema_path) as f:
         conn.executescript(f.read())
-
     conn.commit()
     return conn
 
-
-# ---------------------------------------------------------------------------
-# Market data snapshots
-# ---------------------------------------------------------------------------
 
 def save_market_snapshot(
     conn: sqlite3.Connection,
@@ -63,10 +50,8 @@ def save_market_snapshot(
 ) -> str:
     """Persist a validated price DataFrame for bit-for-bit reproducibility.
 
-    Uses the SHA-256 hash from DataQualityReport as the primary key — if a
-    snapshot with the same hash already exists (identical data), the INSERT
-    is silently skipped (INSERT OR IGNORE). This makes the function safe to
-    call on every recommendation without duplicating data.
+    Uses INSERT OR IGNORE so calling this multiple times with identical
+    data is safe — duplicates are silently skipped.
 
     Args:
         conn:   Open SQLite connection (managed by caller).
@@ -78,7 +63,7 @@ def save_market_snapshot(
     """
     assert isinstance(df, pd.DataFrame), "df must be a pandas DataFrame"
     assert not df.empty, "Cannot persist an empty DataFrame"
-    assert len(report.market_data_hash) == 64, "Hash must be a 64-char SHA-256 hex string"  # noqa: E501
+    assert len(report.market_data_hash) == 64, "Hash must be 64-char SHA-256"
 
     created_at = datetime.now(timezone.utc).isoformat()
     tickers_json = json.dumps(sorted(df.columns.tolist()))
@@ -105,33 +90,22 @@ def save_market_snapshot(
     return report.market_data_hash
 
 
-# ---------------------------------------------------------------------------
-# Recommendations
-# ---------------------------------------------------------------------------
-
 def save_recommendation(
     conn: sqlite3.Connection,
     rec: dict,
 ) -> str:
     """Insert a full recommendation audit record.
 
-    The caller is responsible for providing all required fields. Optional
-    fields (fallback_tickers_applied, tilt_applied, regulatory_context,
-    validator_flags) default to None if not supplied.
-
     Args:
         conn: Open SQLite connection (managed by caller).
-        rec:  Dictionary with all recommendation fields. See inline comment
-              for the expected keys.
+        rec:  Dictionary with all recommendation fields.
 
     Returns:
-        The UUID string used as primary key (rec["id"] if provided,
-        otherwise a freshly generated UUID v4).
+        The UUID string used as primary key.
     """
     rec_id = rec.get("id") or str(uuid.uuid4())
     created_at = rec.get("created_at") or datetime.now(timezone.utc).isoformat()
 
-    # Serialise list/dict fields to JSON strings (schema stores TEXT)
     def _json(val: object) -> str | None:
         if val is None:
             return None
@@ -166,12 +140,10 @@ def save_recommendation(
             rec["user_id"],
             created_at,
             rec.get("data_fetch_timestamp", created_at),
-            # Input snapshot
             _json(rec["questionnaire_snapshot"]),
             rec["profile_label"],
             float(rec["profile_confidence"]),
             rec["profile_model_version"],
-            # Market data provenance
             _json(rec["tickers_used"]),
             _json(rec["ucits_tickers_used"]),
             _json(rec.get("fallback_tickers_applied")),
@@ -181,22 +153,18 @@ def save_recommendation(
             rec["market_data_hash"],
             int(rec.get("nan_count_pre_clean", 0)),
             int(rec.get("nan_count_post_clean", 0)),
-            # Optimizer config
             rec.get("optimizer_algo", "HRP"),
             rec["optimizer_version"],
             rec.get("linkage_method", "ward"),
             rec.get("shrinkage_method", "ledoit_wolf"),
             rec.get("tilt_applied"),
             int(rec.get("guardrails_applied", 0)),
-            # Output weights
             _json(rec["weights_raw_hrp"]),
             _json(rec["weights_final"]),
-            # Metrics and context
             _json(rec["risk_metrics"]),
             _json(rec["cluster_structure"]),
             _json(rec["stress_scenarios"]),
             _json(rec.get("regulatory_context")),
-            # LLM audit
             rec["llm_model"],
             rec["system_prompt_hash"],
             rec["ground_truth_json_hash"],
@@ -205,7 +173,6 @@ def save_recommendation(
             rec.get("validator_version", "v1"),
             _json(rec.get("validator_flags")),
             int(rec.get("retry_count", 0)),
-            # Compliance
             int(rec.get("disclaimer_shown", 0)),
             rec.get("disclaimer_text_hash", ""),
         ),
@@ -214,18 +181,11 @@ def save_recommendation(
     return rec_id
 
 
-# ---------------------------------------------------------------------------
-# Read helpers (used as fallback when yfinance is down)
-# ---------------------------------------------------------------------------
-
 def get_latest_snapshot(
     conn: sqlite3.Connection,
     tickers: list[str],
 ) -> dict | None:
     """Fetch the most recent snapshot for a given set of tickers.
-
-    Used as circuit-breaker fallback: if yfinance fails, the optimizer
-    can re-use the last valid snapshot instead of crashing.
 
     Args:
         conn:    Open SQLite connection.
@@ -233,8 +193,10 @@ def get_latest_snapshot(
 
     Returns:
         Dict with keys {hash, created_at, window_start, window_end, df}
-        where df is the reconstructed DataFrame, or None if not found.
+        or None if not found.
     """
+    import io  # noqa: PLC0415
+
     tickers_json = json.dumps(sorted(tickers))
     row = conn.execute(
         """
@@ -250,7 +212,6 @@ def get_latest_snapshot(
     if row is None:
         return None
 
-    import io
     df = pd.read_csv(io.StringIO(row["data_csv"]), index_col=0, parse_dates=True)
     return {
         "hash": row["hash"],
