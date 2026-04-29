@@ -18,7 +18,6 @@ import hashlib
 from unittest.mock import patch
 
 import pandas as pd
-
 from backend.data.loader import ValidatedDataLoader
 
 
