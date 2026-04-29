@@ -12,11 +12,11 @@ not by this module. All functions accept an open sqlite3.Connection.
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
 import json
+from pathlib import Path
 import sqlite3
 import uuid
-from datetime import datetime, timezone
-from pathlib import Path
 
 import pandas as pd
 

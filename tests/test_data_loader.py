@@ -10,14 +10,13 @@ Tests cover:
 
 from __future__ import annotations
 
-import hashlib
 from datetime import date
-from unittest.mock import MagicMock, patch
+import hashlib
+from unittest.mock import patch
 
 import pandas as pd
-import pytest
 
-from backend.data.loader import DataQualityReport, ValidatedDataLoader
+from backend.data.loader import ValidatedDataLoader
 
 
 # ---------------------------------------------------------------------------
