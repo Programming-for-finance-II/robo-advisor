@@ -4,7 +4,7 @@ from typing import Literal, TypedDict
 
 
 class OptimizationResult(TypedDict):
-    algorithm: Literal["HRP", "MV", "ERC"]
+    algorithm: Literal["HRP", "MV", "BL"]
     weights: dict[str, float]
     expected_return: float
     expected_volatility: float
