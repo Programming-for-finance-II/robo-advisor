@@ -15,8 +15,6 @@ Consumed by:
   - backend/optimizer/   (hrp.py, markowitz.py)
   - tests/test_data_loader.py
   - tests/test_ucits_fallback.py
-
-
 """
 
 from __future__ import annotations
@@ -176,11 +174,9 @@ class ValidatedDataLoader:
         for ticker in tickers:
             fallback = self._fallback_map.get(ticker, ticker)
             if fallback == ticker:
-                # No UCITS alternative — use as-is
                 active.append(ticker)
                 continue
 
-            # Check primary ticker quality
             try:
                 raw = yf.download(
                     ticker,
@@ -232,7 +228,6 @@ class ValidatedDataLoader:
         if isinstance(raw.columns, pd.MultiIndex):
             prices = raw["Close"]
         else:
-            # Single ticker — raw is already a Series or flat DataFrame
             prices = raw[["Close"]] if "Close" in raw.columns else raw
             if isinstance(tickers, str):
                 prices.columns = [tickers]
@@ -258,7 +253,6 @@ class ValidatedDataLoader:
                 f"minimum required: {self.min_observations}."
             )
 
-        # Ensure UTC-aware DatetimeIndex
         if prices.index.tz is None:
             prices.index = prices.index.tz_localize("UTC")
 
