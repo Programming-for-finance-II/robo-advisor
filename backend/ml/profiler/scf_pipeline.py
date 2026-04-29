@@ -1,26 +1,26 @@
 """
 scf_pipeline.py
 ---------------
-Pipeline di preprocessing per il Survey of Consumer Finances (Fed, 2022).
+Preprocessing pipeline for the Survey of Consumer Finances (Fed, 2022).
 
-Responsabilità:
-    - Caricamento del Summary Extract SCF 2022 (CSV, implicate=1)
-    - Selezione delle feature rilevanti per il profiler ML
-    - Applicazione dei pesi campionari (wgt) per rappresentatività
-    - Standardizzazione delle feature → output pronto per clustering.py
+Responsibilities:
+    - Load the SCF 2022 Summary Extract (CSV, implicate=1)
+    - Select relevant features for the ML profiler
+    - Apply sample weights (wgt) for population representativeness
+    - Standardise features → output ready for clustering.py
 
-Riferimenti:
+References:
     - Federal Reserve (2022). Survey of Consumer Finances — Codebook and
       Methodology. https://www.federalreserve.gov/econres/scfindex.htm
     - Grable, J.E., Lytton, R.H. (1999). Financial risk tolerance revisited.
       Financial Services Review.
 
-Note implementative (W1 — stub):
-    Il dataset SCF 2022 Summary Extract non è ancora scaricato localmente.
-    Le funzioni contengono la struttura corretta e la documentazione delle
-    scelte di preprocessing. L'implementazione reale avviene in W2.
+Implementation notes (W1 — stub):
+    The SCF 2022 Summary Extract dataset has not yet been downloaded locally.
+    Functions contain the correct structure and documentation of preprocessing
+    choices. Real implementation takes place in W2.
 
-ADR correlato:
+Related ADR:
     docs/adr/ADR-002-scf-preprocessing.md
 """
 
@@ -37,121 +37,123 @@ from sklearn.preprocessing import StandardScaler
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
-# Costanti — nessun magic number nel codice
+# Constants — no magic numbers in code
 # ---------------------------------------------------------------------------
 
-# Percorso atteso del dataset SCF 2022 Summary Extract (CSV)
+# Expected path of the SCF 2022 Summary Extract (CSV)
 SCF_DEFAULT_PATH = Path("data/scf/scf2022.csv")
 
-# Prima imputazione del SCF (1–5). Usiamo implicate=1 per semplicità.
-# Motivazione: vedere ADR-002-scf-preprocessing.md
+# First SCF implicate (1–5). We use implicate=1 for simplicity.
+# Rationale: see ADR-002-scf-preprocessing.md
 SCF_IMPLICATE = 1
 
-# Colonne selezionate dal SCF per il profiler
-# Fonte: SCF 2022 Codebook — variabili demografiche e comportamentali
+# Columns selected from the SCF for the profiler
+# Source: SCF 2022 Codebook — demographic and behavioural variables
 SCF_FEATURE_COLUMNS: list[str] = [
-    "AGE",        # Età del rispondente principale
-    "INCOME",     # Reddito familiare annuo (normalizzato Fed)
-    "NETWORTH",   # Patrimonio netto familiare
-    "WSAVED",     # Propensione al risparmio dichiarata
-    "YESFINRISK", # Disposto a rischio finanziario (1=sì, 0=no)
-    "NOFINRISK",  # Non disposto a nessun rischio finanziario (1=sì, 0=no)
-    "KIDS",       # Numero di figli (proxy composizione familiare)
-    "EDUC",       # Livello di istruzione (proxy esperienza finanziaria)
+    "AGE",        # Age of the reference person
+    "INCOME",     # Annual family income (Fed-normalised)
+    "NETWORTH",   # Family net worth
+    "WSAVED",     # Self-reported saving propensity
+    "YESFINRISK", # Willing to take financial risk (1=yes, 0=no)
+    "NOFINRISK",  # Unwilling to take any financial risk (1=yes, 0=no)
+    "KIDS",       # Number of children (proxy for family composition)
+    "EDUC",       # Education level (proxy for financial experience)
 ]
 
-# Colonne che definiscono il comportamento allocativo osservato (label source)
+# Columns describing observed portfolio allocation (label source for clustering)
 SCF_ALLOCATION_COLUMNS: list[str] = [
-    "EQUITY",    # Valore totale in equity (azioni + fondi azionari)
-    "BOND",      # Valore totale in obbligazioni
-    "CASHLI",    # Valore in cash/liquidità
-    "STOCKS",    # Valore diretto in azioni (sottoinsieme di EQUITY)
+    "EQUITY",    # Total value held in equity (stocks + equity mutual funds)
+    "BOND",      # Total value held in bonds
+    "CASHLI",    # Value held in cash and liquid assets
+    "STOCKS",    # Direct stock holdings (subset of EQUITY)
 ]
 
-# Peso campionario obbligatorio (SCF usa design stratificato)
+# Mandatory sample weight column (SCF uses stratified sampling design)
 SCF_WEIGHT_COLUMN = "WGT"
 
-# Soglia minima di osservazioni per procedere
+# Minimum number of observations required to proceed
 MIN_OBSERVATIONS = 1_000
 
 
 # ---------------------------------------------------------------------------
-# Funzioni pubbliche
+# Public functions
 # ---------------------------------------------------------------------------
 
 def load_scf(
     path: Path = SCF_DEFAULT_PATH,
     implicate: int = SCF_IMPLICATE,
 ) -> pd.DataFrame:
-    """Carica il Summary Extract SCF 2022 e filtra per imputazione.
+    """Load the SCF 2022 Summary Extract and filter by implicate number.
 
-    Il SCF usa 5 imputazioni multiple per i dati mancanti. Per semplicità
-    accademica usiamo implicate=1 (prima imputazione). Questa scelta è
-    documentata come limitazione in ADR-002-scf-preprocessing.md.
+    The SCF uses 5 multiple imputations for missing data. For academic
+    simplicity we use implicate=1 (first imputation). This choice is
+    documented as a limitation in ADR-002-scf-preprocessing.md.
 
     Args:
-        path: Percorso al file CSV del SCF Summary Extract.
-        implicate: Numero di imputazione da usare (1–5). Default: 1.
+        path: Path to the SCF Summary Extract CSV file.
+        implicate: Implicate number to use (1–5). Default: 1.
 
     Returns:
-        DataFrame con tutte le colonne SCF per l'imputazione selezionata.
+        DataFrame with all SCF columns for the selected implicate.
 
     Raises:
-        FileNotFoundError: Se il file CSV non è presente al path indicato.
-        ValueError: Se implicate non è in range [1, 5].
+        FileNotFoundError: If the CSV file is not found at the given path.
+        ValueError: If implicate is not in range [1, 5].
     """
     if not 1 <= implicate <= 5:
-        raise ValueError(f"implicate deve essere tra 1 e 5, ricevuto: {implicate}")
+        raise ValueError(f"implicate must be between 1 and 5, got: {implicate}")
 
     if not path.exists():
         raise FileNotFoundError(
-            f"Dataset SCF non trovato in: {path}\n"
-            "Scarica il Summary Extract 2022 da:\n"
+            f"SCF dataset not found at: {path}\n"
+            "Download the 2022 Summary Extract from:\n"
             "https://www.federalreserve.gov/econres/scfindex.htm"
         )
 
-    logger.info("Caricamento SCF da %s (implicate=%d)...", path, implicate)
+    logger.info("Loading SCF from %s (implicate=%d)...", path, implicate)
 
-    # TODO (W2): implementare il caricamento reale
-    # Il SCF CSV ha una colonna 'Y1' o 'IMPLICATE' che identifica l'imputazione
+    # TODO (W2): implement real loading
+    # The SCF CSV has a column 'Y1' whose last digit identifies the implicate
     # df = pd.read_csv(path, low_memory=False)
-    # df = df[df["Y1"] == implicate].reset_index(drop=True)
+    # df = df[df["Y1"] % 10 == implicate].reset_index(drop=True)
 
     raise NotImplementedError(
-        "load_scf() — implementazione W2. "
-        "Il dataset SCF 2022 deve essere scaricato prima di procedere."
+        "load_scf() — W2 implementation pending. "
+        "The SCF 2022 dataset must be downloaded before proceeding."
     )
 
 
 def select_features(df: pd.DataFrame) -> pd.DataFrame:
-    """Seleziona e rinomina le colonne rilevanti dal DataFrame SCF grezzo.
+    """Select and retain relevant columns from the raw SCF DataFrame.
 
-    Mantiene le feature demografiche/comportamentali, le colonne di
-    allocazione (per il clustering) e il peso campionario.
+    Keeps demographic/behavioural feature columns, allocation columns
+    (for clustering), and the sample weight column.
 
     Args:
-        df: DataFrame SCF grezzo restituito da load_scf().
+        df: Raw SCF DataFrame returned by load_scf().
 
     Returns:
-        DataFrame con solo le colonne necessarie alla pipeline.
+        DataFrame with only the columns required by the pipeline.
 
     Raises:
-        ValueError: Se colonne obbligatorie mancano nel DataFrame.
+        ValueError: If any required columns are missing from the DataFrame.
     """
     required = SCF_FEATURE_COLUMNS + SCF_ALLOCATION_COLUMNS + [SCF_WEIGHT_COLUMN]
     missing = [col for col in required if col not in df.columns]
 
     if missing:
         raise ValueError(
-            f"Colonne mancanti nel dataset SCF: {missing}\n"
-            "Verifica il Codebook SCF 2022 per i nomi corretti delle variabili."
+            f"Missing columns in SCF dataset: {missing}\n"
+            "Check the SCF 2022 Codebook for correct variable names."
         )
 
-    logger.info("Selezione di %d feature + %d allocation columns + weight.",
-                len(SCF_FEATURE_COLUMNS), len(SCF_ALLOCATION_COLUMNS))
+    logger.info(
+        "Selecting %d feature columns + %d allocation columns + weight.",
+        len(SCF_FEATURE_COLUMNS), len(SCF_ALLOCATION_COLUMNS),
+    )
 
-    # TODO (W2): aggiungere eventuali feature engineered
-    # es. EQUITY_RATIO = EQUITY / (EQUITY + BOND + CASH + REAL)
+    # TODO (W2): add engineered features if needed
+    # e.g. EQUITY_RATIO = EQUITY / (EQUITY + BOND + CASHLI)
 
     return df[required].copy()
 
@@ -160,19 +162,19 @@ def standardise_features(
     df: pd.DataFrame,
     feature_cols: Optional[list[str]] = None,
 ) -> tuple[pd.DataFrame, StandardScaler]:
-    """Standardizza le feature numeriche (zero mean, unit variance).
+    """Standardise numeric features to zero mean and unit variance.
 
-    I pesi campionari (WGT) e le colonne di allocazione non vengono
-    standardizzate — rimangono nel DataFrame come colonne ausiliarie.
+    Sample weights (WGT) and allocation columns are not standardised —
+    they remain in the DataFrame as auxiliary columns.
 
     Args:
-        df: DataFrame con feature selezionate (output di select_features()).
-        feature_cols: Lista di colonne da standardizzare.
+        df: DataFrame with selected columns (output of select_features()).
+        feature_cols: List of columns to standardise.
                       Default: SCF_FEATURE_COLUMNS.
 
     Returns:
-        Tuple (df_standardised, scaler) dove scaler è fitted e
-        può essere riusato per trasformare nuovi utenti a runtime.
+        Tuple (df_standardised, scaler) where scaler is fitted and can
+        be reused to transform new user inputs at inference time.
     """
     if feature_cols is None:
         feature_cols = SCF_FEATURE_COLUMNS
@@ -183,7 +185,7 @@ def standardise_features(
     df_out = df.copy()
     df_out[cols_to_scale] = scaler.fit_transform(df[cols_to_scale])
 
-    logger.info("Standardizzazione completata su %d colonne.", len(cols_to_scale))
+    logger.info("Standardisation complete on %d columns.", len(cols_to_scale))
 
     return df_out, scaler
 
@@ -192,25 +194,25 @@ def build_pipeline(
     path: Path = SCF_DEFAULT_PATH,
     implicate: int = SCF_IMPLICATE,
 ) -> tuple[pd.DataFrame, pd.DataFrame, np.ndarray, StandardScaler]:
-    """Entry point principale della pipeline SCF.
+    """Main entry point for the SCF preprocessing pipeline.
 
-    Esegue in sequenza: load → select → standardise.
+    Executes in sequence: load -> select -> standardise.
 
     Args:
-        path: Percorso al file CSV del SCF.
-        implicate: Imputazione da usare (default: 1).
+        path: Path to the SCF CSV file.
+        implicate: Implicate to use (default: 1).
 
     Returns:
-        Tuple (X, alloc, weights, scaler) dove:
-            X       — feature standardizzate (n_samples × n_features)
-            alloc   — colonne di allocazione raw per clustering (n_samples × 4)
-            weights — pesi campionari SCF (n_samples,)
-            scaler  — StandardScaler fitted su X
+        Tuple (X, alloc, weights, scaler) where:
+            X       -- standardised features (n_samples x n_features)
+            alloc   -- raw allocation columns for clustering (n_samples x 4)
+            weights -- SCF sample weights (n_samples,)
+            scaler  -- StandardScaler fitted on X
 
     Example:
         >>> X, alloc, weights, scaler = build_pipeline()
-        >>> # X è pronto per clustering.py
-        >>> # alloc è pronto per costruire i label via K-Means/GMM
+        >>> # X is ready for clustering.py
+        >>> # alloc is ready to build labels via K-Means / GMM
     """
     df_raw = load_scf(path=path, implicate=implicate)
     df_selected = select_features(df_raw)
@@ -218,8 +220,8 @@ def build_pipeline(
 
     if len(df_std) < MIN_OBSERVATIONS:
         raise ValueError(
-            f"Troppo poche osservazioni dopo il filtraggio: {len(df_std)} "
-            f"(minimo richiesto: {MIN_OBSERVATIONS})"
+            f"Too few observations after filtering: {len(df_std)} "
+            f"(minimum required: {MIN_OBSERVATIONS})"
         )
 
     X = df_std[SCF_FEATURE_COLUMNS].to_numpy()
@@ -227,7 +229,7 @@ def build_pipeline(
     weights = df_selected[SCF_WEIGHT_COLUMN].to_numpy()
 
     logger.info(
-        "Pipeline SCF completata: %d osservazioni, %d feature.",
+        "SCF pipeline complete: %d observations, %d features.",
         len(X), X.shape[1],
     )
 
