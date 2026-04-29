@@ -67,7 +67,6 @@ def test_load_happy_path():
         if isinstance(ticker_or_list, list):
             return bulk_df
         # Single-ticker probe — return scalar float values, not Series
-        t = ticker_or_list
         rng = pd.date_range("2023-01-02", periods=N_DAYS, freq="B")
         return pd.DataFrame({"Close": [100.0 + i for i in range(N_DAYS)]}, index=rng)
 
