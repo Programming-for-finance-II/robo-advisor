@@ -50,23 +50,22 @@ SCF_IMPLICATE = 1
 # Colonne selezionate dal SCF per il profiler
 # Fonte: SCF 2022 Codebook — variabili demografiche e comportamentali
 SCF_FEATURE_COLUMNS: list[str] = [
-    "AGE",       # Età del rispondente principale
-    "INCOME",    # Reddito familiare annuo (normalizzato Fed)
-    "NETWORTH",  # Patrimonio netto familiare
-    "SAVRES",    # Orizzonte temporale del risparmio (proxy)
-    "WSAVED",    # Propensione al risparmio dichiarata
-    "RISKSCALE", # Self-reported risk attitude (1=no risk, 4=substantial)
-    "FAMSIZE",   # Numero di componenti familiari
-    "HDEBT",     # Flag presenza debiti (0/1)
-    "EDUC",      # Livello di istruzione (proxy esperienza finanziaria)
+    "AGE",        # Età del rispondente principale
+    "INCOME",     # Reddito familiare annuo (normalizzato Fed)
+    "NETWORTH",   # Patrimonio netto familiare
+    "WSAVED",     # Propensione al risparmio dichiarata
+    "YESFINRISK", # Disposto a rischio finanziario (1=sì, 0=no)
+    "NOFINRISK",  # Non disposto a nessun rischio finanziario (1=sì, 0=no)
+    "KIDS",       # Numero di figli (proxy composizione familiare)
+    "EDUC",       # Livello di istruzione (proxy esperienza finanziaria)
 ]
 
 # Colonne che definiscono il comportamento allocativo osservato (label source)
 SCF_ALLOCATION_COLUMNS: list[str] = [
-    "EQUITY",    # % portafoglio in equity (calcolata da loader)
-    "BOND",      # % portafoglio in bond
-    "CASH",      # % portafoglio in cash/liquidità
-    "REAL",      # % portafoglio in real estate
+    "EQUITY",    # Valore totale in equity (azioni + fondi azionari)
+    "BOND",      # Valore totale in obbligazioni
+    "CASHLI",    # Valore in cash/liquidità
+    "STOCKS",    # Valore diretto in azioni (sottoinsieme di EQUITY)
 ]
 
 # Peso campionario obbligatorio (SCF usa design stratificato)
