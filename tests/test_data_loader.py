@@ -17,7 +17,7 @@ from unittest.mock import MagicMock, patch
 import pandas as pd
 import pytest
 
-from backend.data.loader import DataQualityReport, DataQualityError, ValidatedDataLoader
+from backend.data.loader import DataQualityReport, ValidatedDataLoader
 
 
 # ---------------------------------------------------------------------------
@@ -26,7 +26,7 @@ from backend.data.loader import DataQualityReport, DataQualityError, ValidatedDa
 
 def _make_prices(tickers: list[str], n_days: int = 300) -> pd.DataFrame:
     """Return a clean DataFrame of fake closing prices, UTC-indexed."""
-    import numpy as np
+
 
     rng = pd.date_range("2023-01-02", periods=n_days, freq="B", tz="UTC")
     data = {t: 100.0 + i + pd.Series(range(n_days), dtype=float).values
