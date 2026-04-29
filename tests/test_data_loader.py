@@ -65,10 +65,11 @@ def test_load_happy_path():
 
     def fake_download(ticker_or_list, **kwargs):
         if isinstance(ticker_or_list, list):
-            # Bulk call from _download()
             return bulk_df
-        # Probe call from _resolve_tickers() — clean data, no fallback needed
-        return _make_single_df(ticker_or_list, all_nan=False)
+        # Single-ticker probe — return scalar float values, not Series
+        t = ticker_or_list
+        rng = pd.date_range("2023-01-02", periods=N_DAYS, freq="B")
+        return pd.DataFrame({"Close": [100.0 + i for i in range(N_DAYS)]}, index=rng)
 
     with patch("backend.data.loader.yf.download", side_effect=fake_download):
         loader = ValidatedDataLoader()
@@ -83,12 +84,8 @@ def test_load_happy_path():
     assert report.nan_ratio < ValidatedDataLoader.NAN_THRESHOLD
     assert len(report.market_data_hash) == 64
     assert all(c in "0123456789abcdef" for c in report.market_data_hash)
-
-    # Hash must be reproducible from the same DataFrame
     expected_hash = hashlib.sha256(df.to_csv().encode()).hexdigest()
     assert report.market_data_hash == expected_hash
-
-    # No fallback applied
     assert len(report.fallback_tickers_applied) == 0
 
 
