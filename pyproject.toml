@@ -36,5 +36,8 @@ target-version = "py311"
 [tool.ruff.lint]
 select = ["E", "F", "I"]
 
+[tool.ruff.lint.isort]
+known-first-party = ["backend"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
