@@ -9,9 +9,9 @@ import pandas as pd
 class OptimizationResult(TypedDict):
     algorithm: Literal["HRP", "MV", "BL"]
     weights: dict[str, float]
-    expected_return: float
-    expected_volatility: float
-    sharpe_ratio: float
+    expected_return: Optional[float]       
+    expected_volatility: float            
+    sharpe_ratio: Optional[float] 
     risk_contributions: dict[str, float]
     optimizer_version: str
     solver_status: Literal["optimal", "infeasible", "fallback"]
