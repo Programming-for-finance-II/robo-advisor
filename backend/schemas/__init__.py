@@ -5,7 +5,7 @@ Public API:
     from backend.schemas import GroundTruthPayload, get_mock_payload
 """
 from backend.schemas.ground_truth import GroundTruthPayload, build_allowed_numbers
-from backend.schemas.mock_data import get_mock_payload, get_all_mock_payloads
+from backend.schemas.mock_data import get_all_mock_payloads, get_mock_payload
 
 __all__ = [
     "GroundTruthPayload",

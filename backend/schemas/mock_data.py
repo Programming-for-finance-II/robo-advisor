@@ -286,13 +286,21 @@ _STRESS: dict[ProfileLabel, StressScenarios] = {
         rates_hike_2022=ScenarioResult(portfolio_drawdown=-0.139,  benchmark_drawdown=-0.183),
     ),
 }
-
+ 
 _BACKTEST: dict[ProfileLabel, BacktestSummary] = {
-    "conservative": BacktestSummary(period="2019-2026", cagr=0.042, sharpe=0.61, max_drawdown=-0.114, calmar_ratio=0.37),
-    "balanced":     BacktestSummary(period="2019-2026", cagr=0.068, sharpe=0.71, max_drawdown=-0.194, calmar_ratio=0.35),
-    "aggressive":   BacktestSummary(period="2019-2026", cagr=0.091, sharpe=0.62, max_drawdown=-0.318, calmar_ratio=0.29),
+    "conservative": BacktestSummary(
+        period="2019-2026", cagr=0.042, sharpe=0.61,
+        max_drawdown=-0.114, calmar_ratio=0.37,
+    ),
+    "balanced": BacktestSummary(
+        period="2019-2026", cagr=0.068, sharpe=0.71,
+        max_drawdown=-0.194, calmar_ratio=0.35,
+    ),
+    "aggressive": BacktestSummary(
+        period="2019-2026", cagr=0.091, sharpe=0.62,
+        max_drawdown=-0.318, calmar_ratio=0.29,
+    ),
 }
-
 
 def _make_regulatory_context(profile: ProfileLabel) -> RegulatoryContext:
     weights = _WEIGHTS[profile]
