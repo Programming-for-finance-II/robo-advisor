@@ -77,7 +77,9 @@ CREATE TABLE IF NOT EXISTS recommendations (
     retry_count                 INTEGER NOT NULL DEFAULT 0,
 
     -- Compliance
-    disclaimer_shown            INTEGER NOT NULL DEFAULT 0  -- 0/1 boolean
+    -- Compliance
+    disclaimer_shown            INTEGER NOT NULL DEFAULT 0,  -- 0/1 boolean
+    disclaimer_text_hash        TEXT NOT NULL DEFAULT ''
 );
 
 -- -------------------------------------------------------------
