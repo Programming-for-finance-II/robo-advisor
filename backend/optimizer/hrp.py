@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Literal, Optional, TypedDict
+from typing import Literal, TypedDict
 
 from pypfopt import CovarianceShrinkage, EfficientFrontier
 
