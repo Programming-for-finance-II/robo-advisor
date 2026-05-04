@@ -97,3 +97,33 @@ def test_profile_empty_responses():
     """Empty responses dict -> 422 Unprocessable Entity."""
     response = client.post("/profile", json={"responses": {}})
     assert response.status_code == 422
+
+    def test_profile_moderate():
+    """Mix of 'b' and 'c' answers -> MODERATE."""
+    responses = {f"Q{i}": "b" for i in range(1, 6)}
+    responses.update({f"Q{i}": "c" for i in range(6, 11)})
+    response = client.post("/profile", json={"responses": responses})
+    assert response.status_code == 200
+    data = response.json()
+    assert data["profile_label"] == "MODERATE"
+
+
+def test_profile_borderline_confidence():
+    """Borderline score (8-9) -> confidence=0.7 and low_confidence_flag=True."""
+    # Score 8: Q1-Q2 = 'c' (2+2=4), Q3-Q10 = 'a' (0x8=0), Q4 reverse 'a'=3
+    # Easier: use map_score_to_label directly via a known boundary response set
+    # All 'a' except Q1='c'(2) Q2='c'(2) Q4='a'=3(reverse) -> score = 2+2+3+0*7 = 7... 
+    # Simplest guaranteed borderline: score 9
+    # Q1='d'(3), Q2='c'(2), Q4='a'(3 reverse), rest='a'(0) -> 3+2+3=8... 
+    # Use compute_score to find a clean borderline set:
+    # Q1='d'(3), Q2='d'(3), Q4='a'(3), rest 'a'(0) -> 3+3+3=9 ✓ borderline
+    responses = _all_responses("a")
+    responses["Q1"] = "d"  # +3
+    responses["Q2"] = "d"  # +3
+    # Q4 is reverse-coded: 'a' = 3
+    # total = 3+3+3 = 9 -> CONSERVATIVE borderline
+    response = client.post("/profile", json={"responses": responses})
+    assert response.status_code == 200
+    data = response.json()
+    assert data["confidence"] == 0.7
+    assert data["low_confidence_flag"] is True
