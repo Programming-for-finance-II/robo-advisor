@@ -131,3 +131,39 @@ def _recursive_bisection(
         clusters = new_clusters
 
     return weights.to_dict()
+# ---------------------------------------------------------------------------
+# Profile Tilt
+# ---------------------------------------------------------------------------
+def _compute_min_var_weights(cov: pd.DataFrame) -> dict[str, float]:
+    ef = EfficientFrontier(None, cov, weight_bounds=(ASSET_MIN, ASSET_MAX))
+    ef.min_volatility()
+    return ef.clean_weights()
+
+
+def _compute_erc_weights(cov: pd.DataFrame) -> dict[str, float]:
+    variances = np.diag(cov.values)
+    inv_vol = 1.0 / np.sqrt(variances)
+    w = inv_vol / inv_vol.sum()
+    return dict(zip(cov.index, w))
+
+
+def _apply_profile_tilt(
+    hrp_weights: dict[str, float],
+    cov: pd.DataFrame,
+    profile: ProfileLabel,
+) -> dict[str, float]:
+    if profile == "BALANCED":
+        return hrp_weights
+
+    if profile == "CONSERVATIVE":
+        w_blend = _compute_min_var_weights(cov)
+    else:
+        w_blend = _compute_erc_weights(cov)
+
+    tilt = 0.3
+    w_final = {
+        t: (1 - tilt) * hrp_weights[t] + tilt * w_blend.get(t, 0.0)
+        for t in hrp_weights
+    }
+    total = sum(w_final.values())
+    return {t: w / total for t, w in w_final.items()}
