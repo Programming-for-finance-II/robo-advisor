@@ -2,14 +2,11 @@ from __future__ import annotations
 
 from typing import Literal, TypedDict
 
-from pypfopt import CovarianceShrinkage, EfficientFrontier
-
-from scipy.cluster.hierarchy import dendrogram, linkage
-
-from scipy.spatial.distance import squareform
-
 import numpy as np
 import pandas as pd
+from pypfopt import CovarianceShrinkage, EfficientFrontier
+from scipy.cluster.hierarchy import dendrogram, linkage
+from scipy.spatial.distance import squareform
 
 OPTIMIZER_VERSION = "2.0.0"
 ASSET_MIN = 0.03
