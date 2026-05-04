@@ -197,3 +197,55 @@ def _apply_box_constraints(
         w = w / w.sum()
 
     return w.to_dict(), clipped
+# ---------------------------------------------------------------------------
+# Main Entry Point
+# ---------------------------------------------------------------------------
+def optimize(
+    prices: pd.DataFrame,
+    profile: ProfileLabel,
+    cluster_map: dict[str, str],
+    ucits_tickers: list[str] | None = None,
+    fallback_tickers: list[str] | None = None,
+) -> OptimizationResult:
+    returns = compute_log_returns(prices)
+    cov = compute_covariance(prices)
+
+    corr = _cov_to_corr(cov)
+    dist_matrix = _corr_to_distance(corr)
+    condensed = squareform(dist_matrix, checks=False)
+    link = linkage(condensed, method="ward")
+
+    sorted_idx = _get_quasi_diagonal_order(link, len(cov.columns))
+    sorted_tickers = [cov.columns[i] for i in sorted_idx]
+
+    hrp_raw = _recursive_bisection(cov, sorted_tickers)
+    tilted = _apply_profile_tilt(hrp_raw, cov, profile)
+    final_weights, was_clipped = _apply_box_constraints(tilted, cluster_map)
+
+    solver_status: Literal["optimal", "clipped", "fallback_erc"] = (
+        "clipped" if was_clipped else "optimal"
+    )
+
+    w_vec = np.array([final_weights[t] for t in cov.columns])
+    ann_vol = float(np.sqrt(w_vec @ cov.values @ w_vec))
+
+    mean_log_returns = returns.mean() * 252
+    exp_ret = float(mean_log_returns.values @ w_vec)
+    sharpe = exp_ret / ann_vol if ann_vol > 0 else 0.0
+
+    marginal = cov.values @ w_vec
+    rc = w_vec * marginal
+    risk_contributions = dict(zip(cov.columns, rc / rc.sum()))
+
+    return OptimizationResult(
+        algorithm="HRP",
+        weights=final_weights,
+        expected_return=round(exp_ret, 6),
+        expected_volatility=round(ann_vol, 6),
+        sharpe_ratio=round(sharpe, 6),
+        risk_contributions={t: round(v, 6) for t, v in risk_contributions.items()},
+        optimizer_version=OPTIMIZER_VERSION,
+        solver_status=solver_status,
+        ucits_tickers_used=ucits_tickers or [],
+        fallback_tickers_applied=fallback_tickers or [],
+    )
