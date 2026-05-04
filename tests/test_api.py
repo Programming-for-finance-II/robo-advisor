@@ -98,7 +98,7 @@ def test_profile_empty_responses():
     response = client.post("/profile", json={"responses": {}})
     assert response.status_code == 422
 
-    def test_profile_moderate():
+def test_profile_moderate():
     """Mix of 'b' and 'c' answers -> MODERATE."""
     responses = {f"Q{i}": "b" for i in range(1, 6)}
     responses.update({f"Q{i}": "c" for i in range(6, 11)})
