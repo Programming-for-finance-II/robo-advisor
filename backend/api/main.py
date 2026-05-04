@@ -4,11 +4,11 @@ from __future__ import annotations
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, field_validator
 from slowapi import Limiter, _rate_limit_exceeded_handler
-from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
 from starlette.requests import Request
 
-from backend.ml.profiler.rule_based import profile_user, ProfilerOutput
+from backend.ml.profiler.rule_based import ProfilerOutput, profile_user
 
 # ---------------------------------------------------------------------------
 # App + rate limiter
