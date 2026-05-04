@@ -59,3 +59,18 @@ def compute_covariance(prices: pd.DataFrame) -> pd.DataFrame:
     assert np.all(eigenvalues >= -1e-8), "covariance matrix is not PSD after LW shrinkage"
 
     return cov
+
+# ---------------------------------------------------------------------------
+# Log Returns
+# ---------------------------------------------------------------------------
+def compute_log_returns(prices: pd.DataFrame) -> pd.DataFrame:
+    assert not prices.empty, "prices cannot be empty"
+    assert prices.shape[1] >= 2, "need at least 2 assets"
+    assert not prices.isnull().all().any(), "some tickers have all-NaN prices"
+
+    returns = np.log(prices / prices.shift(1)).dropna()
+
+    assert len(returns) >= 60, (
+        f"too few observations ({len(returns)}); need >= 60 for stable covariance"
+    )
+    return returns
