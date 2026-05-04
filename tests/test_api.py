@@ -9,7 +9,6 @@ test_profiler.py by P3).
 
 from __future__ import annotations
 
-import pytest
 from fastapi.testclient import TestClient
 
 from backend.api.main import app
