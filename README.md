@@ -5,7 +5,7 @@
 ![Python](https://img.shields.io/badge/python-3.11+-blue)
 ![Streamlit](https://img.shields.io/badge/frontend-Streamlit-red)
 ![FastAPI](https://img.shields.io/badge/backend-FastAPI-green)
-![License](https://img.shields.io/badge/license-MIT-lightgrey)
+[![License](https://img.shields.io/badge/license-MIT-lightgrey)](LICENSE)
 
 An academic robo-advisor that classifies investor risk profiles using a
 machine learning model trained on real household behaviour data (Fed SCF 2022),
@@ -18,7 +18,7 @@ and generates natural-language explanations through a constrained LLM narrator
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```text
 robo-advisor/
@@ -46,7 +46,7 @@ robo-advisor/
 ```
 ---
 
-## ⚙️ Installation
+## Installation
 
 ### Requirements
 
@@ -81,7 +81,7 @@ docker-compose up --build
 
 ---
 
-## 🚀 Usage
+## Usage
 
 ### Step-by-step user flow
 
@@ -93,7 +93,7 @@ docker-compose up --build
 
 ---
 
-## 🔌 API Documentation
+## API Documentation
 
 The backend exposes three endpoints via FastAPI. Interactive docs available at `http://localhost:8000/docs`.
 
@@ -156,7 +156,7 @@ Generates a validated natural-language explanation of the portfolio.
 
 ---
 
-## 🧠 Technical Highlights
+## Technical Highlights
 
 | Component | Technology | Notes |
 |---|---|---|
@@ -172,7 +172,7 @@ Generates a validated natural-language explanation of the portfolio.
 
 ---
 
-## 🇪🇺 EU Awareness
+## 🇪EU Awareness
 
 This prototype explicitly addresses the geographic tension between its US-trained
 model and European retail investors:
@@ -182,11 +182,11 @@ model and European retail investors:
 - The LLM narrator applies **Rule 9 (EU Awareness)**: all advice acknowledges
   the SCF/EU behavioural gap when addressing European investors
 - A persistent **EU Investor Note** banner is shown on the Portfolio page
-- **UCITS badges** 🇪🇺 are displayed in the portfolio weights table
+- **UCITS badges** are displayed in the portfolio weights table
 
 ---
 
-## ⚠️ Disclaimer
+## Disclaimer
 
 This is an **educational prototype** developed in an academic context at USI
 (Università della Svizzera italiana). No content constitutes financial advice
@@ -196,7 +196,7 @@ and may not reflect European investor behaviour.
 
 ---
 
-## 📄 Academic Documentation
+## Academic Documentation
 
 Full project documentation (LaTeX PDF, 5–8 pages) submitted on iCorsi includes:
 - Mathematical derivation of HRP (López de Prado, 2016)
