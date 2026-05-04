@@ -172,7 +172,7 @@ Generates a validated natural-language explanation of the portfolio.
 
 ---
 
-## 🇪EU Awareness
+## EU Awareness
 
 This prototype explicitly addresses the geographic tension between its US-trained
 model and European retail investors:
