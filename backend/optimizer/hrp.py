@@ -94,3 +94,40 @@ def _corr_to_distance(corr: pd.DataFrame) -> np.ndarray:
 def _get_quasi_diagonal_order(linkage_matrix: np.ndarray, n: int) -> list[int]:
     d = dendrogram(linkage_matrix, no_plot=True)
     return [int(i) for i in d["leaves"]]
+# ---------------------------------------------------------------------------
+# Recursive Bisection
+# ---------------------------------------------------------------------------
+def _get_cluster_variance(cov: pd.DataFrame, assets: list[str]) -> float:
+    sub_cov = cov.loc[assets, assets].values
+    inv_diag = 1.0 / np.diag(sub_cov)
+    w_ivp = inv_diag / inv_diag.sum()
+    return float(w_ivp @ sub_cov @ w_ivp)
+
+
+def _recursive_bisection(
+    cov: pd.DataFrame,
+    sorted_assets: list[str],
+) -> dict[str, float]:
+    weights = pd.Series(1.0, index=sorted_assets)
+    clusters = [sorted_assets]
+
+    while clusters:
+        new_clusters = []
+        for cluster in clusters:
+            if len(cluster) == 1:
+                continue
+            mid = len(cluster) // 2
+            left = cluster[:mid]
+            right = cluster[mid:]
+
+            var_left = _get_cluster_variance(cov, left)
+            var_right = _get_cluster_variance(cov, right)
+
+            alpha = var_right / (var_left + var_right)
+            weights[left] *= alpha
+            weights[right] *= (1 - alpha)
+
+            new_clusters.extend([left, right])
+        clusters = new_clusters
+
+    return weights.to_dict()
