@@ -167,3 +167,33 @@ def _apply_profile_tilt(
     }
     total = sum(w_final.values())
     return {t: w / total for t, w in w_final.items()}
+# ---------------------------------------------------------------------------
+# Box Constraints
+# ---------------------------------------------------------------------------
+def _apply_box_constraints(
+    weights: dict[str, float],
+    cluster_map: dict[str, str],
+) -> tuple[dict[str, float], bool]:
+    w = pd.Series(weights)
+    clipped = False
+
+    for _ in range(10):
+        w_clipped = w.clip(lower=ASSET_MIN, upper=ASSET_MAX)
+        if not w_clipped.equals(w):
+            clipped = True
+        w = w_clipped / w_clipped.sum()
+
+        for cluster_name in set(cluster_map.values()):
+            assets = [t for t, c in cluster_map.items() if c == cluster_name and t in w.index]
+            if not assets:
+                continue
+            cluster_weight = w[assets].sum()
+            if cluster_weight < CLUSTER_MIN:
+                w[assets] *= CLUSTER_MIN / cluster_weight
+                clipped = True
+            elif cluster_weight > CLUSTER_MAX:
+                w[assets] *= CLUSTER_MAX / cluster_weight
+                clipped = True
+        w = w / w.sum()
+
+    return w.to_dict(), clipped
