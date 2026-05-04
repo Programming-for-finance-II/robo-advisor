@@ -74,3 +74,23 @@ def compute_log_returns(prices: pd.DataFrame) -> pd.DataFrame:
         f"too few observations ({len(returns)}); need >= 60 for stable covariance"
     )
     return returns
+
+# ---------------------------------------------------------------------------
+# Clustering
+# ---------------------------------------------------------------------------
+def _cov_to_corr(cov: pd.DataFrame) -> pd.DataFrame:
+    std = np.sqrt(np.diag(cov.values))
+    corr = cov.values / np.outer(std, std)
+    corr = np.clip(corr, -1.0, 1.0)
+    return pd.DataFrame(corr, index=cov.index, columns=cov.columns)
+
+
+def _corr_to_distance(corr: pd.DataFrame) -> np.ndarray:
+    dist = np.sqrt(0.5 * (1.0 - corr.values))
+    np.fill_diagonal(dist, 0.0)
+    return dist
+
+
+def _get_quasi_diagonal_order(linkage_matrix: np.ndarray, n: int) -> list[int]:
+    d = dendrogram(linkage_matrix, no_plot=True)
+    return [int(i) for i in d["leaves"]]
