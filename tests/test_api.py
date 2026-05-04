@@ -109,19 +109,17 @@ def test_profile_moderate():
 
 
 def test_profile_borderline_confidence():
-    """Borderline score (8-9) -> confidence=0.7 and low_confidence_flag=True."""
-    # Score 8: Q1-Q2 = 'c' (2+2=4), Q3-Q10 = 'a' (0x8=0), Q4 reverse 'a'=3
-    # Easier: use map_score_to_label directly via a known boundary response set
-    # All 'a' except Q1='c'(2) Q2='c'(2) Q4='a'=3(reverse) -> score = 2+2+3+0*7 = 7... 
-    # Simplest guaranteed borderline: score 9
-    # Q1='d'(3), Q2='c'(2), Q4='a'(3 reverse), rest='a'(0) -> 3+2+3=8... 
-    # Use compute_score to find a clean borderline set:
-    # Q1='d'(3), Q2='d'(3), Q4='a'(3), rest 'a'(0) -> 3+3+3=9 ✓ borderline
+    """Borderline score 9 -> CONSERVATIVE with confidence=0.7 and low_confidence_flag=True.
+    
+    Q7 must NOT be 'a' to avoid the MiFID II override which forces confidence=1.0.
+    Score: Q1='d'(3) + Q2='c'(2) + Q4='a'(3, reverse) + Q7='b'(1) + rest='a'(0) = 9.
+    """
     responses = _all_responses("a")
-    responses["Q1"] = "d"  # +3
-    responses["Q2"] = "d"  # +3
-    # Q4 is reverse-coded: 'a' = 3
-    # total = 3+3+3 = 9 -> CONSERVATIVE borderline
+    responses["Q1"] = "d"   # +3
+    responses["Q2"] = "c"   # +2
+    responses["Q7"] = "b"   # +1, avoids MiFID II override
+    # Q4 reverse-coded: 'a' = 3
+    # total = 3+2+3+1 = 9 -> CONSERVATIVE borderline
     response = client.post("/profile", json={"responses": responses})
     assert response.status_code == 200
     data = response.json()
