@@ -267,7 +267,9 @@ class TestAggressiveLabel:
         assert len(result["top_drivers"]) == 3
         # Top drivers must be the highest-scored questions (Q1, Q2, Q3, Q5 all = 3)
         features = [d["feature"] for d in result["top_drivers"]]
-        high_score_features = {"age", "income_comfort", "liquid_runway_months", "investment_experience"}
+        high_score_features = {
+            "age", "income_comfort", "liquid_runway_months", "investment_experience"
+        }
         assert all(f in high_score_features for f in features)
 
 
