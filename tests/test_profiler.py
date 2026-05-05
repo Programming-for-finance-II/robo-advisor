@@ -23,8 +23,6 @@ Boundary table (from questionnaire_schema.md):
     22–30 -> AGGRESSIVE    confidence=1.0
 """
 
-from __future__ import annotations
-
 import pytest
 
 from backend.ml.profiler.rule_based import (
