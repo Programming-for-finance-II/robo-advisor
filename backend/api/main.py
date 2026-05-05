@@ -79,3 +79,35 @@ def profile(request: Request, body: ProfileRequest) -> ProfileResponse:
         raise HTTPException(status_code=422, detail=str(e))
 
     return ProfileResponse(**result)
+# ---------------------------------------------------------------------------
+# /advice, /compare, /backtest — stubs
+# ---------------------------------------------------------------------------
+
+@app.post("/advice")
+@limiter.limit("10/minute")
+def advice(request: Request) -> None:
+    """Generate LLM narrative advice for a portfolio. Stub — W3."""
+    raise HTTPException(
+        status_code=503,
+        detail="LLM advisor not yet available — P4 implementation in W3.",
+    )
+
+
+@app.post("/compare")
+@limiter.limit("10/minute")
+def compare(request: Request) -> None:
+    """Compare HRP vs Markowitz portfolio. Stub — W3."""
+    raise HTTPException(
+        status_code=503,
+        detail="MV comparison not yet available — P2 implementation in W2-W3.",
+    )
+
+
+@app.post("/backtest")
+@limiter.limit("10/minute")
+def backtest(request: Request) -> None:
+    """Run historical backtest on 3 stress scenarios. Stub — W3."""
+    raise HTTPException(
+        status_code=503,
+        detail="Backtest not yet available — P2 implementation in W3.",
+    )
