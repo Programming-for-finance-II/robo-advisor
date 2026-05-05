@@ -24,7 +24,6 @@ Boundary table (from questionnaire_schema.md):
 """
 
 import pytest
-
 from backend.ml.profiler.rule_based import (
     CONFIDENCE_BORDERLINE,
     CONFIDENCE_HIGH,
