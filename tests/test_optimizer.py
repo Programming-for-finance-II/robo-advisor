@@ -29,14 +29,14 @@ def test_compute_covariance_raises_on_empty_dataframe() -> None:
     with pytest.raises(AssertionError):
         compute_covariance(pd.DataFrame())
 
-
-def test_compute_covariance_raises_not_implemented_on_valid_input() -> None:
-    """W1 stub: NotImplementedError expected until W2 implementation."""
+def test_compute_covariance_returns_dataframe_on_valid_input() -> None:
+    """compute_covariance must return a PSD DataFrame after W2 implementation."""
     from backend.optimizer.hrp import compute_covariance
-
     prices = pd.DataFrame(
-        np.random.randn(100, 8),
+        np.random.rand(100, 8) + 1,
         columns=["CSPX.L", "EFA", "AGGH.MI", "TLT", "GLD", "VNQ", "TIP", "XEON.MI"],
     )
-    with pytest.raises(NotImplementedError):
-        compute_covariance(prices)
+    cov = compute_covariance(prices)
+    assert isinstance(cov, pd.DataFrame)
+    assert cov.shape == (8, 8)
+    assert list(cov.columns) == ["CSPX.L", "EFA", "AGGH.MI", "TLT", "GLD", "VNQ", "TIP", "XEON.MI"]
