@@ -4,8 +4,7 @@ from typing import Literal
 
 import numpy as np
 import pandas as pd
-from pypfopt import CovarianceShrinkage, EfficientFrontier
-from pypfopt import expected_returns
+from pypfopt import CovarianceShrinkage, EfficientFrontier, expected_returns
 
 from backend.optimizer.hrp import OPTIMIZER_VERSION, OptimizationResult
 from backend.optimizer.risk_metrics import compute_risk_contributions
