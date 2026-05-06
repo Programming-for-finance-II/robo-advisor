@@ -1,6 +1,10 @@
 # backend/api/main.py
 from __future__ import annotations
 
+import logging
+import uuid
+from datetime import date, datetime, timezone
+
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, field_validator
 from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -8,14 +12,10 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 from starlette.requests import Request
 
-from backend.ml.profiler.rule_based import ProfilerOutput, profile_user
-
-from datetime import date, datetime, timezone
-import uuid
-
 from backend.data.loader import ValidatedDataLoader
-from backend.data.universe_config import get_cluster_map, get_primary_tickers
 from backend.data.snapshots import init_db, save_market_snapshot, save_recommendation
+from backend.data.universe_config import get_cluster_map, get_primary_tickers
+from backend.ml.profiler.rule_based import ProfilerOutput, profile_user
 from backend.optimizer.hrp import OptimizationResult, optimize
 
 # ---------------------------------------------------------------------------
