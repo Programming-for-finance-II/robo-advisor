@@ -206,29 +206,35 @@ def _make_portfolio(profile: ProfileLabel) -> Portfolio:
 def _make_risk_metrics(profile: ProfileLabel) -> RiskMetrics:
     metrics: dict[ProfileLabel, dict] = {
         "conservative": {
-            "annual_volatility":      0.062,
+            "annual_volatility":       0.062,
+            "expected_annual_return":  0.042,   # da _BACKTEST["conservative"].cagr
+            "sharpe_ratio":            0.61,     # da _BACKTEST["conservative"].sharpe
             "max_drawdown_historical": -0.112,
-            "var_95_daily":           -0.0058,
-            "cvar_95_daily":          -0.0089,
+            "var_95_daily":            -0.0058,
+            "cvar_95_daily":           -0.0089,
         },
         "balanced": {
-            "annual_volatility":      0.094,
+            "annual_volatility":       0.094,
+            "expected_annual_return":  0.068,
+            "sharpe_ratio":            0.71,
             "max_drawdown_historical": -0.187,
-            "var_95_daily":           -0.0089,
-            "cvar_95_daily":          -0.0134,
+            "var_95_daily":            -0.0089,
+            "cvar_95_daily":           -0.0134,
         },
         "aggressive": {
-            "annual_volatility":      0.148,
+            "annual_volatility":       0.148,
+            "expected_annual_return":  0.091,
+            "sharpe_ratio":            0.62,
             "max_drawdown_historical": -0.312,
-            "var_95_daily":           -0.0141,
-            "cvar_95_daily":          -0.0213,
+            "var_95_daily":            -0.0141,
+            "cvar_95_daily":           -0.0213,
         },
     }
     m = metrics[profile]
     return RiskMetrics(
-        expected_annual_return=None,   # intentionally null — HRP design
+        expected_annual_return=m["expected_annual_return"],
         annual_volatility=m["annual_volatility"],
-        sharpe_ratio=None,             # intentionally null — no expected return
+        sharpe_ratio=m["sharpe_ratio"],
         max_drawdown_historical=m["max_drawdown_historical"],
         var_95_daily=m["var_95_daily"],
         cvar_95_daily=m["cvar_95_daily"],
