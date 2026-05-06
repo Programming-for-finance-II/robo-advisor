@@ -14,7 +14,7 @@ ASSET_MAX = 0.40
 CLUSTER_MIN = 0.10
 CLUSTER_MAX = 0.60
 
-ProfileLabel = Literal["CONSERVATIVE", "BALANCED", "AGGRESSIVE"]
+ProfileLabel = Literal["CONSERVATIVE", "MODERATE", "AGGRESSIVE"]
 
 class OptimizationResult(TypedDict):
     algorithm: Literal["HRP", "MV", "BL"]
@@ -149,7 +149,7 @@ def _apply_profile_tilt(
     cov: pd.DataFrame,
     profile: ProfileLabel,
 ) -> dict[str, float]:
-    if profile == "BALANCED":
+    if profile == "MODERATE":
         return hrp_weights
 
     if profile == "CONSERVATIVE":
