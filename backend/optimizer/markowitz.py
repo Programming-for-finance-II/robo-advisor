@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-from typing import Literal, TypedDict
+from typing import Literal
 
 import numpy as np
 import pandas as pd
-from pypfopt import EfficientFrontier, expected_returns
-from pypfopt import CovarianceShrinkage
+from pypfopt import CovarianceShrinkage, EfficientFrontier
+from pypfopt import expected_returns
 
-from backend.optimizer.hrp import OptimizationResult, OPTIMIZER_VERSION
+from backend.optimizer.hrp import OPTIMIZER_VERSION, OptimizationResult
 from backend.optimizer.risk_metrics import compute_risk_contributions
  
 # ---------------------------------------------------------------------------
