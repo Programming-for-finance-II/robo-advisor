@@ -8,14 +8,8 @@ from pypfopt import EfficientFrontier, expected_returns
 from pypfopt import CovarianceShrinkage
 
 from backend.optimizer.hrp import OptimizationResult, OPTIMIZER_VERSION
-from backend.optimizer.risk_metrics import (
-    compute_risk_contributions,
-    compute_annual_volatility,
-    compute_max_drawdown,
-    compute_var_cvar,
-    compute_portfolio_returns,
-)
-
+from backend.optimizer.risk_metrics import compute_risk_contributions
+ 
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
