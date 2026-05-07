@@ -4,43 +4,6 @@ import numpy as np
 import pandas as pd
 import pytest
 
-
-def test_optimization_result_has_required_fields() -> None:
-    """OptimizationResult must contain all fields defined in design v3.1."""
-    from backend.optimizer.hrp import OptimizationResult
-
-    required = {
-        "algorithm",
-        "weights",
-        "expected_return",
-        "expected_volatility",
-        "sharpe_ratio",
-        "risk_contributions",
-        "optimizer_version",
-        "solver_status",
-    }
-    assert required.issubset(OptimizationResult.__annotations__.keys())
-
-
-def test_compute_covariance_raises_on_empty_dataframe() -> None:
-    """compute_covariance must raise AssertionError on empty input."""
-    from backend.optimizer.hrp import compute_covariance
-
-    with pytest.raises(AssertionError):
-        compute_covariance(pd.DataFrame())
-
-def test_compute_covariance_returns_dataframe_on_valid_input() -> None:
-    """compute_covariance must return a PSD DataFrame after W2 implementation."""
-    from backend.optimizer.hrp import compute_covariance
-    prices = pd.DataFrame(
-        np.random.rand(100, 8) + 1,
-        columns=["CSPX.L", "EFA", "AGGH.MI", "TLT", "GLD", "VNQ", "TIP", "XEON.MI"],
-    )
-    cov = compute_covariance(prices)
-    assert isinstance(cov, pd.DataFrame)
-    assert cov.shape == (8, 8)
-    assert list(cov.columns) == ["CSPX.L", "EFA", "AGGH.MI", "TLT", "GLD", "VNQ", "TIP", "XEON.MI"]
-
 # ---------------------------------------------------------------------------
 # Shared fixtures
 # ---------------------------------------------------------------------------
@@ -58,13 +21,57 @@ CLUSTER_MAP: dict[str, str] = {
     "XEON.MI":  "cash",
 }
 
-
 def _make_prices(n_days: int = 252) -> pd.DataFrame:
-    """Synthetic random-walk prices — enough rows to pass the 60-obs assert."""
+    """Synthetic prices — uniform volatility, sufficient rows for covariance."""
     rng = np.random.default_rng(42)
-    daily_returns = rng.normal(0.0003, 0.01, size=(n_days, len(TICKERS)))
-    prices = 100.0 * np.exp(np.cumsum(daily_returns, axis=0))
+    daily_ret = rng.normal(0.0003, 0.01, size=(n_days, len(TICKERS)))
+    prices = 100.0 * np.exp(np.cumsum(daily_ret, axis=0))
     return pd.DataFrame(prices, columns=TICKERS)
+    
+def _make_prices_with_varied_vol(n_days: int = 252) -> pd.DataFrame:
+    """
+    Prices with clearly different volatilities per asset class.
+    Required for the tilt test: MinVar must prefer low-vol assets (bonds/cash)
+    and ERC must spread risk more evenly — producing visibly different weights.
+    """
+    rng = np.random.default_rng(42)
+    # equity ~1.5%, bonds ~0.4%, gold ~1%, cash ~0.1%
+    vols = [0.015, 0.012, 0.004, 0.004, 0.010, 0.014, 0.004, 0.001]
+    daily_ret = rng.normal(0.0003, 1.0, size=(n_days, len(TICKERS))) * vols
+    prices = 100.0 * np.exp(np.cumsum(daily_ret, axis=0))
+    return pd.DataFrame(prices, columns=TICKERS)
+
+# ---------------------------------------------------------------------------
+# Structural tests (W1)
+# ---------------------------------------------------------------------------
+
+def test_optimization_result_has_required_fields() -> None:
+    """OptimizationResult must contain all fields defined in design v3.1."""
+    from backend.optimizer.hrp import OptimizationResult
+
+    required = {
+        "algorithm", "weights", "expected_return", "expected_volatility",
+        "sharpe_ratio", "risk_contributions", "optimizer_version", "solver_status",
+    }
+    assert required.issubset(OptimizationResult.__annotations__.keys())
+
+
+def test_compute_covariance_raises_on_empty_dataframe() -> None:
+    """compute_covariance must raise AssertionError on empty input."""
+    from backend.optimizer.hrp import compute_covariance
+
+    with pytest.raises(AssertionError):
+        compute_covariance(pd.DataFrame())
+
+
+def test_compute_covariance_returns_dataframe_on_valid_input() -> None:
+    """compute_covariance must return a PSD DataFrame."""
+    from backend.optimizer.hrp import compute_covariance
+
+    cov = compute_covariance(_make_prices())
+    assert isinstance(cov, pd.DataFrame)
+    assert cov.shape == (8, 8)
+    assert list(cov.columns) == TICKERS
 
 # ---------------------------------------------------------------------------
 # Functional tests (W2)
@@ -78,7 +85,7 @@ def test_optimize_weights_sum_to_one_and_box_constraints() -> None:
     from backend.optimizer.hrp import ASSET_MAX, ASSET_MIN, optimize
 
     result = optimize(
-        prices=_make_prices(),
+        prices = _make_prices_with_varied_vol(),
         profile="MODERATE",
         cluster_map=CLUSTER_MAP,
     )
@@ -99,7 +106,7 @@ def test_optimize_profile_tilt_produces_different_weights() -> None:
     """
     from backend.optimizer.hrp import optimize
 
-    prices = _make_prices()
+    prices = _make_prices_with_varied_vol()   
     w_cons = optimize(prices=prices, profile="CONSERVATIVE", cluster_map=CLUSTER_MAP)["weights"]
     w_agg  = optimize(prices=prices, profile="AGGRESSIVE",   cluster_map=CLUSTER_MAP)["weights"]
 
@@ -116,7 +123,7 @@ def test_optimize_annual_volatility_in_realistic_range() -> None:
     from backend.optimizer.hrp import optimize
 
     result = optimize(
-        prices=_make_prices(),
+        prices= _make_prices_with_varied_vol(),
         profile="MODERATE",
         cluster_map=CLUSTER_MAP,
     )
