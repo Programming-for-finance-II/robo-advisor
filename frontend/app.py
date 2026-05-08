@@ -83,8 +83,9 @@ _QUESTIONS: list[dict] = [
         "id": "Q3",
         "section": "Who You Are Financially",
         "text": (
-        "If you had to live off savings starting tomorrow, "
-        "how many months could you cover?"
+            "If you had to live off savings starting tomorrow, "
+            "how many months could you cover?"
+        ),
         "options": ["Less than 3 months", "3–6 months", "6–12 months", "More than 12 months"],
         "scores": [0, 1, 2, 3],
     },
@@ -159,8 +160,10 @@ _QUESTIONS: list[dict] = [
     {
         "id": "Q9",
         "section": "How You React",
-        "Your portfolio drops 30% over 3 months. "
-         "How long are you willing to wait for recovery?"
+        "text": (
+            "Your portfolio drops 30% over 3 months. "
+            "How long are you willing to wait for recovery?"
+        ),
         "options": [
             "A few months at most.",
             "Up to 6 months.",
