@@ -82,7 +82,9 @@ _QUESTIONS: list[dict] = [
     {
         "id": "Q3",
         "section": "Who You Are Financially",
-        "text": "If you had to live off savings starting tomorrow, how many months could you cover?",
+        "text": (
+        "If you had to live off savings starting tomorrow, "
+        "how many months could you cover?"
         "options": ["Less than 3 months", "3–6 months", "6–12 months", "More than 12 months"],
         "scores": [0, 1, 2, 3],
     },
@@ -98,7 +100,7 @@ _QUESTIONS: list[dict] = [
         ],
         "scores": [3, 2, 1, 0],   # reverse-coded
     },
-    
+
     # --- Section 2: How You Invest ---
     # Investment behaviour and financial literacy questions.
     # Longer horizons and greater experience support higher risk tolerance.
@@ -157,7 +159,8 @@ _QUESTIONS: list[dict] = [
     {
         "id": "Q9",
         "section": "How You React",
-        "text": "Your portfolio drops 30% over 3 months. How long are you willing to wait for recovery?",
+        "Your portfolio drops 30% over 3 months. "
+         "How long are you willing to wait for recovery?"
         "options": [
             "A few months at most.",
             "Up to 6 months.",
