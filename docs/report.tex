@@ -1,0 +1,338 @@
+% =============================================================
+%  AI-Powered Robo-Advisor Platform
+%  Academic Report — Programming in Finance II (2026)
+%  USI — Prof. Peter H. Gruber
+%  GitHub: https://github.com/<YOUR_ORG>/robo-advisor
+% =============================================================
+\documentclass[11pt, a4paper]{article}
+
+% ── Packages ─────────────────────────────────────────────────
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{lmodern}
+\usepackage{microtype}
+
+\usepackage{geometry}
+\geometry{margin=2.5cm}
+
+\usepackage{amsmath, amssymb}
+\usepackage{booktabs}       % professional tables
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{listings}       % code blocks
+\usepackage{hyperref}
+\usepackage{cleveref}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{enumitem}
+\usepackage{csquotes}
+\usepackage[style=authoryear, backend=biber]{biblatex}
+\addbibresource{references.bib}
+
+% ── Code listing style ────────────────────────────────────────
+\lstset{
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{blue!70},
+  commentstyle=\color{gray},
+  stringstyle=\color{teal},
+  breaklines=true,
+  frame=single,
+  numbers=left,
+  numberstyle=\tiny\color{gray}
+}
+
+% ── Metadata ─────────────────────────────────────────────────
+\title{%
+  \textbf{AI-Powered Robo-Advisor Platform}\\[0.4em]
+  \large Academic Project Report\\
+  Programming in Finance II — USI, 2026
+}
+\author{%
+  P1 (Backend/Data) \quad P2 (Quant/Optimizer)\\
+  P3 (ML/Profiling) \quad P4 (Frontend/LLM/Docs)
+}
+\date{May 2026}
+
+% =============================================================
+\begin{document}
+% =============================================================
+
+\maketitle
+\tableofcontents
+\newpage
+
+% ─────────────────────────────────────────────────────────────
+\section{Introduction}
+\label{sec:intro}
+% Owner: P4 (integra contributi del team)
+% TODO W4: problem statement, gap in existing robo-advisors,
+%          our contribution, GitHub link
+% ─────────────────────────────────────────────────────────────
+
+\subsection{Problem Statement}
+
+Retail investors increasingly rely on algorithm-driven portfolio recommendations, yet most commercial robo-advisors offer limited transparency regarding their underlying models, data sources, and geographic limitations. This project addresses the gap between quantitative rigour and user-facing explainability.
+
+\subsection{Our Contribution}
+
+% TODO: fill after demo is stable — 3–4 sentences on what
+%       the platform does and what makes it distinctive
+
+We present an educational robo-advisor prototype that combines:
+\begin{itemize}
+  \item Hierarchical Risk Parity (HRP) portfolio optimisation with
+        Ledoit--Wolf shrinkage on a UCITS-aware ETF universe;
+  \item A Gradient Boosting (GBM) risk profiler trained on real
+        household financial behaviour (Fed SCF~2022) with SHAP
+        explainability;
+  \item A constrained LLM narrator layer (Claude API) that translates
+        numerical results into natural language without inventing figures;
+  \item An EU-awareness layer that explicitly communicates the US-centric
+        bias of the training data to European investors.
+\end{itemize}
+
+The source code is available at:
+\url{https://github.com/<YOUR_ORG>/robo-advisor}
+
+% ─────────────────────────────────────────────────────────────
+\section{ML Risk Profiler}
+\label{sec:ml}
+% Owner: P3 (draft) — P4 integrates
+% TODO W4: GBM on SCF 2022, SHAP, clustering, feature importance
+% ─────────────────────────────────────────────────────────────
+
+\subsection{Data: Federal Reserve SCF 2022}
+% TODO P3: dataset description, variables used, preprocessing
+
+\subsection{Label Construction via Behavioural Clustering}
+% TODO P3: k-means / hierarchical clustering on financial behaviour,
+%          why not Grable-Lytton (circular), silhouette score
+
+\subsection{GBM Classifier}
+% TODO P3: model architecture, hyperparameters, train/test split,
+%          accuracy / F1
+
+\subsection{SHAP Explainability}
+% TODO P3: top drivers, waterfall plots, how SHAP values feed into
+%          the Ground Truth JSON
+
+% ─────────────────────────────────────────────────────────────
+\section{Portfolio Optimisation}
+\label{sec:portfolio}
+% Owner: P2 (draft) — P4 integrates
+% TODO W4: HRP, Ledoit-Wolf, MV comparison, backtests
+% ─────────────────────────────────────────────────────────────
+
+\subsection{ETF Universe}
+% TODO P2: 10–12 ETFs, UCITS dual-listed, fallback logic
+
+\subsection{Hierarchical Risk Parity}
+% TODO P2: López de Prado (2016), distance matrix, linkage,
+%          quasi-diagonalisation, recursive bisection
+
+The HRP algorithm \parencite{LopezdePrado2016} constructs a portfolio
+by organising assets in a hierarchical tree based on pairwise
+correlations, then allocating capital by inverse variance along the
+resulting dendrogram branches.
+
+\subsection{Covariance Estimation: Ledoit--Wolf Shrinkage}
+% TODO P2: formula, why OAS shrinkage, sklearn implementation
+
+\[
+  \hat{\Sigma} = (1-\alpha)\,S + \alpha\,\mu_S\,I
+\]
+
+where $S$ is the sample covariance matrix, $\mu_S$ its average
+eigenvalue, and $\alpha$ the shrinkage coefficient estimated via
+analytical formula \parencite{LedoitWolf2004}.
+
+\subsection{Box Constraints}
+% 0.03–0.40 per asset, 0.10–0.60 per cluster
+% TODO P2: rationale
+
+\subsection{Mean--Variance Comparison}
+% TODO P2: efficient frontier, why HRP is default,
+%          MV as educational comparison tab
+
+% ─────────────────────────────────────────────────────────────
+\section{LLM Narrator and Validator}
+\label{sec:llm}
+% Owner: P4
+% TODO W4: narrator pattern, GT JSON, validator 4-step,
+%          prompt injection defense, EU Awareness Rule 9
+% ─────────────────────────────────────────────────────────────
+
+\subsection{Design Principle: Narrator, Not Calculator}
+
+A language model is not a reliable arithmetic engine. Our architecture
+enforces a strict separation: all numerical computations are performed
+by the quantitative backend; the LLM receives a \emph{Ground Truth JSON}
+containing pre-computed figures and is permitted only to narrate them.
+
+\subsection{Ground Truth JSON Contract}
+% TODO W4: schema description, key fields, invariants
+% Reference: docs/ground_truth_schema.md
+
+The Ground Truth JSON payload passed to the LLM at inference time
+includes the following top-level blocks:
+
+\begin{itemize}
+  \item \texttt{portfolio}: weights, risk contributions, expected
+        drawdown under stress scenarios;
+  \item \texttt{profiler}: \texttt{profile\_label},
+        \texttt{profile\_confidence}, \texttt{top\_drivers} (SHAP);
+  \item \texttt{regulatory\_context}: MiFID~II disclaimer,
+        currency risk note, UCITS eligibility flags,
+        SCF US-centrism caveat;
+  \item \texttt{llm\_constraints}: \texttt{forbidden\_phrases},
+        \texttt{allowed\_numbers}, \texttt{disclaimer\_required}.
+\end{itemize}
+
+\subsection{System Prompt Design}
+
+% TODO W4: paste key rules (not full prompt), highlight
+%          forbidden phrases, allowed_numbers binding, Rule 9
+
+Key constraints embedded in the system prompt:
+\begin{enumerate}
+  \item The narrator may only cite numbers present in
+        \texttt{allowed\_numbers}.
+  \item Phrases such as ``you should invest'', ``guaranteed return'',
+        and ``this is financial advice'' are forbidden.
+  \item Every response must end with the MiFID~II disclaimer.
+  \item \textbf{Rule~9 — EU Awareness}: if the investor is located in
+        the EU, the narrator must acknowledge that the risk profiler
+        was trained on US household data (Fed SCF) and that results
+        should be interpreted with this limitation in mind.
+\end{enumerate}
+
+\subsection{Validator: 4-Step Pipeline}
+
+% TODO W4: describe each step, fallback behaviour, test coverage
+
+\begin{enumerate}
+  \item \textbf{Number check}: all figures in the response must appear
+        verbatim in \texttt{allowed\_numbers}.
+  \item \textbf{Forbidden phrase scan}: regex scan against the
+        blacklist.
+  \item \textbf{Disclaimer presence}: assert disclaimer substring
+        present.
+  \item \textbf{Length / coherence guard}: response must be between
+        50 and 800 tokens; if any step fails, a safe fallback
+        message is returned instead.
+\end{enumerate}
+
+\subsection{Prompt Injection Defence}
+
+% TODO W4: input sanitisation, max length, character whitelist
+
+% ─────────────────────────────────────────────────────────────
+\section{Backtest Results}
+\label{sec:backtest}
+% Owner: P2 (tables) — P4 integrates
+% TODO W4: 3 historical scenarios, Sharpe, max drawdown, table
+% ─────────────────────────────────────────────────────────────
+
+\subsection{Scenarios}
+% TODO P2: COVID crash (2020), rate hike cycle (2022),
+%          2008 stress test if data available
+
+\subsection{Performance Metrics}
+
+% TODO P2: fill table with real numbers after backtest runs
+
+\begin{table}[H]
+\centering
+\caption{Backtest summary — HRP vs.\ Mean--Variance}
+\label{tab:backtest}
+\begin{tabular}{lccccc}
+\toprule
+Scenario & Model & Ann.\ Return & Volatility & Sharpe & Max DD \\
+\midrule
+COVID-19 (2020) & HRP & \textit{TBD} & \textit{TBD} & \textit{TBD} & \textit{TBD} \\
+                & MV  & \textit{TBD} & \textit{TBD} & \textit{TBD} & \textit{TBD} \\
+Rate hike (2022)& HRP & \textit{TBD} & \textit{TBD} & \textit{TBD} & \textit{TBD} \\
+                & MV  & \textit{TBD} & \textit{TBD} & \textit{TBD} & \textit{TBD} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ─────────────────────────────────────────────────────────────
+\section{Limitations and Failure Modes}
+\label{sec:limitations}
+% Owner: P4 (integra contributi) — all members contribute
+% ─────────────────────────────────────────────────────────────
+
+\subsection{Data Fragility: yfinance}
+% TODO: discuss single-source dependency, fallback logic
+
+\subsection{SCF US-Centrism vs.\ EU Investor}
+
+The risk profiler is trained on the Federal Reserve Survey of Consumer
+Finances~(2022), which captures US household financial behaviour.
+European investors may exhibit materially different risk preferences,
+savings rates, and financial literacy patterns. The EU Awareness layer
+communicates this limitation explicitly at the point of recommendation.
+
+\subsection{HRP Opacity vs.\ Mean--Variance Interpretability}
+% TODO: discuss black-box nature of HRP for a retail investor
+
+\subsection{LLM Hallucination Risk}
+% TODO: describe residual risk after validator, honest about limits
+
+% ─────────────────────────────────────────────────────────────
+\section{Lessons Learned and AI Tools}
+\label{sec:lessons}
+% Owner: all — P4 coordinates
+% TODO W4 Fri–Sun: retrospective, agentic workflow, what worked
+% ─────────────────────────────────────────────────────────────
+
+\subsection{Agentic Development Workflow}
+
+% TODO: describe AGENTS.md, GitHub Actions + Claude API for
+%       automated PR, evidence of agent PR on GitHub
+
+\subsection{AI Tools Used}
+
+\begin{description}
+  \item[Claude (Anthropic)] Used as technical advisor throughout the
+    project; generated and reviewed code for
+    \texttt{narrator.py}, \texttt{validator.py}, and documentation
+    scaffolding.
+  \item[GitHub Copilot / ChatGPT] % TODO: add if used
+  \item[GitHub Actions] Automated CI (ruff linter, pytest) and
+    agent-driven PR generation.
+\end{description}
+
+\subsection{What Worked}
+% TODO: honest retrospective — 3–5 points
+
+\subsection{What Did Not Work}
+% TODO: honest retrospective — 2–3 points
+
+% ─────────────────────────────────────────────────────────────
+\section{Conclusions}
+\label{sec:conclusions}
+% Owner: P4
+% TODO W4: 1 page summary, GitHub link, future work
+% ─────────────────────────────────────────────────────────────
+
+% TODO: fill after demo is stable
+
+\subsection{Future Work}
+
+\begin{itemize}
+  \item Full EU-specific dataset (HFCS) to replace SCF as training
+        source for European investors.
+  \item Real-time market data integration beyond yfinance.
+  \item Regulatory compliance layer for MiFID~II suitability
+        assessment (beyond educational disclaimer).
+\end{itemize}
+
+% ─────────────────────────────────────────────────────────────
+\printbibliography
+% ─────────────────────────────────────────────────────────────
+
+\end{document}
