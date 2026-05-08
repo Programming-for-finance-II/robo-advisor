@@ -58,94 +58,89 @@ def main() -> None:
 _QUESTIONS: list[dict] = [
     # --- Section 1: Who You Are Financially ---
     # Demographic and financial capacity questions.
-    # Younger investors with higher income and net worth can typically
-    # afford more risk, hence higher scores map to more aggressive profiles.
+    # Younger investors, stronger income/savings capacity, and fewer financial
+    # dependents generally map to higher risk capacity scores.
     {
         "id": "Q1",
         "section": "Who You Are Financially",
-        "text": "What is your current age?",
-        "options": ["Over 65", "56-65", "36-55", "18-35"],
+        "text": "How old are you?",
+        "options": ["Over 60", "46–60", "30–45", "Under 30"],
         "scores": [0, 1, 2, 3],
     },
     {
         "id": "Q2",
         "section": "Who You Are Financially",
-        "text": "What is your approximate annual household income?",
+        "text": "Which best describes your household income?",
         "options": [
-            "Under 25,000 EUR",
-            "25,000-50,000 EUR",
-            "50,000-100,000 EUR",
-            "Over 100,000 EUR",
+            "Money is tight — I cover essentials but have little left over.",
+            "I'm comfortable — I meet my needs and save occasionally.",
+            "I'm in a solid position — I save regularly.",
+            "I have significant disposable income beyond living expenses.",
         ],
         "scores": [0, 1, 2, 3],
     },
     {
         "id": "Q3",
         "section": "Who You Are Financially",
-        "text": "What is your approximate net worth (assets minus debts)?",
-        "options": [
-            "Under 10,000 EUR",
-            "10,000-50,000 EUR",
-            "50,000-150,000 EUR",
-            "Over 150,000 EUR",
-        ],
+        "text": (
+            "If you had to live off savings starting tomorrow, "
+            "how many months could you cover?"
+        ),
+        "options": ["Less than 3 months", "3–6 months", "6–12 months", "More than 12 months"],
         "scores": [0, 1, 2, 3],
     },
+    {
+        "id": "Q4",
+        "section": "Who You Are Financially",
+        "text": "Do you have financial dependents?",
+        "options": [
+            "No, I have no financial dependents.",
+            "Yes, one dependent.",
+            "Yes, two or three dependents.",
+            "Yes, four or more dependents.",
+        ],
+        "scores": [3, 2, 1, 0],   # reverse-coded
+    },
+
     # --- Section 2: How You Invest ---
     # Investment behaviour and financial literacy questions.
     # Longer horizons and greater experience support higher risk tolerance.
-    {
-        "id": "Q4",
-        "section": "How You Invest",
-        "text": "What is your investment time horizon?",
-        "options": [
-            "Less than 2 years",
-            "2-5 years",
-            "5-10 years",
-            "More than 10 years",
-        ],
-        "scores": [0, 1, 2, 3],
-    },
     {
         "id": "Q5",
         "section": "How You Invest",
         "text": "How would you describe your investment experience?",
         "options": [
-            "None - I have never invested",
-            "Limited - a few investments",
-            "Moderate - I invest regularly",
-            "Extensive - I actively manage a portfolio",
+            "None — I have never invested.",
+            "Basic — savings accounts or government bonds only.",
+            "Intermediate — I have invested in mutual funds or ETFs.",
+            "Advanced — I actively trade stocks or other complex instruments.",
         ],
         "scores": [0, 1, 2, 3],
     },
     {
         "id": "Q6",
         "section": "How You Invest",
-        "text": "How familiar are you with financial products (ETFs, bonds, equities)?",
+        "text": "How would you rate your theoretical financial knowledge?",
         "options": [
-            "Not at all",
-            "Slightly familiar",
-            "Moderately familiar",
-            "Very familiar",
+            "Very limited — I find financial topics confusing.",
+            "Basic — I understand how savings accounts and bonds work.",
+            "Intermediate — I'm comfortable with ETFs, diversification, volatility.",
+            "Advanced — I understand derivatives, leverage, portfolio construction.",
         ],
         "scores": [0, 1, 2, 3],
     },
     {
         "id": "Q7",
         "section": "How You Invest",
-        "text": "When you invest, what is most important to you?",
+        "text": "What is the primary purpose of this investment?",
         "options": [
-            "Protecting my capital above all - safety net",
-            "Mostly preserving capital with some growth",
-            "Balancing growth and security",
-            "Maximising long-term growth, even with higher risk",
+            "Safety net — I may need this money at any time.",
+            "A specific goal within the next 5 years.",
+            "Long-term wealth building — I won't need this for at least 10 years.",
+            "Aggressive growth — this is surplus capital with no planned withdrawal.",
         ],
         "scores": [0, 1, 2, 3],
-        # Hard override: option index 0 forces profile_label = CONSERVATIVE.
-        # This implements the MiFID II suitability hard constraint: a client
-        # who explicitly prioritises capital protection must not be classified
-        # as Moderate or Aggressive regardless of other answers.
-        "override": True,
+        "override": True,   # Q7='a' forces CONSERVATIVE
     },
     # --- Section 3: How You React ---
     # Behavioural questions placed last to reduce social desirability bias
@@ -153,32 +148,40 @@ _QUESTIONS: list[dict] = [
     {
         "id": "Q8",
         "section": "How You React",
-        "text": "If your portfolio dropped 20% in one month, what would you do?",
+        "text": "Your portfolio drops 20% in one month. What do you do?",
         "options": [
-            "Sell everything immediately",
-            "Sell part of it to reduce risk",
-            "Hold and wait for recovery",
-            "Buy more - it is a buying opportunity",
+            "Sell everything immediately — I cut my losses.",
+            "Sell part of it to reduce risk.",
+            "Hold and wait — panic selling is the worst thing.",
+            "Buy more at a discount — this is an opportunity.",
         ],
         "scores": [0, 1, 2, 3],
     },
     {
         "id": "Q9",
         "section": "How You React",
-        "text": "Thinking about your own investing behaviour: which best describes you?",
+        "text": (
+            "Your portfolio drops 30% over 3 months. "
+            "How long are you willing to wait for recovery?"
+        ),
         "options": [
-            "I avoid any investment that could lose value",
-            "I accept small losses for modest gains",
-            "I accept moderate losses for good long-term gains",
-            "I accept large short-term losses for potentially high returns",
+            "A few months at most.",
+            "Up to 6 months.",
+            "One to three years.",
+            "As long as it takes.",
         ],
         "scores": [0, 1, 2, 3],
     },
     {
         "id": "Q10",
         "section": "How You React",
-        "text": "How many dependants rely on your income?",
-        "options": ["3 or more", "2", "1", "None"],
+        "text": "Which investment profile fits you best over a 10-year horizon?",
+        "options": [
+            "I'd lock in a guaranteed +2% per year — modest but no surprises.",
+            "Mostly stable — I accept minor fluctuations for modest gains.",
+            "Balanced — I accept significant swings for stronger long-term returns.",
+            "Aggressive — I'm comfortable with large losses for high potential returns.",
+        ],
         "scores": [0, 1, 2, 3],
     },
 ]
