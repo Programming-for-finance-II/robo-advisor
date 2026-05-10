@@ -98,17 +98,24 @@ class Portfolio(BaseModel):
 
 
 class RiskMetrics(BaseModel):
-    # NOTE:
-    # expected_annual_return and sharpe_ratio are intentionally null.
-    # HRP does not produce a reliable point estimate of expected return.
-    expected_annual_return: None = Field(
+    # HRP does not require expected returns as an optimization input.
+    # These fields are optional because they are descriptive historical metrics,
+    # not forward-looking forecasts.
+    expected_annual_return: Optional[float] = Field(
         default=None,
-        description="Deliberately null: HRP produces no reliable return estimate",
+        description=(
+        "Annualised historical mean log return. Populated with historical "
+        "average when available; null if data is insufficient. "
+        "Not a forward-looking forecast."
+        ),
     )
     annual_volatility: float = Field(..., gt=0.0)
-    sharpe_ratio: None = Field(
+    sharpe_ratio: Optional[float] = Field(
         default=None,
-        description="Deliberately null: no expected return means no Sharpe ratio",
+        description=(
+        "Historical Sharpe ratio (rf ≈ 0). Populated when expected_annual_return "
+        "is available; null otherwise."
+        ),
     )
     max_drawdown_historical: float = Field(
         ..., le=0.0, description="Historical maximum drawdown, expressed as a negative float"

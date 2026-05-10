@@ -52,7 +52,7 @@ from __future__ import annotations
 # ---------------------------------------------------------------------------
 
 MANDATORY_DISCLAIMER: str = (
-    "⚠️ *This is an educational prototype developed in an academic context "
+    "This is an educational prototype developed in an academic context "
     "(USI, Programming in Finance II 2026). No content constitutes financial "
     "advice under MiFID II or any other applicable regulatory framework. "
     "Market data may be inaccurate or delayed.*"
@@ -112,11 +112,12 @@ RULE 4 — NO ABSOLUTES
 Never use: guaranteed, certain, risk-free, infallible, optimal.
 Backtest results are historical. Past performance does not predict the future.
 
-RULE 5 — EXPECTED RETURN: SILENCE IF NULL
-The fields expected_annual_return and sharpe_ratio are null by design.
-HRP does not produce reliable point estimates of expected return.
-Do not invent a value. Do not work around the null.
-You may explain why these fields are intentionally absent.
+RULE 5 — EXPECTED RETURN: HISTORICAL CONTEXT ONLY
+If expected_annual_return or sharpe_ratio are present in <CONTEXT>, 
+they represent historical averages, NOT forward-looking forecasts.
+Always frame them as: "historically, over the backtest period..."
+Never extrapolate or imply future performance.
+If these fields are null, do not mention them.
 
 RULE 6 — OUT OF CONTEXT: FIXED RESPONSE
 If the user asks about anything not covered by the <CONTEXT> block, respond

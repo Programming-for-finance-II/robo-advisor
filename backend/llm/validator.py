@@ -1,0 +1,244 @@
+"""
+backend/llm/validator.py
+========================
+LLM Validator Agent — 4-step post-generation safety filter.
+
+Pipeline:
+    Step 1 — Forbidden phrases check
+    Step 2 — Allowed numbers check  (hallucination detection)
+    Step 3 — Disclaimer presence check
+    Step 4 — Prompt injection defence (semantic, post-generation)
+
+Consumed by:
+    - backend/api/main.py    POST /advice endpoint (W3)
+    - tests/test_validator.py
+"""
+
+from __future__ import annotations
+
+import re
+from dataclasses import dataclass, field
+from enum import Enum
+
+from backend.llm.prompts.system_prompt import MANDATORY_DISCLAIMER
+
+# ---------------------------------------------------------------------------
+# Constants
+# ---------------------------------------------------------------------------
+
+NUMBER_TOLERANCE: float = 0.02          # 2% relative tolerance
+SAFE_FALLBACK_MESSAGE: str = (
+    "I cannot provide a detailed response at this time. "
+    "Please consult a qualified financial advisor for personalised advice.\n\n"
+    + MANDATORY_DISCLAIMER
+)
+
+_INJECTION_PATTERNS_SEMANTIC: tuple[str, ...] = (
+    "ignore previous",
+    "ignore above",
+    "disregard",
+    "new instruction",
+    "forget your rules",
+    "act as",
+    "jailbreak",
+    "pretend you are",
+    "you are now",
+    "override",
+    "system:",
+    "assistant:",
+)
+
+
+# ---------------------------------------------------------------------------
+# Result types
+# ---------------------------------------------------------------------------
+
+class ValidationFlag(str, Enum):
+    FORBIDDEN_PHRASE    = "FORBIDDEN_PHRASE"
+    HALLUCINATED_NUMBER = "HALLUCINATED_NUMBER"
+    MISSING_DISCLAIMER  = "MISSING_DISCLAIMER"
+    INJECTION_DETECTED  = "INJECTION_DETECTED"
+
+
+@dataclass
+class ValidationResult:
+    """
+    Output of the 4-step validator.
+
+    Attributes
+    ----------
+    passed : bool
+        True if the response passed all checks and is safe to display.
+    flags : list[ValidationFlag]
+        All checks that failed.
+    safe_text : str
+        The text to display to the user.
+        - If passed=True:  the original (possibly disclaimer-appended) text.
+        - If passed=False: SAFE_FALLBACK_MESSAGE.
+    disclaimer_appended : bool
+        True if the disclaimer was missing and was auto-appended (Step 3).
+    """
+    passed: bool
+    flags: list[ValidationFlag] = field(default_factory=list)
+    safe_text: str = ""
+    disclaimer_appended: bool = False
+
+
+# ---------------------------------------------------------------------------
+# Public API
+# ---------------------------------------------------------------------------
+
+def validate(
+    response_text: str,
+    allowed_numbers: list[float],
+    forbidden_phrases: list[str],
+) -> ValidationResult:
+    """
+    Run the 4-step validator on a raw LLM response.
+
+    Steps are run in order. Steps 1, 2 and 4 are blocking (return fallback).
+    Step 3 is corrective (auto-appends disclaimer, does not block).
+
+    Args:
+        response_text:    Raw text from NarratorClient.narrate().
+        allowed_numbers:  From GroundTruthPayload.llm_constraints.allowed_numbers.
+        forbidden_phrases: From GroundTruthPayload.llm_constraints.forbidden_phrases.
+
+    Returns:
+        ValidationResult with passed flag, list of triggered flags, and safe text.
+    """
+    flags: list[ValidationFlag] = []
+
+    # Step 1 — Forbidden phrases
+    if _check_forbidden_phrases(response_text, forbidden_phrases):
+        flags.append(ValidationFlag.FORBIDDEN_PHRASE)
+        return ValidationResult(passed=False, flags=flags, safe_text=SAFE_FALLBACK_MESSAGE)
+
+    # Step 2 — Hallucinated numbers
+    if _check_hallucinated_numbers(response_text, allowed_numbers):
+        flags.append(ValidationFlag.HALLUCINATED_NUMBER)
+        return ValidationResult(passed=False, flags=flags, safe_text=SAFE_FALLBACK_MESSAGE)
+
+    # Step 3 — Disclaimer presence (corrective, not blocking)
+    text, appended = _ensure_disclaimer(response_text)
+    if appended:
+        flags.append(ValidationFlag.MISSING_DISCLAIMER)
+
+    # Step 4 — Post-generation injection detection
+    if _check_injection_semantic(response_text):
+        flags.append(ValidationFlag.INJECTION_DETECTED)
+        return ValidationResult(passed=False, flags=flags, safe_text=SAFE_FALLBACK_MESSAGE)
+
+    return ValidationResult(
+        passed=True,
+        flags=flags,
+        safe_text=text,
+        disclaimer_appended=appended,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Private helpers
+# ---------------------------------------------------------------------------
+
+def _check_forbidden_phrases(text: str, forbidden_phrases: list[str]) -> bool:
+    """Return True (= fail) if any forbidden phrase is found (case-insensitive)."""
+    lower = text.lower()
+    return any(phrase.lower() in lower for phrase in forbidden_phrases)
+
+
+def _extract_numbers(text: str) -> list[float]:
+    """
+    Extract all numeric values from text.
+    Handles: 12, 12.5, 12,5, 12%, -0.08, 0.35
+
+    Percentages are normalised:
+        35% -> 0.35
+
+    This avoids treating both 35 and 0.35 as separate numbers.
+    """
+    pattern = r"-?\d+(?:[.,]\d+)?(?:\s*%)?"
+    results = []
+
+    for match in re.findall(pattern, text):
+        cleaned = match.replace(",", ".").replace("%", "").strip()
+        try:
+            val = float(cleaned)
+
+            # Percentages in the LLM text must match decimal values
+            # in the Ground Truth JSON. Example: "35%" -> 0.35.
+            if "%" in match:
+                results.append(val / 100.0)
+            else:
+                results.append(val)
+
+        except ValueError:
+            continue
+
+    return results
+
+
+def _is_number_allowed(n: float, allowed: list[float]) -> bool:
+    """Return True if n is within NUMBER_TOLERANCE of any allowed number."""
+    for gt in allowed:
+        if abs(gt) < 1e-9:
+            if abs(n) < 1e-9:
+                return True
+        else:
+            if abs(n - gt) / abs(gt) <= NUMBER_TOLERANCE:
+                return True
+    return False
+
+
+def _check_hallucinated_numbers(text: str, allowed_numbers: list[float]) -> bool:
+    """
+    Return True (= fail) if any number in the response cannot be matched
+    to an allowed number within tolerance.
+
+    The mandatory disclaimer is removed before checking numbers because it
+    contains fixed academic/legal text such as "2026", which is not part of
+    the financial Ground Truth JSON.
+
+    Small integers like "3 assets", "2 clusters", "1 year" are ignored as
+    narrative context.
+
+    Decimal values like 0.35, 0.091 or 0.72 are always checked because they
+    are likely to be financial figures from the Ground Truth JSON.
+    """
+    # Remove the mandatory disclaimer before number validation.
+    # Otherwise fixed text such as "USI 2026" may be incorrectly flagged.
+    text_to_check = text.replace(MANDATORY_DISCLAIMER, "")
+
+    numbers = _extract_numbers(text_to_check)
+
+    for n in numbers:
+        # Ignore small integers used as narrative context.
+        # Example: "3 clusters" should not trigger hallucination detection.
+        #
+        # Decimals such as 0.35 or 0.091 must still be checked.
+        if float(n).is_integer() and abs(n) <= 10:
+            continue
+
+        if not _is_number_allowed(n, allowed_numbers):
+            return True
+
+    return False
+
+
+def _ensure_disclaimer(text: str) -> tuple[str, bool]:
+    """
+    Check for MANDATORY_DISCLAIMER. If missing, append it.
+    Returns (text, was_appended).
+    """
+    if MANDATORY_DISCLAIMER in text:
+        return text, False
+    return text + "\n\n" + MANDATORY_DISCLAIMER, True
+
+
+def _check_injection_semantic(text: str) -> bool:
+    """
+    Post-generation check: did the LLM echo injection instructions back?
+    Looks for known injection patterns in the generated output.
+    """
+    lower = text.lower()
+    return any(pattern in lower for pattern in _INJECTION_PATTERNS_SEMANTIC)
