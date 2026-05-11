@@ -42,7 +42,6 @@ from backend.ml.profiler.scf_pipeline import (
     SCF_WEIGHT_COLUMN,
     build_pipeline,
     SCF_DEFAULT_PATH,
-    SCF_IMPLICATE,
 )
 
 logger = logging.getLogger(__name__)
