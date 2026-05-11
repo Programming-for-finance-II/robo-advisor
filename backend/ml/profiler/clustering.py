@@ -39,9 +39,9 @@ from sklearn.metrics import silhouette_score
 from sklearn.preprocessing import StandardScaler
 
 from backend.ml.profiler.scf_pipeline import (
+    SCF_DEFAULT_PATH,
     SCF_WEIGHT_COLUMN,
     build_pipeline,
-    SCF_DEFAULT_PATH,
 )
 
 logger = logging.getLogger(__name__)
