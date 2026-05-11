@@ -209,7 +209,7 @@ def run_clustering(
     """
     # --- 1. Load and preprocess SCF ---
     logger.info("Running SCF pipeline...")
-    X, alloc, weights, scaler = build_pipeline(path=scf_path)
+    X, alloc, weights, scaler, df_selected = build_pipeline(path=scf_path)
 
     # --- 2. Compute allocation ratios ---
     alloc_ratios = compute_allocation_ratios(alloc)
@@ -235,7 +235,7 @@ def run_clustering(
     profile_labels = assign_labels(cluster_ids, alloc_ratios)
 
     # --- 7. Build labeled DataFrame ---
-    df_labeled = alloc.copy()
+    df_labeled = df_selected.copy()
     df_labeled["profile_label"] = profile_labels
     df_labeled[SCF_WEIGHT_COLUMN] = weights
 

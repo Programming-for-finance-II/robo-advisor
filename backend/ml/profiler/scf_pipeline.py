@@ -253,4 +253,4 @@ def build_pipeline(
         len(X), X.shape[1],
     )
 
-    return X, alloc, weights, scaler
+    return X, alloc, weights, scaler, df_selected
