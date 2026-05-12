@@ -6,7 +6,7 @@ import logging
 import uuid
 from datetime import date, datetime, timezone
 
-from fastapi import FastAPI, HTTPException, Header, Security
+from fastapi import Depends, FastAPI, HTTPException, Security
 from fastapi.security.api_key import APIKeyHeader
 from pydantic import BaseModel, field_validator
 from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -110,7 +110,9 @@ class ProfileResponse(BaseModel):
 
 @app.post("/profile", response_model=ProfileResponse)
 @limiter.limit("20/minute")
-def profile(request: Request, body: ProfileRequest, _: str = Depends(verify_api_key)) -> ProfileResponse:
+def profile(
+    request: Request, body: ProfileRequest, _: str = Depends(verify_api_key)
+) -> ProfileResponse:
     """
     Classify a user's risk profile from their questionnaire responses.
 
@@ -146,7 +148,9 @@ class AdviceResponse(BaseModel):
 
 @app.post("/advice", response_model=AdviceResponse)
 @limiter.limit("10/minute")
-def advice(request: Request, body: AdviceRequest, _: str = Depends(verify_api_key)) -> AdviceResponse:
+def advice(
+    request: Request, body: AdviceRequest, _: str = Depends(verify_api_key)
+) -> AdviceResponse:
     """
     Generate LLM narrative advice for a stored portfolio recommendation.
 
@@ -383,7 +387,9 @@ class OptimizeResponse(BaseModel):
 
 @app.post("/optimize", response_model=OptimizeResponse)
 @limiter.limit("10/minute")
-def optimize_portfolio(request: Request, body: OptimizeRequest, _: str = Depends(verify_api_key)) -> OptimizeResponse:
+def optimize_portfolio(
+    request: Request, body: OptimizeRequest, _: str = Depends(verify_api_key)
+) -> OptimizeResponse:
     """
     Run HRP portfolio optimization for a given risk profile.
 
