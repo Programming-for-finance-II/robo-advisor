@@ -226,7 +226,11 @@ def advice(request: Request, body: AdviceRequest) -> AdviceResponse:
     allowed_numbers = build_allowed_numbers(payload_without_constraints)
 
     try:
+        payload_without_constraints["regulatory_context"] = RegulatoryContext(
+            portfolio_usd_denominated_pct=0.5,
+            portfolio_eur_denominated_pct=0.3,
+        )
         payload = GroundTruthPayload(
             **payload_without_constraints,
             llm_constraints=LLMConstraints(allowed_numbers=allowed_numbers),
-            regulatory_conte
+        )
