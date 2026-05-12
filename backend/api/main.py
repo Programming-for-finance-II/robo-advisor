@@ -1,10 +1,13 @@
 # backend/api/main.py
 from __future__ import annotations
 
+import json
+import logging
 import uuid
 from datetime import date, datetime, timezone
 
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, Security
+from fastapi.security.api_key import APIKeyHeader
 from pydantic import BaseModel, field_validator
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
@@ -20,6 +23,8 @@ from backend.ml.profiler.rule_based import ProfilerOutput, profile_user
 from backend.optimizer.hrp import OptimizationResult, optimize
 from backend.schemas.mock_data import get_mock_payload
 
+logger = logging.getLogger(__name__)
+
 # ---------------------------------------------------------------------------
 # App + rate limiter
 # ---------------------------------------------------------------------------
@@ -29,13 +34,48 @@ app = FastAPI(title="Robo-Advisor API", version="0.1.0")
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
+# ---------------------------------------------------------------------------
+# API Key auth
+# ---------------------------------------------------------------------------
+
+API_KEY_NAME = "X-API-Key"
+_api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
+
+
+async def verify_api_key(api_key: str | None = Security(_api_key_header)) -> str:
+    """
+    Validate the X-API-Key header on every protected endpoint.
+    Key is read from the API_KEY environment variable.
+    If API_KEY is not set, auth is disabled (development mode).
+    """
+    import os
+    expected = os.environ.get("API_KEY", "")
+    if not expected:
+        return "dev-mode"
+    if api_key != expected:
+        raise HTTPException(status_code=403, detail="Invalid or missing API key.")
+    return api_key
 
 # ---------------------------------------------------------------------------
-# /profile — Pydantic models
+# Constants
 # ---------------------------------------------------------------------------
 
 VALID_RESPONSES = {"a", "b", "c", "d"}
 QUESTION_KEYS = [f"Q{i}" for i in range(1, 11)]
+VALID_PROFILE_LABELS = {"CONSERVATIVE", "MODERATE", "AGGRESSIVE"}
+START_DATE = "2023-01-01"
+END_DATE = date.today().isoformat()
+DB_PATH = "robo_advisor.db"
+
+_PROFILE_LABEL_MAP: dict[str, str] = {
+    "CONSERVATIVE": "conservative",
+    "MODERATE": "balanced",
+    "AGGRESSIVE": "aggressive",
+}
+
+# ---------------------------------------------------------------------------
+# /profile — Pydantic models
+# ---------------------------------------------------------------------------
 
 
 class ProfileRequest(BaseModel):
@@ -76,7 +116,9 @@ class ProfileResponse(BaseModel):
 
 @app.post("/profile", response_model=ProfileResponse)
 @limiter.limit("20/minute")
-def profile(request: Request, body: ProfileRequest) -> ProfileResponse:
+def profile(
+    request: Request, body: ProfileRequest, _: str = Depends(verify_api_key)
+) -> ProfileResponse:
     """
     Classify a user's risk profile from their questionnaire responses.
 
@@ -89,16 +131,32 @@ def profile(request: Request, body: ProfileRequest) -> ProfileResponse:
         raise HTTPException(status_code=422, detail=str(e))
 
     return ProfileResponse(**result)
-# ---------------------------------------------------------------------------
-# /advice, /compare, /backtest — stubs
-# ---------------------------------------------------------------------------
 
-PROFILE_LABEL_MAP: dict[str, str] = {
-    "CONSERVATIVE": "conservative",
-    "MODERATE": "balanced",
-    "AGGRESSIVE": "aggressive",
-}
 
+# ---------------------------------------------------------------------------
+# /advice — LLM Narrator + Validator pipeline (W3)
+#
+# This endpoint implements the full 3-stage LLM safety pipeline described
+# in the design document v3.1:
+#
+#   Stage 1 — Backend (P1/P2/P3): retrieves stored recommendation from DB
+#             by recommendation_id and builds Ground Truth payload via
+#             get_mock_payload() mapped to the stored profile label.
+#
+#   Stage 2 — NarratorClient (P4, narrator.py): assembles the system prompt,
+#             injects the Ground Truth JSON as context, calls the Claude API
+#             (claude-sonnet-4-20250514), and returns the raw LLM response.
+#             The narrator is stateless — full GT JSON re-injected every call.
+#
+#   Stage 3 — Validator (P4, validator.py): runs a 5-step post-generation
+#             filter (forbidden phrases, hallucinated numbers, disclaimer
+#             presence, prompt injection detection, EU awareness Rule 9).
+#             If any blocking check fails, a safe static fallback is returned.
+#
+# The user sees ONLY the output of Stage 3. Every call updates the DB audit
+# trail with validator_flags, system_prompt_hash, and ground_truth_json_hash.
+# DB failure does not block the response.
+# ---------------------------------------------------------------------------
 
 class AdviceRequest(BaseModel):
     recommendation_id: str
@@ -113,36 +171,43 @@ class AdviceResponse(BaseModel):
     injection_blocked: bool
     api_error: bool
 
-#--------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
 # /advice endpoint
 # ---------------------------------------------------------------------------
 
 @app.post("/advice", response_model=AdviceResponse)
 @limiter.limit("10/minute")
-def advice(request: Request, body: AdviceRequest) -> AdviceResponse:
+def advice(
+    request: Request, body: AdviceRequest, _: str = Depends(verify_api_key)
+) -> AdviceResponse:
     """Generate LLM narrative advice for a saved portfolio recommendation."""
+    # Step 1 — fetch recommendation from DB
     try:
         conn = init_db(DB_PATH)
         row = conn.execute(
             "SELECT * FROM recommendations WHERE id = ?",
             (body.recommendation_id,),
         ).fetchone()
-        conn.close()
     except Exception as e:
         raise HTTPException(status_code=503, detail=f"DB unavailable: {e}")
 
     if row is None:
-        raise HTTPException(status_code=404, detail="Recommendation not found")
+        raise HTTPException(status_code=404, detail="Recommendation not found.")
 
+    # Step 2 — build Ground Truth payload from stored profile
     profile_key = _PROFILE_LABEL_MAP.get(row["profile_label"], "balanced")
     payload = get_mock_payload(profile_key)
 
+    # Step 3 — call Narrator
     try:
         narrator = NarratorClient()
     except NarratorError as e:
         raise HTTPException(status_code=503, detail=str(e))
 
     narrator_response = narrator.narrate(payload, body.user_message)
+
+    # Step 4 — validate
     eu_required = payload.regulatory_context.profiler_us_centric_caveat
     result = validate(
         narrator_response.raw_text,
@@ -150,9 +215,40 @@ def advice(request: Request, body: AdviceRequest) -> AdviceResponse:
         payload.llm_constraints.forbidden_phrases,
         eu_awareness_required=eu_required,
     )
-   
 
-   return AdviceResponse(
+    # Step 5 — update DB audit trail
+    try:
+        conn.execute(
+            """
+            UPDATE recommendations SET
+                llm_model              = ?,
+                system_prompt_hash     = ?,
+                ground_truth_json_hash = ?,
+                llm_response_raw       = ?,
+                llm_response_validated = ?,
+                validator_flags        = ?,
+                retry_count            = ?,
+                disclaimer_shown       = ?
+            WHERE id = ?
+            """,
+            (
+                narrator_response.model,
+                narrator_response.system_prompt_hash,
+                narrator_response.ground_truth_hash,
+                narrator_response.raw_text,
+                result.safe_text,
+                json.dumps([f.value for f in result.flags]),
+                0,
+                int(not result.disclaimer_appended),
+                row["id"],
+            ),
+        )
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        logger.warning("DB audit update failed: %s", e)
+
+    return AdviceResponse(
         safe_text=result.safe_text,
         passed=result.passed,
         disclaimer_appended=result.disclaimer_appended,
@@ -162,28 +258,33 @@ def advice(request: Request, body: AdviceRequest) -> AdviceResponse:
     )
 
 
-#---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 # /compare, /backtest — stubs
 # ---------------------------------------------------------------------------
 
-
 @app.post("/compare")
 @limiter.limit("10/minute")
+def compare(request: Request) -> None:
+    """Compare HRP vs Markowitz portfolio. Stub — W3."""
+    raise HTTPException(
+        status_code=503,
+        detail="MV comparison not yet available — P2 implementation in W2-W3.",
+    )
+
+
+@app.post("/backtest")
+@limiter.limit("10/minute")
+def backtest(request: Request) -> None:
+    """Run historical backtest on 3 stress scenarios. Stub — W3."""
+    raise HTTPException(
+        status_code=503,
+        detail="Backtest not yet available — P2 implementation in W3.",
+    )
+
+
 # ---------------------------------------------------------------------------
 # /optimize — Pydantic models
 # ---------------------------------------------------------------------------
-# Design note: /optimize wires ValidatedDataLoader (P1) + optimize() (P2).
-# ASSET_MIN diverges between hrp.py (0.03) and universe_config.py (0.05) —
-# flagged to P2 via GitHub issue, to be aligned in W3. Not a blocker.
-# expected_return and sharpe_ratio are returned as float by hrp.optimize()
-# despite being null in ground_truth.py — flagged to P2, to fix in W3.
-# ---------------------------------------------------------------------------
-
-VALID_PROFILE_LABELS = {"CONSERVATIVE", "MODERATE", "AGGRESSIVE"}
-START_DATE = "2023-01-01"
-END_DATE = date.today().isoformat()
-DB_PATH = "robo_advisor.db"
-
 
 class OptimizeRequest(BaseModel):
     profile_label: str
@@ -221,7 +322,9 @@ class OptimizeResponse(BaseModel):
 
 @app.post("/optimize", response_model=OptimizeResponse)
 @limiter.limit("10/minute")
-def optimize_portfolio(request: Request, body: OptimizeRequest) -> OptimizeResponse:
+def optimize_portfolio(
+    request: Request, body: OptimizeRequest, _: str = Depends(verify_api_key)
+) -> OptimizeResponse:
     """
     Run HRP portfolio optimization for a given risk profile.
 
@@ -297,9 +400,7 @@ def optimize_portfolio(request: Request, body: OptimizeRequest) -> OptimizeRespo
         })
         conn.close()
     except Exception as e:
-        # DB failure does not block the response — log and continue
-        import logging
-        logging.getLogger(__name__).warning("DB persist failed: %s", e)
+        logger.warning("DB persist failed: %s", e)
 
     return OptimizeResponse(
         algorithm=result["algorithm"],
