@@ -19,7 +19,7 @@ from unittest.mock import MagicMock, patch
 from fastapi.testclient import TestClient
 
 from backend.api.main import app
-from backend.data.snapshots import init_db, save_recommendation
+from backend.data.snapshots import init_db
 
 client = TestClient(app)
 
