@@ -1,6 +1,7 @@
 # backend/api/main.py
 from __future__ import annotations
 
+import os
 import uuid
 from datetime import date, datetime, timezone
 
@@ -14,8 +15,11 @@ from starlette.requests import Request
 from backend.data.loader import ValidatedDataLoader
 from backend.data.snapshots import init_db, save_market_snapshot, save_recommendation
 from backend.data.universe_config import get_cluster_map, get_primary_tickers
+from backend.llm.narrator import NarratorClient
+from backend.llm.validator import validate
 from backend.ml.profiler.rule_based import ProfilerOutput, profile_user
 from backend.optimizer.hrp import OptimizationResult, optimize
+from backend.schemas.mock_data import get_mock_payload
 
 # ---------------------------------------------------------------------------
 # App + rate limiter
@@ -66,6 +70,29 @@ class ProfileResponse(BaseModel):
     top_drivers: list[TopDriverResponse]
     model_version: str
 
+# ---------------------------------------------------------------------------
+# /advice — Pydantic models
+# ---------------------------------------------------------------------------
+
+_PROFILE_LABEL_TO_MOCK: dict[str, str] = {
+    "CONSERVATIVE": "conservative",
+    "MODERATE": "balanced",
+    "AGGRESSIVE": "aggressive",
+}
+
+
+class AdviceRequest(BaseModel):
+    recommendation_id: str
+    user_message: str
+
+
+class AdviceResponse(BaseModel):
+    safe_text: str
+    passed: bool
+    disclaimer_appended: bool
+    validator_flags: list[str]
+    injection_blocked: bool
+    api_error: bool
 
 # ---------------------------------------------------------------------------
 # /profile endpoint
@@ -86,19 +113,66 @@ def profile(request: Request, body: ProfileRequest) -> ProfileResponse:
         raise HTTPException(status_code=422, detail=str(e))
 
     return ProfileResponse(**result)
+
 # ---------------------------------------------------------------------------
-# /advice, /compare, /backtest — stubs
+# /advice endpoint
 # ---------------------------------------------------------------------------
 
-@app.post("/advice")
+@app.post("/advice", response_model=AdviceResponse)
 @limiter.limit("10/minute")
-def advice(request: Request) -> None:
-    """Generate LLM narrative advice for a portfolio. Stub — W3."""
-    raise HTTPException(
-        status_code=503,
-        detail="LLM advisor not yet available — P4 implementation in W3.",
+def advice(request: Request, body: AdviceRequest) -> AdviceResponse:
+    """
+    Generate a validated LLM narrative for a stored recommendation.
+
+    Looks up the recommendation by ID, builds the Ground Truth payload,
+    calls the LLM Narrator, runs the Validator, and returns safe text.
+    """
+    conn = init_db(DB_PATH)
+    row = conn.execute(
+        "SELECT profile_label FROM recommendations WHERE id = ?",
+        (body.recommendation_id,),
+    ).fetchone()
+    conn.close()
+
+    if row is None:
+        raise HTTPException(status_code=404, detail="Recommendation not found.")
+
+    profile_key = _PROFILE_LABEL_TO_MOCK.get(row["profile_label"], "balanced")
+    payload = get_mock_payload(profile_key)
+
+    api_key = os.environ.get("ANTHROPIC_API_KEY", "placeholder")
+    narrator = NarratorClient(api_key=api_key)
+    narrator_resp = narrator.narrate(payload, body.user_message)
+
+    if narrator_resp.injection_blocked:
+        return AdviceResponse(
+            safe_text=narrator_resp.raw_text,
+            passed=False,
+            disclaimer_appended=False,
+            validator_flags=[],
+            injection_blocked=True,
+            api_error=False,
+        )
+
+    result = validate(
+        response_text=narrator_resp.raw_text,
+        allowed_numbers=payload.llm_constraints.allowed_numbers,
+        forbidden_phrases=payload.llm_constraints.forbidden_phrases,
+        eu_awareness_required=payload.regulatory_context.profiler_us_centric_caveat,
     )
 
+    return AdviceResponse(
+        safe_text=result.safe_text,
+        passed=result.passed,
+        disclaimer_appended=result.disclaimer_appended,
+        validator_flags=[f.value for f in result.flags],
+        injection_blocked=False,
+        api_error=narrator_resp.api_error,
+    )
+
+# ---------------------------------------------------------------------------
+# /compare, /backtest — stubs
+# ---------------------------------------------------------------------------
 
 @app.post("/compare")
 @limiter.limit("10/minute")

@@ -44,10 +44,11 @@ VALID_LLM_RESPONSE = (
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _setup_test_db() -> tuple[str, str]:
     """
-    Create a temp SQLite DB with schema and a valid recommendation row.
-    FK checks are disabled during insert to avoid constraint issues in tests.
+    Create a temp SQLite DB with schema, a valid user row, and a
+    seed recommendation row. FK constraints remain active.
     Returns (db_path, recommendation_id).
     """
     fd, db_path = tempfile.mkstemp(suffix=".db")
@@ -55,8 +56,12 @@ def _setup_test_db() -> tuple[str, str]:
 
     conn = init_db(db_path)
 
-    # Disable FK for test setup — re-enabled after inserts
-    conn.execute("PRAGMA foreign_keys = OFF")
+    # Create the user referenced by recommendations.user_id
+    conn.execute(
+    "INSERT OR IGNORE INTO users (id, created_at, session_token) VALUES (?, ?, ?)",
+    ("test", datetime.now(timezone.utc).isoformat(), "test-token-001"),
+    )
+    conn.commit()
 
     rec_id = "test-rec-id-12345-abcde"
     conn.execute(
@@ -125,7 +130,6 @@ def _setup_test_db() -> tuple[str, str]:
         ),
     )
     conn.commit()
-    conn.execute("PRAGMA foreign_keys = ON")
     conn.close()
 
     return db_path, rec_id
