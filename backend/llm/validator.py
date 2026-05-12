@@ -1,13 +1,14 @@
 """
 backend/llm/validator.py
 ========================
-LLM Validator Agent — 4-step post-generation safety filter.
+LLM Validator Agent — 5-step post-generation safety filter.
 
 Pipeline:
     Step 1 — Forbidden phrases check
     Step 2 — Allowed numbers check  (hallucination detection)
     Step 3 — Disclaimer presence check
     Step 4 — Prompt injection defence (semantic, post-generation)
+    Step 5 — EU awareness check for US-trained profiler
 
 Consumed by:
     - backend/api/main.py    POST /advice endpoint (W3)
@@ -58,12 +59,13 @@ class ValidationFlag(str, Enum):
     HALLUCINATED_NUMBER = "HALLUCINATED_NUMBER"
     MISSING_DISCLAIMER  = "MISSING_DISCLAIMER"
     INJECTION_DETECTED  = "INJECTION_DETECTED"
+    EU_AWARENESS_MISSING = "EU_AWARENESS_MISSING"
 
 
 @dataclass
 class ValidationResult:
     """
-    Output of the 4-step validator.
+    Output of the 5-step validator.
 
     Attributes
     ----------
@@ -92,17 +94,19 @@ def validate(
     response_text: str,
     allowed_numbers: list[float],
     forbidden_phrases: list[str],
+    eu_awareness_required: bool = False,
 ) -> ValidationResult:
     """
-    Run the 4-step validator on a raw LLM response.
+    Run the 5-step validator on a raw LLM response.
 
-    Steps are run in order. Steps 1, 2 and 4 are blocking (return fallback).
+    Steps are run in order. Steps 1, 2, 4 and 5 are blocking (return fallback).
     Step 3 is corrective (auto-appends disclaimer, does not block).
 
     Args:
         response_text:    Raw text from NarratorClient.narrate().
         allowed_numbers:  From GroundTruthPayload.llm_constraints.allowed_numbers.
         forbidden_phrases: From GroundTruthPayload.llm_constraints.forbidden_phrases.
+        eu_awareness_required: Whether Rule 9 EU awareness check is required.
 
     Returns:
         ValidationResult with passed flag, list of triggered flags, and safe text.
@@ -128,6 +132,15 @@ def validate(
     if _check_injection_semantic(response_text):
         flags.append(ValidationFlag.INJECTION_DETECTED)
         return ValidationResult(passed=False, flags=flags, safe_text=SAFE_FALLBACK_MESSAGE)
+
+    # Step 5 — EU Awareness Rule 9 (blocking)
+    # Required when profiler was trained on US data (SCF 2022).
+    # The narrator must acknowledge the US/EU geographic gap explicitly.
+    if eu_awareness_required and _check_eu_awareness_missing(response_text):
+        flags.append(ValidationFlag.EU_AWARENESS_MISSING)
+        return ValidationResult(
+            passed=False, flags=flags, safe_text=SAFE_FALLBACK_MESSAGE
+        )
 
     return ValidationResult(
         passed=True,
@@ -242,3 +255,47 @@ def _check_injection_semantic(text: str) -> bool:
     """
     lower = text.lower()
     return any(pattern in lower for pattern in _INJECTION_PATTERNS_SEMANTIC)
+
+
+# Keywords the narrator must use to satisfy Rule 9.
+# At least ONE keyword from EACH group must appear in the response.
+# Group A: identifies the data source (US-centric)
+# Group B: identifies the target audience (European investor)
+
+_EU_AWARENESS_KEYWORDS_A: tuple[str, ...] = (
+    "scf",
+    "survey of consumer finances",
+    "federal reserve",
+    "us household",
+    "united states",
+    "us-based",
+    "us data",
+    "u.s.",
+)
+
+_EU_AWARENESS_KEYWORDS_B: tuple[str, ...] = (
+    "european",
+    "eu investor",
+    "europe",
+    "hfcs",
+)
+
+
+def _check_eu_awareness_missing(text: str) -> bool:
+    """
+    Return True (= fail) if the response does not satisfy Rule 9.
+
+    Rule 9 requires that when profiler_us_centric_caveat=True, the LLM
+    acknowledges that the risk profiler was trained on US data and that
+    European investors may have different risk preferences.
+
+    Both conditions must be present:
+        - A reference to the US data source (SCF / Federal Reserve / US household)
+        - A reference to European investors or the geographic gap
+
+    Returns True if either group is entirely absent (= rule violated).
+    """
+    lower = text.lower()
+    has_us_reference = any(kw in lower for kw in _EU_AWARENESS_KEYWORDS_A)
+    has_eu_reference = any(kw in lower for kw in _EU_AWARENESS_KEYWORDS_B)
+    return not (has_us_reference and has_eu_reference)
