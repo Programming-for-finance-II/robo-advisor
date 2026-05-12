@@ -6,7 +6,8 @@ import logging
 import uuid
 from datetime import date, datetime, timezone
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Header, Security
+from fastapi.security.api_key import APIKeyHeader
 from pydantic import BaseModel, field_validator
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
@@ -30,6 +31,28 @@ from backend.schemas.ground_truth import (
 )
 
 logger = logging.getLogger(__name__)
+
+# ---------------------------------------------------------------------------
+# API Key auth
+# ---------------------------------------------------------------------------
+
+API_KEY_NAME = "X-API-Key"
+_api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
+
+
+async def verify_api_key(api_key: str | None = Security(_api_key_header)) -> str:
+    """
+    Validate the X-API-Key header on every protected endpoint.
+    Key is read from the API_KEY environment variable.
+    If API_KEY is not set, auth is disabled (development mode).
+    """
+    import os
+    expected = os.environ.get("API_KEY", "")
+    if not expected:
+        return "dev-mode"
+    if api_key != expected:
+        raise HTTPException(status_code=403, detail="Invalid or missing API key.")
+    return api_key
 
 # ---------------------------------------------------------------------------
 # App + rate limiter
@@ -87,7 +110,7 @@ class ProfileResponse(BaseModel):
 
 @app.post("/profile", response_model=ProfileResponse)
 @limiter.limit("20/minute")
-def profile(request: Request, body: ProfileRequest) -> ProfileResponse:
+def profile(request: Request, body: ProfileRequest, _: str = Depends(verify_api_key)) -> ProfileResponse:
     """
     Classify a user's risk profile from their questionnaire responses.
 
@@ -123,7 +146,7 @@ class AdviceResponse(BaseModel):
 
 @app.post("/advice", response_model=AdviceResponse)
 @limiter.limit("10/minute")
-def advice(request: Request, body: AdviceRequest) -> AdviceResponse:
+def advice(request: Request, body: AdviceRequest, _: str = Depends(verify_api_key)) -> AdviceResponse:
     """
     Generate LLM narrative advice for a stored portfolio recommendation.
 
@@ -360,7 +383,7 @@ class OptimizeResponse(BaseModel):
 
 @app.post("/optimize", response_model=OptimizeResponse)
 @limiter.limit("10/minute")
-def optimize_portfolio(request: Request, body: OptimizeRequest) -> OptimizeResponse:
+def optimize_portfolio(request: Request, body: OptimizeRequest, _: str = Depends(verify_api_key)) -> OptimizeResponse:
     """
     Run HRP portfolio optimization for a given risk profile.
 
