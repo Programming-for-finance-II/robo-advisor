@@ -92,7 +92,7 @@ def _setup_test_db() -> tuple[str, str]:
         )
         """,
         (
-            rrec_id,
+            rec_id,
             "test",
             datetime.now(timezone.utc).isoformat(),
             datetime.now(timezone.utc).isoformat(),
@@ -149,7 +149,7 @@ def _mock_anthropic_response(text: str) -> MagicMock:
 
 # ---------------------------------------------------------------------------
 # Test 1 — /advice returns 404 for unknown recommendation_id
-# ----------------------------------------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 
 def test_advice_unknown_recommendation_id():
