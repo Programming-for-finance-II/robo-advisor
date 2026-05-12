@@ -15,7 +15,6 @@ import tempfile
 from unittest.mock import MagicMock, patch
 
 import pandas as pd
-import pytest
 from fastapi.testclient import TestClient
 
 from backend.api.main import app
@@ -44,7 +43,6 @@ def _make_single_df() -> pd.DataFrame:
 
 
 def _fake_download(ticker_or_list, **kwargs):
-    tickers = ["CSPX.L", "EFA", "AGGH.MI", "TLT", "GLD", "VNQ", "TIP", "XEON.MI"]
     if isinstance(ticker_or_list, list):
         return _make_bulk_df(ticker_or_list)
     return _make_single_df()
