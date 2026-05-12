@@ -234,3 +234,5 @@ def advice(request: Request, body: AdviceRequest) -> AdviceResponse:
             **payload_without_constraints,
             llm_constraints=LLMConstraints(allowed_numbers=allowed_numbers),
         )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Payload build failed: {e}")
