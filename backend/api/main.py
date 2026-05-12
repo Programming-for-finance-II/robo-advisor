@@ -14,8 +14,11 @@ from starlette.requests import Request
 from backend.data.loader import ValidatedDataLoader
 from backend.data.snapshots import init_db, save_market_snapshot, save_recommendation
 from backend.data.universe_config import get_cluster_map, get_primary_tickers
+from backend.llm.narrator import NarratorClient, NarratorError
+from backend.llm.validator import validate
 from backend.ml.profiler.rule_based import ProfilerOutput, profile_user
 from backend.optimizer.hrp import OptimizationResult, optimize
+from backend.schemas.mock_data import get_mock_payload
 
 # ---------------------------------------------------------------------------
 # App + rate limiter
@@ -87,17 +90,81 @@ def profile(request: Request, body: ProfileRequest) -> ProfileResponse:
 
     return ProfileResponse(**result)
 # ---------------------------------------------------------------------------
-# /advice, /compare, /backtest — stubs
+# /advice — request/response models
 # ---------------------------------------------------------------------------
 
-@app.post("/advice")
+_PROFILE_LABEL_MAP: dict[str, str] = {
+    "CONSERVATIVE": "conservative",
+    "MODERATE": "balanced",
+    "AGGRESSIVE": "aggressive",
+}
+
+
+class AdviceRequest(BaseModel):
+    recommendation_id: str
+    user_message: str
+
+
+class AdviceResponse(BaseModel):
+    safe_text: str
+    passed: bool
+    disclaimer_appended: bool
+    validator_flags: list[str]
+    injection_blocked: bool
+    api_error: bool
+
+
+# ---------------------------------------------------------------------------
+# /advice endpoint
+# ---------------------------------------------------------------------------
+
+@app.post("/advice", response_model=AdviceResponse)
 @limiter.limit("10/minute")
-def advice(request: Request) -> None:
-    """Generate LLM narrative advice for a portfolio. Stub — W3."""
-    raise HTTPException(
-        status_code=503,
-        detail="LLM advisor not yet available — P4 implementation in W3.",
+def advice(request: Request, body: AdviceRequest) -> AdviceResponse:
+    """Generate LLM narrative advice for a saved portfolio recommendation."""
+    try:
+        conn = init_db(DB_PATH)
+        row = conn.execute(
+            "SELECT * FROM recommendations WHERE id = ?",
+            (body.recommendation_id,),
+        ).fetchone()
+        conn.close()
+    except Exception as e:
+        raise HTTPException(status_code=503, detail=f"DB unavailable: {e}")
+
+    if row is None:
+        raise HTTPException(status_code=404, detail="Recommendation not found")
+
+    profile_key = _PROFILE_LABEL_MAP.get(row["profile_label"], "balanced")
+    payload = get_mock_payload(profile_key)
+
+    try:
+        narrator = NarratorClient()
+    except NarratorError as e:
+        raise HTTPException(status_code=503, detail=str(e))
+
+    narrator_response = narrator.narrate(payload, body.user_message)
+    eu_required = payload.regulatory_context.profiler_us_centric_caveat
+    result = validate(
+        narrator_response.raw_text,
+        payload.llm_constraints.allowed_numbers,
+        payload.llm_constraints.forbidden_phrases,
+        eu_awareness_required=eu_required,
     )
+
+    return AdviceResponse(
+        safe_text=result.safe_text,
+        passed=result.passed,
+        disclaimer_appended=result.disclaimer_appended,
+        validator_flags=[f.value for f in result.flags],
+        injection_blocked=narrator_response.injection_blocked,
+        api_error=narrator_response.api_error,
+    )
+
+
+# ---------------------------------------------------------------------------
+# /compare, /backtest — stubs
+# ---------------------------------------------------------------------------
 
 
 @app.post("/compare")
