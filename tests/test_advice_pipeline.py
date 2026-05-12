@@ -46,64 +46,89 @@ VALID_LLM_RESPONSE = (
 
 def _setup_test_db() -> tuple[str, str]:
     """
-    Create a temp SQLite DB with schema, insert a market snapshot (FK parent)
-    and a recommendation row (FK child). Returns (db_path, recommendation_id).
+    Create a temp SQLite DB with schema and a valid recommendation row.
+    FK checks are disabled during insert to avoid constraint issues in tests.
+    Returns (db_path, recommendation_id).
     """
     fd, db_path = tempfile.mkstemp(suffix=".db")
     os.close(fd)
 
     conn = init_db(db_path)
 
-    # Insert market snapshot first — FK parent required by recommendations table
+    # Disable FK for test setup — re-enabled after inserts
+    conn.execute("PRAGMA foreign_keys = OFF")
+
+    rec_id = "test-rec-id-12345-abcde"
     conn.execute(
         """
-        INSERT OR IGNORE INTO market_data_snapshots
-            (hash, created_at, tickers, window_start, window_end, data_csv)
-        VALUES (?, ?, ?, ?, ?, ?)
+        INSERT INTO recommendations (
+            id, user_id, created_at, data_fetch_timestamp,
+            questionnaire_snapshot, profile_label, profile_confidence,
+            profile_model_version,
+            tickers_used, ucits_tickers_used, fallback_tickers_applied,
+            etf_universe_version,
+            data_window_start, data_window_end, market_data_hash,
+            nan_count_pre_clean, nan_count_post_clean,
+            optimizer_algo, optimizer_version, linkage_method,
+            shrinkage_method, tilt_applied, guardrails_applied,
+            weights_raw_hrp, weights_final,
+            risk_metrics, cluster_structure, stress_scenarios,
+            regulatory_context,
+            llm_model, system_prompt_hash, ground_truth_json_hash,
+            llm_response_raw, llm_response_validated,
+            validator_version, validator_flags, retry_count,
+            disclaimer_shown, disclaimer_text_hash
+        ) VALUES (
+            ?,?,?,?,  ?,?,?,?,  ?,?,?,?,  ?,?,?,?,?,
+            ?,?,?,?,  ?,?,?,?,  ?,?,?,?,  ?,?,?,?,?,?,?,?,?,?
+        )
         """,
         (
-            TEST_HASH,
+            rec_id,
+            "test",
             datetime.now(timezone.utc).isoformat(),
+            datetime.now(timezone.utc).isoformat(),
+            "{}",
+            "MODERATE",
+            0.9,
+            "rule_based_v1",
             json.dumps(["CSPX.L", "EFA", "AGGH.MI"]),
+            json.dumps(["CSPX.L", "AGGH.MI"]),
+            json.dumps({}),
+            "v3.1",
             "2023-01-02",
             "2024-01-02",
-            "date,CSPX.L\n2023-01-02,100.0\n",
+            TEST_HASH,
+            0, 0,
+            "HRP",
+            "pypfopt==1.5.5",
+            "ward",
+            "ledoit_wolf",
+            None,
+            0,
+            json.dumps({"CSPX.L": 0.3, "EFA": 0.4, "AGGH.MI": 0.3}),
+            json.dumps({"CSPX.L": 0.3, "EFA": 0.4, "AGGH.MI": 0.3}),
+            json.dumps({"expected_volatility": 0.12, "risk_contributions": {}}),
+            json.dumps({}),
+            json.dumps({}),
+            None,
+            "none",
+            "none",
+            "none",
+            "none",
+            "none",
+            "v1",
+            json.dumps([]),
+            0,
+            0,
+            "",
         ),
     )
     conn.commit()
-
-    # Insert recommendation via save_recommendation — reuses production logic
-    rec_id = "test-rec-id-12345-abcde"
-    save_recommendation(conn, {
-        "id": rec_id,
-        "user_id": "test",
-        "data_fetch_timestamp": datetime.now(timezone.utc).isoformat(),
-        "questionnaire_snapshot": "{}",
-        "profile_label": "MODERATE",
-        "profile_confidence": 0.9,
-        "profile_model_version": "rule_based_v1",
-        "tickers_used": ["CSPX.L", "EFA", "AGGH.MI"],
-        "ucits_tickers_used": ["CSPX.L", "AGGH.MI"],
-        "fallback_tickers_applied": {},
-        "data_window_start": "2023-01-02",
-        "data_window_end": "2024-01-02",
-        "market_data_hash": TEST_HASH,
-        "optimizer_version": "pypfopt==1.5.5",
-        "weights_raw_hrp": {"CSPX.L": 0.3, "EFA": 0.4, "AGGH.MI": 0.3},
-        "weights_final": {"CSPX.L": 0.3, "EFA": 0.4, "AGGH.MI": 0.3},
-        "risk_metrics": {"expected_volatility": 0.12, "risk_contributions": {}},
-        "cluster_structure": {},
-        "stress_scenarios": {},
-        "llm_model": "none",
-        "system_prompt_hash": "none",
-        "ground_truth_json_hash": "none",
-        "llm_response_raw": "none",
-        "llm_response_validated": "none",
-    })
+    conn.execute("PRAGMA foreign_keys = ON")
     conn.close()
 
     return db_path, rec_id
-
 
 def _mock_anthropic_response(text: str) -> MagicMock:
     """Build a fake anthropic Message object."""
