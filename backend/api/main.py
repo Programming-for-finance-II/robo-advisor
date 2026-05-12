@@ -1,6 +1,8 @@
 # backend/api/main.py
 from __future__ import annotations
 
+import json
+import logging
 import uuid
 from datetime import date, datetime, timezone
 
@@ -14,25 +16,16 @@ from starlette.requests import Request
 from backend.data.loader import ValidatedDataLoader
 from backend.data.snapshots import init_db, save_market_snapshot, save_recommendation
 from backend.data.universe_config import get_cluster_map, get_primary_tickers
-from backend.ml.profiler.rule_based import ProfilerOutput, profile_user
-from backend.optimizer.hrp import OptimizationResult, optimize
-
 from backend.llm.narrator import NarratorClient
 from backend.llm.validator import validate
+from backend.ml.profiler.rule_based import ProfilerOutput, profile_user
+from backend.optimizer.hrp import OptimizationResult, optimize
 from backend.schemas.ground_truth import (
-    BacktestSummary,
     Cluster,
-    ClusterStructure,
     GroundTruthPayload,
     LLMConstraints,
-    Metadata,
-    Portfolio,
-    Profiler,
     RegulatoryContext,
-    RiskMetrics,
     ScenarioResult,
-    StressScenarios,
-    TopDriver,
     build_allowed_numbers,
 )
 
