@@ -227,9 +227,14 @@ def _check_hallucinated_numbers(text: str, allowed_numbers: list[float]) -> bool
     for n in numbers:
         # Ignore small integers used as narrative context.
         # Example: "3 clusters" should not trigger hallucination detection.
-        #
         # Decimals such as 0.35 or 0.091 must still be checked.
         if float(n).is_integer() and abs(n) <= 10:
+            continue
+
+        # Ignore year-like integers (1900–2100).
+        # Years appear in narrative text: "SCF 2022", "MiFID II 2014", etc.
+        # They are not financial values from the Ground Truth JSON.
+        if float(n).is_integer() and 1900 <= n <= 2100:
             continue
 
         if not _is_number_allowed(n, allowed_numbers):
