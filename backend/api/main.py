@@ -17,6 +17,25 @@ from backend.data.universe_config import get_cluster_map, get_primary_tickers
 from backend.ml.profiler.rule_based import ProfilerOutput, profile_user
 from backend.optimizer.hrp import OptimizationResult, optimize
 
+from backend.llm.narrator import NarratorClient
+from backend.llm.validator import validate
+from backend.schemas.ground_truth import (
+    BacktestSummary,
+    Cluster,
+    ClusterStructure,
+    GroundTruthPayload,
+    LLMConstraints,
+    Metadata,
+    Portfolio,
+    Profiler,
+    RegulatoryContext,
+    RiskMetrics,
+    ScenarioResult,
+    StressScenarios,
+    TopDriver,
+    build_allowed_numbers,
+)
+
 # ---------------------------------------------------------------------------
 # App + rate limiter
 # ---------------------------------------------------------------------------
@@ -90,13 +109,198 @@ def profile(request: Request, body: ProfileRequest) -> ProfileResponse:
 # /advice, /compare, /backtest — stubs
 # ---------------------------------------------------------------------------
 
-@app.post("/advice")
+# ---------------------------------------------------------------------------
+# /advice — Pydantic models
+# ---------------------------------------------------------------------------
+
+class AdviceRequest(BaseModel):
+    recommendation_id: str
+    user_message: str
+
+
+class AdviceResponse(BaseModel):
+    safe_text: str
+    passed: bool
+    disclaimer_appended: bool
+    validator_flags: list[str]
+    injection_blocked: bool
+    api_error: bool
+
+
+# ---------------------------------------------------------------------------
+# /advice endpoint
+# ---------------------------------------------------------------------------
+
+@app.post("/advice", response_model=AdviceResponse)
 @limiter.limit("10/minute")
-def advice(request: Request) -> None:
-    """Generate LLM narrative advice for a portfolio. Stub — W3."""
-    raise HTTPException(
-        status_code=503,
-        detail="LLM advisor not yet available — P4 implementation in W3.",
+def advice(request: Request, body: AdviceRequest) -> AdviceResponse:
+    """
+    Generate LLM narrative advice for a stored portfolio recommendation.
+
+    Retrieves the OptimizationResult from DB by recommendation_id,
+    builds the Ground Truth JSON payload, calls the Narrator (Claude API),
+    runs the 5-step Validator, updates the DB audit trail, and returns
+    the validated response.
+    """
+    import logging
+    logger = logging.getLogger(__name__)
+
+    # Step 1 — fetch recommendation from DB
+    try:
+        conn = init_db(DB_PATH)
+        row = conn.execute(
+            "SELECT * FROM recommendations WHERE id = ?",
+            (body.recommendation_id,),
+        ).fetchone()
+    except Exception as e:
+        raise HTTPException(status_code=503, detail=f"DB unavailable: {e}")
+
+    if row is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"recommendation_id '{body.recommendation_id}' not found.",
+        )
+
+    # Step 2 — rebuild GroundTruthPayload from stored data
+    weights: dict[str, float] = json.loads(row["weights_final"]) if row["weights_final"] else {}
+    risk: dict = json.loads(row["risk_metrics"]) if row["risk_metrics"] else {}
+    ucits: list[str] = json.loads(row["ucits_tickers_used"]) if row["ucits_tickers_used"] else []
+    fallback: list[str] = list(
+        json.loads(row["fallback_tickers_applied"]).keys()
+    ) if row["fallback_tickers_applied"] else []
+
+    # Stub cluster/stress/backtest — P2 will populate in W3
+    stub_cluster = Cluster(
+        members=[], total_weight=0.0,
+        intra_cluster_correlation=None, cluster_volatility=0.0,
+    )
+    stub_scenario = ScenarioResult(portfolio_drawdown=0.0, benchmark_drawdown=0.0)
+
+    payload_without_constraints = {
+        "metadata": {
+            "recommendation_id": row["id"],
+            "timestamp_utc": row["created_at"],
+            "optimizer": row["optimizer_algo"] or "HRP",
+            "optimizer_version": row["optimizer_version"],
+            "market_data_hash": row["market_data_hash"],
+            "data_window": {
+                "start": row["data_window_start"],
+                "end": row["data_window_end"],
+            },
+            "user_profile": row["profile_label"].capitalize(),
+            "profile_confidence": float(row["profile_confidence"]),
+        },
+        "profiler": {
+            "profile_label": row["profile_label"].lower(),
+            "confidence": float(row["profile_confidence"]),
+            "model_version": row["profile_model_version"],
+            "top_drivers": [{"feature": "score", "importance": 1.0}],
+            "similar_profiles_note": f"Investor classified as {row['profile_label']}.",
+            "low_confidence_flag": float(row["profile_confidence"]) < 0.65,
+        },
+        "portfolio": {
+            "weights": weights,
+            "guardrail_applied": bool(row["guardrails_applied"]),
+            "ucits_tickers_used": ucits,
+            "fallback_tickers_applied": fallback,
+        },
+        "risk_metrics": {
+            "expected_annual_return": None,
+            "annual_volatility": risk.get("expected_volatility", 0.1),
+            "sharpe_ratio": None,
+            "max_drawdown_historical": -0.1,
+            "var_95_daily": -0.02,
+            "cvar_95_daily": -0.03,
+        },
+        "cluster_structure": {
+            "cluster_A_risk_assets": stub_cluster.model_dump(),
+            "cluster_B_real_assets": stub_cluster.model_dump(),
+            "cluster_C_safe_haven": stub_cluster.model_dump(),
+            "cluster_D_cash": stub_cluster.model_dump(),
+        },
+        "stress_scenarios": {
+            "covid_march_2020": stub_scenario.model_dump(),
+            "ukraine_feb_2022": stub_scenario.model_dump(),
+            "rates_hike_2022": stub_scenario.model_dump(),
+        },
+        "backtest_summary": {
+            "period": f"{row['data_window_start'][:4]}–{row['data_window_end'][:4]}",
+            "cagr": 0.07,
+            "sharpe": 0.6,
+            "max_drawdown": -0.15,
+            "calmar_ratio": 0.47,
+        },
+        "regulatory_context": {
+            "portfolio_usd_denominated_pct": 0.5,
+            "portfolio_eur_denominated_pct": 0.3,
+        },
+    }
+
+    allowed_numbers = build_allowed_numbers(payload_without_constraints)
+
+    try:
+        payload = GroundTruthPayload(
+            **payload_without_constraints,
+            llm_constraints=LLMConstraints(allowed_numbers=allowed_numbers),
+            regulatory_context=RegulatoryContext(
+                portfolio_usd_denominated_pct=0.5,
+                portfolio_eur_denominated_pct=0.3,
+            ),
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Payload build failed: {e}")
+
+    # Step 3 — call Narrator
+    narrator = NarratorClient()
+    narrator_response = narrator.narrate(payload, body.user_message)
+
+    # Step 4 — validate
+    validation = validate(
+        response_text=narrator_response.raw_text,
+        allowed_numbers=payload.llm_constraints.allowed_numbers,
+        forbidden_phrases=payload.llm_constraints.forbidden_phrases,
+        eu_awareness_required=payload.regulatory_context.profiler_us_centric_caveat,
+    )
+
+    # Step 5 — update DB audit trail
+    try:
+        conn.execute(
+            """
+            UPDATE recommendations SET
+                llm_model            = ?,
+                system_prompt_hash   = ?,
+                ground_truth_json_hash = ?,
+                llm_response_raw     = ?,
+                llm_response_validated = ?,
+                validator_flags      = ?,
+                retry_count          = ?,
+                disclaimer_shown     = ?
+            WHERE id = ?
+            """,
+            (
+                narrator_response.model,
+                narrator_response.system_prompt_hash,
+                narrator_response.ground_truth_hash,
+                narrator_response.raw_text,
+                validation.safe_text,
+                json.dumps([f.value for f in validation.flags]),
+                0,
+                int(not validation.disclaimer_appended),
+                row["id"],
+            ),
+        )
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        logger.warning("DB audit update failed: %s", e)
+
+    return AdviceResponse(
+        safe_text=validation.safe_text,
+        passed=validation.passed,
+        disclaimer_appended=validation.disclaimer_appended,
+        validator_flags=[f.value for f in validation.flags],
+        injection_blocked=narrator_response.injection_blocked,
+        api_error=narrator_response.api_error,
     )
 
 
