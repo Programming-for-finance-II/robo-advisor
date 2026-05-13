@@ -18,11 +18,15 @@ def compute_risk_contributions(
         RC_i = w_i * (Σw)_i / (wᵀΣw)
 
     Args:
-        weights: Dict {ticker: weight}, must sum to 1.0.
-        cov:     Ledoit-Wolf covariance matrix
+        weights: Dict mapping ticker to portfolio weight, must sum to 1.0.
+        cov: Ledoit-Wolf covariance matrix with tickers as columns/index.
 
     Returns:
-        Dict {ticker: risk_contribution}, values sum to 1.0.
+        Dict mapping ticker to risk contribution, values sum to 1.0.
+
+    Raises:
+        AssertionError: If fewer than 2 assets, weights don't sum to 1.0,
+                       or portfolio variance is non-positive.
     """
     assert len(weights) >= 2, "need at least 2 assets"
     assert abs(sum(weights.values()) - 1.0) < 1e-6, "weights must sum to 1.0"
@@ -48,15 +52,15 @@ def compute_annual_volatility(
 
     Formula: σ_p = sqrt(wᵀΣw * 252)
 
-    Note: assumes cov is in daily units (as returned by
-    CovarianceShrinkage from daily price series).
+    Assumes cov is in daily units (as returned by CovarianceShrinkage 
+    from daily price series). Annualization uses 252 trading days per year.
 
     Args:
-        weights: Dict {ticker: weight}.
-        cov:     Daily covariance matrix (Ledoit-Wolf).
+        weights: Dict mapping ticker to portfolio weight.
+        cov: Daily covariance matrix (Ledoit-Wolf).
 
     Returns:
-        Annualised volatility as a positive float.
+        Annualised portfolio volatility as a positive float, rounded to 6 decimals.
     """
     tickers = list(cov.columns)
     w = np.array([weights[t] for t in tickers])
@@ -68,11 +72,18 @@ def compute_max_drawdown(returns: pd.Series) -> float:
     """
     Compute historical maximum drawdown from a return series.
 
+    The maximum drawdown is the largest peak-to-trough decline in cumulative
+    returns over the entire history.
+
     Args:
         returns: Daily portfolio returns (arithmetic or log).
 
     Returns:
-        Maximum drawdown as a negative float (e.g. -0.312 = -31.2%).
+        Maximum drawdown as a negative float (e.g. -0.312 = -31.2%), 
+        rounded to 6 decimals.
+
+    Raises:
+        AssertionError: If returns series is empty.
     """
     assert not returns.empty, "returns series cannot be empty"
 
@@ -89,81 +100,5 @@ def compute_var_cvar(
     """
     Compute historical 1-day VaR and CVaR at the given confidence level.
 
-    Args:
-        returns:    Daily portfolio returns.
-        confidence: Confidence level (default 0.95).
-
-    Returns:
-        (var, cvar) — both negative floats.
-        var  = 5th percentile of the return distribution.
-        cvar = mean of returns below the VaR threshold (Expected Shortfall).
-    """
-    assert len(returns) >= 30, (
-        f"too few observations ({len(returns)}) for reliable VaR/CVaR"
-    )
-    assert 0 < confidence < 1, "confidence must be in (0, 1)"
-
-    var = float(np.percentile(returns, (1 - confidence) * 100))
-    tail_returns = returns[returns <= var]
-    cvar = float(tail_returns.mean()) if len(tail_returns) > 0 else var
-
-    return round(var, 6), round(cvar, 6)
-
-
-def compute_portfolio_returns(
-    prices: pd.DataFrame,
-    weights: dict[str, float],
-) -> pd.Series:
-    """
-    Compute daily portfolio log-returns from price series and weights.
-
-    Used internally to compute drawdown, VaR, CVaR.
-
-    Args:
-        prices:  Adjusted close prices (rows=dates, cols=tickers).
-        weights: Dict {ticker: weight}.
-
-    Returns:
-        pd.Series of daily portfolio log-returns.
-    """
-    tickers = list(weights.keys())
-    w = np.array([weights[t] for t in tickers])
-    log_returns = np.log(prices[tickers] / prices[tickers].shift(1)).dropna()
-    portfolio_returns = log_returns.values @ w
-    return pd.Series(portfolio_returns, index=log_returns.index)
-
-
-def compute_all(
-    weights: dict[str, float],
-    cov: pd.DataFrame,
-    prices: pd.DataFrame,
-) -> dict:
-    """
-    Compute all risk metrics in one call.
-
-    Returns a dict matching the RiskMetrics sub-model in ground_truth.py:
-        annual_volatility         float
-        max_drawdown_historical   float (negative)
-        var_95_daily              float (negative)
-        cvar_95_daily             float (negative)
-        risk_contributions        dict[str, float]
-        expected_annual_return    None  (HRP design — no reliable mu estimate)
-        sharpe_ratio              None  (HRP design — no mu, no Sharpe)
-
-    Args:
-        weights: Final portfolio weights from hrp.optimize().
-        cov:     Ledoit-Wolf covariance matrix from compute_covariance().
-        prices:  Cleaned price DataFrame from ValidatedDataLoader.
-    """
-    port_returns = compute_portfolio_returns(prices, weights)
-    var, cvar = compute_var_cvar(port_returns)
-
-    return {
-        "expected_annual_return": None,       # intentionally null — HRP design
-        "annual_volatility": compute_annual_volatility(weights, cov),
-        "sharpe_ratio": None,                 # intentionally null — no mu
-        "max_drawdown_historical": compute_max_drawdown(port_returns),
-        "var_95_daily": var,
-        "cvar_95_daily": cvar,
-        "risk_contributions": compute_risk_contributions(weights, cov),
-    }
+    Value at Risk (VaR) is the percentile of the return distribution at the
+    (1 - confidence) level. Conditional VaR (CVaR
