@@ -103,7 +103,7 @@ jobs:
 
       - name: Open Pull Request
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.PAT_TOKEN }}
         run: |
           gh pr create \
             --title "docs(agent): auto-generated optimizer docstrings [AI agent]" \
