@@ -3,6 +3,7 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 import pytest
+from pathlib import Path
 
 from backend.optimizer.backtest import (
     LOOKBACK_DAYS,
@@ -213,10 +214,8 @@ def test_export_results_json_creates_files(tmp_path: Path) -> None:
     """
     export_results_json must write one file per scenario plus a summary.
     """
-    from dataclasses import asdict
-    from pathlib import Path
 
-    from backend.optimizer.backtest import DailyReturn, RebalanceEvent
+    from backend.optimizer.backtest import DailyReturn
 
     # Build minimal mock results without running a full backtest
     mock_sr = StrategyResult(
