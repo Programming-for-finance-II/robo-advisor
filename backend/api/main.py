@@ -199,15 +199,37 @@ def advice(
     profile_key = _PROFILE_LABEL_MAP.get(row["profile_label"], "balanced")
     payload = get_mock_payload(profile_key)
 
-    # Step 3 — call Narrator
+    # Step 3 — sanitise user input (Layer 1 injection defence)
+    from backend.llm.input_sanitiser import sanitise
+    sanitiser_result = sanitise(body.user_message)
+    if sanitiser_result.blocked:
+        return AdviceResponse(
+            safe_text=(
+                "Your question could not be processed. "
+                "Please rephrase it more concisely.\n\n"
+                "This is an educational prototype. "
+                "No formal financial advice is provided."
+            ),
+            passed=False,
+            disclaimer_appended=False,
+            validator_flags=["INJECTION_DETECTED"],
+            injection_blocked=True,
+            api_error=False,
+        )
+
+    # Step 4 — call Narrator
     try:
         narrator = NarratorClient()
     except NarratorError as e:
         raise HTTPException(status_code=503, detail=str(e))
 
+    narrator_response = narrator.narrate(
+        payload, sanitiser_result.sanitised_input
+    )
+
     narrator_response = narrator.narrate(payload, body.user_message)
 
-    # Step 4 — validate
+    # Step 5 — validate
     eu_required = payload.regulatory_context.profiler_us_centric_caveat
     result = validate(
         narrator_response.raw_text,
@@ -216,7 +238,7 @@ def advice(
         eu_awareness_required=eu_required,
     )
 
-    # Step 5 — update DB audit trail
+    # Step 6 — update DB audit trail
     try:
         conn.execute(
             """
