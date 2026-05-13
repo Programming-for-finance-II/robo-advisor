@@ -17,9 +17,6 @@ name: AI Agent — Optimizer Docstrings PR
 
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - "backend/optimizer/**"
 
 jobs:
   generate-docstrings:
