@@ -50,7 +50,7 @@ def compute_covariance(prices: pd.DataFrame) -> pd.DataFrame:
     assert prices.shape[1] >= 2, "need at least 2 assets"
     assert not prices.isnull().all().any(), "some tickers have all-NaN prices"
 
-    cov = CovarianceShrinkage(prices).ledoit_wolf()
+    cov = CovarianceShrinkage(prices, frequency=1).ledoit_wolf()
 
     eigenvalues = np.linalg.eigvalsh(cov.values)
     assert np.all(eigenvalues >= -1e-8), "covariance matrix is not PSD after LW shrinkage"
@@ -224,7 +224,7 @@ def optimize(
     )
 
     w_vec = np.array([final_weights[t] for t in cov.columns])
-    ann_vol = float(np.sqrt(w_vec @ cov.values @ w_vec))
+    ann_vol = float(np.sqrt(w_vec @ cov.values @ w_vec* 252))
 
     mean_log_returns = returns.mean() * 252
     exp_ret = float(mean_log_returns.values @ w_vec)
