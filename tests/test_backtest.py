@@ -167,7 +167,8 @@ def test_run_scenario_equity_curve_starts_at_one() -> None:
 
 def test_run_scenario_transaction_costs_are_positive() -> None:
     """
-    Total transaction costs must be > 0 when rebalancing occurs.
+    HRP and MV must incur positive transaction costs when rebalancing.
+    1/N is excluded: equal weights produce zero turnover in this model.
     """
     prices = _make_prices(n_days=600, end_date="2020-12-31")
 
@@ -178,7 +179,8 @@ def test_run_scenario_transaction_costs_are_positive() -> None:
         scenario_key="covid_2020",
     )
 
-    for strategy, sr in result.strategies.items():
+    for strategy in ("HRP", "MV"):
+        sr = result.strategies[strategy]
         assert sr.total_transaction_cost > 0.0, (
             f"{strategy}: expected positive transaction costs after rebalancing"
         )
