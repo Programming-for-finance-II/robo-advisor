@@ -305,12 +305,18 @@ def test_full_pipeline_profile_optimize_advice():
     """
     Full pipeline: /profile → /optimize → /advice.
 
-    1. POST /profile with questionnaire → get profile_label
+    1. POST /profile with questionnaire responses → get profile_label
     2. POST /optimize with profile_label → get recommendation_id
     3. POST /advice with recommendation_id → get validated LLM response
     """
     fd, db_path = tempfile.mkstemp(suffix=".db")
     os.close(fd)
+
+    # Disable FK on the DB used by /optimize so save_recommendation succeeds
+    conn = init_db(db_path)
+    conn.execute("PRAGMA foreign_keys = OFF")
+    conn.commit()
+    conn.close()
 
     mock_msg = _mock_anthropic_response(VALID_LLM_RESPONSE)
 
@@ -340,6 +346,24 @@ def test_full_pipeline_profile_optimize_advice():
         rec_id = optimize_response.json()["recommendation_id"]
         assert isinstance(rec_id, str)
         assert len(rec_id) > 0
+
+        # Step 3 — /advice
+        advice_response = client.post(
+            "/advice",
+            json={
+                "recommendation_id": rec_id,
+                "user_message": "Why is my bond allocation high?",
+            },
+        )
+
+    os.unlink(db_path)
+
+    assert advice_response.status_code == 200
+    data = advice_response.json()
+    assert isinstance(data["safe_text"], str)
+    assert len(data["safe_text"]) > 0
+    assert data["injection_blocked"] is False
+    assert data["api_error"] is False
 
         # Step 3 — /advice
         advice_response = client.post(
