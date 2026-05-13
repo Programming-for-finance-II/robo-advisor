@@ -347,23 +347,6 @@ def test_full_pipeline_profile_optimize_advice():
         assert isinstance(rec_id, str)
         assert len(rec_id) > 0
 
-        # Step 3 — /advice
-        advice_response = client.post(
-            "/advice",
-            json={
-                "recommendation_id": rec_id,
-                "user_message": "Why is my bond allocation high?",
-            },
-        )
-
-    os.unlink(db_path)
-
-    assert advice_response.status_code == 200
-    data = advice_response.json()
-    assert isinstance(data["safe_text"], str)
-    assert len(data["safe_text"]) > 0
-    assert data["injection_blocked"] is False
-    assert data["api_error"] is False
 
         # Step 3 — /advice
         advice_response = client.post(
