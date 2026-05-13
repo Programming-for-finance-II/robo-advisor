@@ -10,7 +10,6 @@ import numpy as np
 import pandas as pd
 
 from backend.optimizer.hrp import ProfileLabel, optimize
-
 from backend.optimizer.markowitz import optimize_markowitz
 
 logger = logging.getLogger(__name__)
