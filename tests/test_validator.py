@@ -253,6 +253,42 @@ class TestEUAwarenessRule9:
         assert result.passed is True
         assert ValidationFlag.EU_AWARENESS_MISSING not in result.flags
 
+    def test_mifid_compliance_question_eu_awareness(self) -> None:
+        # A question about MiFID II compliance must still satisfy Rule 9:
+        # the response must acknowledge SCF US bias, not just cite the regulation.
+        text = (
+            "This portfolio was built using an educational prototype and does not "
+            "constitute formal MiFID II suitability advice. The profiler relies on "
+            "Federal Reserve SCF 2022 data. European investors should be aware that "
+            "their risk preferences may differ from the US-based training sample."
+            + MANDATORY_DISCLAIMER
+        )
+        assert _check_eu_awareness_missing(text) is False
+
+    def test_usd_etf_question_eu_awareness(self) -> None:
+        # A response about USD-denominated ETFs must still disclose the SCF
+        # US-centric training data when eu_awareness_required=True.
+        text = (
+            "A significant portion of the portfolio is denominated in USD. "
+            "EUR-based investors face currency risk. The risk profile was determined "
+            "using a model trained on United States household data. "
+            "European investors may exhibit systematically different preferences."
+            + MANDATORY_DISCLAIMER
+        )
+        assert _check_eu_awareness_missing(text) is False
+
+    def test_ucits_question_eu_awareness(self) -> None:
+        # A response focusing on UCITS eligibility must still satisfy Rule 9.
+        # UCITS compliance alone does not substitute for the SCF caveat.
+        text = (
+            "The portfolio includes UCITS-eligible ETFs such as CSPX.L and AGGH.MI. "
+            "However, the underlying profiler was trained on the Survey of Consumer "
+            "Finances (United States). European investors may have different "
+            "risk tolerances than the US households in the training data."
+            + MANDATORY_DISCLAIMER
+        )
+        assert _check_eu_awareness_missing(text) is False
+
     def test_scf_keyword_satisfies_group_a(self) -> None:
         text = "SCF data was used. European investors should note this." + MANDATORY_DISCLAIMER
         assert _check_eu_awareness_missing(text) is False
