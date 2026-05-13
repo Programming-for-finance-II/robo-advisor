@@ -17,12 +17,23 @@ def compute_risk_contributions(
     Formula (Maillard et al., 2010):
         RC_i = w_i * (Σw)_i / (wᵀΣw)
 
+    where RC_i is the risk contribution of asset i, w_i is its weight,
+    Σ is the covariance matrix, and (Σw)_i is the marginal contribution
+    to portfolio variance.
+
     Args:
-        weights: Dict {ticker: weight}, must sum to 1.0.
-        cov:     Ledoit-Wolf covariance matrix
+        weights: Dictionary mapping ticker to portfolio weight. Weights must
+                 sum to 1.0. At least 2 assets required.
+        cov: Ledoit-Wolf covariance matrix as a pandas DataFrame with tickers
+             as both index and columns. Must be positive definite.
 
     Returns:
-        Dict {ticker: risk_contribution}, values sum to 1.0.
+        Dictionary mapping each ticker to its risk contribution (float).
+        Values sum to 1.0 and are rounded to 6 decimal places.
+
+    Raises:
+        AssertionError: If fewer than 2 assets provided, weights don't sum to 1.0,
+                       or portfolio variance is non-positive.
     """
     assert len(weights) >= 2, "need at least 2 assets"
     assert abs(sum(weights.values()) - 1.0) < 1e-6, "weights must sum to 1.0"
@@ -44,19 +55,23 @@ def compute_annual_volatility(
     cov: pd.DataFrame,
 ) -> float:
     """
-    Compute annualised portfolio volatility.
+    Compute annualized portfolio volatility.
 
     Formula: σ_p = sqrt(wᵀΣw * 252)
 
-    Note: assumes cov is in daily units (as returned by
-    CovarianceShrinkage from daily price series).
+    This function assumes the covariance matrix is in daily units (as returned
+    by CovarianceShrinkage from daily price series). The result is annualized
+    by multiplying by the square root of trading days per year (252).
 
     Args:
-        weights: Dict {ticker: weight}.
-        cov:     Daily covariance matrix (Ledoit-Wolf).
+        weights: Dictionary mapping ticker to portfolio weight. Each ticker
+                 must be present in the covariance matrix columns.
+        cov: Daily covariance matrix (Ledoit-Wolf shrinkage estimator) as a
+             pandas DataFrame with tickers as both index and columns.
 
     Returns:
-        Annualised volatility as a positive float.
+        Annualized portfolio volatility as a positive float, rounded to 6
+        decimal places.
     """
     tickers = list(cov.columns)
     w = np.array([weights[t] for t in tickers])
@@ -68,102 +83,17 @@ def compute_max_drawdown(returns: pd.Series) -> float:
     """
     Compute historical maximum drawdown from a return series.
 
+    Maximum drawdown is the largest peak-to-trough decline in cumulative returns.
+    This metric measures the largest loss an investor would have experienced from
+    a local peak to the subsequent trough.
+
     Args:
-        returns: Daily portfolio returns (arithmetic or log).
+        returns: Daily portfolio returns as a pandas Series. Can be arithmetic
+                 or log returns. Must not be empty.
 
     Returns:
-        Maximum drawdown as a negative float (e.g. -0.312 = -31.2%).
-    """
-    assert not returns.empty, "returns series cannot be empty"
+        Maximum drawdown as a negative float (e.g., -0.312 represents -31.2%),
+        rounded to 6 decimal places.
 
-    cum = (1 + returns).cumprod()
-    rolling_max = cum.cummax()
-    drawdowns = (cum - rolling_max) / rolling_max
-    return round(float(drawdowns.min()), 6)
-
-
-def compute_var_cvar(
-    returns: pd.Series,
-    confidence: float = CONFIDENCE_LEVEL,
-) -> tuple[float, float]:
-    """
-    Compute historical 1-day VaR and CVaR at the given confidence level.
-
-    Args:
-        returns:    Daily portfolio returns.
-        confidence: Confidence level (default 0.95).
-
-    Returns:
-        (var, cvar) — both negative floats.
-        var  = 5th percentile of the return distribution.
-        cvar = mean of returns below the VaR threshold (Expected Shortfall).
-    """
-    assert len(returns) >= 30, (
-        f"too few observations ({len(returns)}) for reliable VaR/CVaR"
-    )
-    assert 0 < confidence < 1, "confidence must be in (0, 1)"
-
-    var = float(np.percentile(returns, (1 - confidence) * 100))
-    tail_returns = returns[returns <= var]
-    cvar = float(tail_returns.mean()) if len(tail_returns) > 0 else var
-
-    return round(var, 6), round(cvar, 6)
-
-
-def compute_portfolio_returns(
-    prices: pd.DataFrame,
-    weights: dict[str, float],
-) -> pd.Series:
-    """
-    Compute daily portfolio log-returns from price series and weights.
-
-    Used internally to compute drawdown, VaR, CVaR.
-
-    Args:
-        prices:  Adjusted close prices (rows=dates, cols=tickers).
-        weights: Dict {ticker: weight}.
-
-    Returns:
-        pd.Series of daily portfolio log-returns.
-    """
-    tickers = list(weights.keys())
-    w = np.array([weights[t] for t in tickers])
-    log_returns = np.log(prices[tickers] / prices[tickers].shift(1)).dropna()
-    portfolio_returns = log_returns.values @ w
-    return pd.Series(portfolio_returns, index=log_returns.index)
-
-
-def compute_all(
-    weights: dict[str, float],
-    cov: pd.DataFrame,
-    prices: pd.DataFrame,
-) -> dict:
-    """
-    Compute all risk metrics in one call.
-
-    Returns a dict matching the RiskMetrics sub-model in ground_truth.py:
-        annual_volatility         float
-        max_drawdown_historical   float (negative)
-        var_95_daily              float (negative)
-        cvar_95_daily             float (negative)
-        risk_contributions        dict[str, float]
-        expected_annual_return    None  (HRP design — no reliable mu estimate)
-        sharpe_ratio              None  (HRP design — no mu, no Sharpe)
-
-    Args:
-        weights: Final portfolio weights from hrp.optimize().
-        cov:     Ledoit-Wolf covariance matrix from compute_covariance().
-        prices:  Cleaned price DataFrame from ValidatedDataLoader.
-    """
-    port_returns = compute_portfolio_returns(prices, weights)
-    var, cvar = compute_var_cvar(port_returns)
-
-    return {
-        "expected_annual_return": None,       # intentionally null — HRP design
-        "annual_volatility": compute_annual_volatility(weights, cov),
-        "sharpe_ratio": None,                 # intentionally null — no mu
-        "max_drawdown_historical": compute_max_drawdown(port_returns),
-        "var_95_daily": var,
-        "cvar_95_daily": cvar,
-        "risk_contributions": compute_risk_contributions(weights, cov),
-    }
+    Raises:
+        AssertionError: If returns series is empty
