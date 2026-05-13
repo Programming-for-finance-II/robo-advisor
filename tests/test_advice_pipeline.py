@@ -312,16 +312,20 @@ def test_full_pipeline_profile_optimize_advice():
     fd, db_path = tempfile.mkstemp(suffix=".db")
     os.close(fd)
 
-    # Disable FK on the DB used by /optimize so save_recommendation succeeds
-    conn = init_db(db_path)
-    conn.execute("PRAGMA foreign_keys = OFF")
-    conn.commit()
-    conn.close()
+    # Patch init_db to always return a connection with FK disabled
+    # so save_recommendation succeeds without the market_data_snapshots parent row.
+    _real_init_db = init_db
+
+    def _init_db_no_fk(path):
+        conn = _real_init_db(path)
+        conn.execute("PRAGMA foreign_keys = OFF")
+        return conn
 
     mock_msg = _mock_anthropic_response(VALID_LLM_RESPONSE)
 
     with (
         patch("backend.api.main.DB_PATH", db_path),
+        patch("backend.api.main.init_db", side_effect=_init_db_no_fk),
         patch("backend.data.loader.yf.download", side_effect=_fake_download),
         patch("anthropic.Anthropic") as mock_anthropic_cls,
         patch.dict("os.environ", {"ANTHROPIC_API_KEY": "test-key"}),
@@ -346,7 +350,6 @@ def test_full_pipeline_profile_optimize_advice():
         rec_id = optimize_response.json()["recommendation_id"]
         assert isinstance(rec_id, str)
         assert len(rec_id) > 0
-
 
         # Step 3 — /advice
         advice_response = client.post(
