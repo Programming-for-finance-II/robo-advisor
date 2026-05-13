@@ -11,6 +11,7 @@ then call /advice. This avoids:
 from __future__ import annotations
 
 import json
+import pandas as pd
 import os
 import tempfile
 from datetime import datetime, timezone
@@ -277,3 +278,93 @@ def test_advice_response_schema():
     assert "validator_flags" in data
     assert "injection_blocked" in data
     assert "api_error" in data
+
+# ---------------------------------------------------------------------------
+# Test 5 — Full pipeline /profile → /optimize → /advice
+# ---------------------------------------------------------------------------
+
+N_DAYS = 300
+
+
+def _make_bulk_df(tickers: list[str]) -> pd.DataFrame:
+    """Mimic yfinance multi-ticker output: MultiIndex columns ("Close", ticker)."""
+    rng = pd.date_range("2023-01-02", periods=N_DAYS, freq="B")
+    columns = pd.MultiIndex.from_product([["Close"], tickers])
+    data = {("Close", t): [100.0 + i for i in range(N_DAYS)] for t in tickers}
+    return pd.DataFrame(data, index=rng, columns=columns)
+
+
+def _fake_download(ticker_or_list, **kwargs):
+    if isinstance(ticker_or_list, list):
+        return _make_bulk_df(ticker_or_list)
+    rng = pd.date_range("2023-01-02", periods=N_DAYS, freq="B")
+    return pd.DataFrame({"Close": [100.0 + i for i in range(N_DAYS)]}, index=rng)
+
+
+def test_full_pipeline_profile_optimize_advice():
+    """
+    Full pipeline: /profile → /optimize → /advice.
+
+    1. POST /profile with questionnaire responses → get profile_label
+    2. POST /optimize with profile_label → get recommendation_id
+    3. POST /advice with recommendation_id → get validated LLM response
+    """
+    fd, db_path = tempfile.mkstemp(suffix=".db")
+    os.close(fd)
+
+    # Patch init_db to always return a connection with FK disabled
+    # so save_recommendation succeeds without the market_data_snapshots parent row.
+    _real_init_db = init_db
+
+    def _init_db_no_fk(path):
+        conn = _real_init_db(path)
+        conn.execute("PRAGMA foreign_keys = OFF")
+        return conn
+
+    mock_msg = _mock_anthropic_response(VALID_LLM_RESPONSE)
+
+    with (
+        patch("backend.api.main.DB_PATH", db_path),
+        patch("backend.api.main.init_db", side_effect=_init_db_no_fk),
+        patch("backend.data.loader.yf.download", side_effect=_fake_download),
+        patch("anthropic.Anthropic") as mock_anthropic_cls,
+        patch.dict("os.environ", {"ANTHROPIC_API_KEY": "test-key"}),
+    ):
+        mock_anthropic_cls.return_value.messages.create.return_value = mock_msg
+
+        # Step 1 — /profile
+        profile_response = client.post(
+            "/profile",
+            json={"responses": {f"Q{i}": "b" for i in range(1, 11)}},
+        )
+        assert profile_response.status_code == 200
+        profile_label = profile_response.json()["profile_label"]
+        assert profile_label in {"CONSERVATIVE", "MODERATE", "AGGRESSIVE"}
+
+        # Step 2 — /optimize
+        optimize_response = client.post(
+            "/optimize",
+            json={"profile_label": profile_label},
+        )
+        assert optimize_response.status_code == 200
+        rec_id = optimize_response.json()["recommendation_id"]
+        assert isinstance(rec_id, str)
+        assert len(rec_id) > 0
+
+        # Step 3 — /advice
+        advice_response = client.post(
+            "/advice",
+            json={
+                "recommendation_id": rec_id,
+                "user_message": "Why is my bond allocation high?",
+            },
+        )
+
+    os.unlink(db_path)
+
+    assert advice_response.status_code == 200
+    data = advice_response.json()
+    assert isinstance(data["safe_text"], str)
+    assert len(data["safe_text"]) > 0
+    assert data["injection_blocked"] is False
+    assert data["api_error"] is False
