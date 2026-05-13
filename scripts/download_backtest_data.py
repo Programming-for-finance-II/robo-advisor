@@ -13,8 +13,8 @@ import yfinance as yf
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from backend.data.universe_config import get_fallback_map, get_primary_tickers
-from backend.optimizer.backtest import LOOKBACK_DAYS, SCENARIOS
+from backend.data.universe_config import get_fallback_map, get_primary_tickers # noqa: E402
+from backend.optimizer.backtest import LOOKBACK_DAYS, SCENARIOS # noqa: E402
 
 # ---------------------------------------------------------------------------
 # Constants
