@@ -4,11 +4,13 @@ AI-Powered Robo-Advisor Platform
 Programming in Finance II (2026) — USI
 """
 
+import os
+
 import streamlit as st
 
-from backend.schemas.mock_data import get_mock_payload
 from backend.llm.narrator import NarratorClient, NarratorError
 from backend.llm.validator import validate
+from backend.schemas.mock_data import get_mock_payload
 
 # ---------------------------------------------------------------------------
 # Page config (must be first Streamlit call)
@@ -420,8 +422,6 @@ def render_chat() -> None:
     # Load the ANTHROPIC_API_KEY from Streamlit secrets or environment variable.
     # In production: set via .streamlit/secrets.toml
     # In CI/tests: set via os.environ
-    import os
-
     if "ANTHROPIC_API_KEY" not in os.environ:
         try:
             os.environ["ANTHROPIC_API_KEY"] = st.secrets["ANTHROPIC_API_KEY"]
