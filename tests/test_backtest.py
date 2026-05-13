@@ -6,7 +6,6 @@ import pytest
 from pathlib import Path
 
 from backend.optimizer.backtest import (
-    LOOKBACK_DAYS,
     SCENARIOS,
     TC_BPS,
     ScenarioResult,
