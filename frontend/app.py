@@ -6,6 +6,10 @@ Programming in Finance II (2026) — USI
 
 import streamlit as st
 
+from backend.schemas.mock_data import get_mock_payload
+from backend.llm.narrator import NarratorClient, NarratorError
+from backend.llm.validator import validate
+
 # ---------------------------------------------------------------------------
 # Page config (must be first Streamlit call)
 # ---------------------------------------------------------------------------
@@ -390,15 +394,107 @@ def render_portfolio() -> None:
 # Page 3 — Chat Advisor
 # ---------------------------------------------------------------------------
 def render_chat() -> None:
-    """Chat Advisor placeholder — LLM Narrator wired in Week 3."""
+    """Chat Advisor — LLM Narrator wired to the 3-stage safety pipeline."""
     st.title("Chat Advisor")
     show_disclaimer()
     st.markdown("---")
-    st.info("LLM Narrator (Claude API) — coming in Week 3.")
 
-    st.text_input("Ask about your portfolio...", disabled=True,
-                  placeholder="Available in Week 3")
+    # Read the investor profile computed by the questionnaire page.
+    # Falls back to MODERATE/balanced if the user navigates here directly
+    # without completing the questionnaire first.
+    profile_data = st.session_state.get("profile", {})
+    raw_label = profile_data.get("profile_label", "MODERATE")
+
+    # Map UPPERCASE profile labels (used by the backend) to lowercase keys
+    # expected by get_mock_payload() — "MODERATE" -> "balanced", etc.
+    _LABEL_MAP = {
+        "CONSERVATIVE": "conservative",
+        "MODERATE": "balanced",
+        "AGGRESSIVE": "aggressive",
+    }
+    profile_key = _LABEL_MAP.get(raw_label, "balanced")
+
+    # Show the active profile so the user knows which context the LLM is using.
+    st.info(f"Active profile: **{raw_label}**")
+
+    # Load the ANTHROPIC_API_KEY from Streamlit secrets or environment variable.
+    # In production: set via .streamlit/secrets.toml
+    # In CI/tests: set via os.environ
+    import os
+
+    if "ANTHROPIC_API_KEY" not in os.environ:
+        try:
+            os.environ["ANTHROPIC_API_KEY"] = st.secrets["ANTHROPIC_API_KEY"]
+        except Exception:
+            pass  # Key not configured — NarratorError will handle it gracefully
+
+    # Free-text input for the user question about their portfolio.
+    user_message = st.text_input(
+        "Ask about your portfolio...",
+        placeholder="E.g. Why is my bond allocation high?",
+    )
+
+    if st.button("Ask") and user_message:
+        with st.spinner("Generating response..."):
+            try:
+                # Stage 1 — Build the Ground Truth JSON payload for this profile.
+                # This is the only data the LLM is allowed to reference.
+                # No live backend call needed in Phase A — mock data is always available.
+                payload = get_mock_payload(profile_key)
+
+                # Stage 2 — Call the LLM Narrator.
+                # The narrator assembles the system prompt, injects the Ground Truth
+                # JSON as context, and calls the Claude API. It also runs the
+                # pre-call injection defence (Layer 1).
+                narrator = NarratorClient()
+                narrator_response = narrator.narrate(payload, user_message)
+
+                # Stage 3 — Run the 5-step Validator on the raw LLM response.
+                # Checks: forbidden phrases, hallucinated numbers, disclaimer
+                # presence, semantic injection, EU awareness Rule 9.
+                result = validate(
+                    response_text=narrator_response.raw_text,
+                    allowed_numbers=payload.llm_constraints.allowed_numbers,
+                    forbidden_phrases=payload.llm_constraints.forbidden_phrases,
+                    eu_awareness_required=payload.regulatory_context.profiler_us_centric_caveat,
+                )
+
+                # Display the result based on what happened at each stage.
+                # Priority: injection block > API error > validator fail > clean response.
+                if narrator_response.injection_blocked:
+                    # Layer 1 injection defence triggered before the API call.
+                    st.warning(
+                        "Your question could not be processed. "
+                        "Please rephrase it more concisely."
+                    )
+                elif narrator_response.api_error:
+                    # Claude API call failed (timeout, rate limit, server error).
+                    st.error(
+                        "Could not reach the AI service. Please try again in a moment."
+                    )
+                elif not result.passed:
+                    # Validator blocked the response — show safe fallback text.
+                    st.warning(result.safe_text)
+                else:
+                    # Clean response — display the validated narrative.
+                    st.markdown(result.safe_text)
+
+                # Show validator flags if any were triggered (e.g. disclaimer appended).
+                # Remove this block before the final demo.
+                if result.flags:
+                    st.caption(
+                        f"Validator flags: {[f.value for f in result.flags]}"
+                    )
+
+            except NarratorError:
+                # NarratorClient raised at construction — API key is missing.
+                st.error(
+                    "ANTHROPIC_API_KEY is not configured. "
+                    "Add it to `.streamlit/secrets.toml` or set it as an "
+                    "environment variable before running the app."
+                )
 
 # ---------------------------------------------------------------------------
-if __name__ == "__main__":
-    main()
+# Streamlit entrypoint
+# ---------------------------------------------------------------------------
+main()
