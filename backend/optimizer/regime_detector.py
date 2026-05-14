@@ -14,6 +14,8 @@ from backend.data.universe_config import get_cluster_map
 
 STRESS_CORR_THRESHOLD: float = 0.75   # avg |ρ_LW| trigger
 STRESS_VIX_THRESHOLD: float = 30.0    # VIX trigger (secondary signal)
+ASSET_WEIGHT_MIN: float = 0.05   
+ASSET_WEIGHT_MAX: float = 0.40   
 
 RegimeLabel = Literal["NORMAL", "HIGH_STRESS"]
 
@@ -113,10 +115,6 @@ def get_erc_cluster_weights(
     Returns:
         Dict {ticker: weight}, sums to 1.0.
     """
-    from backend.data.universe_config import (
-        ASSET_WEIGHT_MIN,
-        ASSET_WEIGHT_MAX,
-    )
 
     if cluster_map is None:
         cluster_map = get_cluster_map()
