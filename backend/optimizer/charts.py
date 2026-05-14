@@ -95,3 +95,68 @@ def plot_dendrogram(
     )
 
     return fig
+
+# ---------------------------------------------------------------------------
+# 3. Drawdown Chart
+# ---------------------------------------------------------------------------
+
+def plot_drawdown(
+    backtest_results: dict,
+    scenario_key: str = "gfc_2008",
+) -> go.Figure:
+    """Drawdown chart for a backtest scenario.
+
+    Args:
+        backtest_results: Dict loaded from backtest JSON output.
+                          Expected keys: 'dates', 'hrp', 'mv', 'equal_weight'
+                          each containing a list of cumulative returns.
+        scenario_key:     Which scenario to plot (gfc_2008, covid_2020,
+                          rate_hike_2022).
+
+    Returns:
+        Plotly Figure ready for st.plotly_chart().
+    """
+    import numpy as np
+
+    scenario = backtest_results.get(scenario_key, {})
+    dates = scenario.get("dates", [])
+
+    fig = go.Figure()
+
+    series = {
+        "HRP":          ("steelblue",  scenario.get("hrp", [])),
+        "Markowitz":    ("tomato",     scenario.get("mv", [])),
+        "1/N":          ("gray",       scenario.get("equal_weight", [])),
+    }
+
+    for name, (color, cumret) in series.items():
+        if not cumret:
+            continue
+        cumret_arr = np.array(cumret)
+        rolling_max = np.maximum.accumulate(cumret_arr)
+        drawdown = (cumret_arr - rolling_max) / rolling_max * 100
+
+        fig.add_trace(go.Scatter(
+            x=dates,
+            y=drawdown.tolist(),
+            mode="lines",
+            name=name,
+            line=dict(color=color, width=1.5),
+        ))
+
+    labels = {
+        "gfc_2008":      "GFC 2008",
+        "covid_2020":    "COVID 2020",
+        "rate_hike_2022": "Rate Hike 2022",
+    }
+
+    fig.update_layout(
+        title=f"Drawdown — {labels.get(scenario_key, scenario_key)}",
+        xaxis_title="Date",
+        yaxis_title="Drawdown (%)",
+        height=400,
+        margin=dict(l=20, r=20, t=50, b=40),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02),
+    )
+
+    return fig
