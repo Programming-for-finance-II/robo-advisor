@@ -47,3 +47,51 @@ def plot_risk_contributions(
     )
 
     return fig
+
+# ---------------------------------------------------------------------------
+# 2. HRP Dendrogram
+# ---------------------------------------------------------------------------
+
+def plot_dendrogram(
+    linkage_matrix: list,
+    tickers: list[str],
+) -> go.Figure:
+    """Dendrogram of HRP hierarchical clustering.
+
+    Args:
+        linkage_matrix: Output of scipy.cluster.hierarchy.linkage().
+        tickers:        Asset ticker labels in the same order as the
+                        distance matrix rows.
+
+    Returns:
+        Plotly Figure ready for st.plotly_chart().
+    """
+    import numpy as np
+    from scipy.cluster.hierarchy import dendrogram
+
+    dendro = dendrogram(linkage_matrix, labels=tickers, no_plot=True)
+
+    fig = go.Figure()
+
+    for x, y in zip(dendro["icoord"], dendro["dcoord"]):
+        fig.add_trace(go.Scatter(
+            x=x,
+            y=y,
+            mode="lines",
+            line=dict(color="steelblue", width=1.5),
+            showlegend=False,
+        ))
+
+    fig.update_layout(
+        title="HRP Cluster Structure",
+        xaxis=dict(
+            tickvals=[dendro["leaves"][i] * 10 + 5 for i in range(len(tickers))],
+            ticktext=dendro["ivl"],
+            tickangle=-45,
+        ),
+        yaxis_title="Distance",
+        height=400,
+        margin=dict(l=20, r=20, t=50, b=80),
+    )
+
+    return fig
