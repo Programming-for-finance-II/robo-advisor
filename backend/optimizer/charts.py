@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import plotly.graph_objects as go
 
-
 # ---------------------------------------------------------------------------
 # 1. Risk Contribution Bar Chart
 # ---------------------------------------------------------------------------
@@ -66,7 +65,6 @@ def plot_dendrogram(
     Returns:
         Plotly Figure ready for st.plotly_chart().
     """
-    import numpy as np
     from scipy.cluster.hierarchy import dendrogram
 
     dendro = dendrogram(linkage_matrix, labels=tickers, no_plot=True)
