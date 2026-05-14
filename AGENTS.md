@@ -68,7 +68,7 @@ All AI tool usage is acknowledged in the academic PDF (Section 7: Lessons Learne
 
 | Date | Agent | Action | PR / Link |
 |------|-------|--------|-----------|
-| *To be populated during development* | | | |
+| 2026-05-13 | Docstring PR Agent (agent_pr.yml) | Auto-generated docstrings in `backend/optimizer/` via Claude API (`claude-sonnet-4-20250514`) | https://github.com/Programming-for-finance-II/robo-advisor/pull/43 |
 
 ---
 
