@@ -160,3 +160,74 @@ def plot_drawdown(
     )
 
     return fig
+
+# ---------------------------------------------------------------------------
+# 4. Efficient Frontier
+# ---------------------------------------------------------------------------
+
+def plot_efficient_frontier(
+    frontier_vols: list[float],
+    frontier_rets: list[float],
+    hrp_vol: float,
+    hrp_ret: float | None,
+    mv_vol: float,
+    mv_ret: float | None,
+) -> go.Figure:
+    """Efficient frontier scatter with HRP and MV portfolio markers.
+
+    Args:
+        frontier_vols: Annualised volatilities along the MV frontier.
+        frontier_rets: Expected returns along the MV frontier.
+        hrp_vol:       HRP portfolio annualised volatility.
+        hrp_ret:       HRP expected return (None if not estimated).
+        mv_vol:        MV portfolio annualised volatility.
+        mv_ret:        MV expected return (None if not estimated).
+
+    Returns:
+        Plotly Figure ready for st.plotly_chart().
+    """
+    fig = go.Figure()
+
+    # Frontier line
+    fig.add_trace(go.Scatter(
+        x=[v * 100 for v in frontier_vols],
+        y=[r * 100 for r in frontier_rets],
+        mode="lines",
+        name="Efficient Frontier",
+        line=dict(color="gray", width=1.5, dash="dot"),
+    ))
+
+    # MV portfolio marker
+    if mv_ret is not None:
+        fig.add_trace(go.Scatter(
+            x=[mv_vol * 100],
+            y=[mv_ret * 100],
+            mode="markers+text",
+            name="Markowitz",
+            marker=dict(color="tomato", size=12, symbol="diamond"),
+            text=["MV"],
+            textposition="top center",
+        ))
+
+    # HRP portfolio marker
+    y_hrp = [hrp_ret * 100] if hrp_ret is not None else [0]
+    fig.add_trace(go.Scatter(
+        x=[hrp_vol * 100],
+        y=y_hrp,
+        mode="markers+text",
+        name="HRP",
+        marker=dict(color="steelblue", size=12, symbol="circle"),
+        text=["HRP"],
+        textposition="top center",
+    ))
+
+    fig.update_layout(
+        title="Efficient Frontier — HRP vs Markowitz",
+        xaxis_title="Annualised Volatility (%)",
+        yaxis_title="Expected Return (%)",
+        height=450,
+        margin=dict(l=20, r=20, t=50, b=40),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02),
+    )
+
+    return fig
