@@ -9,7 +9,7 @@ from scipy.cluster.hierarchy import dendrogram, linkage
 from scipy.spatial.distance import squareform
 
 OPTIMIZER_VERSION = "2.0.0"
-ASSET_MIN = 0.03
+ASSET_MIN = 0.05
 ASSET_MAX = 0.40
 CLUSTER_MIN = 0.10
 CLUSTER_MAX = 0.60

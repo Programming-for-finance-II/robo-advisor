@@ -4,6 +4,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from backend.optimizer.regime_detector import detect_regime
+
 # ---------------------------------------------------------------------------
 # Shared fixtures
 # ---------------------------------------------------------------------------
@@ -133,3 +135,44 @@ def test_optimize_annual_volatility_in_realistic_range() -> None:
         f"annual volatility {vol:.4f} outside realistic range — "
         "possible annualisation bug"
     )
+
+# ---------------------------------------------------------------------------
+# Regime Detector Tests
+# ---------------------------------------------------------------------------
+
+class TestRegimeDetector:
+    """Tests for regime_detector.detect_regime()."""
+
+    def _make_cov(self, correlation: float, n: int = 4) -> pd.DataFrame:
+        """Build synthetic covariance matrix with uniform off-diagonal correlation."""
+        tickers = [f"A{i}" for i in range(n)]
+        corr = np.full((n, n), correlation)
+        np.fill_diagonal(corr, 1.0)
+        # vol = 1% daily for all assets
+        vols = np.full(n, 0.01)
+        cov = corr * np.outer(vols, vols)
+        return pd.DataFrame(cov, index=tickers, columns=tickers)
+
+    def test_high_corr_triggers_high_stress(self):
+        """avg_corr > 0.75 → HIGH_STRESS, corr_triggered=True."""
+        cov = self._make_cov(correlation=0.85)
+        result = detect_regime(cov)
+        assert result.regime == "HIGH_STRESS"
+        assert result.corr_triggered is True
+        assert result.vix_triggered is False
+
+    def test_low_corr_normal_regime(self):
+        """avg_corr < 0.75, no VIX → NORMAL."""
+        cov = self._make_cov(correlation=0.30)
+        result = detect_regime(cov)
+        assert result.regime == "NORMAL"
+        assert result.corr_triggered is False
+        assert result.vix_triggered is False
+
+    def test_vix_alone_triggers_high_stress(self):
+        """avg_corr < 0.75 but VIX > 30 → HIGH_STRESS, vix_triggered=True."""
+        cov = self._make_cov(correlation=0.30)
+        result = detect_regime(cov, vix_level=35.0)
+        assert result.regime == "HIGH_STRESS"
+        assert result.vix_triggered is True
+        assert result.corr_triggered is False
