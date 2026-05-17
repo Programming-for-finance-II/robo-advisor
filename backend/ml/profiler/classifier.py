@@ -4,7 +4,7 @@ classifier.py
 Phase B GBM-based risk profiler trained on Fed SCF 2022.
 
 Responsibilities:
-    - Train a GradientBoostingClassifier on the labeled SCF dataset produced
+    - Train a HistGradientBoostingClassifier on the labeled SCF dataset produced
       by clustering.py (data/scf/scf_labeled.parquet).
     - Use SCF sample weights (WGT) to correct for the survey's oversampling
       of high-net-worth households.
@@ -12,11 +12,18 @@ Responsibilities:
       from rule_based.py — same ProfilerOutput schema.
     - Compute SHAP TreeExplainer values for per-prediction explainability.
 
+Note on model choice:
+    HistGradientBoostingClassifier is used instead of GradientBoostingClassifier.
+    Both are pure sklearn (no extra deps), but HistGBC is the modern replacement:
+    it is significantly faster on large datasets, natively supports missing values,
+    and — critically — is supported by shap.TreeExplainer >= 0.46, whereas
+    GradientBoostingClassifier was dropped from TreeExplainer in shap 0.46+.
+
 References:
     - Federal Reserve (2022). Survey of Consumer Finances.
     - Lundberg, S.M., Lee, S.-I. (2017). A Unified Approach to Interpreting
       Model Predictions. NeurIPS 2017.
-    - sklearn GradientBoostingClassifier docs.
+    - sklearn HistGradientBoostingClassifier docs.
 
 Related ADR:
     docs/adr/ADR-003-gbm-profiler.md (to be written)
@@ -32,7 +39,7 @@ import joblib
 import numpy as np
 import pandas as pd
 import shap
-from sklearn.ensemble import GradientBoostingClassifier
+from sklearn.ensemble import HistGradientBoostingClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import StratifiedKFold, cross_val_score
 from sklearn.preprocessing import LabelEncoder
@@ -66,8 +73,8 @@ TARGET_COL: str = "profile_label"
 WEIGHT_COL: str = "WGT"
 MODEL_VERSION_GBM: str = "gbm_scf_v1"
 
-# GBM hyperparameters — fixed for reproducibility
-GBM_N_ESTIMATORS: int = 200
+# HistGBM hyperparameters — fixed for reproducibility
+GBM_MAX_ITER: int = 200
 GBM_MAX_DEPTH: int = 4
 GBM_LEARNING_RATE: float = 0.05
 GBM_RANDOM_STATE: int = 42
@@ -82,11 +89,11 @@ _MODEL_CACHE: dict[str, Any] = {}
 # Training
 # =============================================================================
 
-def train_gbm() -> GradientBoostingClassifier:
-    """Train a GBM risk profiler on the labeled SCF 2022 dataset.
+def train_gbm() -> HistGradientBoostingClassifier:
+    """Train a HistGBM risk profiler on the labeled SCF 2022 dataset.
 
     Loads ``data/scf/scf_labeled.parquet`` (produced by clustering.py),
-    trains a GradientBoostingClassifier with SCF sample weights, evaluates
+    trains a HistGradientBoostingClassifier with SCF sample weights, evaluates
     a LogisticRegression baseline for comparison, and persists the fitted
     GBM + LabelEncoder to ``data/scf/gbm_model.pkl``.
 
@@ -128,14 +135,14 @@ def train_gbm() -> GradientBoostingClassifier:
     y: np.ndarray = le.fit_transform(y_raw)
     logger.info("Classes: %s → encoded as %s", le.classes_, list(range(len(le.classes_))))
 
-    # --- GBM ---
-    gbm = GradientBoostingClassifier(
-        n_estimators=GBM_N_ESTIMATORS,
+    # --- HistGBM ---
+    gbm = HistGradientBoostingClassifier(
+        max_iter=GBM_MAX_ITER,
         max_depth=GBM_MAX_DEPTH,
         learning_rate=GBM_LEARNING_RATE,
         random_state=GBM_RANDOM_STATE,
     )
-    logger.info("Training GBM (n_estimators=%d)...", GBM_N_ESTIMATORS)
+    logger.info("Training HistGBM (max_iter=%d)...", GBM_MAX_ITER)
     gbm.fit(X, y, sample_weight=weights)
 
     train_acc = gbm.score(X, y, sample_weight=weights)
@@ -171,7 +178,7 @@ def train_gbm() -> GradientBoostingClassifier:
 # Inference
 # =============================================================================
 
-def _load_model() -> tuple[GradientBoostingClassifier, LabelEncoder]:
+def _load_model() -> tuple[HistGradientBoostingClassifier, LabelEncoder]:
     """Load GBM + LabelEncoder from disk into the module-level cache.
 
     Parameters
@@ -180,7 +187,7 @@ def _load_model() -> tuple[GradientBoostingClassifier, LabelEncoder]:
 
     Returns
     -------
-    tuple[GradientBoostingClassifier, LabelEncoder]
+    tuple[HistGradientBoostingClassifier, LabelEncoder]
         Cached or freshly loaded model pair.
 
     Raises
@@ -234,7 +241,7 @@ def profile_user_gbm(user_features: dict[str, float]) -> ProfilerOutput:
     """
     gbm, le = _load_model()
 
-    X_input = pd.DataFrame([user_features])[FEATURE_COLS]
+    X_input: np.ndarray = pd.DataFrame([user_features])[FEATURE_COLS].to_numpy()
 
     proba: np.ndarray = gbm.predict_proba(X_input)[0]
     confidence = float(np.max(proba))
