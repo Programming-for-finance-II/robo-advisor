@@ -15,11 +15,6 @@ References:
     - Grable, J.E., Lytton, R.H. (1999). Financial risk tolerance revisited.
       Financial Services Review.
 
-Implementation notes (W1 — stub):
-    The SCF 2022 Summary Extract dataset has not yet been downloaded locally.
-    Functions contain the correct structure and documentation of preprocessing
-    choices. Real implementation takes place in W2.
-
 Related ADR:
     docs/adr/ADR-002-scf-preprocessing.md
 """
@@ -47,6 +42,10 @@ SCF_DEFAULT_PATH = Path("data/scf/scf2022.csv")
 # Rationale: see ADR-002-scf-preprocessing.md
 SCF_IMPLICATE = 1
 
+# The SCF identifies implicates via the last digit of column Y1.
+# E.g. Y1=11 → implicate 1, Y1=12 → implicate 2, ...
+SCF_IMPLICATE_COLUMN = "Y1"
+
 # Columns selected from the SCF for the profiler
 # Source: SCF 2022 Codebook — demographic and behavioural variables
 SCF_FEATURE_COLUMNS: list[str] = [
@@ -58,6 +57,7 @@ SCF_FEATURE_COLUMNS: list[str] = [
     "NOFINRISK",  # Unwilling to take any financial risk (1=yes, 0=no)
     "KIDS",       # Number of children (proxy for family composition)
     "EDUC",       # Education level (proxy for financial experience)
+    "EQUITY_RATIO",  # Engineered: share of risky assets in total allocation
 ]
 
 # Columns describing observed portfolio allocation (label source for clustering)
@@ -70,6 +70,9 @@ SCF_ALLOCATION_COLUMNS: list[str] = [
 
 # Mandatory sample weight column (SCF uses stratified sampling design)
 SCF_WEIGHT_COLUMN = "WGT"
+
+# Small constant to avoid division by zero when computing ratios
+EPSILON = 1.0
 
 # Minimum number of observations required to proceed
 MIN_OBSERVATIONS = 1_000
@@ -89,12 +92,18 @@ def load_scf(
     simplicity we use implicate=1 (first imputation). This choice is
     documented as a limitation in ADR-002-scf-preprocessing.md.
 
+    The implicate is identified by the last digit of column Y1:
+        Y1 % 10 == 1  →  implicate 1
+        Y1 % 10 == 2  →  implicate 2
+        ...
+
     Args:
         path: Path to the SCF Summary Extract CSV file.
         implicate: Implicate number to use (1–5). Default: 1.
 
     Returns:
         DataFrame with all SCF columns for the selected implicate.
+        Shape: (4595, 357) for implicate=1 on the 2022 extract.
 
     Raises:
         FileNotFoundError: If the CSV file is not found at the given path.
@@ -112,34 +121,41 @@ def load_scf(
 
     logger.info("Loading SCF from %s (implicate=%d)...", path, implicate)
 
-    # TODO (W2): implement real loading
-    # The SCF CSV has a column 'Y1' whose last digit identifies the implicate
-    # df = pd.read_csv(path, low_memory=False)
-    # df = df[df["Y1"] % 10 == implicate].reset_index(drop=True)
+    df = pd.read_csv(path, low_memory=False)
+    df = df[df[SCF_IMPLICATE_COLUMN] % 10 == implicate].reset_index(drop=True)
 
-    raise NotImplementedError(
-        "load_scf() — W2 implementation pending. "
-        "The SCF 2022 dataset must be downloaded before proceeding."
+    logger.info(
+        "SCF loaded: %d observations after filtering implicate=%d.",
+        len(df), implicate,
     )
+
+    return df
 
 
 def select_features(df: pd.DataFrame) -> pd.DataFrame:
     """Select and retain relevant columns from the raw SCF DataFrame.
 
-    Keeps demographic/behavioural feature columns, allocation columns
-    (for clustering), and the sample weight column.
+    Also engineers EQUITY_RATIO = EQUITY / (EQUITY + BOND + CASHLI),
+    which captures each household's share of risky assets and is a
+    strong signal for clustering risk profiles.
 
     Args:
         df: Raw SCF DataFrame returned by load_scf().
 
     Returns:
-        DataFrame with only the columns required by the pipeline.
+        DataFrame with only the columns required by the pipeline,
+        including the engineered EQUITY_RATIO feature.
 
     Raises:
-        ValueError: If any required columns are missing from the DataFrame.
+        ValueError: If any required raw columns are missing from the DataFrame.
     """
-    required = SCF_FEATURE_COLUMNS + SCF_ALLOCATION_COLUMNS + [SCF_WEIGHT_COLUMN]
-    missing = [col for col in required if col not in df.columns]
+    # Validate raw columns (before engineering)
+    raw_required = (
+        [c for c in SCF_FEATURE_COLUMNS if c != "EQUITY_RATIO"]
+        + SCF_ALLOCATION_COLUMNS
+        + [SCF_WEIGHT_COLUMN]
+    )
+    missing = [col for col in raw_required if col not in df.columns]
 
     if missing:
         raise ValueError(
@@ -147,15 +163,19 @@ def select_features(df: pd.DataFrame) -> pd.DataFrame:
             "Check the SCF 2022 Codebook for correct variable names."
         )
 
+    df_out = df[raw_required].copy()
+
+    # Engineer EQUITY_RATIO: share of risky assets in total portfolio
+    # EPSILON avoids division by zero for households with zero total assets
+    total_allocation = df_out["EQUITY"] + df_out["BOND"] + df_out["CASHLI"]
+    df_out["EQUITY_RATIO"] = df_out["EQUITY"] / (total_allocation + EPSILON)
+
     logger.info(
-        "Selecting %d feature columns + %d allocation columns + weight.",
+        "Feature selection complete: %d feature columns + %d allocation columns + weight.",
         len(SCF_FEATURE_COLUMNS), len(SCF_ALLOCATION_COLUMNS),
     )
 
-    # TODO (W2): add engineered features if needed
-    # e.g. EQUITY_RATIO = EQUITY / (EQUITY + BOND + CASHLI)
-
-    return df[required].copy()
+    return df_out
 
 
 def standardise_features(
@@ -193,7 +213,7 @@ def standardise_features(
 def build_pipeline(
     path: Path = SCF_DEFAULT_PATH,
     implicate: int = SCF_IMPLICATE,
-) -> tuple[pd.DataFrame, pd.DataFrame, np.ndarray, StandardScaler]:
+) -> tuple[np.ndarray, pd.DataFrame, np.ndarray, StandardScaler]:
     """Main entry point for the SCF preprocessing pipeline.
 
     Executes in sequence: load -> select -> standardise.
@@ -233,4 +253,4 @@ def build_pipeline(
         len(X), X.shape[1],
     )
 
-    return X, alloc, weights, scaler
+    return X, alloc, weights, scaler, df_selected
