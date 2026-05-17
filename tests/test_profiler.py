@@ -468,7 +468,6 @@ _SAMPLE_FEATURES: dict[str, float] = {
 from backend.ml.profiler.classifier import (  # noqa: E402 — import after skipif setup
     FEATURE_COLS,
     MODEL_VERSION_GBM,
-    _MODEL_CACHE,
     profile_user_gbm,
 )
 

@@ -150,7 +150,10 @@ def train_gbm() -> HistGradientBoostingClassifier:
 
     cv = StratifiedKFold(n_splits=CV_N_FOLDS, shuffle=True, random_state=GBM_RANDOM_STATE)
     cv_scores = cross_val_score(gbm, X, y, cv=cv, scoring="accuracy")
-    print(f"GBM cross-val accuracy ({CV_N_FOLDS}-fold): {cv_scores.mean():.4f} ± {cv_scores.std():.4f}")
+    print(
+        f"GBM cross-val accuracy ({CV_N_FOLDS}-fold): "
+        f"{cv_scores.mean():.4f} ± {cv_scores.std():.4f}"
+    )
 
     # --- LogisticRegression baseline ---
     lr = LogisticRegression(max_iter=1000, random_state=GBM_RANDOM_STATE)
