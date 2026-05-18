@@ -178,7 +178,6 @@ def test_fallback_recorded_in_db(tmp_path):
     )
     conn.commit()
 
-    import uuid
     rec_id = str(uuid.uuid4())
 
     save_recommendation(conn, {
