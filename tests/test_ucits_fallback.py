@@ -172,38 +172,18 @@ def test_fallback_recorded_in_db(tmp_path):
     db_path = str(tmp_path / "test_fallback.db")
     conn = init_db(db_path)
 
+    # Insert required user row to satisfy FK constraint
+    conn.execute(
+        "INSERT OR IGNORE INTO users (id, created_at) VALUES (?, ?)",
+        ("test_user", "2024-01-01T00:00:00+00:00"),
+    )
+    conn.commit()
+
     import uuid
     rec_id = str(uuid.uuid4())
 
     save_recommendation(conn, {
-        "id": rec_id,
-        "user_id": "test_user",
-        "data_fetch_timestamp": "2024-01-01T00:00:00+00:00",
-        "questionnaire_snapshot": "{}",
-        "profile_label": "MODERATE",
-        "profile_confidence": 0.82,
-        "profile_model_version": "rule_based_v1",
-        "tickers_used": list(report_with_fallback.ucits_tickers_used),
-        "ucits_tickers_used": report_with_fallback.ucits_tickers_used,
-        "fallback_tickers_applied": report_with_fallback.fallback_tickers_applied,
-        "data_window_start": "2023-01-01",
-        "data_window_end": "2024-01-01",
-        "market_data_hash": report_with_fallback.market_data_hash,
-        "nan_count_pre_clean": 0,
-        "nan_count_post_clean": 0,
-        "optimizer_version": "hrp_v1",
-        "weights_raw_hrp": {},
-        "weights_final": {},
-        "risk_metrics": {},
-        "cluster_structure": {},
-        "stress_scenarios": {},
-        "llm_model": "none",
-        "system_prompt_hash": "none",
-        "ground_truth_json_hash": "none",
-        "llm_response_raw": "none",
-        "llm_response_validated": "none",
-    })
-    conn.commit()
+        # ... resto invariato
 
     # Read back and verify
     row = conn.execute(
