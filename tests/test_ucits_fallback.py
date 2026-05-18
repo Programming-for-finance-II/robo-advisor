@@ -171,10 +171,10 @@ def test_fallback_recorded_in_db(tmp_path):
     db_path = str(tmp_path / "test_fallback.db")
     conn = init_db(db_path)
 
-    # Insert required user row to satisfy FK constraint
+    ## Insert required user row to satisfy FK constraint
     conn.execute(
-        "INSERT OR IGNORE INTO users (id, created_at) VALUES (?, ?)",
-        ("test_user", "2024-01-01T00:00:00+00:00"),
+        "INSERT OR IGNORE INTO users (id, created_at, session_token) VALUES (?, ?, ?)",
+        ("test_user", "2024-01-01T00:00:00+00:00", "test_session_token_xyz"),
     )
     conn.commit()
 
