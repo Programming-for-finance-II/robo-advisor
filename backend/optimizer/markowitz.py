@@ -14,7 +14,7 @@ from backend.optimizer.risk_metrics import compute_risk_contributions
 # ---------------------------------------------------------------------------
 
 # Asset-level weight bounds — same guardrails as HRP for fair comparison
-MV_ASSET_MIN: float = 0.03
+MV_ASSET_MIN: float = 0.05
 MV_ASSET_MAX: float = 0.40
 
 # Risk-free rate for Sharpe computation (annualised, approximate EUR rate 2024)
@@ -59,7 +59,7 @@ def optimize_markowitz(
 
     # ── Step 1: Estimate inputs ──────────────────────────────────────────
     # Ledoit-Wolf shrinkage
-    cov: pd.DataFrame = CovarianceShrinkage(prices).ledoit_wolf()
+    cov: pd.DataFrame = CovarianceShrinkage(prices, frequency=1).ledoit_wolf()
 
     # Historical mean log returns, annualised
     # Acknowledged limitation: mu is highly unstable out-of-sample
