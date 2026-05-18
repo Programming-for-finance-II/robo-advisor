@@ -46,38 +46,51 @@ robo-advisor/
 ```
 ---
 
+## Live Demo
+
+🌐 **[https://robo-advisor-usi.streamlit.app/](https://robo-advisor-usi.streamlit.app/)**
+
+---
+
 ## Installation
 
 ### Requirements
 
 - Python 3.11+
-- [uv](https://github.com/astral-sh/uv) (recommended) or pip
+- [uv](https://github.com/astral-sh/uv)
 
 ### Clone and install
 
 ```bash
 git clone https://github.com/Programming-for-finance-II/robo-advisor.git
 cd robo-advisor
-uv sync          # installs all dependencies from pyproject.toml
+uv sync
+```
+
+### Environment variables
+
+Create a `.env` file in the root (never commit this file):
+
+```bash
+ANTHROPIC_API_KEY=sk-ant-...
+API_KEY=your-api-key
 ```
 
 ### Run locally
 
 ```bash
-# Start the FastAPI backend
-uv run uvicorn backend.api.main:app --reload --port 8000
-
-# In a separate terminal, start the Streamlit frontend
 uv run streamlit run frontend/app.py
 ```
 
-Then open [http://localhost:8501](http://localhost:8501) in your browser.
+Open [http://localhost:8501](http://localhost:8501).
 
 ### Run with Docker
 
 ```bash
 docker-compose up --build
 ```
+
+SQLite data persists in a Docker volume between restarts.
 
 ---
 
