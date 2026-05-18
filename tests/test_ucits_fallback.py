@@ -13,12 +13,11 @@ Shared with P3 (universe_config.py integrity checks).
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pandas as pd
-import pytest
 
-from backend.data.loader import DataQualityError, ValidatedDataLoader
+from backend.data.loader import ValidatedDataLoader
 from backend.data.universe_config import get_fallback_map, get_ucits_tickers
 
 
