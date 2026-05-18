@@ -147,14 +147,13 @@ def test_fallback_recorded_in_db(tmp_path):
     must record the fallback in the fallback_tickers_applied column.
     """
     import json
+    import datetime
+    import uuid
+    from backend.data.loader import DataQualityReport
     from backend.data.snapshots import init_db, save_recommendation
 
     primary = "XEON.MI"
     fallback = get_fallback_map()[primary]
-
-    # Build a minimal report simulating a fallback
-    from backend.data.loader import DataQualityReport
-    import datetime
 
     report_with_fallback = DataQualityReport(
         nan_ratio=0.0,
@@ -183,9 +182,35 @@ def test_fallback_recorded_in_db(tmp_path):
     rec_id = str(uuid.uuid4())
 
     save_recommendation(conn, {
-        # ... resto invariato
+        "id": rec_id,
+        "user_id": "test_user",
+        "data_fetch_timestamp": "2024-01-01T00:00:00+00:00",
+        "questionnaire_snapshot": "{}",
+        "profile_label": "MODERATE",
+        "profile_confidence": 0.82,
+        "profile_model_version": "rule_based_v1",
+        "tickers_used": list(report_with_fallback.ucits_tickers_used),
+        "ucits_tickers_used": report_with_fallback.ucits_tickers_used,
+        "fallback_tickers_applied": report_with_fallback.fallback_tickers_applied,
+        "data_window_start": "2023-01-01",
+        "data_window_end": "2024-01-01",
+        "market_data_hash": report_with_fallback.market_data_hash,
+        "nan_count_pre_clean": 0,
+        "nan_count_post_clean": 0,
+        "optimizer_version": "hrp_v1",
+        "weights_raw_hrp": {},
+        "weights_final": {},
+        "risk_metrics": {},
+        "cluster_structure": {},
+        "stress_scenarios": {},
+        "llm_model": "none",
+        "system_prompt_hash": "none",
+        "ground_truth_json_hash": "none",
+        "llm_response_raw": "none",
+        "llm_response_validated": "none",
+    })
+    conn.commit()
 
-    # Read back and verify
     row = conn.execute(
         "SELECT fallback_tickers_applied FROM recommendations WHERE id = ?",
         (rec_id,),
