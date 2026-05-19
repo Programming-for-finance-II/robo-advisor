@@ -89,6 +89,69 @@ Or configure via `.streamlit/secrets.toml` for local Streamlit:
 ANTHROPIC_API_KEY = "sk-ant-..."
 ```
 
+### Data Setup (SCF 2022 — required for ML pipeline)
+
+The risk profiler is trained on the **Federal Reserve Survey of Consumer
+Finances 2022** (public dataset, free download). The raw CSV is not stored
+in this repository (~21 MB); follow these steps once after cloning:
+
+**1. Download the SCF 2022 Summary Extract**
+
+Go to the official Fed page:
+```
+https://www.federalreserve.gov/econres/scfindex.htm
+```
+Under the **2022** section, click  
+**"Summary Extract Data (CSV)"** → download `SCFP2022s.zip`
+
+Direct link (may change with future releases):
+```
+https://www.federalreserve.gov/econres/files/scfp2022s.zip
+```
+
+**2. Extract and place the file**
+
+```bash
+# from the repo root
+mkdir -p data/scf
+unzip ~/Downloads/SCFP2022s.zip -d /tmp/scf_extract
+cp /tmp/scf_extract/SCFP2022.csv data/scf/scf2022.csv
+```
+
+Expected result:
+```
+data/scf/scf2022.csv   (~21 MB, 22 976 rows × 357 columns)
+```
+
+**3. Verify**
+
+```bash
+python - <<'EOF'
+import pandas as pd
+df = pd.read_csv("data/scf/scf2022.csv", nrows=5)
+assert "Y1" in df.columns and "AGE" in df.columns, "Wrong file!"
+print(f"OK — {len(pd.read_csv('data/scf/scf2022.csv'))} rows loaded")
+EOF
+```
+
+**4. Run the ML pipeline** (optional — pre-built artifacts already in repo)
+
+```bash
+# Step 1 — cluster SCF households → data/scf/scf_labeled.parquet
+python -m backend.ml.profiler.clustering
+
+# Step 2 — train GBM → data/scf/gbm_model.pkl
+python -m backend.ml.profiler.classifier
+```
+
+> **Note:** `data/scf/scf_labeled.parquet` (161 KB) and
+> `data/scf/gbm_model.pkl` (950 KB) are already committed to this repo.
+> Steps 1–2 above are only needed if you want to retrain from scratch.
+> All tests run without the CSV (integration tests are auto-skipped when
+> the file is absent).
+
+---
+
 ### Run locally
 
 ```bash
