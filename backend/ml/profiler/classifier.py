@@ -54,8 +54,12 @@ logger = logging.getLogger(__name__)
 
 LOW_CONFIDENCE_THRESHOLD: float = 0.65
 N_TOP_DRIVERS: int = 3
-MODEL_PATH: Path = Path("data/scf/gbm_model.pkl")
-LABELED_DATA_PATH: Path = Path("data/scf/scf_labeled.parquet")
+# Paths resolved relative to this file so they work regardless of the
+# working directory at import time (e.g. pytest invoked from repo root or
+# from a subdirectory).
+_REPO_ROOT: Path = Path(__file__).parents[3]
+MODEL_PATH: Path = _REPO_ROOT / "data/scf/gbm_model.pkl"
+LABELED_DATA_PATH: Path = _REPO_ROOT / "data/scf/scf_labeled.parquet"
 
 FEATURE_COLS: list[str] = [
     "AGE",
@@ -103,7 +107,7 @@ def train_gbm() -> HistGradientBoostingClassifier:
 
     Returns
     -------
-    GradientBoostingClassifier
+    HistGradientBoostingClassifier
         The fitted GBM model.
 
     Raises
@@ -146,13 +150,13 @@ def train_gbm() -> HistGradientBoostingClassifier:
     gbm.fit(X, y, sample_weight=weights)
 
     train_acc = gbm.score(X, y, sample_weight=weights)
-    print(f"GBM train accuracy (weighted): {train_acc:.4f}")
+    logger.info("HistGBM train accuracy (weighted): %.4f", train_acc)
 
     cv = StratifiedKFold(n_splits=CV_N_FOLDS, shuffle=True, random_state=GBM_RANDOM_STATE)
     cv_scores = cross_val_score(gbm, X, y, cv=cv, scoring="accuracy")
-    print(
-        f"GBM cross-val accuracy ({CV_N_FOLDS}-fold): "
-        f"{cv_scores.mean():.4f} ± {cv_scores.std():.4f}"
+    logger.info(
+        "HistGBM cross-val accuracy (%d-fold, unweighted): %.4f ± %.4f",
+        CV_N_FOLDS, cv_scores.mean(), cv_scores.std(),
     )
 
     # --- LogisticRegression baseline ---
@@ -160,14 +164,16 @@ def train_gbm() -> HistGradientBoostingClassifier:
     lr.fit(X, y, sample_weight=weights)
     lr_train_acc = lr.score(X, y, sample_weight=weights)
     lr_cv = cross_val_score(lr, X, y, cv=cv, scoring="accuracy")
-    print(f"LR  train accuracy (weighted): {lr_train_acc:.4f}")
-    print(f"LR  cross-val accuracy ({CV_N_FOLDS}-fold): {lr_cv.mean():.4f} ± {lr_cv.std():.4f}")
+    logger.info("LR  train accuracy (weighted): %.4f", lr_train_acc)
+    logger.info(
+        "LR  cross-val accuracy (%d-fold, unweighted): %.4f ± %.4f",
+        CV_N_FOLDS, lr_cv.mean(), lr_cv.std(),
+    )
 
     # --- Persist ---
     MODEL_PATH.parent.mkdir(parents=True, exist_ok=True)
     joblib.dump({"gbm": gbm, "le": le}, MODEL_PATH)
     logger.info("Model saved to %s", MODEL_PATH)
-    print(f"Model saved to: {MODEL_PATH}")
 
     # Update the module-level cache so subsequent calls in the same process
     # pick up the freshly trained model without re-reading from disk.
@@ -232,6 +238,8 @@ def profile_user_gbm(user_features: dict[str, float]) -> ProfilerOutput:
 
     Raises
     ------
+    ValueError
+        If ``user_features`` is missing one or more keys from ``FEATURE_COLS``.
     FileNotFoundError
         If the model file does not exist (train_gbm() has not been run).
 
@@ -242,6 +250,12 @@ def profile_user_gbm(user_features: dict[str, float]) -> ProfilerOutput:
     normalised so they sum to 1.0 — matching the ``TopDriver`` contract
     from Phase A.
     """
+    missing = set(FEATURE_COLS) - set(user_features)
+    if missing:
+        raise ValueError(
+            f"profile_user_gbm: missing required features: {sorted(missing)}"
+        )
+
     gbm, le = _load_model()
 
     X_input: np.ndarray = pd.DataFrame([user_features])[FEATURE_COLS].to_numpy()
