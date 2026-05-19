@@ -224,4 +224,4 @@ venv/
 .pytest_cache/
 .ruff_cache/
 htmlcov/
-.coverage
+.coverage.claude/
