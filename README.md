@@ -124,6 +124,23 @@ python -m backend.ml.profiler.classifier
 
 ---
 
+### Environment Variables
+
+The project needs two environment variables. Copy the example file and fill in your values:
+
+```bash
+cp .env.example .env
+```
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `ANTHROPIC_API_KEY` | **Yes** | Powers the LLM Narrator (`/advice` endpoint). Get one at [console.anthropic.com](https://console.anthropic.com/settings/keys). |
+| `API_KEY` | No | Protects all API endpoints with an `X-API-Key` header. If left empty, auth is disabled (dev mode). Generate with `openssl rand -hex 32`. |
+
+> **Never commit your `.env` file.** It is already listed in `.gitignore`.
+
+---
+
 ### Run locally
 
 ```bash
