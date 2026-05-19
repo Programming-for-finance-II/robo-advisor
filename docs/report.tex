@@ -121,40 +121,148 @@ The source code is available at:
 % ─────────────────────────────────────────────────────────────
 \section{Portfolio Optimisation}
 \label{sec:portfolio}
-% Owner: P2 (draft) — P4 integrates
-% TODO W4: HRP, Ledoit-Wolf, MV comparison, backtests
 % ─────────────────────────────────────────────────────────────
 
 \subsection{ETF Universe}
-% TODO P2: 10–12 ETFs, UCITS dual-listed, fallback logic
+
+The investment universe comprises eight ETFs organised into four
+structural clusters reflecting their expected correlation behaviour
+under both normal and stress market regimes (Table~\ref{tab:universe}).
+
+\begin{table}[h]
+\centering
+\caption{ETF Universe v3.1 — UCITS-aware hybrid configuration}
+\label{tab:universe}
+\small
+\begin{tabular}{llllc}
+\toprule
+\textbf{Primary Ticker} & \textbf{Fallback} & \textbf{Asset Class} & \textbf{Cluster} & \textbf{UCITS} \\
+\midrule
+CSPX.L & SPY & Equity USA (S\&P 500)         & Risk Assets  & \checkmark \\
+EFA    & EFA & Equity International (EAFE)   & Risk Assets  &            \\
+GLD    & GLD & Gold                          & Real Assets  &            \\
+VNQ    & VNQ & Real Estate (US REITs)        & Real Assets  &            \\
+AGGH.MI & AGG & Bond Aggregate (EUR-hedged)  & Safe Haven   & \checkmark \\
+TLT    & TLT & US Treasury 20Y+              & Safe Haven   &            \\
+TIP    & TIP & US TIPS (Inflation-Linked)    & Safe Haven   &            \\
+XEON.MI & BIL & Cash / EUR Overnight Rate   & Cash         & \checkmark \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Three of the eight ETFs use UCITS-compliant primary tickers
+(CSPX.L, AGGH.MI, XEON.MI), improving eligibility for EU retail
+investors under MiFID~II. For each ticker, a US-listed fallback is
+defined: the \texttt{ValidatedDataLoader} activates the fallback
+automatically when the primary ticker exhibits a NaN rate above 2\%,
+logging the substitution in the audit trail.
 
 \subsection{Hierarchical Risk Parity}
-% TODO P2: López de Prado (2016), distance matrix, linkage,
-%          quasi-diagonalisation, recursive bisection
 
-The HRP algorithm \parencite{LopezdePrado2016} constructs a portfolio
-by organising assets in a hierarchical tree based on pairwise
-correlations, then allocating capital by inverse variance along the
-resulting dendrogram branches.
+Portfolio allocation follows the Hierarchical Risk Parity (HRP)
+algorithm of \textcite{LopezdePrado2016}, which constructs a
+diversified portfolio without requiring an invertible covariance
+matrix or explicit return estimates. The algorithm proceeds in three
+steps.
+
+\paragraph{Step 1 — Hierarchical Clustering.}
+A distance matrix is derived from the shrunk correlation matrix:
+\[
+  D_{ij} = \sqrt{\tfrac{1}{2}(1 - \rho_{ij})}
+\]
+Ward linkage is applied to the condensed distance matrix, producing a
+dendrogram that reflects the hierarchical correlation structure of the
+assets. The resulting tree is visualised in the dashboard as an
+interactive Plotly dendrogram.
+
+\paragraph{Step 2 — Quasi-Diagonalisation.}
+Assets are reordered according to the leaf sequence of the dendrogram,
+placing correlated assets adjacent to one another. This reordering
+renders the covariance matrix approximately block-diagonal, exposing
+the cluster structure used in the subsequent allocation step.
+
+\paragraph{Step 3 — Recursive Bisection.}
+Capital is allocated by recursively splitting each cluster into two
+sub-clusters and assigning weights inversely proportional to the
+intra-cluster variance:
+\[
+  \alpha_k = \frac{\sigma^2_{R}}{\sigma^2_{L} + \sigma^2_{R}}, \qquad
+  \text{where } \sigma^2_C = \mathbf{w}^{\text{IVP}\top}_C \,
+  \Sigma_C \, \mathbf{w}^{\text{IVP}}_C
+\]
+and $\mathbf{w}^{\text{IVP}}$ denotes the inverse-variance portfolio
+within the cluster. This procedure does not require matrix inversion
+and is therefore numerically stable on small asset universes.
 
 \subsection{Covariance Estimation: Ledoit--Wolf Shrinkage}
-% TODO P2: formula, why OAS shrinkage, sklearn implementation
+
+Sample covariance matrices estimated on short return histories are
+notoriously noisy: eigenvalues are systematically biased, leading to
+extreme and unstable portfolio weights \parencite{Michaud1989}. We
+address this by applying the analytical Ledoit--Wolf shrinkage
+estimator \parencite{LedoitWolf2004}:
 
 \[
-  \hat{\Sigma} = (1-\alpha)\,S + \alpha\,\mu_S\,I
+  \hat{\Sigma} = (1 - \alpha)\,S + \alpha\,\mu_S\,I
 \]
 
 where $S$ is the sample covariance matrix, $\mu_S$ its average
-eigenvalue, and $\alpha$ the shrinkage coefficient estimated via
-analytical formula \parencite{LedoitWolf2004}.
+diagonal entry, $I$ the identity matrix, and $\alpha \in [0,1]$ the
+shrinkage intensity estimated analytically (Oracle Approximating
+Shrinkage). The estimator pulls extreme eigenvalues toward a common
+value, reducing estimation error without discarding the correlation
+structure present in the data.
 
-\subsection{Box Constraints}
-% 0.03–0.40 per asset, 0.10–0.60 per cluster
-% TODO P2: rationale
+The same shrinkage estimator is applied to both the HRP and the
+Mean--Variance benchmark, ensuring that any performance differences
+between the two algorithms reflect optimisation methodology, not
+input quality.
+
+\subsection{Profile Tilt and Box Constraints}
+
+Raw HRP weights are adjusted in two stages to incorporate investor
+risk preferences.
+
+\paragraph{Profile Tilt.}
+A 30\% blend is applied between the HRP weights and a
+profile-specific target:
+\begin{itemize}
+  \item \textit{Conservative}: blend toward Minimum Volatility weights.
+  \item \textit{Moderate}: HRP weights retained unmodified.
+  \item \textit{Aggressive}: blend toward Equal Risk Contribution (ERC) weights.
+\end{itemize}
+
+\paragraph{Box Constraints.}
+After tilting, weights are clipped to enforce:
+\begin{itemize}
+  \item Asset level: $[0.05,\; 0.40]$ per instrument.
+  \item Cluster level: $[0.10,\; 0.60]$ per structural cluster.
+\end{itemize}
+Clipping is iterated up to ten times with renormalisation at each
+step to ensure convergence. If any constraint is active, the
+\texttt{solver\_status} field of \texttt{OptimizationResult} is set
+to \texttt{"clipped"}.
 
 \subsection{Mean--Variance Comparison}
-% TODO P2: efficient frontier, why HRP is default,
-%          MV as educational comparison tab
+
+The dashboard exposes a dedicated MV tab displaying the efficient
+frontier alongside both the HRP and the Max-Sharpe Markowitz
+portfolios. The comparison is educational rather than normative:
+HRP is the default allocation method; MV serves as an academic
+benchmark.
+
+Expected returns for MV are estimated via historical mean log
+returns --- a known limitation acknowledged in \textcite{Michaud1989},
+who demonstrated that estimation error in $\mu$ causes MV to produce
+highly concentrated, out-of-sample unstable portfolios. The same
+Ledoit--Wolf covariance is used for both methods. The risk-free rate
+is set to 3\% per annum, reflecting approximate EUR short-term rates
+in 2024.
+
+The \texttt{compare\_hrp\_vs\_mv()} helper function returns a
+structured dictionary consumed by the Streamlit frontend to render a
+side-by-side weight comparison table and a weight-divergence bar
+chart, making the methodological trade-offs transparent to the user.
 
 % ─────────────────────────────────────────────────────────────
 \section{LLM Narrator and Validator}
