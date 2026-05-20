@@ -586,6 +586,43 @@ def _render_hrp_tab(portfolio: dict) -> None:
     except Exception as exc:
         st.caption(f"Chart unavailable: {exc}")
 
+    # --- Dendrogram ---
+    try:
+        import numpy as np
+        from scipy.cluster.hierarchy import linkage
+        from scipy.spatial.distance import squareform
+
+        from backend.optimizer.charts import plot_dendrogram
+
+        tickers_list = list(weights.keys())
+        n = len(tickers_list)
+
+        _CLUSTER_GROUPS = {
+            "CSPX.L": 0, "EFA": 0,
+            "GLD": 1, "VNQ": 1,
+            "AGGH.MI": 2, "TLT": 2, "TIP": 2,
+            "XEON.MI": 3,
+        }
+        corr = np.eye(n)
+        for i in range(n):
+            for j in range(n):
+                if i != j:
+                    ci = _CLUSTER_GROUPS.get(tickers_list[i], -1)
+                    cj = _CLUSTER_GROUPS.get(tickers_list[j], -1)
+                    corr[i, j] = 0.70 if ci == cj else 0.10
+
+        dist = np.sqrt(0.5 * (1 - corr))
+        np.fill_diagonal(dist, 0.0)
+        condensed = squareform(dist, checks=False)
+        link = linkage(condensed, method="ward")
+
+        st.markdown("**Cluster Structure (Dendrogram)**")
+        fig_dend = plot_dendrogram(link, tickers_list)
+        st.plotly_chart(fig_dend, use_container_width=True)
+
+    except Exception as exc:
+        st.caption(f"Dendrogram unavailable: {exc}")
+
 
 def _render_mv_tab(portfolio: dict, profile_key: str) -> None:
     """
@@ -740,11 +777,7 @@ def render_chat() -> None:
                     # Clean response -- show the validated narrative
                     st.markdown(result.safe_text)
 
-                # Show any validator flags that were triggered
-                # Remove this block before the final demo
-                if result.flags:
-                    st.caption(f"Validator flags: {[f.value for f in result.flags]}")
-
+           
             except NarratorError:
                 # NarratorClient raised at construction -- API key is missing
                 st.error(
