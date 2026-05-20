@@ -598,7 +598,6 @@ def _render_mv_tab(portfolio: dict, profile_key: str) -> None:
 
     from backend.optimizer.charts import (
         plot_efficient_frontier,
-        plot_risk_contributions,
     )
 
     # ── Try to run live MV optimizer (Phase B) ────────────────────────────
@@ -609,10 +608,11 @@ def _render_mv_tab(portfolio: dict, profile_key: str) -> None:
 
     if portfolio.get("source") == "live":
         try:
+            from datetime import date
+            
             from backend.data.loader import ValidatedDataLoader
             from backend.data.universe_config import get_primary_tickers
             from backend.optimizer.markowitz import optimize_markowitz
-            from datetime import date
 
             tickers = get_primary_tickers()
             loader = ValidatedDataLoader()
