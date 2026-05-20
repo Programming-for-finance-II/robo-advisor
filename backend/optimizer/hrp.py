@@ -9,6 +9,10 @@ from scipy.cluster.hierarchy import dendrogram, linkage
 from scipy.spatial.distance import squareform
 
 OPTIMIZER_VERSION = "2.0.0"
+TRADING_DAYS_PER_YEAR: int = 252
+MIN_OBSERVATIONS: int = 60
+TILT_FACTOR: float = 0.3
+MAX_CONSTRAINT_ITER: int = 10
 ASSET_MIN = 0.05
 ASSET_MAX = 0.40
 CLUSTER_MIN = 0.10
@@ -67,7 +71,7 @@ def compute_log_returns(prices: pd.DataFrame) -> pd.DataFrame:
 
     returns = np.log(prices / prices.shift(1)).dropna()
 
-    assert len(returns) >= 60, (
+    assert len(returns) >= MIN_OBSERVATIONS, (
         f"too few observations ({len(returns)}); need >= 60 for stable covariance"
     )
     return returns
@@ -157,7 +161,7 @@ def _apply_profile_tilt(
     else:
         w_blend = _compute_erc_weights(cov)
 
-    tilt = 0.3
+    tilt = TILT_FACTOR
     w_final = {
         t: (1 - tilt) * hrp_weights[t] + tilt * w_blend.get(t, 0.0)
         for t in hrp_weights
@@ -174,7 +178,7 @@ def _apply_box_constraints(
     w = pd.Series(weights)
     clipped = False
 
-    for _ in range(10):
+    for _ in range(MAX_CONSTRAINT_ITER):
         w_clipped = w.clip(lower=ASSET_MIN, upper=ASSET_MAX)
         if not w_clipped.equals(w):
             clipped = True
@@ -204,6 +208,8 @@ def optimize(
     ucits_tickers: list[str] | None = None,
     fallback_tickers: list[str] | None = None,
 ) -> OptimizationResult:
+    assert profile in ("CONSERVATIVE", "MODERATE", "AGGRESSIVE"), \
+        f"Unknown profile: {profile!r}"
     returns = compute_log_returns(prices)
     cov = compute_covariance(prices)
 
@@ -224,9 +230,9 @@ def optimize(
     )
 
     w_vec = np.array([final_weights[t] for t in cov.columns])
-    ann_vol = float(np.sqrt(w_vec @ cov.values @ w_vec* 252))
+    ann_vol = float(np.sqrt(w_vec @ cov.values @ w_vec * TRADING_DAYS_PER_YEAR))
 
-    mean_log_returns = returns.mean() * 252
+    mean_log_returns = returns.mean() * TRADING_DAYS_PER_YEAR
     exp_ret = float(mean_log_returns.values @ w_vec)
     sharpe = exp_ret / ann_vol if ann_vol > 0 else 0.0
 
