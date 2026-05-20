@@ -135,10 +135,11 @@ def optimize_markowitz(
 # Comparison helper — used by the Dashboard tab
 # ---------------------------------------------------------------------------
 
-def compare_hrp_vs_mv(...) -> dict[str, object]:(
+def compare_hrp_vs_mv(
     hrp_result: OptimizationResult,
     mv_result: OptimizationResult,
-) -> dict:
+) -> dict[str, object]:
+    
     """
     Build a side-by-side comparison dict for the Streamlit comparison tab.
 
