@@ -486,6 +486,10 @@ current implementation is considered adequate, and all three
 limitations are explicitly documented in ADR-004.
 
 % ─────────────────────────────────────────────────────────────
+\section{Lessons Learned and AI Tools}
+\label{sec:lessons}
+% ─────────────────────────────────────────────────────────────
+
 \subsection{Agentic Development Workflow}
 
 The project adopted an explicitly agentic development philosophy
@@ -566,49 +570,77 @@ with no human committing or pushing the generated code.
 \begin{itemize}
   \item \textbf{AI tool side effects.} Claude Code automatically
     added a \texttt{.coverage.claude/} entry to
-    \texttt{.gitignore} during an a
+    \texttt{.gitignore} during an agentic session. The
+    unintended modification was caught during PR review via
+    \texttt{git diff} and reverted with
+    \texttt{git restore --source=HEAD\textasciitilde1}.
+    This incident illustrates that agentic tools require the
+    same review discipline as human contributions.
+  \item \textbf{yfinance UCITS data gaps.} Several UCITS-listed
+    tickers (\texttt{CSPX.L}, \texttt{AGGH.MI}) returned
+    excessive NaN values during development, requiring the
+    fallback logic to be implemented earlier than planned and
+    the validator to be updated to handle GBP-listed tickers
+    whose currency exposure does not sum to 1.0 with USD and
+    EUR alone.
+  \item \textbf{LLM validator false positives.} The substring
+    check for \textit{safe} in the forbidden phrase list
+    blocked legitimate responses containing the cluster label
+    \textit{safe\_haven}. The fix — whole-word matching — was
+    deferred to future work to avoid scope creep in Week~4.
+\end{itemize}
 % ─────────────────────────────────────────────────────────────
 
-\subsection{Agentic Development Workflow}
-
-% TODO: describe AGENTS.md, GitHub Actions + Claude API for
-%       automated PR, evidence of agent PR on GitHub
-
-\subsection{AI Tools Used}
-
-\begin{description}
-  \item[Claude (Anthropic)] Used as technical advisor throughout the
-    project; generated and reviewed code for
-    \texttt{narrator.py}, \texttt{validator.py}, and documentation
-    scaffolding.
-  \item[GitHub Copilot / ChatGPT] % TODO: add if used
-  \item[GitHub Actions] Automated CI (ruff linter, pytest) and
-    agent-driven PR generation.
-\end{description}
-
-\subsection{What Worked}
-% TODO: honest retrospective — 3–5 points
-
-\subsection{What Did Not Work}
-% TODO: honest retrospective — 2–3 points
-
-% ─────────────────────────────────────────────────────────────
 \section{Conclusions}
 \label{sec:conclusions}
-% Owner: P4
-% TODO W4: 1 page summary, GitHub link, future work
-% ─────────────────────────────────────────────────────────────
+This paper presented an educational robo-advisor prototype that
+demonstrates a complete investment workflow — from risk profiling
+to portfolio optimisation to natural-language explanation — while
+explicitly addressing the transparency and geographic-awareness
+gaps common in commercial robo-advisor platforms.
 
-% TODO: fill after demo is stable
+The platform combines two advanced components: a Gradient Boosting
+risk profiler trained on real household financial behaviour (Fed
+SCF~2022) with SHAP explainability, and a constrained LLM narrator
+layer that is mathematically prevented from inventing figures
+through the Ground Truth JSON contract and the five-step validator.
+Four standard components complete the system: HRP portfolio
+optimisation with Ledoit--Wolf shrinkage, a UCITS-aware ETF
+universe with automatic fallback logic, a SQLite audit trail, and
+a Streamlit dashboard with EU Investor Note and stress regime
+detection.
+
+The EU Awareness layer — Rule~9 of the system prompt, the
+\texttt{profiler\_us\_centric\_caveat} flag, and the validator
+Step~5 check — represents a deliberate design choice to communicate
+the geographic limitations of a US-trained model to European
+investors at the point of recommendation, rather than burying the
+disclaimer in documentation.
+
+The source code, Architecture Decision Records, and this report
+are available at:
+\url{https://github.com/Programming-for-finance-II/robo-advisor}
 
 \subsection{Future Work}
 
 \begin{itemize}
-  \item Full EU-specific dataset (HFCS) to replace SCF as training
-        source for European investors.
-  \item Real-time market data integration beyond yfinance.
-  \item Regulatory compliance layer for MiFID~II suitability
-        assessment (beyond educational disclaimer).
+  \item Replace the Fed SCF~2022 training dataset with the ECB
+        Household Finance and Consumption Survey (HFCS) to produce
+        a risk profiler genuinely calibrated on European investor
+        behaviour.
+  \item Replace \texttt{yfinance} with a reliable data provider
+        (e.g.\ Bloomberg, Refinitiv) or implement a caching layer
+        that survives API outages without falling back to mock data.
+  \item Implement whole-word matching in the forbidden phrase
+        validator to eliminate the \textit{safe} / \textit{safe\_haven}
+        false-positive failure mode.
+  \item Add retry logic to the narrator pipeline: if the validator
+        blocks a response, re-prompt with explicit feedback before
+        returning the safe fallback message.
+  \item Extend the regime detector with a rolling confirmation
+        window to prevent oscillation between NORMAL and
+        HIGH\_STRESS on consecutive days near the correlation
+        threshold.
 \end{itemize}
 
 % ─────────────────────────────────────────────────────────────
