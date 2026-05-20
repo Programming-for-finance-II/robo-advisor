@@ -85,7 +85,7 @@ with a persistent SQLite volume for development and evaluation.
 
 ## Consequences
 
-- Streamlit app deployed at: `[URL to be added after deploy]`
+- Streamlit app deployed at: `https://robo-advisor-usi.streamlit.app/`
 - `ANTHROPIC_API_KEY` configured as secret in Streamlit Cloud dashboard
 - `docker-compose.yml` available for local reproduction
 - Railway remains documented as fallback — no implementation required
