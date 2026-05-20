@@ -68,7 +68,6 @@
 \label{sec:intro}
 % ─────────────────────────────────────────────────────────────
 \subsection{Problem Statement}
-
 Retail investors increasingly rely on algorithm-driven portfolio
 recommendations, yet most commercial robo-advisor platforms share
 three structural limitations. First, their underlying models are
@@ -85,7 +84,6 @@ This project addresses all three limitations in an academic
 prototype setting.
 
 \subsection{Our Contribution}
-
 We present an educational robo-advisor prototype that combines:
 
 \begin{itemize}
@@ -412,14 +410,12 @@ passed to the LLM narrator via the Ground Truth JSON:
 % ─────────────────────────────────────────────────────────────
 
 \subsection{Design Principle: Narrator, Not Calculator}
-
 A language model is not a reliable arithmetic engine. Our architecture
 enforces a strict separation: all numerical computations are performed
 by the quantitative backend; the LLM receives a \emph{Ground Truth JSON}
 containing pre-computed figures and is permitted only to narrate them.
 
 \subsection{Ground Truth JSON Contract}
-
 The Ground Truth JSON is the sole interface between the quantitative
 backend and the LLM narrator. Before every API call, the backend
 assembles a \texttt{GroundTruthPayload} (defined in
@@ -428,12 +424,9 @@ the information the narrator is permitted to discuss. The payload
 is serialised to JSON and injected verbatim into the system prompt
 as a \texttt{<CONTEXT>} block.
 
-The payload contains eight top-level blocks:
+The payload contains five top-level blocks:
 
 \begin{itemize}
-  \item \texttt{metadata}: recommendation UUID, timestamp, optimizer
-        version, and SHA-256 hash of the price matrix — enabling
-        bit-for-bit reproducibility of any historical response;
   \item \texttt{portfolio}: asset weights, guardrail flags, and
         UCITS eligibility of each position;
   \item \texttt{risk\_metrics}: annualised volatility, historical
@@ -445,10 +438,6 @@ The payload contains eight top-level blocks:
   \item \texttt{profiler}: \texttt{profile\_label},
         \texttt{profile\_confidence}, and \texttt{top\_drivers}
         (SHAP values in Phase~B, importance scores in Phase~A);
-  \item \texttt{cluster\_structure}: four clusters with member
-        tickers, total weights, and intra-cluster correlations;
-  \item \texttt{stress\_scenarios}: portfolio drawdown vs.\ benchmark
-        for three historical stress episodes;
   \item \texttt{llm\_constraints}: \texttt{allowed\_numbers}
         (auto-populated by \texttt{build\_allowed\_numbers()},
         which recursively extracts every float from the payload),
@@ -468,7 +457,6 @@ legitimately cite is guaranteed to be in the whitelist, and any
 number outside the whitelist is by definition hallucinated.
 
 \subsection{System Prompt Design}
-
 The system prompt embeds nine absolute rules. The narrator is
 explicitly instructed that violating any single rule causes the
 response to be discarded by the Validator before it reaches the user.
@@ -484,13 +472,12 @@ response to be discarded by the Validator before it reaches the user.
         from \texttt{llm\_constraints.forbidden\_phrases} into the
         prompt template at request time, ensuring the blacklist is
         always synchronised with the backend payload.
-  \item \textbf{No regulatory compliance claims.} The narrator must
+  \item \textbf{No compliance claims or absolutes.} The narrator must
         never state that the portfolio ``complies with MiFID~II'',
-        is ``suitable'', ``safe'', or ``optimal''.
-  \item \textbf{No absolutes.} Words such as \textit{guaranteed},
-        \textit{risk-free}, and \textit{certain} are forbidden.
-        Backtest results must always be framed as historical, never
-        as forecasts.
+        is ``suitable'', ``safe'', or ``optimal'', nor use words
+        such as \textit{guaranteed}, \textit{risk-free}, or
+        \textit{certain}. Backtest results must always be framed
+        as historical, never as forecasts.
   \item \textbf{Historical framing only.} If
         \texttt{expected\_annual\_return} or \texttt{sharpe\_ratio}
         are present in the payload, they must be described as
@@ -505,7 +492,10 @@ response to be discarded by the Validator before it reaches the user.
         coefficients.
   \item \textbf{Profile drivers.} If \texttt{top\_drivers} are
         present, the narrator must use them to explain the
-        classification. No additional drivers may be invented.
+        classification without inventing additional drivers.
+  \item \textbf{Disclaimer required.} Every response must include
+        the \texttt{MANDATORY\_DISCLAIMER}; if absent, the
+        Validator appends it automatically (Step~3).
   \item \textbf{Rule~9 — EU Awareness.} When
         \texttt{regulatory\_context.profiler\_us\_centric\_caveat}
         is \texttt{true}, the narrator must explicitly acknowledge
@@ -516,16 +506,7 @@ response to be discarded by the Validator before it reaches the user.
         Step~5 before the response is shown to the user.
 \end{enumerate}
 
-The prompt template is assembled at request time by
-\texttt{build\_system\_prompt()}, which injects the serialised
-Ground Truth JSON and the forbidden phrases list into named
-placeholders. The SHA-256 hash of the assembled prompt is stored
-in the database audit trail under \texttt{system\_prompt\_hash},
-enabling exact reconstruction of the prompt used for any
-historical recommendation.
-
 \subsection{Validator: 5-Step Pipeline}
-
 Every raw LLM response passes through a five-step post-generation
 filter (\texttt{backend/llm/validator.py}) before it reaches the
 user. Steps~1, 2, 4, and~5 are \emph{blocking}: failure returns
@@ -587,7 +568,6 @@ which includes cases for each of the five steps including
 EU Awareness Rule~9.
 
 \subsection{Prompt Injection Defence}
-
 The platform implements a two-layer defence against prompt injection
 attacks.
 
@@ -611,12 +591,6 @@ same injection patterns. This catches edge cases where the model
 echoes injected instructions back in its generated text — a failure
 mode that Layer~1 alone cannot prevent.
 
-The stateless design of the narrator (full Ground Truth JSON
-re-injected on every call, no conversation history) provides
-structural protection against a third attack vector: multi-turn
-drift, where an attacker gradually shifts the model's behaviour
-across several turns. Without conversation history, each call
-starts from a clean, backend-anchored context.
 
 % ─────────────────────────────────────────────────────────────
 \section{Backtest Results}
@@ -656,20 +630,12 @@ Rate hike (2022)& HRP & \textit{TBD} & \textit{TBD} & \textit{TBD} & \textit{TBD
 % ─────────────────────────────────────────────────────────────
 
 \subsection{Data Fragility: yfinance}
-
 The platform relies exclusively on \texttt{yfinance} as its market
 data source. This introduces three concrete fragility vectors.
 First, \texttt{yfinance} is an unofficial API with no service-level
 agreement; outages or rate-limiting can render the live optimizer
-unavailable without warning. Second, yfinance retroactively adjusts
-historical prices for stock splits and dividend corrections, meaning
-that the same ticker and date range may return different values on
-different days. The platform mitigates this by storing a SHA-256
-hash of the downloaded price matrix (\texttt{market\_data\_hash})
-and a full CSV snapshot in the \texttt{market\_data\_snapshots}
-table, enabling bit-for-bit reproducibility of any past
-recommendation even if yfinance later changes the underlying data.
-Third, UCITS-listed tickers (e.g.\ \texttt{CSPX.L},
+unavailable without warning. 
+Second, UCITS-listed tickers (e.g.\ \texttt{CSPX.L},
 \texttt{AGGH.MI}) occasionally return excessive NaN values on
 yfinance due to lower liquidity and less complete data coverage
 compared to their US-listed equivalents. The
@@ -682,7 +648,6 @@ application remains fully demonstrable regardless of data
 availability.
 
 \subsection{SCF US-Centrism vs.\ EU Investor}
-
 The risk profiler is trained on the Federal Reserve Survey of Consumer
 Finances~(2022), which captures US household financial behaviour.
 European investors may exhibit materially different risk preferences,
@@ -690,7 +655,6 @@ savings rates, and financial literacy patterns. The EU Awareness layer
 communicates this limitation explicitly at the point of recommendation.
 
 \subsection{HRP Opacity vs.\ Mean--Variance Interpretability}
-
 Hierarchical Risk Parity presents a communication challenge for
 retail investors. The recursive bisection algorithm produces
 weights that cannot be summarised by a simple rule such as
@@ -711,7 +675,6 @@ fundamental limitation of the HRP approach and is documented
 in ADR-001.
 
 \subsection{LLM Hallucination Risk}
-
 The five-step validator substantially reduces but does not
 eliminate hallucination risk. Three residual failure modes exist.
 First, the forbidden phrase check uses substring matching: the
@@ -732,13 +695,29 @@ an LLM call — to resolve fully. For an academic prototype, the
 current implementation is considered adequate, and all three
 limitations are explicitly documented in ADR-004.
 
+\subsection{SQLite Persistence on Streamlit Cloud}
+The audit trail database (\texttt{robo\_advisor.db}) is written to the
+application's working directory on Streamlit Community Cloud, which resets
+on every redeploy. Recommendations generated in one session are therefore
+lost after a new deployment. For a production system a managed PostgreSQL
+instance would be required, as documented in ADR-005. For the prototype
+scope this is an accepted limitation: the audit trail functions correctly
+within a session, and local reproducibility is guaranteed via
+\texttt{docker-compose.yml}.
+
+\subsection{Rate Limiting and Cold Starts}
+The FastAPI rate limiting (\texttt{slowapi}) is applied per IP address.
+In a shared network environment such as university WiFi, multiple users
+behind the same NAT share the same rate-limit bucket. Additionally,
+the Streamlit Cloud free tier suspends the application after inactivity,
+causing a cold-start delay of 15--30 seconds on the first request.
+
 % ─────────────────────────────────────────────────────────────
 \section{Lessons Learned and AI Tools}
 \label{sec:lessons}
 % ─────────────────────────────────────────────────────────────
 
 \subsection{Agentic Development Workflow}
-
 The project adopted an explicitly agentic development philosophy
 documented in \texttt{AGENTS.md} from Week~1. Four AI agents
 contributed to the codebase across the four-week development period.
@@ -765,7 +744,6 @@ opened entirely by GitHub Actions calling the Anthropic API,
 with no human committing or pushing the generated code.
 
 \subsection{AI Tools Used}
-
 \begin{description}
   \item[Claude (Anthropic)] Used as interactive technical advisor
     throughout the project via the Claude.ai interface. Contributed
@@ -785,8 +763,40 @@ with no human committing or pushing the generated code.
     loop: trigger → Claude API call → code diff → automatic PR.
 \end{description}
 
-\subsection{What Worked}
+\subsection{Infrastructure and Deployment}
+Deploying to Streamlit Community Cloud exposed a module resolution issue
+absent in local development: Streamlit Cloud launches the application from
+a working directory different from the repository root, causing
+\texttt{ModuleNotFoundError} on all \texttt{backend.*} imports. The fix---
+inserting the repository root into \texttt{sys.path} at the top of
+\texttt{frontend/app.py}---is a one-line change that required significant
+debugging because the error message was redacted in the Streamlit Cloud UI.
+The lesson is to test the deployment environment early, not on the final day.
 
+\subsection{Secret Management}
+Before making the repository public, a manual audit was performed on the
+git history to verify that no API keys had been committed at any point.
+The audit confirmed that all secrets are referenced exclusively via
+\texttt{\$\{\{ secrets.XXX \}\}} in GitHub Actions workflows and never
+hardcoded. This step is often skipped in academic projects but is critical
+when moving from private to public visibility.
+
+\subsection{Database Schema Design}
+The foreign-key constraint on the \texttt{users} table surfaced only during
+the \texttt{test\_ucits\_fallback.py} test suite, not during manual testing.
+This is a concrete example of how automated tests catch schema assumptions
+invisible at the API level, reinforcing the practice of writing tests
+alongside the schema rather than after.
+
+\subsection{Coverage Governance in a Team Setting}
+Reaching 80\,\% line coverage in a multi-person codebase requires explicit
+coordination. Four modules had 0\,\% coverage because their owners had not
+yet written tests. The solution---opening a GitHub issue requesting tests
+from the responsible contributors and temporarily lowering the CI threshold
+to 75\,\%---preserved CI stability without excluding modules unilaterally.
+Coverage reached 81.07\,\% once all tests were merged.
+
+\subsection{What Worked}
 \begin{itemize}
   \item \textbf{Phase A / Phase B separation.} Designing the
     frontend to always work with mock data (Phase~A) while the
@@ -796,11 +806,6 @@ with no human committing or pushing the generated code.
     \texttt{GroundTruthPayload} schema in Week~1 gave all four
     team members a shared, stable interface. Backend changes
     did not break the frontend and vice versa.
-  \item \textbf{Early LaTeX skeleton.} Creating the full
-    \texttt{report.tex} skeleton with \texttt{\% TODO} markers
-    in Week~2 meant that P2 and P3 could write their sections
-    in parallel during Week~4 without waiting for P4 to set
-    up the document.
   \item \textbf{ADRs as living documentation.} Writing
     Architecture Decision Records for every significant design
     choice (HRP over Markowitz, UCITS fallback, LLM narrator
@@ -813,7 +818,6 @@ with no human committing or pushing the generated code.
 \end{itemize}
 
 \subsection{What Did Not Work}
-
 \begin{itemize}
   \item \textbf{AI tool side effects.} Claude Code automatically
     added a \texttt{.coverage.claude/} entry to
@@ -836,6 +840,7 @@ with no human committing or pushing the generated code.
     \textit{safe\_haven}. The fix — whole-word matching — was
     deferred to future work to avoid scope creep in Week~4.
 \end{itemize}
+
 % ─────────────────────────────────────────────────────────────
 
 \section{Conclusions}
