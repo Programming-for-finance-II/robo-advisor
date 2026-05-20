@@ -135,27 +135,6 @@ def profile(
 
 # ---------------------------------------------------------------------------
 # /advice — LLM Narrator + Validator pipeline (W3)
-#
-# This endpoint implements the full 3-stage LLM safety pipeline described
-# in the design document v3.1:
-#
-#   Stage 1 — Backend (P1/P2/P3): retrieves stored recommendation from DB
-#             by recommendation_id and builds Ground Truth payload via
-#             get_mock_payload() mapped to the stored profile label.
-#
-#   Stage 2 — NarratorClient (P4, narrator.py): assembles the system prompt,
-#             injects the Ground Truth JSON as context, calls the Claude API
-#             (claude-sonnet-4-20250514), and returns the raw LLM response.
-#             The narrator is stateless — full GT JSON re-injected every call.
-#
-#   Stage 3 — Validator (P4, validator.py): runs a 5-step post-generation
-#             filter (forbidden phrases, hallucinated numbers, disclaimer
-#             presence, prompt injection detection, EU awareness Rule 9).
-#             If any blocking check fails, a safe static fallback is returned.
-#
-# The user sees ONLY the output of Stage 3. Every call updates the DB audit
-# trail with validator_flags, system_prompt_hash, and ground_truth_json_hash.
-# DB failure does not block the response.
 # ---------------------------------------------------------------------------
 
 class AdviceRequest(BaseModel):
@@ -172,17 +151,12 @@ class AdviceResponse(BaseModel):
     api_error: bool
 
 
-# ---------------------------------------------------------------------------
-# /advice endpoint
-# ---------------------------------------------------------------------------
-
 @app.post("/advice", response_model=AdviceResponse)
 @limiter.limit("10/minute")
 def advice(
     request: Request, body: AdviceRequest, _: str = Depends(verify_api_key)
 ) -> AdviceResponse:
     """Generate LLM narrative advice for a saved portfolio recommendation."""
-    # Step 1 — fetch recommendation from DB
     try:
         conn = init_db(DB_PATH)
         row = conn.execute(
@@ -195,11 +169,9 @@ def advice(
     if row is None:
         raise HTTPException(status_code=404, detail="Recommendation not found.")
 
-    # Step 2 — build Ground Truth payload from stored profile
     profile_key = _PROFILE_LABEL_MAP.get(row["profile_label"], "balanced")
     payload = get_mock_payload(profile_key)
 
-    # Step 3 — sanitise user input (Layer 1 injection defence)
     from backend.llm.input_sanitiser import sanitise
     sanitiser_result = sanitise(body.user_message)
     if sanitiser_result.blocked:
@@ -217,7 +189,6 @@ def advice(
             api_error=False,
         )
 
-    # Step 4 — call Narrator
     try:
         narrator = NarratorClient()
     except NarratorError as e:
@@ -229,7 +200,6 @@ def advice(
 
     narrator_response = narrator.narrate(payload, body.user_message)
 
-    # Step 5 — validate
     eu_required = payload.regulatory_context.profiler_us_centric_caveat
     result = validate(
         narrator_response.raw_text,
@@ -238,7 +208,6 @@ def advice(
         eu_awareness_required=eu_required,
     )
 
-    # Step 6 — update DB audit trail
     try:
         conn.execute(
             """
@@ -281,26 +250,195 @@ def advice(
 
 
 # ---------------------------------------------------------------------------
-# /compare, /backtest — stubs
+# /backtest — Pydantic models
 # ---------------------------------------------------------------------------
 
-@app.post("/compare")
-@limiter.limit("10/minute")
-def compare(request: Request) -> None:
-    """Compare HRP vs Markowitz portfolio. Stub — W3."""
-    raise HTTPException(
-        status_code=503,
-        detail="MV comparison not yet available — P2 implementation in W2-W3.",
+class BacktestRequest(BaseModel):
+    profile_label: str
+
+    @field_validator("profile_label")
+    @classmethod
+    def validate_profile_label(cls, v: str) -> str:
+        if v not in VALID_PROFILE_LABELS:
+            raise ValueError(
+                f"Invalid profile_label '{v}'; "
+                f"expected one of {sorted(VALID_PROFILE_LABELS)}"
+            )
+        return v
+
+
+class StrategyMetrics(BaseModel):
+    cagr: float
+    annualised_volatility: float
+    sharpe_ratio: float
+    max_drawdown: float
+    calmar_ratio: float
+    total_transaction_cost: float
+    n_rebalances: int
+
+
+class ScenarioResponse(BaseModel):
+    scenario_key: str
+    scenario_label: str
+    test_start: str
+    test_end: str
+    strategies: dict[str, StrategyMetrics]
+
+
+class BacktestResponse(BaseModel):
+    profile_label: str
+    scenarios: list[ScenarioResponse]
+
+
+# ---------------------------------------------------------------------------
+# /backtest endpoint
+# ---------------------------------------------------------------------------
+
+@app.post("/backtest", response_model=BacktestResponse)
+@limiter.limit("5/minute")
+def backtest(
+    request: Request, body: BacktestRequest, _: str = Depends(verify_api_key)
+) -> BacktestResponse:
+    """
+    Run HRP vs MV vs 1/N backtest on 3 historical stress scenarios.
+
+    Scenarios: GFC 2008, COVID 2020, Rate Hike 2022.
+    Returns metrics only (no equity curve) to keep response size manageable.
+    """
+    from backend.optimizer.backtest import run_all_scenarios
+
+    tickers = get_primary_tickers()
+    cluster_map = get_cluster_map()
+
+    BACKTEST_START = "2006-01-01"
+
+    try:
+        loader = ValidatedDataLoader()
+        prices, _ = loader.load(
+            tickers=tickers,
+            start=BACKTEST_START,
+            end=END_DATE,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=503, detail=f"Market data unavailable: {e}")
+
+    try:
+        results = run_all_scenarios(prices, body.profile_label, cluster_map)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Backtest failed: {e}")
+
+    scenarios = []
+    for key, result in results.items():
+        strategies = {
+            strat: StrategyMetrics(
+                cagr=sr.cagr,
+                annualised_volatility=sr.annualised_volatility,
+                sharpe_ratio=sr.sharpe_ratio,
+                max_drawdown=sr.max_drawdown,
+                calmar_ratio=sr.calmar_ratio,
+                total_transaction_cost=sr.total_transaction_cost,
+                n_rebalances=sr.n_rebalances,
+            )
+            for strat, sr in result.strategies.items()
+        }
+        scenarios.append(ScenarioResponse(
+            scenario_key=result.scenario_key,
+            scenario_label=result.scenario_label,
+            test_start=result.test_start,
+            test_end=result.test_end,
+            strategies=strategies,
+        ))
+
+    return BacktestResponse(
+        profile_label=body.profile_label,
+        scenarios=scenarios,
     )
 
 
-@app.post("/backtest")
+# ---------------------------------------------------------------------------
+# /compare — Pydantic models
+# ---------------------------------------------------------------------------
+
+class CompareRequest(BaseModel):
+    profile_label: str
+
+    @field_validator("profile_label")
+    @classmethod
+    def validate_profile_label(cls, v: str) -> str:
+        if v not in VALID_PROFILE_LABELS:
+            raise ValueError(
+                f"Invalid profile_label '{v}'; "
+                f"expected one of {sorted(VALID_PROFILE_LABELS)}"
+            )
+        return v
+
+
+class CompareResponse(BaseModel):
+    profile_label: str
+    hrp: dict[str, float]
+    mv: dict[str, float]
+    equal_weight: dict[str, float]
+    hrp_volatility: float
+    mv_volatility: float
+    equal_weight_volatility: float
+
+
+# ---------------------------------------------------------------------------
+# /compare endpoint
+# ---------------------------------------------------------------------------
+
+@app.post("/compare", response_model=CompareResponse)
 @limiter.limit("10/minute")
-def backtest(request: Request) -> None:
-    """Run historical backtest on 3 stress scenarios. Stub — W3."""
-    raise HTTPException(
-        status_code=503,
-        detail="Backtest not yet available — P2 implementation in W3.",
+def compare(
+    request: Request, body: CompareRequest, _: str = Depends(verify_api_key)
+) -> CompareResponse:
+    """
+    Compare HRP vs Markowitz vs 1/N portfolio weights for a given profile.
+
+    Uses current market data (last 2 years). Returns weights and
+    annualised volatility for each strategy.
+    """
+    from backend.optimizer.markowitz import optimize_markowitz
+
+    tickers = get_primary_tickers()
+    cluster_map = get_cluster_map()
+
+    try:
+        loader = ValidatedDataLoader()
+        prices, _ = loader.load(
+            tickers=tickers,
+            start=START_DATE,
+            end=END_DATE,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=503, detail=f"Market data unavailable: {e}")
+
+    try:
+        hrp_result = optimize(
+            prices=prices,
+            profile=body.profile_label,
+            cluster_map=cluster_map,
+        )
+        mv_result = optimize_markowitz(prices)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Optimization failed: {e}")
+
+    n = len(tickers)
+    equal_weights = {t: round(1.0 / n, 6) for t in tickers}
+
+    daily_rets = prices.pct_change().dropna()
+    eq_vol = float(
+        (daily_rets @ list(equal_weights.values())).std() * (252 ** 0.5)
+    )
+
+    return CompareResponse(
+        profile_label=body.profile_label,
+        hrp=hrp_result["weights"],
+        mv=mv_result["weights"],
+        equal_weight=equal_weights,
+        hrp_volatility=hrp_result["expected_volatility"],
+        mv_volatility=mv_result["expected_volatility"],
+        equal_weight_volatility=round(eq_vol, 6),
     )
 
 
@@ -349,19 +487,10 @@ def optimize_portfolio(
 ) -> OptimizeResponse:
     """
     Run HRP portfolio optimization for a given risk profile.
-
-    Accepts profile_label (CONSERVATIVE / MODERATE / AGGRESSIVE) and optional
-    tickers override. Calls P2's optimize(), persists result in DB audit trail,
-    returns OptimizationResult as JSON.
-
-    DB audit trail: every call writes a row to recommendations and a snapshot
-    to market_data_snapshots via snapshots.py.
     """
-    # Step 1 — resolve tickers
     tickers = body.tickers or get_primary_tickers()
     cluster_map = get_cluster_map()
 
-    # Step 2 — load and validate market data
     try:
         loader = ValidatedDataLoader()
         prices, report = loader.load(
@@ -372,7 +501,6 @@ def optimize_portfolio(
     except Exception as e:
         raise HTTPException(status_code=503, detail=f"Market data unavailable: {e}")
 
-    # Step 3 — run HRP optimizer
     try:
         result: OptimizationResult = optimize(
             prices=prices,
@@ -384,7 +512,6 @@ def optimize_portfolio(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Optimizer failed: {e}")
 
-    # Step 4 — persist to DB audit trail
     try:
         conn = init_db(DB_PATH)
         save_market_snapshot(conn, prices, report)
