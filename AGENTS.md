@@ -76,3 +76,22 @@ All AI tool usage is acknowledged in the academic PDF (Section 7: Lessons Learne
 The `agent_pr.yml` workflow (Week 4) will demonstrate a full agentic loop:
 GitHub Actions triggers → Claude API called → code diff generated → PR opened automatically.
 This satisfies the mandatory criterion: *"at least one pull request made by an AI agent."*
+
+---
+
+## Session Log
+
+### Session: W3 — GBM Phase B (2026-05-17)
+- **Agent:** Claude Code (Anthropic)
+- **Branch:** feature/p3-gbm-phase-b
+- **Task prompted by:** P3
+- **What the agent did:**
+  - Implemented `backend/ml/profiler/classifier.py`:
+    HistGradientBoostingClassifier trained on SCF 2022 (n=4595,
+    implicate=1) with WGT sample weights, SHAP TreeExplainer for
+    top_drivers, LogisticRegression baseline, joblib persistence
+  - Implemented `backend/ml/regime_detector.py`: typed stub
+  - Extended `tests/test_profiler.py`: 3 new GBM test cases
+- **Results:** Train accuracy 97.7%, CV 94.0% ± 0.15%, 43 tests passing
+- **Prompt-to-commit:** fully autonomous (read repo, wrote files,
+  committed, pushed without human edits)
