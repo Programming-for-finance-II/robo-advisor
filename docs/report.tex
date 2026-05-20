@@ -486,10 +486,87 @@ current implementation is considered adequate, and all three
 limitations are explicitly documented in ADR-004.
 
 % ─────────────────────────────────────────────────────────────
-\section{Lessons Learned and AI Tools}
-\label{sec:lessons}
-% Owner: all — P4 coordinates
-% TODO W4 Fri–Sun: retrospective, agentic workflow, what worked
+\subsection{Agentic Development Workflow}
+
+The project adopted an explicitly agentic development philosophy
+documented in \texttt{AGENTS.md} from Week~1. Four AI agents
+contributed to the codebase across the four-week development period.
+
+The \textbf{CI Validator} (GitHub Actions, \texttt{ci.yml}) ran
+\texttt{ruff} and \texttt{pytest} on every push and pull request,
+enforcing code quality and blocking merges on test failure. The
+\textbf{Docstring PR Agent} (\texttt{agent\_pr.yml}) called the
+Claude API to generate docstrings for the entire
+\texttt{backend/optimizer/} module and opened a pull request
+automatically, without human intervention in the commit-to-PR
+pipeline. Evidence of this agentic PR is recorded in
+\texttt{AGENTS.md} with the GitHub pull request URL. The
+\textbf{LLM Narrator Agent} (\texttt{backend/llm/narrator.py})
+calls the Claude API at runtime to generate natural-language
+explanations of portfolio recommendations. The \textbf{LLM
+Validator Agent} (\texttt{backend/llm/validator.py}) filters
+every narrator response through a five-step safety pipeline
+before it reaches the user.
+
+This architecture satisfies the course requirement of at least
+one pull request made by an AI agent: the docstring PR was
+opened entirely by GitHub Actions calling the Anthropic API,
+with no human committing or pushing the generated code.
+
+\subsection{AI Tools Used}
+
+\begin{description}
+  \item[Claude (Anthropic)] Used as interactive technical advisor
+    throughout the project via the Claude.ai interface. Contributed
+    to code generation and review for \texttt{narrator.py},
+    \texttt{validator.py}, \texttt{input\_sanitiser.py}, and
+    documentation scaffolding. Also called programmatically via
+    the Anthropic API in the Docstring PR Agent and the LLM
+    Narrator at runtime.
+  \item[ChatGPT (OpenAI)] Used for exploratory research and
+    alternative implementation approaches, particularly during
+    the design phase for the risk profiler and the validator
+    pipeline. Responses were critically reviewed before any
+    code was adopted.
+  \item[GitHub Actions] Automated CI pipeline (lint and test on
+    every push) and agent-driven PR generation. The
+    \texttt{agent\_pr.yml} workflow demonstrates a full agentic
+    loop: trigger → Claude API call → code diff → automatic PR.
+\end{description}
+
+\subsection{What Worked}
+
+\begin{itemize}
+  \item \textbf{Phase A / Phase B separation.} Designing the
+    frontend to always work with mock data (Phase~A) while the
+    backend was still under development eliminated integration
+    blockers. The demo was always runnable.
+  \item \textbf{Ground Truth JSON as contract.} Defining the
+    \texttt{GroundTruthPayload} schema in Week~1 gave all four
+    team members a shared, stable interface. Backend changes
+    did not break the frontend and vice versa.
+  \item \textbf{Early LaTeX skeleton.} Creating the full
+    \texttt{report.tex} skeleton with \texttt{\% TODO} markers
+    in Week~2 meant that P2 and P3 could write their sections
+    in parallel during Week~4 without waiting for P4 to set
+    up the document.
+  \item \textbf{ADRs as living documentation.} Writing
+    Architecture Decision Records for every significant design
+    choice (HRP over Markowitz, UCITS fallback, LLM narrator
+    pattern) made the academic PDF substantially easier to write:
+    the rationale was already documented in prose.
+  \item \textbf{Claude as pair programmer.} Using Claude
+    interactively for code review and design discussion
+    accelerated development, particularly for the validator
+    pipeline and the system prompt rules.
+\end{itemize}
+
+\subsection{What Did Not Work}
+
+\begin{itemize}
+  \item \textbf{AI tool side effects.} Claude Code automatically
+    added a \texttt{.coverage.claude/} entry to
+    \texttt{.gitignore} during an a
 % ─────────────────────────────────────────────────────────────
 
 \subsection{Agentic Development Workflow}
