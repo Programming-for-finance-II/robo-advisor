@@ -56,8 +56,7 @@ def optimize_markowitz(
     """
     assert not prices.empty, "prices DataFrame is empty"
     assert prices.shape[1] >= 2, "need at least 2 assets"
-    assert len(prices) >= 60, \
-        f"too few observations ({len(prices)}); need >= 60", \
+    assert len(prices) >= 60, f"too few observations ({len(prices)}); need >= 60"
 
     # ── Step 1: Estimate inputs ──────────────────────────────────────────
     # Ledoit-Wolf shrinkage
