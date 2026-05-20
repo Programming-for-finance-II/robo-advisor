@@ -409,7 +409,30 @@ Rate hike (2022)& HRP & \textit{TBD} & \textit{TBD} & \textit{TBD} & \textit{TBD
 % ─────────────────────────────────────────────────────────────
 
 \subsection{Data Fragility: yfinance}
-% TODO: discuss single-source dependency, fallback logic
+
+The platform relies exclusively on \texttt{yfinance} as its market
+data source. This introduces three concrete fragility vectors.
+First, \texttt{yfinance} is an unofficial API with no service-level
+agreement; outages or rate-limiting can render the live optimizer
+unavailable without warning. Second, yfinance retroactively adjusts
+historical prices for stock splits and dividend corrections, meaning
+that the same ticker and date range may return different values on
+different days. The platform mitigates this by storing a SHA-256
+hash of the downloaded price matrix (\texttt{market\_data\_hash})
+and a full CSV snapshot in the \texttt{market\_data\_snapshots}
+table, enabling bit-for-bit reproducibility of any past
+recommendation even if yfinance later changes the underlying data.
+Third, UCITS-listed tickers (e.g.\ \texttt{CSPX.L},
+\texttt{AGGH.MI}) occasionally return excessive NaN values on
+yfinance due to lower liquidity and less complete data coverage
+compared to their US-listed equivalents. The
+\texttt{ValidatedDataLoader} addresses this with an automatic
+fallback mechanism: if the NaN ratio for any primary ticker exceeds
+2\,\%, the loader substitutes the corresponding US-listed fallback
+(e.g.\ \texttt{SPY} for \texttt{CSPX.L}) and records the
+substitution in the audit trail. Phase~A mock data ensures the
+application remains fully demonstrable regardless of data
+availability.
 
 \subsection{SCF US-Centrism vs.\ EU Investor}
 
@@ -420,10 +443,47 @@ savings rates, and financial literacy patterns. The EU Awareness layer
 communicates this limitation explicitly at the point of recommendation.
 
 \subsection{HRP Opacity vs.\ Mean--Variance Interpretability}
-% TODO: discuss black-box nature of HRP for a retail investor
+
+Hierarchical Risk Parity presents a communication challenge for
+retail investors. The recursive bisection algorithm produces
+weights that cannot be summarised by a simple rule such as
+\textit{``allocate more to assets with higher expected Sharpe.''}
+The diversification benefit is real but the mechanism is opaque:
+a non-technical user cannot easily verify why \texttt{TLT}
+received a 12\,\% allocation rather than 15\,\%. Mean-Variance
+Optimisation, despite its well-documented instability
+\parencite{Michaud1989}, produces weights that are at least
+narratively connected to expected return and risk estimates.
+The platform partially mitigates HRP opacity through two channels:
+the LLM narrator explains cluster structure in economic terms
+(Rule~7 of the system prompt forbids citing correlation
+coefficients directly), and the Markowitz comparison tab makes
+the diversification benefit visible by showing both allocations
+side by side. The residual opacity is acknowledged as a
+fundamental limitation of the HRP approach and is documented
+in ADR-001.
 
 \subsection{LLM Hallucination Risk}
-% TODO: describe residual risk after validator, honest about limits
+
+The five-step validator substantially reduces but does not
+eliminate hallucination risk. Three residual failure modes exist.
+First, the forbidden phrase check uses substring matching: the
+token \textit{safe} correctly blocks prescriptive language but
+also matches the legitimate cluster label \textit{safe\_haven},
+producing false positives that trigger the fallback message
+unnecessarily. Second, the EU Awareness check (Step~5) is
+keyword-based rather than semantic: a response that satisfies
+the intent of Rule~9 through paraphrasing may fail the keyword
+check, while a response that mentions \textit{SCF} and
+\textit{European} in an unrelated context may pass. Third, the
+allowed numbers check uses a 2\,\% relative tolerance to handle
+rounding, but this tolerance also permits the narrator to cite
+slightly incorrect figures without triggering the hallucination
+flag. These limitations are inherent to post-generation string
+matching and would require a semantic validation layer — itself
+an LLM call — to resolve fully. For an academic prototype, the
+current implementation is considered adequate, and all three
+limitations are explicitly documented in ADR-004.
 
 % ─────────────────────────────────────────────────────────────
 \section{Lessons Learned and AI Tools}
