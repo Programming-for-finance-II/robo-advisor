@@ -66,35 +66,61 @@
 % ─────────────────────────────────────────────────────────────
 \section{Introduction}
 \label{sec:intro}
-% Owner: P4 (integra contributi del team)
-% TODO W4: problem statement, gap in existing robo-advisors,
-%          our contribution, GitHub link
 % ─────────────────────────────────────────────────────────────
-
 \subsection{Problem Statement}
 
-Retail investors increasingly rely on algorithm-driven portfolio recommendations, yet most commercial robo-advisors offer limited transparency regarding their underlying models, data sources, and geographic limitations. This project addresses the gap between quantitative rigour and user-facing explainability.
+Retail investors increasingly rely on algorithm-driven portfolio
+recommendations, yet most commercial robo-advisor platforms share
+three structural limitations. First, their underlying models are
+opaque: users receive a recommended allocation without any
+explanation of why that specific portfolio was produced for their
+profile. Second, their data sources are undisclosed: it is rarely
+clear whether the risk profiler was trained on data representative
+of the investor's own demographic and geographic context. Third,
+their AI components — where present — are unconstrained: a language
+model free to generate financial commentary without grounding in
+verified backend data is a liability, not a feature.
+
+This project addresses all three limitations in an academic
+prototype setting.
 
 \subsection{Our Contribution}
 
-% TODO: fill after demo is stable — 3–4 sentences on what
-%       the platform does and what makes it distinctive
-
 We present an educational robo-advisor prototype that combines:
+
 \begin{itemize}
-  \item Hierarchical Risk Parity (HRP) portfolio optimisation with
-        Ledoit--Wolf shrinkage on a UCITS-aware ETF universe;
-  \item A Gradient Boosting (GBM) risk profiler trained on real
-        household financial behaviour (Fed SCF~2022) with SHAP
-        explainability;
-  \item A constrained LLM narrator layer (Claude API) that translates
-        numerical results into natural language without inventing figures;
-  \item An EU-awareness layer that explicitly communicates the US-centric
-        bias of the training data to European investors.
+  \item A \textbf{Gradient Boosting risk profiler} trained on real
+        household financial behaviour from the Federal Reserve
+        Survey of Consumer Finances~(SCF 2022), with SHAP
+        explainability that exposes the top drivers of each
+        classification to the user;
+  \item A \textbf{Hierarchical Risk Parity portfolio optimizer}
+        with Ledoit--Wolf covariance shrinkage on a UCITS-aware
+        eight-asset ETF universe, with automatic fallback logic
+        for tickers unavailable on \texttt{yfinance};
+  \item A \textbf{constrained LLM narrator} (Claude API,
+        Anthropic) that translates numerical results into
+        natural-language explanations without inventing figures,
+        enforced by a Ground Truth JSON contract and a five-step
+        post-generation validator;
+  \item An \textbf{EU Awareness layer} that explicitly
+        communicates the US-centric bias of the SCF training data
+        to European investors at the point of recommendation,
+        enforced at the system prompt level (Rule~9) and verified
+        by the validator before any response reaches the user.
 \end{itemize}
 
-The source code is available at:
-\url{https://github.com/<YOUR_ORG>/robo-advisor}
+The platform is implemented as a Streamlit web application backed
+by a FastAPI service, with a SQLite audit trail that stores
+SHA-256 hashes of every market data snapshot and LLM prompt,
+enabling bit-for-bit reproducibility of any historical
+recommendation. An agentic GitHub Actions workflow demonstrates
+the mandatory AI agent criterion: a pull request generated
+entirely by the Claude API without human intervention.
+
+The source code, Architecture Decision Records, and this report
+are available at:
+\url{https://github.com/Programming-for-finance-II/robo-advisor}
 
 % ─────────────────────────────────────────────────────────────
 \section{ML Risk Profiler}
