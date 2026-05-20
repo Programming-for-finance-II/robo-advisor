@@ -23,15 +23,24 @@ import streamlit as st
 from backend.llm.narrator import NarratorClient, NarratorError
 from backend.llm.validator import validate
 from backend.schemas.mock_data import get_mock_payload
+from frontend.style import (
+    apply_plotly_dark_theme,
+    inject_css,
+    page_header,
+    render_disclaimer,
+    render_eu_note,
+)
 
 # ---------------------------------------------------------------------------
 # Page config -- must be the first Streamlit call in the file
 # ---------------------------------------------------------------------------
 st.set_page_config(
-    page_title="Robo-Advisor -- USI 2026",
-    page_icon=":chart_with_upwards_trend:",
+    page_title="RoboAdvisor · USI 2026",
+    page_icon="📊",
     layout="wide",
+    initial_sidebar_state="expanded",
 )
+inject_css()
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -439,9 +448,9 @@ def render_portfolio() -> None:
         Phase A (default): mock payload from backend/schemas/mock_data.py
         Phase B (live toggle on): ValidatedDataLoader + HRP + regime detector
     """
-    st.title("Portfolio Dashboard")
-    show_disclaimer()
-    st.markdown("---")
+    page_header("Portfolio Dashboard", "HRP optimization · Balanced profile")
+    render_disclaimer()
+    render_eu_note()
 
     # Read the profile that was set by the Questionnaire page
     profile_data = st.session_state.get("profile", {})
@@ -582,6 +591,7 @@ def _render_hrp_tab(portfolio: dict) -> None:
             risk_contributions,
             profile_label=st.session_state.get("profile", {}).get("profile_label", ""),
         )
+        fig = apply_plotly_dark_theme(fig)
         st.plotly_chart(fig, use_container_width=True)
     except Exception as exc:
         st.caption(f"Chart unavailable: {exc}")
@@ -618,6 +628,7 @@ def _render_hrp_tab(portfolio: dict) -> None:
 
         st.markdown("**Cluster Structure (Dendrogram)**")
         fig_dend = plot_dendrogram(link, tickers_list)
+        fig_dend = apply_plotly_dark_theme(fig_dend)
         st.plotly_chart(fig_dend, use_container_width=True)
 
     except Exception as exc:
