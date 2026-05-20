@@ -137,7 +137,8 @@ def compute_all(
     weights: dict[str, float],
     cov: pd.DataFrame,
     prices: pd.DataFrame,
-) -> dict:
+) -> dict[str, object]:
+        
     """
     Compute all risk metrics in one call.
 
@@ -155,6 +156,8 @@ def compute_all(
         cov:     Ledoit-Wolf covariance matrix from compute_covariance().
         prices:  Cleaned price DataFrame from ValidatedDataLoader.
     """
+    assert len(weights) >= 2, "need at least 2 assets"
+    assert not prices.empty, "prices DataFrame is empty"
     port_returns = compute_portfolio_returns(prices, weights)
     var, cvar = compute_var_cvar(port_returns)
 
