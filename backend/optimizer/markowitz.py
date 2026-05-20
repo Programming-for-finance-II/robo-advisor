@@ -6,9 +6,9 @@ import numpy as np
 import pandas as pd
 from pypfopt import CovarianceShrinkage, EfficientFrontier, expected_returns
 
-from backend.optimizer.hrp import OPTIMIZER_VERSION, OptimizationResult
+from backend.optimizer.hrp import MIN_OBSERVATIONS, OPTIMIZER_VERSION, OptimizationResult
 from backend.optimizer.risk_metrics import compute_risk_contributions
- 
+
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
@@ -56,6 +56,8 @@ def optimize_markowitz(
     """
     assert not prices.empty, "prices DataFrame is empty"
     assert prices.shape[1] >= 2, "need at least 2 assets"
+    assert len(prices) >= MIN_OBSERVATIONS, \
+    f"too few observations ({len(prices)}); need >= {MIN_OBSERVATIONS}"
 
     # ── Step 1: Estimate inputs ──────────────────────────────────────────
     # Ledoit-Wolf shrinkage
@@ -133,7 +135,7 @@ def optimize_markowitz(
 # Comparison helper — used by the Dashboard tab
 # ---------------------------------------------------------------------------
 
-def compare_hrp_vs_mv(
+def compare_hrp_vs_mv(...) -> dict[str, object]:(
     hrp_result: OptimizationResult,
     mv_result: OptimizationResult,
 ) -> dict:
