@@ -172,61 +172,204 @@ by the quantitative backend; the LLM receives a \emph{Ground Truth JSON}
 containing pre-computed figures and is permitted only to narrate them.
 
 \subsection{Ground Truth JSON Contract}
-% TODO W4: schema description, key fields, invariants
-% Reference: docs/ground_truth_schema.md
 
-The Ground Truth JSON payload passed to the LLM at inference time
-includes the following top-level blocks:
+The Ground Truth JSON is the sole interface between the quantitative
+backend and the LLM narrator. Before every API call, the backend
+assembles a \texttt{GroundTruthPayload} (defined in
+\texttt{backend/schemas/ground\_truth.py}) containing all and only
+the information the narrator is permitted to discuss. The payload
+is serialised to JSON and injected verbatim into the system prompt
+as a \texttt{<CONTEXT>} block.
+
+The payload contains eight top-level blocks:
 
 \begin{itemize}
-  \item \texttt{portfolio}: weights, risk contributions, expected
-        drawdown under stress scenarios;
+  \item \texttt{metadata}: recommendation UUID, timestamp, optimizer
+        version, and SHA-256 hash of the price matrix — enabling
+        bit-for-bit reproducibility of any historical response;
+  \item \texttt{portfolio}: asset weights, guardrail flags, and
+        UCITS eligibility of each position;
+  \item \texttt{risk\_metrics}: annualised volatility, historical
+        maximum drawdown, 95\,\% VaR and CVaR.
+        \texttt{expected\_annual\_return} and \texttt{sharpe\_ratio}
+        are intentionally \texttt{null} for HRP: the algorithm
+        requires no estimate of forward returns, and reporting a
+        spurious figure would be academically indefensible;
   \item \texttt{profiler}: \texttt{profile\_label},
-        \texttt{profile\_confidence}, \texttt{top\_drivers} (SHAP);
-  \item \texttt{regulatory\_context}: MiFID~II disclaimer,
-        currency risk note, UCITS eligibility flags,
-        SCF US-centrism caveat;
-  \item \texttt{llm\_constraints}: \texttt{forbidden\_phrases},
-        \texttt{allowed\_numbers}, \texttt{disclaimer\_required}.
+        \texttt{profile\_confidence}, and \texttt{top\_drivers}
+        (SHAP values in Phase~B, importance scores in Phase~A);
+  \item \texttt{cluster\_structure}: four clusters with member
+        tickers, total weights, and intra-cluster correlations;
+  \item \texttt{stress\_scenarios}: portfolio drawdown vs.\ benchmark
+        for three historical stress episodes;
+  \item \texttt{llm\_constraints}: \texttt{allowed\_numbers}
+        (auto-populated by \texttt{build\_allowed\_numbers()},
+        which recursively extracts every float from the payload),
+        \texttt{forbidden\_phrases}, and
+        \texttt{disclaimer\_required};
+  \item \texttt{regulatory\_context}: MiFID~II disclaimer text,
+        currency risk note, UCITS eligibility flags, and the
+        \texttt{profiler\_us\_centric\_caveat} boolean that
+        activates Rule~9 EU Awareness in the system prompt.
 \end{itemize}
+
+A key invariant enforced by Pydantic is that
+\texttt{llm\_constraints.allowed\_numbers} is always a strict
+superset of every numeric value present elsewhere in the payload.
+This closes the hallucination loop: any number the narrator could
+legitimately cite is guaranteed to be in the whitelist, and any
+number outside the whitelist is by definition hallucinated.
 
 \subsection{System Prompt Design}
 
-% TODO W4: paste key rules (not full prompt), highlight
-%          forbidden phrases, allowed_numbers binding, Rule 9
-
-Key constraints embedded in the system prompt:
-\begin{enumerate}
-  \item The narrator may only cite numbers present in
-        \texttt{allowed\_numbers}.
-  \item Phrases such as ``you should invest'', ``guaranteed return'',
-        and ``this is financial advice'' are forbidden.
-  \item Every response must end with the MiFID~II disclaimer.
-  \item \textbf{Rule~9 — EU Awareness}: if the investor is located in
-        the EU, the narrator must acknowledge that the risk profiler
-        was trained on US household data (Fed SCF) and that results
-        should be interpreted with this limitation in mind.
-\end{enumerate}
-
-\subsection{Validator: 4-Step Pipeline}
-
-% TODO W4: describe each step, fallback behaviour, test coverage
+The system prompt embeds nine absolute rules. The narrator is
+explicitly instructed that violating any single rule causes the
+response to be discarded by the Validator before it reaches the user.
 
 \begin{enumerate}
-  \item \textbf{Number check}: all figures in the response must appear
-        verbatim in \texttt{allowed\_numbers}.
-  \item \textbf{Forbidden phrase scan}: regex scan against the
-        blacklist.
-  \item \textbf{Disclaimer presence}: assert disclaimer substring
-        present.
-  \item \textbf{Length / coherence guard}: response must be between
-        50 and 800 tokens; if any step fails, a safe fallback
-        message is returned instead.
+  \item \textbf{No invented numbers.} The narrator may only cite
+        numeric values present in the \texttt{<CONTEXT>} block.
+        Rounding, estimating, or drawing from general knowledge
+        is forbidden.
+  \item \textbf{No prescriptive advice.} A set of forbidden phrases
+        (e.g.\ \textit{you should}, \textit{I recommend},
+        \textit{invest}, \textit{liquidate}) is injected directly
+        from \texttt{llm\_constraints.forbidden\_phrases} into the
+        prompt template at request time, ensuring the blacklist is
+        always synchronised with the backend payload.
+  \item \textbf{No regulatory compliance claims.} The narrator must
+        never state that the portfolio ``complies with MiFID~II'',
+        is ``suitable'', ``safe'', or ``optimal''.
+  \item \textbf{No absolutes.} Words such as \textit{guaranteed},
+        \textit{risk-free}, and \textit{certain} are forbidden.
+        Backtest results must always be framed as historical, never
+        as forecasts.
+  \item \textbf{Historical framing only.} If
+        \texttt{expected\_annual\_return} or \texttt{sharpe\_ratio}
+        are present in the payload, they must be described as
+        historical averages, never as forward-looking predictions.
+        If they are \texttt{null}, the narrator must not mention them.
+  \item \textbf{Out-of-context fixed response.} If the user asks
+        about anything not covered by the \texttt{<CONTEXT>} block,
+        the narrator must respond with exactly: \textit{``I do not
+        have sufficient data to answer this question accurately.''}
+  \item \textbf{Cluster economic language.} Portfolio clusters must
+        be described in economic terms, never as correlation
+        coefficients.
+  \item \textbf{Profile drivers.} If \texttt{top\_drivers} are
+        present, the narrator must use them to explain the
+        classification. No additional drivers may be invented.
+  \item \textbf{Rule~9 — EU Awareness.} When
+        \texttt{regulatory\_context.profiler\_us\_centric\_caveat}
+        is \texttt{true}, the narrator must explicitly acknowledge
+        that the risk profiler was trained on US household data
+        (Federal Reserve SCF~2022) and that European investors may
+        exhibit systematically different risk preferences.
+        Compliance with this rule is verified by the Validator at
+        Step~5 before the response is shown to the user.
 \end{enumerate}
+
+The prompt template is assembled at request time by
+\texttt{build\_system\_prompt()}, which injects the serialised
+Ground Truth JSON and the forbidden phrases list into named
+placeholders. The SHA-256 hash of the assembled prompt is stored
+in the database audit trail under \texttt{system\_prompt\_hash},
+enabling exact reconstruction of the prompt used for any
+historical recommendation.
+
+\subsection{Validator: 5-Step Pipeline}
+
+Every raw LLM response passes through a five-step post-generation
+filter (\texttt{backend/llm/validator.py}) before it reaches the
+user. Steps~1, 2, 4, and~5 are \emph{blocking}: failure returns
+\texttt{SAFE\_FALLBACK\_MESSAGE} immediately. Step~3 is
+\emph{corrective}: if the disclaimer is absent it is auto-appended
+and the response continues.
+
+\begin{enumerate}
+  \item \textbf{Forbidden phrase check.} Case-insensitive substring
+        scan against \texttt{llm\_constraints.forbidden\_phrases}.
+        Any match blocks the response. Known limitation: the token
+        \textit{safe} also matches the cluster label
+        \textit{safe\_haven}; this false-positive risk is accepted
+        for prototype scope and documented in ADR-004.
+
+  \item \textbf{Hallucinated number check.} All numeric values are
+        extracted from the response via a regex that handles
+        integers, decimals, and percentage notation. Percentages
+        are normalised to their decimal equivalent
+        ($35\% \to 0.35$) to match the Ground Truth JSON format.
+        Each extracted number is checked against
+        \texttt{allowed\_numbers} within a $\pm 2\%$ relative
+        tolerance. Small integers ($\leq 10$) and year-like
+        integers (1900--2100) are exempted as narrative context.
+        The mandatory disclaimer text is stripped before checking
+        to avoid false positives on fixed legal text.
+
+  \item \textbf{Disclaimer presence (corrective).} Checks for the
+        \texttt{MANDATORY\_DISCLAIMER} substring. If absent,
+        appends it and sets \texttt{disclaimer\_appended=True}.
+        The \texttt{MANDATORY\_DISCLAIMER} constant is defined
+        once in \texttt{system\_prompt.py} and imported by both
+        the narrator and the validator, eliminating any risk of
+        drift between the prompt instruction and the check.
+
+  \item \textbf{Post-generation injection detection.} Semantic scan
+        of the LLM output for known injection patterns
+        (e.g.\ \textit{ignore previous}, \textit{act as},
+        \textit{jailbreak}). Catches cases where the model echoes
+        injected instructions back in its output.
+
+  \item \textbf{EU Awareness Rule~9.} Active only when
+        \texttt{eu\_awareness\_required=True}. Verifies that the
+        response contains at least one reference to the US data
+        source (keywords: \textit{scf}, \textit{federal reserve},
+        \textit{us household}, \textit{united states}) \emph{and}
+        at least one reference to European investors
+        (\textit{european}, \textit{eu investor}, \textit{europe},
+        \textit{hfcs}). Both groups must be present; missing
+        either blocks the response.
+\end{enumerate}
+
+If any blocking step fails, the user sees:
+\textit{``I cannot provide a detailed response at this time.
+Please consult a qualified financial advisor for personalised
+advice.''} followed by the mandatory disclaimer.
+The validator is covered by \texttt{tests/test\_validator.py},
+which includes cases for each of the five steps including
+EU Awareness Rule~9.
 
 \subsection{Prompt Injection Defence}
 
-% TODO W4: input sanitisation, max length, character whitelist
+The platform implements a two-layer defence against prompt injection
+attacks.
+
+\textbf{Layer~1 — Pre-call sanitisation.}
+User input passes through \texttt{backend/llm/input\_sanitiser.py}
+before the API call is made. Two checks are applied: (a) length
+gate — inputs exceeding 500 characters are rejected, since
+legitimate portfolio questions are short and long inputs are likely
+to contain injected instructions after the real question; (b)
+keyword blocking — a fixed tuple of known injection patterns
+(e.g.\ \textit{ignore previous instructions}, \textit{act as},
+\textit{jailbreak}, \textit{override}) is scanned
+case-insensitively. Blocked input returns a safe message without
+consuming any API tokens. Accepted input is wrapped in a
+\texttt{<user\_input>} tag, signalling to the LLM that the content
+is untrusted user data and not part of the system prompt.
+
+\textbf{Layer~2 — Post-generation semantic scan.}
+After the API call, Validator Step~4 scans the LLM output for the
+same injection patterns. This catches edge cases where the model
+echoes injected instructions back in its generated text — a failure
+mode that Layer~1 alone cannot prevent.
+
+The stateless design of the narrator (full Ground Truth JSON
+re-injected on every call, no conversation history) provides
+structural protection against a third attack vector: multi-turn
+drift, where an attacker gradually shifts the model's behaviour
+across several turns. Without conversation history, each call
+starts from a clean, backend-anchored context.
 
 % ─────────────────────────────────────────────────────────────
 \section{Backtest Results}
