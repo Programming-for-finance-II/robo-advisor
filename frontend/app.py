@@ -610,8 +610,8 @@ def _render_mv_tab(portfolio: dict, profile_key: str) -> None:
     if portfolio.get("source") == "live":
         try:
             from backend.data.loader import ValidatedDataLoader
-            from backend.data.universe_config import get_cluster_map, get_primary_tickers
-            from backend.optimizer.markowitz import compare_hrp_vs_mv, optimize_markowitz
+            from backend.data.universe_config import get_primary_tickers
+            from backend.optimizer.markowitz import optimize_markowitz
             from datetime import date
 
             tickers = get_primary_tickers()
@@ -733,7 +733,9 @@ def _render_mv_tab(portfolio: dict, profile_key: str) -> None:
         )
         st.plotly_chart(fig_frontier, use_container_width=True)
         if portfolio.get("source") != "live":
-            st.caption("Frontier shown is illustrative (Phase A mock). Enable live data for real frontier.")
+            st.caption("Frontier shown is illustrative (Phase A mock)."
+                       "Enable live data for real frontier."
+                      )
     except Exception as exc:
         st.caption(f"Frontier chart unavailable: {exc}")
 
