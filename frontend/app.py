@@ -87,7 +87,7 @@ _DATA_START: str = "2023-01-01"
 
 def show_disclaimer() -> None:
     # Show the mandatory MiFID II disclaimer at the top of every page
-    st.warning(DISCLAIMER)
+    render_disclaimer()  # use HTML custom of style.py
 
 
 # ---------------------------------------------------------------------------
@@ -194,7 +194,7 @@ def _mock_optimization(profile_key: str) -> dict:
 # Navigation
 # ---------------------------------------------------------------------------
 
-PAGES = ["Questionnaire", "Portfolio Dashboard", "Chat Advisor"]
+PAGES = ["Questionnaire", "Portfolio Dashboard", "Chat Advisor", "Settings"]
 
 
 def main() -> None:
@@ -209,6 +209,8 @@ def main() -> None:
         render_portfolio()
     elif page == PAGES[2]:
         render_chat()
+    elif page == PAGES[3]:
+        render_settings()
 
 
 # ---------------------------------------------------------------------------
@@ -395,8 +397,8 @@ def _compute_profile(answers: dict[str, int]) -> dict:
 # ---------------------------------------------------------------------------
 
 def render_questionnaire() -> None:
-    st.title("Investor Profile Questionnaire")
-    show_disclaimer()
+    page_header("Investor Profile Questionnaire", "Grable-Lytton Scale · 10 questions")
+    render_disclaimer()
     st.markdown("---")
     st.markdown(
         "Answer all 10 questions honestly. "
@@ -733,8 +735,8 @@ def render_chat() -> None:
         Stage 2 -- call NarratorClient (Claude API)
         Stage 3 -- run 5-step validator before showing anything
     """
-    st.title("Chat Advisor")
-    show_disclaimer()
+    page_header("Chat Advisor", "LLM Narrator · Validated responses")
+    render_disclaimer()
     st.markdown("---")
 
     # Read profile from session_state; default to MODERATE if questionnaire not done
@@ -809,6 +811,44 @@ def render_chat() -> None:
                     "ANTHROPIC_API_KEY is not configured. "
                     "Add it to .streamlit/secrets.toml or set it as an environment variable."
                 )
+
+
+# ---------------------------------------------------------------------------
+# Page 4 -- Settings
+# ---------------------------------------------------------------------------
+
+def render_settings() -> None:
+    """Platform configuration and status page."""
+    page_header("Settings", "Platform configuration")
+    render_disclaimer()
+    st.markdown("---")
+
+    st.markdown("**Data Source**")
+    st.radio(
+        "Default data mode for Portfolio Dashboard",
+        ["Mock data (Phase A — always works)", "Live market data (Phase B — requires network)"],
+        index=0,
+        key="default_data_mode",
+    )
+
+    st.markdown("---")
+    st.markdown("**API Status**")
+    api_key = os.environ.get("ANTHROPIC_API_KEY", "")
+    if not api_key:
+        try:
+            api_key = st.secrets.get("ANTHROPIC_API_KEY", "")
+        except Exception:
+            api_key = ""
+    if api_key:
+        st.success("Claude API key configured ✓")
+    else:
+        st.error("Claude API key not found — Chat Advisor will not work.")
+
+    st.markdown("---")
+    st.markdown("**About**")
+    st.caption("AI-Powered Robo-Advisor Platform · USI Programming in Finance II 2026")
+    st.caption("Design v3.1 · HRP + LLM Narrator + EU Awareness")
+    st.caption("Team: P1 Backend · P2 Quant · P3 ML · P4 Frontend/LLM/Docs")
 
 
 # ---------------------------------------------------------------------------
