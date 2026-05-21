@@ -44,6 +44,23 @@ DISCLAIMER = (
     "regulatory framework. Market data may be inaccurate or delayed."
 )
 
+# UCITS-eligible tickers (primary universe — see ADR-001)
+_UCITS_TICKERS: frozenset[str] = frozenset({"CSPX.L", "AGGH.MI", "XEON.MI"})
+
+# Mock portfolio data (Phase A fallback)
+_MOCK_WEIGHTS: dict[str, float] = {
+    "CSPX.L":  0.30,
+    "EFA":     0.15,
+    "GLD":     0.10,
+    "VNQ":     0.05,
+    "AGGH.MI": 0.20,
+    "TLT":     0.10,
+    "TIP":     0.05,
+    "XEON.MI": 0.05,
+}
+
+_MOCK_REGIME: str = "NORMAL"
+
 # Maps the uppercase profile label from the backend to the lowercase key
 # used by get_mock_payload()
 _LABEL_TO_MOCK: dict[str, str] = {
@@ -51,9 +68,6 @@ _LABEL_TO_MOCK: dict[str, str] = {
     "MODERATE": "balanced",
     "AGGRESSIVE": "aggressive",
 }
-
-# UCITS-eligible tickers in the universe -- used to display the EU badge
-_UCITS_TICKERS: frozenset[str] = frozenset({"CSPX.L", "AGGH.MI", "XEON.MI"})
 
 # Start date for the live market data download
 _DATA_START: str = "2023-01-01"
