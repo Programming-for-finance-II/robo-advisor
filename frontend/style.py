@@ -6,7 +6,22 @@ DARK_CSS = """
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=Space+Grotesk:wght@500;600&display=swap');
 
-html, body, [class*="css"] { font-family: 'DM Sans', sans-serif !important; }
+html, body, [class*="css"] {
+    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+}
+
+/* Radio nav in sidebar */
+[data-testid="stSidebar"] [data-testid="stRadio"] label {
+    padding: 6px 10px !important;
+    border-radius: 6px !important;
+    font-size: 0.82rem !important;
+    color: #94a3b8 !important;
+    display: block !important;
+}
+[data-testid="stSidebar"] [data-testid="stRadio"] label:has(input:checked) {
+    background: rgba(124,92,252,0.15) !important;
+    color: #a78bfa !important;
+}
 
 #MainMenu, footer, header { visibility: hidden; }
 .block-container { padding-top: 1.5rem !important; }
