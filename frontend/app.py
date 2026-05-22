@@ -590,10 +590,15 @@ def render_portfolio() -> None:
         if confidence is not None:
             st.metric("Confidence", f"{confidence:.0%}")
 
+    default_live = (
+        st.session_state.get("default_data_mode", "")
+        == "Live market data (Phase B — requires network)"
+    )
+
     # Toggle between mock data (Phase A) and live optimizer (Phase B)
     use_live = st.toggle(
         "Load live market data",
-        value=False,
+        value=default_live,
         help=(
             "Downloads real prices from yfinance and runs the HRP optimizer. "
             "Takes about 10 seconds on first load."
