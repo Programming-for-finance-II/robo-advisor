@@ -429,6 +429,28 @@ def render_questionnaire() -> None:
     page_header("Investor Profile Questionnaire", "Grable-Lytton Scale · 10 questions")
     render_disclaimer()
     st.markdown("---")
+
+    st.markdown(
+        """
+        <div style="
+            background: rgba(124,92,252,0.08);
+            border: 1px solid rgba(124,92,252,0.22);
+            border-radius: 10px;
+            padding: 0.85rem 1rem;
+            margin-bottom: 1.25rem;
+            color: #cbd5e1;
+            font-size: 0.92rem;
+            line-height: 1.45;
+        ">
+            <strong style="color:#f1f5f9;">What is the Grable-Lytton Scale?</strong><br>
+            An academic risk-tolerance questionnaire used to estimate how much
+            financial risk an investor is willing and able to take. In this prototype,
+            it provides the rule-based baseline for the investor profile.
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
     st.markdown(
         "Complete the three sections below to generate your investor risk profile."
     )
