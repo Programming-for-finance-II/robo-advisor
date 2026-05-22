@@ -717,25 +717,35 @@ def _render_hrp_tab(portfolio: dict) -> None:
         m_cols[3].metric("Max Drawdown (hist.)", f"{max_dd:.1%}")
 
     st.markdown("---")
-    st.markdown("**Portfolio Weights**")
 
-    # Build the weights table
-    # UCITS-eligible tickers show "EU" in the UCITS column, others show "-"
-    ucits_set = set(ucits_used) | _UCITS_TICKERS
-    rows = []
-    for ticker, w in sorted(weights.items(), key=lambda kv: -kv[1]):
-        rows.append({
-            "Ticker": ticker,
-            "Weight": f"{w:.1%}",
-            "UCITS": "EU" if ticker in ucits_set else "-",
-            "Risk Contrib.": f"{risk_contributions.get(ticker, 0.0):.1%}",
-        })
+    # Donut chart + weights table side by side
+    col_donut, col_table = st.columns([1, 1.1])
 
-    df = pd.DataFrame(rows)
-    st.dataframe(df, hide_index=True, use_container_width=True)
+    with col_donut:
+        try:
+            from backend.optimizer.charts import plot_weights_donut
+            fig_donut = plot_weights_donut(weights)
+            fig_donut = apply_plotly_dark_theme(fig_donut)
+            st.plotly_chart(fig_donut, use_container_width=True)
+        except Exception as exc:
+            st.caption(f"Chart unavailable: {exc}")
+
+    with col_table:
+        st.markdown("**Portfolio Weights**")
+        # UCITS-eligible tickers show "EU" in the UCITS column, others show "-"
+        ucits_set = set(ucits_used) | _UCITS_TICKERS
+        rows = []
+        for ticker, w in sorted(weights.items(), key=lambda kv: -kv[1]):
+            rows.append({
+                "Ticker": ticker,
+                "Weight": f"{w:.1%}",
+                "UCITS": "EU" if ticker in ucits_set else "-",
+                "Risk Contrib.": f"{risk_contributions.get(ticker, 0.0):.1%}",
+            })
+        df = pd.DataFrame(rows)
+        st.dataframe(df, hide_index=True, use_container_width=True)
 
     # Risk contribution bar chart
-    # plot_risk_contributions is defined in backend/optimizer/charts.py
     try:
         from backend.optimizer.charts import plot_risk_contributions
         fig = plot_risk_contributions(
