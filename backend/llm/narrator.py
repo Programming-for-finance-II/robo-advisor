@@ -86,7 +86,7 @@ logger = logging.getLogger(__name__)
 # Claude model version — pinned for reproducibility.
 # The audit trail records which model generated each response.
 # Update only via an explicit team decision documented in ADR-004.
-NARRATOR_MODEL: str = "claude-sonnet-4-20250514"
+NARRATOR_MODEL: str = "claude-sonnet-4-6"
 
 # Hard token ceiling enforced by the Claude API itself.
 # Rough calculation: 250 words * ~1.3 tokens/word ≈ 325 tokens + buffer = 512.
