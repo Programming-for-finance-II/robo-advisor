@@ -14,6 +14,7 @@ W4 changes (Mon-Tue):
 import os
 import sys
 import uuid
+from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -66,6 +67,9 @@ _UCITS_TICKERS: frozenset[str] = frozenset({"CSPX.L", "AGGH.MI", "XEON.MI"})
 
 # Start date for the live market data download
 _DATA_START: str = "2023-01-01"
+
+ASSETS_DIR = Path(__file__).parent / "assets"
+LOGO_PATH = ASSETS_DIR / "logo.png"
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -184,11 +188,36 @@ PAGES = ["Questionnaire", "Portfolio Dashboard", "Chat Advisor", "Settings"]
 
 
 def main() -> None:
-    # Sidebar with page selector
-    st.sidebar.title("Robo-Advisor")
-    st.sidebar.caption("USI -- Programming in Finance II -- 2026")
-    page = st.sidebar.radio("Navigation", PAGES)
+    # ── Sidebar ──────────────────────────────────────────────────────
+    with st.sidebar:
+        # Logo centrato
+        if LOGO_PATH.exists():
+            st.image(str(LOGO_PATH), use_container_width=True)
+        else:
+            st.markdown("### RoboAdvisor")
+        st.markdown(
+            """
+            <div style="
+                text-align: center;
+                margin-top: -0.5rem;
+                margin-bottom: 1rem;
+                font-size: 0.65rem;
+                letter-spacing: 0.1em;
+                color: #475569;
+                text-transform: uppercase;
+            ">
+                USI · Programming in Finance II · 2026
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            "<hr style='border-color:#1e2640; margin: 0.5rem 0 1rem 0;'>",
+            unsafe_allow_html=True,
+        )
+        page = st.radio("Navigation", PAGES)
 
+    # ── Pages ────────────────────────────────────────────────────────
     if page == PAGES[0]:
         render_questionnaire()
     elif page == PAGES[1]:
@@ -459,7 +488,7 @@ def render_questionnaire() -> None:
 
             with st.container(border=True):
                 st.markdown("")
-                
+
                 for q in _QUESTIONS:
                     if q["section"] != section["key"]:
                         continue
@@ -868,7 +897,6 @@ def render_chat() -> None:
                 else:
                     # Clean response -- show the validated narrative
                     st.markdown(result.safe_text)
-
            
             except NarratorError:
                 # NarratorClient raised at construction -- API key is missing
