@@ -14,20 +14,38 @@ html, body, [class*="css"] {
 [data-testid="stSidebar"] [data-testid="stRadio"] label {
     display: flex !important;
     align-items: center !important;
-    gap: 0.75rem !important;
+    gap: 0.65rem !important;
     padding: 0.65rem 0.85rem !important;
     margin: 0.25rem 0 !important;
     border-radius: 10px !important;
     color: #94a3b8 !important;
+    min-height: 2.8rem !important;
 }
 
+/* Force Streamlit internal radio wrapper to stay horizontal */
+[data-testid="stSidebar"] [data-testid="stRadio"] label > div {
+    display: flex !important;
+    align-items: center !important;
+    flex-direction: row !important;
+    gap: 0.65rem !important;
+}
+
+/* Keep the circular radio marker aligned */
+[data-testid="stSidebar"] [data-testid="stRadio"] label > div:first-child {
+    flex: 0 0 auto !important;
+    margin: 0 !important;
+}
+
+/* Selected item */
 [data-testid="stSidebar"] [data-testid="stRadio"] label:has(input:checked) {
     background: rgba(124,92,252,0.15) !important;
     color: #a78bfa !important;
 }
 
+/* Text label */
 [data-testid="stSidebar"] [data-testid="stRadio"] label p {
     margin: 0 !important;
+    padding: 0 !important;
     line-height: 1.1 !important;
     font-size: 0.95rem !important;
     font-weight: 600 !important;
