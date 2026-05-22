@@ -14,6 +14,7 @@ W4 changes (Mon-Tue):
 import os
 import sys
 import uuid
+from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -80,6 +81,9 @@ _LABEL_TO_MOCK: dict[str, str] = {
 
 # Start date for the live market data download
 _DATA_START: str = "2023-01-01"
+
+ASSETS_DIR = Path(__file__).parent / "assets"
+LOGO_PATH = ASSETS_DIR / "logo.png"
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -198,11 +202,36 @@ PAGES = ["Questionnaire", "Portfolio Dashboard", "Chat Advisor", "Settings"]
 
 
 def main() -> None:
-    # Sidebar with page selector
-    st.sidebar.title("Robo-Advisor")
-    st.sidebar.caption("USI -- Programming in Finance II -- 2026")
-    page = st.sidebar.radio("Navigation", PAGES)
+    # ── Sidebar ──────────────────────────────────────────────────────
+    with st.sidebar:
+        # Logo centrato
+        if LOGO_PATH.exists():
+            st.image(str(LOGO_PATH), use_container_width=True)
+        else:
+            st.markdown("### RoboAdvisor")
+        st.markdown(
+            """
+            <div style="
+                text-align: center;
+                margin-top: -0.5rem;
+                margin-bottom: 1rem;
+                font-size: 0.65rem;
+                letter-spacing: 0.1em;
+                color: #475569;
+                text-transform: uppercase;
+            ">
+                USI · Programming in Finance II · 2026
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            "<hr style='border-color:#1e2640; margin: 0.5rem 0 1rem 0;'>",
+            unsafe_allow_html=True,
+        )
+        page = st.radio("Navigation", PAGES)
 
+    # ── Pages ────────────────────────────────────────────────────────
     if page == PAGES[0]:
         render_questionnaire()
     elif page == PAGES[1]:
@@ -401,32 +430,113 @@ def render_questionnaire() -> None:
     render_disclaimer()
     st.markdown("---")
     st.markdown(
-        "Answer all 10 questions honestly. "
-        "Your responses determine your investor risk profile."
+        "Complete the three sections below to generate your investor risk profile."
     )
 
-    answers: dict[str, int] = {}
-    current_section = ""
+    answers: dict[str, int | None] = {}
+
+    sections = [
+        {
+            "number": "01",
+            "title": "Financial Situation",
+            "subtitle": "Basic information about your financial background.",
+            "key": "Who You Are Financially",
+        },
+        {
+            "number": "02",
+            "title": "Investment Behaviour",
+            "subtitle": "How you think about time horizon, return and uncertainty.",
+            "key": "How You Invest",
+        },
+        {
+            "number": "03",
+            "title": "Reaction to Risk",
+            "subtitle": "How you would react under market stress.",
+            "key": "How You React",
+        },
+    ]
 
     with st.form("questionnaire_form"):
-        for q in _QUESTIONS:
-            # Print a section header when the section changes
-            if q["section"] != current_section:
-                current_section = q["section"]
-                st.subheader(current_section)
-
-            selected = st.radio(
-                label=f"**{q['id']}. {q['text']}**",
-                options=q["options"],
-                index=None,  # no pre-selected default -- user must choose
-                key=f"q_{q['id']}",
+        for section in sections:
+            st.markdown(
+                f"""
+                <div style="
+                    margin-top: 1.3rem;
+                    margin-bottom: 0.5rem;
+                ">
+                    <div style="
+                        display: flex;
+                        align-items: baseline;
+                        gap: 0.75rem;
+                    ">
+                        <span style="
+                            font-family: 'Space Grotesk', sans-serif;
+                            font-size: 0.75rem;
+                            letter-spacing: 0.14em;
+                            color: #7c5cfc;
+                            font-weight: 700;
+                        ">
+                            {section["number"]}
+                        </span>
+                        <span style="
+                            font-family: 'Space Grotesk', sans-serif;
+                            font-size: 1.25rem;
+                            color: #f8fafc;
+                            font-weight: 700;
+                        ">
+                            {section["title"]}
+                        </span>
+                    </div>
+                    <div style="
+                        margin-left: 2.45rem;
+                        color: #94a3b8;
+                        font-size: 0.98rem;
+                        margin-top: 0.1rem;
+                    ">
+                        {section["subtitle"]}
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True,
             )
-            answers[q["id"]] = q["options"].index(selected) if selected else None
+
+            with st.container(border=True):
+                st.markdown("")
+
+                for q in _QUESTIONS:
+                    if q["section"] != section["key"]:
+                        continue
+
+                    st.markdown(
+                        f"""
+                        <div style="
+                            font-size: 1.05rem;
+                            font-weight: 700;
+                            color: #f8fafc;
+                            margin-top: 0.75rem;
+                            margin-bottom: 0.25rem;
+                        ">
+                            {q["id"]}. {q["text"]}
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
+
+                    selected = st.radio(
+                        label="",
+                        options=q["options"],
+                        index=None,
+                        key=f"q_{q['id']}",
+                        label_visibility="collapsed",
+                    )
+
+                    answers[q["id"]] = (
+                        q["options"].index(selected) if selected else None
+                    )
 
         submitted = st.form_submit_button("Calculate my profile")
 
     if submitted:
-        # Make sure all questions are answered before computing
         if any(v is None for v in answers.values()):
             st.error("Please answer all questions before submitting.")
             return
@@ -434,8 +544,6 @@ def render_questionnaire() -> None:
         result = _compute_profile(answers)
         st.session_state["profile"] = result
         st.session_state["questionnaire_answers"] = answers
-
-        # Clear any cached portfolio so the Dashboard reloads for the new profile
         st.session_state.pop("portfolio_data", None)
 
         st.success("Profile calculated. Navigate to Portfolio Dashboard.")
@@ -443,7 +551,7 @@ def render_questionnaire() -> None:
         st.metric("Confidence", f"{result['confidence']:.0%}")
 
         if result["low_confidence_flag"]:
-            st.warning("Borderline score -- consider reviewing your answers.")
+            st.warning("Borderline score — consider reviewing your answers.")
 
         if result["q7_override_applied"]:
             st.info(
@@ -803,7 +911,6 @@ def render_chat() -> None:
                 else:
                     # Clean response -- show the validated narrative
                     st.markdown(result.safe_text)
-
            
             except NarratorError:
                 # NarratorClient raised at construction -- API key is missing

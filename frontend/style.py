@@ -12,15 +12,26 @@ html, body, [class*="css"] {
 
 /* Radio nav in sidebar */
 [data-testid="stSidebar"] [data-testid="stRadio"] label {
-    padding: 6px 10px !important;
-    border-radius: 6px !important;
-    font-size: 0.82rem !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.75rem !important;
+    padding: 0.65rem 0.85rem !important;
+    margin: 0.25rem 0 !important;
+    border-radius: 10px !important;
     color: #94a3b8 !important;
-    display: block !important;
 }
+
 [data-testid="stSidebar"] [data-testid="stRadio"] label:has(input:checked) {
     background: rgba(124,92,252,0.15) !important;
     color: #a78bfa !important;
+}
+
+[data-testid="stSidebar"] [data-testid="stRadio"] label p {
+    margin: 0 !important;
+    line-height: 1.1 !important;
+    font-size: 0.95rem !important;
+    font-weight: 600 !important;
+    white-space: nowrap !important;
 }
 
 #MainMenu, footer, header { visibility: hidden; }
