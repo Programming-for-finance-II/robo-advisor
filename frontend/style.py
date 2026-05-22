@@ -166,13 +166,13 @@ def render_stress_banner() -> None:
 def page_header(title: str, subtitle: str = "") -> None:
     """Render a styled page header with Space Grotesk font."""
     sub_html = (
-        f'<div style="font-size:0.72rem;color:#475569;margin-top:3px;'
+        f'<div style="font-size:0.82rem;color:#475569;margin-top:3px;'
         f'letter-spacing:0.04em;">{subtitle}</div>'
         if subtitle else ""
     )
     st.markdown(
         f'<div style="margin-bottom:1.25rem;">'
-        f'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:1.1rem;'
+        f'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:1.45rem;'
         f'font-weight:600;color:#f1f5f9;">{title}</div>{sub_html}</div>',
         unsafe_allow_html=True,
     )
