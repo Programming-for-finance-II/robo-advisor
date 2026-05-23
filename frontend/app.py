@@ -198,17 +198,102 @@ def _mock_optimization(profile_key: str) -> dict:
 # Navigation
 # ---------------------------------------------------------------------------
 
-PAGES = ["Questionnaire", "Portfolio Dashboard", "Chat Advisor", "Settings"]
+PAGES = [
+    "Questionnaire",
+    "Portfolio Dashboard",
+    "Chat Advisor",
+    "Backtesting",
+    "Compare (MV)",
+    "Settings",
+]
+
+_NAV_SVGS: dict[str, str] = {
+    "Questionnaire": (
+        '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"'
+        ' stroke="currentColor" stroke-width="2"'
+        ' stroke-linecap="round" stroke-linejoin="round">'
+        '<rect x="8" y="2" width="8" height="4" rx="1"/>'
+        '<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6'
+        'a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>'
+        '<line x1="12" y1="11" x2="16" y2="11"/>'
+        '<line x1="12" y1="16" x2="16" y2="16"/>'
+        '<circle cx="8" cy="11" r="1" fill="currentColor" stroke="none"/>'
+        '<circle cx="8" cy="16" r="1" fill="currentColor" stroke="none"/>'
+        "</svg>"
+    ),
+    "Portfolio Dashboard": (
+        '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"'
+        ' stroke="currentColor" stroke-width="2"'
+        ' stroke-linecap="round" stroke-linejoin="round">'
+        '<path d="M21.21 15.89A10 10 0 1 1 8 2.83"/>'
+        '<path d="M22 12A10 10 0 0 0 12 2v10z"/>'
+        "</svg>"
+    ),
+    "Chat Advisor": (
+        '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"'
+        ' stroke="currentColor" stroke-width="2"'
+        ' stroke-linecap="round" stroke-linejoin="round">'
+        '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14'
+        'a2 2 0 0 1 2 2z"/>'
+        "</svg>"
+    ),
+    "Backtesting": (
+        '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"'
+        ' stroke="currentColor" stroke-width="2"'
+        ' stroke-linecap="round" stroke-linejoin="round">'
+        '<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>'
+        '<polyline points="17 6 23 6 23 12"/>'
+        "</svg>"
+    ),
+    "Compare (MV)": (
+        '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"'
+        ' stroke="currentColor" stroke-width="2"'
+        ' stroke-linecap="round" stroke-linejoin="round">'
+        '<line x1="12" y1="2" x2="12" y2="22"/>'
+        '<path d="M5 7 2 14h6z"/>'
+        '<path d="M19 7 22 14h-6z"/>'
+        '<line x1="5" y1="7" x2="19" y2="7"/>'
+        '<line x1="9" y1="2" x2="15" y2="2"/>'
+        "</svg>"
+    ),
+    "Settings": (
+        '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"'
+        ' stroke="currentColor" stroke-width="2"'
+        ' stroke-linecap="round" stroke-linejoin="round">'
+        '<circle cx="12" cy="12" r="3"/>'
+        '<path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83'
+        'l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0'
+        'v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83'
+        '-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4'
+        'h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83'
+        '-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0'
+        'v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83'
+        ' 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4'
+        'h-.09a1.65 1.65 0 0 0-1.51 1z"/>'
+        "</svg>"
+    ),
+}
+
+_SHIELD_SVG = (
+    '<svg width="13" height="13" viewBox="0 0 24 24" fill="none"'
+    ' stroke="currentColor" stroke-width="2"'
+    ' stroke-linecap="round" stroke-linejoin="round">'
+    '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>'
+    "</svg>"
+)
 
 
 def main() -> None:
+    if "active_page" not in st.session_state:
+        st.session_state.active_page = PAGES[0]
+
     # ── Sidebar ──────────────────────────────────────────────────────
     with st.sidebar:
-        # Logo centrato
         if LOGO_PATH.exists():
             st.image(str(LOGO_PATH), use_container_width=True)
         else:
             st.markdown("### RoboAdvisor")
+
         st.markdown(
             """
             <div style="
@@ -226,19 +311,73 @@ def main() -> None:
             unsafe_allow_html=True,
         )
         st.markdown(
-            "<hr style='border-color:#1e2640; margin: 0.5rem 0 1rem 0;'>",
+            "<hr style='border-color:#1e2640; margin: 0.5rem 0 0.6rem 0;'>",
             unsafe_allow_html=True,
         )
-        page = st.radio("Navigation", PAGES)
+        st.markdown(
+            "<div style='font-size:0.58rem;letter-spacing:0.12em;color:#475569;"
+            "text-transform:uppercase;padding:0 0.85rem 0.5rem;font-weight:600;'>"
+            "NAVIGATION</div>",
+            unsafe_allow_html=True,
+        )
+
+        active = st.session_state.active_page
+        for page_name in PAGES:
+            btn_type = "primary" if page_name == active else "secondary"
+            wrap_cls = "nav-svg-wrap active" if page_name == active else "nav-svg-wrap"
+            col_icon, col_btn = st.columns([0.15, 0.85])
+            with col_icon:
+                st.markdown(
+                    f'<div class="{wrap_cls}">{_NAV_SVGS[page_name]}</div>',
+                    unsafe_allow_html=True,
+                )
+            with col_btn:
+                if st.button(
+                    page_name,
+                    key=f"nav_{page_name}",
+                    use_container_width=True,
+                    type=btn_type,
+                ):
+                    st.session_state.active_page = page_name
+                    st.rerun()
+
+        st.markdown(
+            f"""
+            <div style="
+                background: rgba(124,92,252,0.08);
+                border: 1px solid rgba(124,92,252,0.2);
+                border-radius: 10px;
+                padding: 0.75rem 0.875rem;
+                margin: 1.5rem 0 0 0;
+            ">
+                <div style="
+                    display:flex;align-items:center;gap:0.4rem;
+                    font-size:0.7rem;font-weight:600;color:#a78bfa;margin-bottom:0.3rem;
+                ">{_SHIELD_SVG} Educational Prototype</div>
+                <div style="font-size:0.67rem;color:#64748b;line-height:1.5;">
+                    This is an educational prototype and not financial advice.
+                </div>
+                <div style="font-size:0.63rem;color:#475569;margin-top:0.3rem;">
+                    Market data may be delayed or inaccurate.
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
     # ── Pages ────────────────────────────────────────────────────────
-    if page == PAGES[0]:
+    active = st.session_state.active_page
+    if active == "Questionnaire":
         render_questionnaire()
-    elif page == PAGES[1]:
+    elif active == "Portfolio Dashboard":
         render_portfolio()
-    elif page == PAGES[2]:
+    elif active == "Chat Advisor":
         render_chat()
-    elif page == PAGES[3]:
+    elif active == "Backtesting":
+        render_backtesting()
+    elif active == "Compare (MV)":
+        render_compare()
+    elif active == "Settings":
         render_settings()
 
 
@@ -428,31 +567,50 @@ def _compute_profile(answers: dict[str, int]) -> dict:
 def render_questionnaire() -> None:
     page_header("Investor Profile Questionnaire", "Grable-Lytton Scale · 10 questions")
     render_disclaimer()
-    st.markdown("---")
 
+    # Info card — Grable-Lytton explanation (only this one, no icon on page title)
     st.markdown(
         """
         <div style="
-            background: rgba(124,92,252,0.08);
-            border: 1px solid rgba(124,92,252,0.22);
+            background: rgba(30,38,64,0.5);
+            border: 1px solid #1e2640;
             border-radius: 10px;
-            padding: 0.85rem 1rem;
+            padding: 0.9rem 1rem;
             margin-bottom: 1.25rem;
-            color: #cbd5e1;
-            font-size: 0.92rem;
-            line-height: 1.45;
+            display: flex;
+            gap: 0.875rem;
+            align-items: flex-start;
         ">
-            <strong style="color:#f1f5f9;">What is the Grable-Lytton Scale?</strong><br>
-            An academic risk-tolerance questionnaire used to estimate how much
-            financial risk an investor is willing and able to take. In this prototype,
-            it provides the rule-based baseline for the investor profile.
+            <div style="
+                width:2rem;height:2rem;flex-shrink:0;
+                background:rgba(59,130,246,0.12);
+                border:1px solid rgba(59,130,246,0.25);
+                border-radius:7px;
+                display:inline-flex;align-items:center;
+                justify-content:center;font-size:0.95rem;
+            ">🎓</div>
+            <div>
+                <div style="
+                    font-family:'Space Grotesk',sans-serif;
+                    font-size:0.9rem;font-weight:600;
+                    color:#e2e8f0;margin-bottom:0.25rem;
+                ">What is the Grable-Lytton Scale?</div>
+                <div style="font-size:0.79rem;color:#64748b;line-height:1.55;">
+                    An academic risk-tolerance questionnaire used to estimate how much financial
+                    risk an investor is willing and able to take. In this prototype, it provides
+                    the rule-based baseline for the investor profile.
+                </div>
+            </div>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
     st.markdown(
+        '<div style="font-size:0.85rem;color:#64748b;margin:0 0 1.5rem 0;">'
         "Complete the three sections below to generate your investor risk profile."
+        "</div>",
+        unsafe_allow_html=True,
     )
 
     answers: dict[str, int | None] = {}
@@ -480,50 +638,20 @@ def render_questionnaire() -> None:
 
     with st.form("questionnaire_form"):
         for section in sections:
-            st.markdown(
-                f"""
-                <div style="
-                    margin-top: 1.3rem;
-                    margin-bottom: 0.5rem;
-                ">
-                    <div style="
-                        display: flex;
-                        align-items: baseline;
-                        gap: 0.75rem;
-                    ">
-                        <span style="
-                            font-family: 'Space Grotesk', sans-serif;
-                            font-size: 0.75rem;
-                            letter-spacing: 0.14em;
-                            color: #7c5cfc;
-                            font-weight: 700;
-                        ">
-                            {section["number"]}
-                        </span>
-                        <span style="
-                            font-family: 'Space Grotesk', sans-serif;
-                            font-size: 1.25rem;
-                            color: #f8fafc;
-                            font-weight: 700;
-                        ">
-                            {section["title"]}
-                        </span>
-                    </div>
-                    <div style="
-                        margin-left: 2.45rem;
-                        color: #94a3b8;
-                        font-size: 0.98rem;
-                        margin-top: 0.1rem;
-                    ">
-                        {section["subtitle"]}
-                    </div>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-
+            # Each section is its own independent card — siblings, not nested
             with st.container(border=True):
-                st.markdown("")
+                st.markdown(
+                    f"""
+                    <div class="qs-header">
+                        <div class="qs-num">{section["number"]}</div>
+                        <div>
+                            <div class="qs-title">{section["title"]}</div>
+                            <div class="qs-sub">{section["subtitle"]}</div>
+                        </div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
 
                 for q in _QUESTIONS:
                     if q["section"] != section["key"]:
@@ -531,14 +659,9 @@ def render_questionnaire() -> None:
 
                     st.markdown(
                         f"""
-                        <div style="
-                            font-size: 1.05rem;
-                            font-weight: 700;
-                            color: #f8fafc;
-                            margin-top: 0.75rem;
-                            margin-bottom: 0.25rem;
-                        ">
-                            {q["id"]}. {q["text"]}
+                        <div class="qs-q-row">
+                            <span class="qs-q-badge">{q["id"]}</span>
+                            <span class="qs-q-text">{q["text"]}</span>
                         </div>
                         """,
                         unsafe_allow_html=True,
@@ -553,10 +676,14 @@ def render_questionnaire() -> None:
                     )
 
                     answers[q["id"]] = (
-                        q["options"].index(selected) if selected else None
+                        q["options"].index(selected) if selected is not None else None
                     )
 
-        submitted = st.form_submit_button("Calculate my profile")
+        submitted = st.form_submit_button(
+            "Calculate my profile",
+            type="primary",
+            use_container_width=True,
+        )
 
     if submitted:
         if any(v is None for v in answers.values()):
@@ -569,8 +696,9 @@ def render_questionnaire() -> None:
         st.session_state.pop("portfolio_data", None)
 
         st.success("Profile calculated. Navigate to Portfolio Dashboard.")
-        st.metric("Your risk profile", result["profile_label"])
-        st.metric("Confidence", f"{result['confidence']:.0%}")
+        col_a, col_b = st.columns(2)
+        col_a.metric("Your risk profile", result["profile_label"])
+        col_b.metric("Confidence", f"{result['confidence']:.0%}")
 
         if result["low_confidence_flag"]:
             st.warning("Borderline score — consider reviewing your answers.")
@@ -958,7 +1086,34 @@ def render_chat() -> None:
 
 
 # ---------------------------------------------------------------------------
-# Page 4 -- Settings
+# Page 4 -- Backtesting (placeholder)
+# ---------------------------------------------------------------------------
+
+def render_backtesting() -> None:
+    page_header("Backtesting", "Historical performance simulation", icon="📈")
+    render_disclaimer()
+    st.info(
+        "Backtesting module coming in Phase B. "
+        "It will run walk-forward simulations on the HRP portfolio "
+        "using historical price data from yfinance."
+    )
+
+
+# ---------------------------------------------------------------------------
+# Page 5 -- Compare MV (placeholder)
+# ---------------------------------------------------------------------------
+
+def render_compare() -> None:
+    page_header("Compare (MV)", "HRP vs Markowitz mean-variance", icon="⚖")
+    render_disclaimer()
+    st.info(
+        "Side-by-side comparison of HRP and Mean-Variance portfolios "
+        "coming in Phase B (P2 W4 /compare endpoint)."
+    )
+
+
+# ---------------------------------------------------------------------------
+# Page 6 -- Settings
 # ---------------------------------------------------------------------------
 
 def render_settings() -> None:

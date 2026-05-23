@@ -10,46 +10,93 @@ html, body, [class*="css"] {
     font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
 }
 
-/* Radio nav in sidebar */
-[data-testid="stSidebar"] [data-testid="stRadio"] label {
-    display: flex !important;
-    align-items: center !important;
-    gap: 0.65rem !important;
-    padding: 0.65rem 0.85rem !important;
-    margin: 0.25rem 0 !important;
-    border-radius: 10px !important;
-    color: #94a3b8 !important;
-    min-height: 2.8rem !important;
+/* ── Sidebar nav: icon + button rows ──────────────────────────────────────── */
+
+/* Row container: no gap, vertically centered */
+[data-testid="stSidebar"] [data-testid="stHorizontalBlock"] {
+    gap: 0 !important;
+    align-items: stretch !important;
+    margin: 0.05rem 0 !important;
 }
 
-/* Force Streamlit internal radio wrapper to stay horizontal */
-[data-testid="stSidebar"] [data-testid="stRadio"] label > div {
-    display: flex !important;
-    align-items: center !important;
-    flex-direction: row !important;
-    gap: 0.65rem !important;
-}
-
-/* Keep the circular radio marker aligned */
-[data-testid="stSidebar"] [data-testid="stRadio"] label > div:first-child {
-    flex: 0 0 auto !important;
-    margin: 0 !important;
-}
-
-/* Selected item */
-[data-testid="stSidebar"] [data-testid="stRadio"] label:has(input:checked) {
-    background: rgba(124,92,252,0.15) !important;
-    color: #a78bfa !important;
-}
-
-/* Text label */
-[data-testid="stSidebar"] [data-testid="stRadio"] label p {
-    margin: 0 !important;
+/* Each column: flex so children can vertically center */
+[data-testid="stSidebar"] [data-testid="stHorizontalBlock"]
+    > [data-testid="stColumn"] {
     padding: 0 !important;
-    line-height: 1.1 !important;
-    font-size: 0.95rem !important;
+    min-width: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+}
+
+/* stMarkdownContainer inside icon column must also center */
+[data-testid="stSidebar"] [data-testid="stHorizontalBlock"]
+    > [data-testid="stColumn"] [data-testid="stMarkdownContainer"] {
+    display: flex !important;
+    align-items: center !important;
+    width: 100% !important;
+}
+
+/* SVG icon wrapper */
+.nav-svg-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: 0.55rem 0 0.55rem 0.7rem;
+    color: #64748b;
+    opacity: 0.7;
+}
+
+.nav-svg-wrap.active {
+    color: #a78bfa;
+    opacity: 1;
+}
+
+/* Nav buttons: no border, left-aligned text */
+[data-testid="stSidebar"] .stButton > button {
+    background: transparent !important;
+    border: none !important;
+    color: #64748b !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    text-align: left !important;
+    padding: 0.55rem 0.6rem 0.55rem 0.4rem !important;
+    border-radius: 10px !important;
+    font-family: 'DM Sans', sans-serif !important;
+    font-size: 0.88rem !important;
+    font-weight: 500 !important;
+    letter-spacing: 0.01em !important;
+    box-shadow: none !important;
+    width: 100% !important;
+    transition: background 0.15s ease, color 0.15s ease !important;
+}
+
+/* Force the inner <p> left-aligned */
+[data-testid="stSidebar"] .stButton > button p {
+    text-align: left !important;
+    margin: 0 !important;
+    width: 100% !important;
+}
+
+[data-testid="stSidebar"] .stButton > button:hover {
+    background: rgba(124,92,252,0.07) !important;
+    color: #94a3b8 !important;
+    border: none !important;
+}
+
+[data-testid="stSidebar"] .stButton > button[data-testid="stBaseButton-primary"],
+[data-testid="stSidebar"] .stButton > button[kind="primary"] {
+    background: rgba(124,92,252,0.15) !important;
+    border: none !important;
+    color: #a78bfa !important;
     font-weight: 600 !important;
-    white-space: nowrap !important;
+}
+
+[data-testid="stSidebar"] .stButton > button[data-testid="stBaseButton-primary"]:hover,
+[data-testid="stSidebar"] .stButton > button[kind="primary"]:hover {
+    background: rgba(124,92,252,0.22) !important;
+    border: none !important;
 }
 
 #MainMenu, footer, header { visibility: hidden; }
@@ -60,6 +107,7 @@ html, body, [class*="css"] {
     border-right: 1px solid #1e2640 !important;
 }
 
+/* ── Metrics ──────────────────────────────────────────────────────────────── */
 [data-testid="stMetric"] {
     background: #111827 !important;
     border: 1px solid #1e2640 !important;
@@ -78,6 +126,7 @@ html, body, [class*="css"] {
     font-weight: 600 !important;
 }
 
+/* ── Tabs ─────────────────────────────────────────────────────────────────── */
 .stTabs [data-baseweb="tab-list"] {
     background: transparent !important;
     border-bottom: 1px solid #1e2640 !important;
@@ -95,6 +144,7 @@ html, body, [class*="css"] {
     border-bottom: 2px solid #7c5cfc !important;
 }
 
+/* ── Buttons ──────────────────────────────────────────────────────────────── */
 .stButton > button {
     background: transparent !important;
     border: 1px solid #1e2640 !important;
@@ -109,6 +159,158 @@ html, body, [class*="css"] {
 }
 
 hr { border-color: #1e2640 !important; }
+
+/* ── Questionnaire layout ──────────────────────────────────────────────────── */
+
+/* Hide the form's own outer border — only the 3 section cards should be visible */
+[data-testid="stForm"] {
+    border: none !important;
+    padding: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+/* Section cards: clip the gradient header at rounded corners */
+[data-testid="stVerticalBlockBorderWrapper"] {
+    overflow: hidden !important;
+    border-color: #1e2640 !important;
+}
+
+/* Gradient header band — full-bleed inside each section card */
+.qs-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    margin: -1rem -1rem 0.75rem -1rem;
+    background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 55%, #0d1220 100%);
+    border-bottom: 1px solid #2d3748;
+    border-radius: 10px 10px 0 0;
+}
+
+.qs-num {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: #a78bfa;
+    background: rgba(124,92,252,0.18);
+    border: 1px solid rgba(124,92,252,0.3);
+    border-radius: 7px;
+    min-width: 2.25rem;
+    height: 2.25rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.qs-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: #f1f5f9;
+    line-height: 1.2;
+}
+
+.qs-sub {
+    font-size: 0.78rem;
+    color: #64748b;
+    margin-top: 0.15rem;
+}
+
+/* Question badge + text row */
+.qs-q-row {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+    margin: 1.25rem 0 0.5rem 0;
+}
+
+.qs-q-badge {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: #a78bfa;
+    background: rgba(124,92,252,0.12);
+    border: 1px solid rgba(124,92,252,0.25);
+    border-radius: 5px;
+    padding: 0.12rem 0.45rem;
+    flex-shrink: 0;
+    letter-spacing: 0.04em;
+}
+
+.qs-q-text {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #e2e8f0;
+    line-height: 1.35;
+}
+
+/* ── Radio options → 4-column card grid ───────────────────────────────────── */
+/* Scoped to section cards (stVerticalBlockBorderWrapper) so it doesn't leak   */
+
+[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stRadio"] > div[role="radiogroup"] {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 0.5rem !important;
+    margin-top: 0.25rem !important;
+    margin-bottom: 0.5rem !important;
+}
+
+[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stRadio"] label {
+    background: rgba(10, 15, 30, 0.65) !important;
+    border: 1px solid #1e2640 !important;
+    border-radius: 9px !important;
+    padding: 0.8rem 0.95rem !important;
+    cursor: pointer !important;
+    min-height: 3.5rem !important;
+    display: flex !important;
+    align-items: flex-start !important;
+    gap: 0.5rem !important;
+    transition: border-color 0.15s ease, background 0.15s ease !important;
+}
+
+[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stRadio"] label:hover {
+    border-color: rgba(124,92,252,0.45) !important;
+    background: rgba(124,92,252,0.07) !important;
+}
+
+[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stRadio"] label:has(input:checked) {
+    border-color: #7c5cfc !important;
+    background: rgba(124,92,252,0.14) !important;
+}
+
+[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stRadio"] label p {
+    font-size: 0.8rem !important;
+    color: #94a3b8 !important;
+    line-height: 1.45 !important;
+    margin: 0 !important;
+}
+
+[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stRadio"] label:has(input:checked) p {
+    color: #c4b5fd !important;
+}
+
+/* Submit button */
+[data-testid="stFormSubmitButton"] > button {
+    width: 100% !important;
+    background: rgba(124,92,252,0.15) !important;
+    border: 1px solid #7c5cfc !important;
+    color: #c4b5fd !important;
+    border-radius: 10px !important;
+    padding: 0.875rem !important;
+    font-family: 'Space Grotesk', sans-serif !important;
+    font-size: 0.9rem !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.03em !important;
+    margin-top: 0.5rem !important;
+    transition: background 0.15s ease !important;
+}
+
+[data-testid="stFormSubmitButton"] > button:hover {
+    background: rgba(124,92,252,0.25) !important;
+}
 </style>
 """
 
@@ -163,17 +365,31 @@ def render_stress_banner() -> None:
     st.markdown(STRESS_BANNER_HTML, unsafe_allow_html=True)
 
 
-def page_header(title: str, subtitle: str = "") -> None:
-    """Render a styled page header with Space Grotesk font."""
+def page_header(title: str, subtitle: str = "", icon: str = "") -> None:
+    """Render a styled page header with Space Grotesk font and optional icon."""
     sub_html = (
-        f'<div style="font-size:0.82rem;color:#475569;margin-top:3px;'
+        f'<div style="font-size:0.72rem;color:#475569;margin-top:4px;'
         f'letter-spacing:0.04em;">{subtitle}</div>'
         if subtitle else ""
     )
+    icon_html = (
+        f'<div style="'
+        f'width:2.4rem;height:2.4rem;'
+        f'background:rgba(124,92,252,0.12);'
+        f'border:1px solid rgba(124,92,252,0.25);'
+        f'border-radius:9px;'
+        f'display:inline-flex;align-items:center;justify-content:center;'
+        f'font-size:1.05rem;flex-shrink:0;">{icon}</div>'
+        if icon else ""
+    )
+    layout = "display:flex;align-items:center;gap:0.875rem;" if icon else ""
     st.markdown(
-        f'<div style="margin-bottom:1.25rem;">'
+        f'<div style="{layout}margin-bottom:1.25rem;">'
+        f'{icon_html}'
+        f'<div>'
         f'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:1.45rem;'
-        f'font-weight:600;color:#f1f5f9;">{title}</div>{sub_html}</div>',
+        f'font-weight:600;color:#f1f5f9;">{title}</div>{sub_html}'
+        f'</div></div>',
         unsafe_allow_html=True,
     )
 
