@@ -1073,18 +1073,160 @@ def _render_hrp_tab(portfolio: dict) -> None:
 
 def _render_mv_tab(portfolio: dict, profile_key: str) -> None:
     """
-    Markowitz tab: placeholder for HRP vs MV comparison,
+    Markowitz tab: HRP vs MV weight comparison, efficient frontier,
     stress scenario table, backtest summary.
-    """
-    st.subheader("Markowitz Mean-Variance -- Benchmark Comparison")
 
-    # Full side-by-side comparison will be available when P2 finishes /compare
-    st.info(
-        "Side-by-side HRP vs MV weight comparison will be available "
-        "when /compare endpoint is live (P2 W4)."
+    Phase A: uses mock MV weights + synthetic frontier for illustration.
+    Phase B: runs optimize_markowitz() on live prices for real comparison.
+    """
+    st.subheader("Markowitz Mean-Variance — Benchmark Comparison")
+
+    from backend.optimizer.charts import (
+        plot_efficient_frontier,
     )
 
-    # Load stress scenarios -- from live result if available, otherwise from mock
+    # ── Try to run live MV optimizer (Phase B) ────────────────────────────
+    mv_weights: dict[str, float] | None = None
+    mv_vol: float | None = None
+    mv_ret: float | None = None
+    mv_sharpe: float | None = None
+
+    if portfolio.get("source") == "live":
+        try:
+            from datetime import date
+            
+            from backend.data.loader import ValidatedDataLoader
+            from backend.data.universe_config import get_primary_tickers
+            from backend.optimizer.markowitz import optimize_markowitz
+
+            tickers = get_primary_tickers()
+            loader = ValidatedDataLoader()
+            prices, _ = loader.load(
+                tickers=tickers,
+                start=_DATA_START,
+                end=date.today().isoformat(),
+            )
+            mv_result = optimize_markowitz(prices)
+            mv_weights = mv_result["weights"]
+            mv_vol = mv_result["expected_volatility"]
+            mv_ret = mv_result["expected_return"]
+            mv_sharpe = mv_result["sharpe_ratio"]
+        except Exception as exc:
+            st.caption(f"Live MV optimizer unavailable: {exc}. Showing mock comparison.")
+
+    # ── Phase A fallback: use approximate MV mock weights ─────────────────
+    if mv_weights is None:
+        # Approximate Max-Sharpe MV weights for illustration
+        # (concentrated in high-Sharpe assets — typical MV corner solution)
+        hrp_w = portfolio.get("weights", {})
+        mv_weights = {t: 0.0 for t in hrp_w}
+        # MV typically over-weights bonds and under-weights alternatives
+        if hrp_w:
+            tickers_list = list(hrp_w.keys())
+            # Simple illustration: shift weight toward safe_haven assets
+            for t in tickers_list:
+                if t in {"AGGH.MI", "TLT", "TIP"}:
+                    mv_weights[t] = min(0.40, hrp_w.get(t, 0.10) * 1.8)
+                elif t in {"CSPX.L", "EFA"}:
+                    mv_weights[t] = max(0.03, hrp_w.get(t, 0.20) * 0.7)
+                else:
+                    mv_weights[t] = hrp_w.get(t, 0.10)
+            total = sum(mv_weights.values()) or 1.0
+            mv_weights = {t: round(w / total, 4) for t, w in mv_weights.items()}
+        mv_vol = portfolio.get("expected_volatility", 0.08) * 0.92  # MV typically lower vol
+        mv_ret = None   # not estimated in Phase A
+        mv_sharpe = None
+
+    # ── Metrics comparison row ────────────────────────────────────────────
+    hrp_vol = portfolio.get("expected_volatility", 0.0)
+    hrp_ret = portfolio.get("expected_return")
+    hrp_sharpe = portfolio.get("sharpe_ratio")
+
+    st.markdown("**Key Metrics — HRP vs Markowitz**")
+    col1, col2, col3 = st.columns(3)
+    col1.metric(
+        "Annual Volatility",
+        f"{hrp_vol:.1%}" if hrp_vol else "—",
+        delta=f"MV: {mv_vol:.1%}" if mv_vol else None,
+        delta_color="inverse",
+    )
+    col2.metric(
+        "Expected Return",
+        f"{hrp_ret:.1%}" if hrp_ret else "HRP: N/A",
+        delta=f"MV: {mv_ret:.1%}" if mv_ret else None,
+    )
+    col3.metric(
+        "Sharpe Ratio",
+        f"{hrp_sharpe:.2f}" if hrp_sharpe else "HRP: N/A",
+        delta=f"MV: {mv_sharpe:.2f}" if mv_sharpe else None,
+    )
+    st.caption(
+        "HRP does not produce a reliable expected return estimate (no μ). "
+        "MV maximises Sharpe explicitly but is sensitive to estimation error."
+    )
+
+    st.markdown("---")
+
+    # ── Side-by-side weights table ────────────────────────────────────────
+    st.markdown("**Weight Comparison — HRP vs Markowitz**")
+
+    hrp_weights = portfolio.get("weights", {})
+    tickers_sorted = sorted(hrp_weights.keys(), key=lambda t: -hrp_weights.get(t, 0))
+
+    comparison_rows = []
+    for ticker in tickers_sorted:
+        h = hrp_weights.get(ticker, 0.0)
+        m = mv_weights.get(ticker, 0.0)
+        comparison_rows.append({
+            "Ticker": ticker,
+            "HRP": f"{h:.1%}",
+            "Markowitz": f"{m:.1%}",
+            "Difference": f"{abs(h - m):.1%}",
+            "UCITS": "EU" if ticker in _UCITS_TICKERS else "—",
+        })
+
+    st.dataframe(
+        pd.DataFrame(comparison_rows),
+        hide_index=True,
+        use_container_width=True,
+    )
+    st.caption(
+        "Markowitz typically produces more concentrated portfolios. "
+        "HRP avoids corner solutions by construction."
+    )
+
+    st.markdown("---")
+
+    # ── Efficient Frontier chart ──────────────────────────────────────────
+    st.markdown("**Efficient Frontier — HRP vs Markowitz**")
+
+    try:
+        # Synthetic frontier for illustration (Phase A)
+        # Phase B: compute frontier from pypfopt EfficientFrontier parametric sweep
+        import numpy as np
+        frontier_vols = list(np.linspace(0.04, 0.20, 30))
+        # Approximate return/risk tradeoff using historical Sharpe ~0.5
+        frontier_rets = [v * 0.5 + 0.01 for v in frontier_vols]
+
+        fig_frontier = plot_efficient_frontier(
+            frontier_vols=frontier_vols,
+            frontier_rets=frontier_rets,
+            hrp_vol=hrp_vol or 0.10,
+            hrp_ret=hrp_ret,
+            mv_vol=mv_vol or 0.08,
+            mv_ret=mv_ret,
+        )
+        st.plotly_chart(fig_frontier, use_container_width=True)
+        if portfolio.get("source") != "live":
+            st.caption("Frontier shown is illustrative (Phase A mock)."
+                       "Enable live data for real frontier."
+                      )
+    except Exception as exc:
+        st.caption(f"Frontier chart unavailable: {exc}")
+
+    st.markdown("---")
+
+    # ── Stress scenarios table (existing P4 code, kept) ───────────────────
     stress = portfolio.get("stress_scenarios")
     if stress is None:
         try:
@@ -1094,7 +1236,7 @@ def _render_mv_tab(portfolio: dict, profile_key: str) -> None:
             stress = None
 
     if stress is not None:
-        st.markdown("**Historical Stress Scenarios -- HRP drawdown vs benchmark**")
+        st.markdown("**Historical Stress Scenarios — HRP drawdown vs benchmark**")
         scenario_rows = [
             {
                 "Scenario": "COVID-19 crash (Mar 2020)",
@@ -1120,10 +1262,10 @@ def _render_mv_tab(portfolio: dict, profile_key: str) -> None:
         st.caption(
             "Benchmark = equal-weight 60/40 portfolio. "
             "Phase A values are from mock data. "
-            "Phase B will use real backtested values from P2."
+            "Phase B will use real backtested values from backtest.py."
         )
 
-    # Backtest summary row
+    # ── Backtest summary (existing P4 code, kept) ─────────────────────────
     backtest = portfolio.get("backtest")
     if backtest is None:
         try:
@@ -1133,7 +1275,7 @@ def _render_mv_tab(portfolio: dict, profile_key: str) -> None:
             backtest = None
 
     if backtest is not None:
-        st.markdown("**Backtest Summary (mock -- Phase A)**")
+        st.markdown("**Backtest Summary (mock — Phase A)**")
         bt_cols = st.columns(4)
         bt_cols[0].metric("Period", backtest.period)
         bt_cols[1].metric("CAGR", f"{backtest.cagr:.1%}")
