@@ -10,23 +10,73 @@ html, body, [class*="css"] {
     font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
 }
 
-/* ── Sidebar nav buttons ──────────────────────────────────────────────────── */
+/* ── Sidebar nav: icon + button rows ──────────────────────────────────────── */
+
+/* Row container: no gap, vertically centered */
+[data-testid="stSidebar"] [data-testid="stHorizontalBlock"] {
+    gap: 0 !important;
+    align-items: stretch !important;
+    margin: 0.05rem 0 !important;
+}
+
+/* Each column: flex so children can vertically center */
+[data-testid="stSidebar"] [data-testid="stHorizontalBlock"]
+    > [data-testid="stColumn"] {
+    padding: 0 !important;
+    min-width: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+}
+
+/* stMarkdownContainer inside icon column must also center */
+[data-testid="stSidebar"] [data-testid="stHorizontalBlock"]
+    > [data-testid="stColumn"] [data-testid="stMarkdownContainer"] {
+    display: flex !important;
+    align-items: center !important;
+    width: 100% !important;
+}
+
+/* SVG icon wrapper */
+.nav-svg-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: 0.55rem 0 0.55rem 0.7rem;
+    color: #64748b;
+    opacity: 0.7;
+}
+
+.nav-svg-wrap.active {
+    color: #a78bfa;
+    opacity: 1;
+}
+
+/* Nav buttons: no border, left-aligned text */
 [data-testid="stSidebar"] .stButton > button {
     background: transparent !important;
     border: none !important;
     color: #64748b !important;
-    text-align: left !important;
+    display: flex !important;
+    align-items: center !important;
     justify-content: flex-start !important;
-    padding: 0.55rem 0.85rem !important;
+    text-align: left !important;
+    padding: 0.55rem 0.6rem 0.55rem 0.4rem !important;
     border-radius: 10px !important;
     font-family: 'DM Sans', sans-serif !important;
     font-size: 0.88rem !important;
     font-weight: 500 !important;
     letter-spacing: 0.01em !important;
     box-shadow: none !important;
-    margin: 0.05rem 0 !important;
     width: 100% !important;
     transition: background 0.15s ease, color 0.15s ease !important;
+}
+
+/* Force the inner <p> left-aligned */
+[data-testid="stSidebar"] .stButton > button p {
+    text-align: left !important;
+    margin: 0 !important;
+    width: 100% !important;
 }
 
 [data-testid="stSidebar"] .stButton > button:hover {

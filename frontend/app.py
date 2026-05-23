@@ -324,14 +324,22 @@ def main() -> None:
         active = st.session_state.active_page
         for page_name in PAGES:
             btn_type = "primary" if page_name == active else "secondary"
-            if st.button(
-                page_name,
-                key=f"nav_{page_name}",
-                use_container_width=True,
-                type=btn_type,
-            ):
-                st.session_state.active_page = page_name
-                st.rerun()
+            wrap_cls = "nav-svg-wrap active" if page_name == active else "nav-svg-wrap"
+            col_icon, col_btn = st.columns([0.15, 0.85])
+            with col_icon:
+                st.markdown(
+                    f'<div class="{wrap_cls}">{_NAV_SVGS[page_name]}</div>',
+                    unsafe_allow_html=True,
+                )
+            with col_btn:
+                if st.button(
+                    page_name,
+                    key=f"nav_{page_name}",
+                    use_container_width=True,
+                    type=btn_type,
+                ):
+                    st.session_state.active_page = page_name
+                    st.rerun()
 
         st.markdown(
             f"""
