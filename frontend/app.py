@@ -1514,8 +1514,8 @@ def render_backtesting() -> None:
         st.plotly_chart(fig_dd, use_container_width=True)
 
     st.caption(
-        f"Profile: MODERATE · Rebalancing: monthly · TC: 10 bps/rebalance · "
-        f"Lookback: 252 trading days"
+        "Profile: MODERATE · Rebalancing: monthly · TC: 10 bps/rebalance · "
+        "Lookback: 252 trading days"
     )
 
 
