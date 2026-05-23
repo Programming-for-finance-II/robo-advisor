@@ -11,6 +11,7 @@ W4 changes (Mon-Tue):
     - recommendation_id stored in session_state for Chat Advisor
 """
 
+import json
 import os
 import sys
 import uuid
@@ -19,6 +20,7 @@ from pathlib import Path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pandas as pd
+import plotly.graph_objects as go
 import streamlit as st
 
 from backend.llm.narrator import NarratorClient, NarratorError
@@ -667,10 +669,14 @@ def render_questionnaire() -> None:
                         unsafe_allow_html=True,
                     )
 
+                    saved_idx = st.session_state.get(
+                        "questionnaire_answers", {}
+                    ).get(q["id"])
+
                     selected = st.radio(
                         label="",
                         options=q["options"],
-                        index=None,
+                        index=saved_idx,
                         key=f"q_{q['id']}",
                         label_visibility="collapsed",
                     )
@@ -695,10 +701,17 @@ def render_questionnaire() -> None:
         st.session_state["questionnaire_answers"] = answers
         st.session_state.pop("portfolio_data", None)
 
-        st.success("Profile calculated. Navigate to Portfolio Dashboard.")
-        col_a, col_b = st.columns(2)
+    if st.session_state.get("profile"):
+        result = st.session_state["profile"]
+        st.success("Profile calculated.")
+        col_a, col_b, col_c = st.columns([1, 1, 1])
         col_a.metric("Your risk profile", result["profile_label"])
         col_b.metric("Confidence", f"{result['confidence']:.0%}")
+        with col_c:
+            st.markdown("<div style='height:0.5rem'></div>", unsafe_allow_html=True)
+            if st.button("Go to Portfolio Dashboard →", type="primary", use_container_width=True):
+                st.session_state.active_page = "Portfolio Dashboard"
+                st.rerun()
 
         if result["low_confidence_flag"]:
             st.warning("Borderline score — consider reviewing your answers.")
@@ -820,11 +833,66 @@ def render_portfolio() -> None:
     )
 
 
+_HRP_TICKER_CLUSTER: dict[str, str] = {
+    "CSPX.L":  "Equity",
+    "EFA":     "Equity",
+    "GLD":     "Alternatives",
+    "VNQ":     "Alternatives",
+    "AGGH.MI": "Bonds",
+    "TLT":     "Bonds",
+    "TIP":     "Bonds",
+    "XEON.MI": "Cash",
+}
+
+_HRP_CLUSTER_COLOR: dict[str, str] = {
+    "Equity":       "#7c5cfc",
+    "Alternatives": "#f59e0b",
+    "Bonds":        "#0dcfb0",
+    "Cash":         "#3b82f6",
+}
+
+_HRP_CLUSTER_BG: dict[str, str] = {
+    "Equity":       "rgba(124,92,252,0.15)",
+    "Alternatives": "rgba(245,158,11,0.15)",
+    "Bonds":        "rgba(13,207,176,0.15)",
+    "Cash":         "rgba(59,130,246,0.15)",
+}
+
+_PROFILE_COLOR: dict[str, str] = {
+    "CONSERVATIVE": "#0dcfb0",
+    "MODERATE":     "#7c5cfc",
+    "AGGRESSIVE":   "#f87171",
+}
+
+
 def _render_hrp_tab(portfolio: dict) -> None:
     """
-    HRP tab: key metrics, weights table with UCITS column, risk chart.
+    HRP tab: cluster breakdown, key metrics, weights table, colored risk chart.
     """
-    st.subheader("Hierarchical Risk Parity -- Portfolio Allocation")
+    profile_label = st.session_state.get("profile", {}).get("profile_label", "MODERATE")
+    profile_color = _PROFILE_COLOR.get(profile_label, "#7c5cfc")
+
+    # ── Section header ───────────────────────────────────────────────────────
+    st.markdown(
+        f"""
+        <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:1.25rem;">
+            <div style="
+                font-family:'Space Grotesk',sans-serif;font-size:1.1rem;
+                font-weight:600;color:#f1f5f9;">
+                Hierarchical Risk Parity
+            </div>
+            <div style="
+                font-family:'Space Grotesk',sans-serif;font-size:0.7rem;
+                font-weight:700;color:{profile_color};
+                background:rgba(124,92,252,0.1);
+                border:1px solid {profile_color}40;
+                border-radius:5px;padding:0.1rem 0.5rem;letter-spacing:0.06em;">
+                {profile_label}
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
     weights: dict[str, float] = portfolio["weights"]
     risk_contributions: dict[str, float] = portfolio["risk_contributions"]
@@ -834,56 +902,174 @@ def _render_hrp_tab(portfolio: dict) -> None:
     sharpe = portfolio.get("sharpe_ratio")
     max_dd = portfolio.get("max_drawdown")
 
-    # Key metrics row
-    m_cols = st.columns(4)
-    m_cols[0].metric("Annual Volatility", f"{vol:.1%}")
+    # ── Cluster breakdown pills ──────────────────────────────────────────────
+    cluster_totals: dict[str, float] = {}
+    for ticker, w in weights.items():
+        cl = _HRP_TICKER_CLUSTER.get(ticker, "Other")
+        cluster_totals[cl] = cluster_totals.get(cl, 0.0) + w
+
+    pills_html = '<div style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-bottom:1.25rem;">'
+    for cl in ["Equity", "Bonds", "Alternatives", "Cash"]:
+        pct = cluster_totals.get(cl, 0.0)
+        if pct < 0.001:
+            continue
+        c = _HRP_CLUSTER_COLOR[cl]
+        bg = _HRP_CLUSTER_BG[cl]
+        pills_html += (
+            f'<div style="display:flex;align-items:center;gap:0.4rem;'
+            f'background:{bg};border:1px solid {c}40;border-radius:20px;'
+            f'padding:0.3rem 0.75rem;">'
+            f'<span style="width:8px;height:8px;border-radius:50%;'
+            f'background:{c};flex-shrink:0;"></span>'
+            f'<span style="font-size:0.75rem;color:{c};font-weight:600;'
+            f'font-family:\'Space Grotesk\',sans-serif;">{cl}</span>'
+            f'<span style="font-size:0.75rem;color:#94a3b8;">{pct:.0%}</span>'
+            f'</div>'
+        )
+    pills_html += "</div>"
+    st.markdown(pills_html, unsafe_allow_html=True)
+
+    # ── Key metrics row ──────────────────────────────────────────────────────
+    metrics = [("Annual Volatility", f"{vol:.1%}")]
     if exp_ret is not None:
-        m_cols[1].metric("Exp. Return (hist.)", f"{exp_ret:.1%}")
+        metrics.append(("Exp. Return (hist.)", f"{exp_ret:.1%}"))
     if sharpe is not None:
-        m_cols[2].metric("Sharpe Ratio", f"{sharpe:.2f}")
+        metrics.append(("Sharpe Ratio", f"{sharpe:.2f}"))
     if max_dd is not None:
-        m_cols[3].metric("Max Drawdown (hist.)", f"{max_dd:.1%}")
+        metrics.append(("Max Drawdown (hist.)", f"{max_dd:.1%}"))
+
+    m_cols = st.columns(len(metrics))
+    for col, (label, value) in zip(m_cols, metrics):
+        col.metric(label, value)
 
     st.markdown("---")
 
-    # Donut chart + weights table side by side
+    # ── Donut chart + weights table ──────────────────────────────────────────
     col_donut, col_table = st.columns([1, 1.1])
 
     with col_donut:
+        st.markdown("**Portfolio Allocation**")
         try:
             from backend.optimizer.charts import plot_weights_donut
             fig_donut = plot_weights_donut(weights)
             fig_donut = apply_plotly_dark_theme(fig_donut)
+            fig_donut.update_layout(
+                title={"text": ""},
+                paper_bgcolor="rgba(0,0,0,0)",
+                plot_bgcolor="rgba(0,0,0,0)",
+            )
             st.plotly_chart(fig_donut, use_container_width=True)
         except Exception as exc:
             st.caption(f"Chart unavailable: {exc}")
 
     with col_table:
         st.markdown("**Portfolio Weights**")
-        # UCITS-eligible tickers show "EU" in the UCITS column, others show "-"
         ucits_set = set(ucits_used) | _UCITS_TICKERS
         rows = []
         for ticker, w in sorted(weights.items(), key=lambda kv: -kv[1]):
             rows.append({
                 "Ticker": ticker,
-                "Weight": f"{w:.1%}",
-                "UCITS": "EU" if ticker in ucits_set else "-",
-                "Risk Contrib.": f"{risk_contributions.get(ticker, 0.0):.1%}",
+                "Weight": w,
+                "UCITS": "EU ✓" if ticker in ucits_set else "—",
             })
         df = pd.DataFrame(rows)
-        st.dataframe(df, hide_index=True, use_container_width=True)
-
-    # Risk contribution bar chart
-    try:
-        from backend.optimizer.charts import plot_risk_contributions
-        fig = plot_risk_contributions(
-            risk_contributions,
-            profile_label=st.session_state.get("profile", {}).get("profile_label", ""),
+        st.dataframe(
+            df,
+            hide_index=True,
+            use_container_width=True,
+            column_config={
+                "Weight": st.column_config.ProgressColumn(
+                    "Weight", format="%.1f%%", min_value=0, max_value=1,
+                ),
+            },
         )
-        fig = apply_plotly_dark_theme(fig)
-        st.plotly_chart(fig, use_container_width=True)
+
+    # ── Risk contribution bar chart — colored by cluster ─────────────────────
+    tickers_sorted = sorted(
+        risk_contributions.keys(),
+        key=lambda t: risk_contributions[t],
+    )
+    bar_colors = [
+        _HRP_CLUSTER_COLOR.get(_HRP_TICKER_CLUSTER.get(t, ""), "#64748b")
+        for t in tickers_sorted
+    ]
+    rc_values = [risk_contributions[t] * 100 for t in tickers_sorted]
+    equal_risk = 100.0 / len(tickers_sorted) if tickers_sorted else 0
+
+    fig_rc = go.Figure()
+    fig_rc.add_trace(go.Bar(
+        x=rc_values,
+        y=tickers_sorted,
+        orientation="h",
+        marker=dict(
+            color=bar_colors,
+            line=dict(color="#0d1220", width=1),
+        ),
+        text=[f"{v:.1f}%" for v in rc_values],
+        textposition="outside",
+        hovertemplate="%{y}: %{x:.1f}%<extra></extra>",
+    ))
+    fig_rc.add_vline(
+        x=equal_risk,
+        line_dash="dot",
+        line_color="#475569",
+        line_width=1.5,
+        annotation_text="1/N",
+        annotation_font_color="#475569",
+        annotation_font_size=10,
+    )
+
+    profile_str = st.session_state.get("profile", {}).get("profile_label", "")
+    fig_rc.update_layout(
+        title=f"Risk Contributions — {profile_str}" if profile_str else "Risk Contributions",
+        xaxis_title="Risk Contribution (%)",
+        xaxis=dict(range=[0, max(rc_values) * 1.25]),
+        height=380,
+        margin=dict(l=8, r=40, t=50, b=40),
+    )
+    fig_rc = apply_plotly_dark_theme(fig_rc)
+    fig_rc.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
+    st.plotly_chart(fig_rc, use_container_width=True)
+
+    # --- Dendrogram ---
+    try:
+        import numpy as np
+        from scipy.cluster.hierarchy import linkage
+        from scipy.spatial.distance import squareform
+
+        from backend.optimizer.charts import plot_dendrogram
+
+        tickers_list = list(weights.keys())
+        n = len(tickers_list)
+
+        _CLUSTER_GROUPS = {
+            "CSPX.L": 0, "EFA": 0,
+            "GLD": 1, "VNQ": 1,
+            "AGGH.MI": 2, "TLT": 2, "TIP": 2,
+            "XEON.MI": 3,
+        }
+        corr = np.eye(n)
+        for i in range(n):
+            for j in range(n):
+                if i != j:
+                    ci = _CLUSTER_GROUPS.get(tickers_list[i], -1)
+                    cj = _CLUSTER_GROUPS.get(tickers_list[j], -1)
+                    corr[i, j] = 0.70 if ci == cj else 0.10
+
+        dist = np.sqrt(0.5 * (1 - corr))
+        np.fill_diagonal(dist, 0.0)
+        condensed = squareform(dist, checks=False)
+        link = linkage(condensed, method="ward")
+
+        st.markdown("**Cluster Structure (Dendrogram)**")
+        fig_dend = plot_dendrogram(link, tickers_list)
+        fig_dend = apply_plotly_dark_theme(fig_dend)
+        fig_dend.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
+        st.plotly_chart(fig_dend, use_container_width=True)
+
     except Exception as exc:
-        st.caption(f"Chart unavailable: {exc}")
+        st.caption(f"Dendrogram unavailable: {exc}")
+
 
 def _render_mv_tab(portfolio: dict, profile_key: str) -> None:
     """
@@ -1189,29 +1375,255 @@ def render_chat() -> None:
 
 
 # ---------------------------------------------------------------------------
-# Page 4 -- Backtesting (placeholder)
+# Page 4 -- Backtesting
 # ---------------------------------------------------------------------------
 
+_BACKTEST_DIR = Path(__file__).parent.parent / "backtest_output"
+
+_SCENARIO_LABELS: dict[str, str] = {
+    "gfc_2008":       "Global Financial Crisis (2008)",
+    "covid_2020":     "COVID-19 Crash (2020)",
+    "rate_hike_2022": "Rate Hike Cycle (2022)",
+}
+
+_STRATEGY_COLORS: dict[str, str] = {
+    "HRP": "#7c5cfc",
+    "MV":  "#f87171",
+    "1/N": "#94a3b8",
+}
+
+
 def render_backtesting() -> None:
-    page_header("Backtesting", "Historical performance simulation", icon="📈")
+    page_header("Backtesting", "Walk-forward simulation · HRP vs MV vs 1/N", icon="📈")
     render_disclaimer()
-    st.info(
-        "Backtesting module coming in Phase B. "
-        "It will run walk-forward simulations on the HRP portfolio "
-        "using historical price data from yfinance."
+
+    profile_data = st.session_state.get("profile", {})
+    profile_label = profile_data.get("profile_label", "MODERATE").lower()
+    if profile_label == "aggressive":
+        profile_label = "moderate"  # only moderate JSON available
+
+    summary_file = _BACKTEST_DIR / f"backtest_summary_{profile_label}.json"
+
+    if not summary_file.exists():
+        st.info(
+            "Backtest data not found. Run `scripts/run_backtest.py` to generate it. "
+            "Walk-forward simulations will appear here automatically once the file is present."
+        )
+        return
+
+    with open(summary_file) as fh:
+        summary = json.load(fh)
+
+    selected = st.selectbox(
+        "Stress scenario",
+        options=list(_SCENARIO_LABELS.keys()),
+        format_func=lambda k: _SCENARIO_LABELS[k],
+    )
+
+    st.markdown("---")
+
+    # ── Metrics comparison table ─────────────────────────────────────────────
+    st.markdown("**Strategy comparison**")
+    rows = []
+    for strat, m in summary[selected]["strategies"].items():
+        rows.append({
+            "Strategy":   strat,
+            "CAGR":       f"{m['cagr']:.1%}",
+            "Volatility": f"{m['annualised_volatility']:.1%}",
+            "Sharpe":     f"{m['sharpe_ratio']:.2f}",
+            "Max DD":     f"{m['max_drawdown']:.1%}",
+            "Calmar":     f"{m['calmar_ratio']:.2f}",
+            "TC (bps)":   f"{m['total_transaction_cost']*10_000:.1f}",
+        })
+    st.dataframe(pd.DataFrame(rows), hide_index=True, use_container_width=True)
+
+    # ── Key metrics for HRP ──────────────────────────────────────────────────
+    hrp = summary[selected]["strategies"]["HRP"]
+    mv  = summary[selected]["strategies"]["MV"]
+    m_cols = st.columns(4)
+    m_cols[0].metric("HRP CAGR",       f"{hrp['cagr']:.1%}",
+                     delta=f"{(hrp['cagr'] - mv['cagr']):.1%} vs MV")
+    m_cols[1].metric("HRP Sharpe",     f"{hrp['sharpe_ratio']:.2f}",
+                     delta=f"{(hrp['sharpe_ratio'] - mv['sharpe_ratio']):.2f} vs MV")
+    m_cols[2].metric("HRP Max DD",     f"{hrp['max_drawdown']:.1%}",
+                     delta=f"{(hrp['max_drawdown'] - mv['max_drawdown']):.1%} vs MV",
+                     delta_color="inverse")
+    m_cols[3].metric("HRP Volatility", f"{hrp['annualised_volatility']:.1%}")
+
+    st.markdown("---")
+
+    # ── Equity curve chart ───────────────────────────────────────────────────
+    scenario_file = _BACKTEST_DIR / f"backtest_{selected}_{profile_label}.json"
+    if scenario_file.exists():
+        with open(scenario_file) as fh:
+            detail = json.load(fh)
+
+        fig = go.Figure()
+        for strat, strat_data in detail["strategies"].items():
+            ec = strat_data["equity_curve"]
+            fig.add_trace(go.Scatter(
+                x=[e["date"] for e in ec],
+                y=[e["portfolio_value"] for e in ec],
+                mode="lines",
+                name=strat,
+                line=dict(color=_STRATEGY_COLORS.get(strat, "#64748b"), width=2),
+                hovertemplate="%{y:.3f}<extra>%{fullData.name}</extra>",
+            ))
+        fig.add_hline(y=1.0, line_dash="dot", line_color="#475569", line_width=1)
+        fig.update_layout(
+            title=f"Equity Curve — {_SCENARIO_LABELS[selected]}",
+            xaxis_title="Date",
+            yaxis_title="Portfolio value (start = 1.0)",
+            height=400,
+            legend=dict(orientation="h", yanchor="bottom", y=1.02),
+        )
+        fig = apply_plotly_dark_theme(fig)
+        st.plotly_chart(fig, use_container_width=True)
+
+        # ── Drawdown chart ───────────────────────────────────────────────────
+        import numpy as np
+
+        _DD_FILL: dict[str, str] = {
+            "HRP": "rgba(124,92,252,0.08)",
+            "MV":  "rgba(248,113,113,0.08)",
+            "1/N": "rgba(148,163,184,0.08)",
+        }
+        fig_dd = go.Figure()
+        for strat, strat_data in detail["strategies"].items():
+            ec = strat_data["equity_curve"]
+            vals = np.array([e["portfolio_value"] for e in ec])
+            dates_dd = [e["date"] for e in ec]
+            rolling_max = np.maximum.accumulate(vals)
+            dd = (vals - rolling_max) / rolling_max * 100
+            fig_dd.add_trace(go.Scatter(
+                x=dates_dd, y=dd.tolist(),
+                mode="lines", name=strat,
+                line=dict(color=_STRATEGY_COLORS.get(strat, "#64748b"), width=1.5),
+                fill="tozeroy",
+                fillcolor=_DD_FILL.get(strat, "rgba(0,0,0,0)"),
+                hovertemplate="%{y:.1f}%<extra>%{fullData.name}</extra>",
+            ))
+        fig_dd.update_layout(
+            title="Drawdown (%)",
+            xaxis_title="Date",
+            yaxis_title="Drawdown (%)",
+            height=320,
+            legend=dict(orientation="h", yanchor="bottom", y=1.02),
+        )
+        fig_dd = apply_plotly_dark_theme(fig_dd)
+        st.plotly_chart(fig_dd, use_container_width=True)
+
+    st.caption(
+        "Profile: MODERATE · Rebalancing: monthly · TC: 10 bps/rebalance · "
+        "Lookback: 252 trading days"
     )
 
 
 # ---------------------------------------------------------------------------
-# Page 5 -- Compare MV (placeholder)
+# Page 5 -- Compare MV
 # ---------------------------------------------------------------------------
+
+# Mock MV weights for Phase A (Markowitz concentrates in low-vol assets)
+_MOCK_MV_WEIGHTS: dict[str, float] = {
+    "CSPX.L":  0.08,
+    "EFA":     0.04,
+    "GLD":     0.07,
+    "VNQ":     0.01,
+    "AGGH.MI": 0.38,
+    "TLT":     0.27,
+    "TIP":     0.10,
+    "XEON.MI": 0.05,
+}
+
 
 def render_compare() -> None:
     page_header("Compare (MV)", "HRP vs Markowitz mean-variance", icon="⚖")
     render_disclaimer()
-    st.info(
-        "Side-by-side comparison of HRP and Mean-Variance portfolios "
-        "coming in Phase B (P2 W4 /compare endpoint)."
+
+    profile_data = st.session_state.get("profile", {})
+    profile_label = profile_data.get("profile_label", "MODERATE")
+    profile_key = _LABEL_TO_MOCK.get(profile_label, "balanced")
+
+    portfolio = st.session_state.get("portfolio_data") or _mock_optimization(profile_key)
+    hrp_weights = portfolio["weights"]
+
+    st.markdown("---")
+
+    # ── Side-by-side weights table ───────────────────────────────────────────
+    st.markdown("**Portfolio weights — HRP vs Markowitz (mock)**")
+
+    tickers = sorted(set(hrp_weights) | set(_MOCK_MV_WEIGHTS))
+    rows = []
+    for t in sorted(tickers, key=lambda x: -hrp_weights.get(x, 0)):
+        hrp_w = hrp_weights.get(t, 0.0)
+        mv_w  = _MOCK_MV_WEIGHTS.get(t, 0.0)
+        diff  = hrp_w - mv_w
+        rows.append({
+            "Ticker": t,
+            "HRP":    f"{hrp_w:.1%}",
+            "MV":     f"{mv_w:.1%}",
+            "HRP − MV": f"+{diff:.1%}" if diff > 0 else f"{diff:.1%}",
+        })
+    st.dataframe(pd.DataFrame(rows), hide_index=True, use_container_width=True)
+
+    st.markdown("---")
+
+    # ── Bar chart: HRP vs MV weights ─────────────────────────────────────────
+    col_bar, col_frontier = st.columns(2)
+
+    with col_bar:
+        st.markdown("**Weight allocation**")
+        fig_bar = go.Figure()
+        ticker_order = [r["Ticker"] for r in rows]
+        fig_bar.add_trace(go.Bar(
+            name="HRP",
+            x=ticker_order,
+            y=[hrp_weights.get(t, 0.0) * 100 for t in ticker_order],
+            marker_color="#7c5cfc",
+        ))
+        fig_bar.add_trace(go.Bar(
+            name="MV",
+            x=ticker_order,
+            y=[_MOCK_MV_WEIGHTS.get(t, 0.0) * 100 for t in ticker_order],
+            marker_color="#f87171",
+        ))
+        fig_bar.update_layout(
+            barmode="group",
+            yaxis_title="Weight (%)",
+            height=340,
+            legend=dict(orientation="h", yanchor="bottom", y=1.02),
+        )
+        fig_bar = apply_plotly_dark_theme(fig_bar)
+        st.plotly_chart(fig_bar, use_container_width=True)
+
+    with col_frontier:
+        st.markdown("**Efficient frontier (mock)**")
+        import numpy as np
+        # Generate a plausible mock frontier parabola
+        vols_f = np.linspace(0.04, 0.22, 60).tolist()
+        rets_f = [max(0.0, -2.5 * v**2 + 1.1 * v + 0.01) for v in vols_f]
+
+        hrp_vol = portfolio.get("expected_volatility", 0.085)
+        hrp_ret = portfolio.get("expected_return") or 0.062
+        mv_vol  = 0.068   # MV mock: lower vol, lower return
+        mv_ret  = 0.048
+
+        from backend.optimizer.charts import plot_efficient_frontier
+        fig_ef = plot_efficient_frontier(
+            frontier_vols=vols_f,
+            frontier_rets=rets_f,
+            hrp_vol=hrp_vol,
+            hrp_ret=hrp_ret,
+            mv_vol=mv_vol,
+            mv_ret=mv_ret,
+        )
+        fig_ef.update_layout(height=340)
+        fig_ef = apply_plotly_dark_theme(fig_ef)
+        st.plotly_chart(fig_ef, use_container_width=True)
+
+    st.caption(
+        "MV weights are mock (Phase A). Phase B will run the live Markowitz optimizer "
+        "via the /compare endpoint and compare against the real HRP result."
     )
 
 

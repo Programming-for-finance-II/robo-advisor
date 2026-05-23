@@ -102,9 +102,26 @@ html, body, [class*="css"] {
 #MainMenu, footer, header { visibility: hidden; }
 .block-container { padding-top: 1.5rem !important; }
 
+section[data-testid="stSidebar"],
 [data-testid="stSidebar"] {
     background: #0d1220 !important;
     border-right: 1px solid #1e2640 !important;
+    min-width: 260px !important;
+    width: 260px !important;
+    display: flex !important;
+    visibility: visible !important;
+    transform: translateX(0) !important;
+    opacity: 1 !important;
+}
+
+[data-testid="stSidebar"] > div:first-child {
+    padding-top: 0 !important;
+    margin-top: -1rem !important;
+}
+
+/* Hide the collapse arrow — nav buttons have <p> text, the arrow doesn't */
+[data-testid="stSidebar"] button:not(:has(p)) {
+    display: none !important;
 }
 
 /* ── Metrics ──────────────────────────────────────────────────────────────── */
