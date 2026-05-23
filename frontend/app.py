@@ -287,13 +287,6 @@ def main() -> None:
     if "active_page" not in st.session_state:
         st.session_state.active_page = PAGES[0]
 
-    # Handle nav change set by JavaScript onclick via query param
-    qp_nav = st.query_params.get("nav")
-    if qp_nav and qp_nav in PAGES:
-        st.session_state.active_page = qp_nav
-        st.query_params.clear()
-        st.rerun()
-
     # ── Sidebar ──────────────────────────────────────────────────────
     with st.sidebar:
         if LOGO_PATH.exists():
@@ -328,21 +321,17 @@ def main() -> None:
             unsafe_allow_html=True,
         )
 
-        # Custom HTML nav — SVG icons, left-aligned, no emoji
         active = st.session_state.active_page
-        nav_rows = []
         for page_name in PAGES:
-            cls = "sidebar-nav-item active" if page_name == active else "sidebar-nav-item"
-            svg = _NAV_SVGS[page_name]
-            enc = page_name.replace(" ", "%20").replace("(", "%28").replace(")", "%29")
-            onclick = f"window.parent.location.search='?nav={enc}'"
-            nav_rows.append(
-                f'<div class="{cls}" onclick="{onclick}">'
-                f'<span class="sidebar-nav-icon">{svg}</span>'
-                f"<span>{page_name}</span>"
-                f"</div>"
-            )
-        st.markdown("\n".join(nav_rows), unsafe_allow_html=True)
+            btn_type = "primary" if page_name == active else "secondary"
+            if st.button(
+                page_name,
+                key=f"nav_{page_name}",
+                use_container_width=True,
+                type=btn_type,
+            ):
+                st.session_state.active_page = page_name
+                st.rerun()
 
         st.markdown(
             f"""

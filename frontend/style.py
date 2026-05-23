@@ -10,50 +10,43 @@ html, body, [class*="css"] {
     font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
 }
 
-/* ── Sidebar custom HTML nav items ───────────────────────────────────────── */
-.sidebar-nav-item {
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    gap: 0.65rem;
-    padding: 0.6rem 0.85rem;
-    margin: 0.1rem 0;
-    border-radius: 10px;
-    cursor: pointer;
-    color: #64748b;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 0.88rem;
-    font-weight: 500;
-    letter-spacing: 0.01em;
-    transition: background 0.15s ease, color 0.15s ease;
-    user-select: none;
-    text-align: left;
+/* ── Sidebar nav buttons ──────────────────────────────────────────────────── */
+[data-testid="stSidebar"] .stButton > button {
+    background: transparent !important;
+    border: none !important;
+    color: #64748b !important;
+    text-align: left !important;
+    justify-content: flex-start !important;
+    padding: 0.55rem 0.85rem !important;
+    border-radius: 10px !important;
+    font-family: 'DM Sans', sans-serif !important;
+    font-size: 0.88rem !important;
+    font-weight: 500 !important;
+    letter-spacing: 0.01em !important;
+    box-shadow: none !important;
+    margin: 0.05rem 0 !important;
+    width: 100% !important;
+    transition: background 0.15s ease, color 0.15s ease !important;
 }
 
-.sidebar-nav-item:hover {
-    background: rgba(124,92,252,0.07);
-    color: #94a3b8;
+[data-testid="stSidebar"] .stButton > button:hover {
+    background: rgba(124,92,252,0.07) !important;
+    color: #94a3b8 !important;
+    border: none !important;
 }
 
-.sidebar-nav-item.active {
-    background: rgba(124,92,252,0.15);
-    color: #a78bfa;
-    font-weight: 600;
+[data-testid="stSidebar"] .stButton > button[data-testid="stBaseButton-primary"],
+[data-testid="stSidebar"] .stButton > button[kind="primary"] {
+    background: rgba(124,92,252,0.15) !important;
+    border: none !important;
+    color: #a78bfa !important;
+    font-weight: 600 !important;
 }
 
-.sidebar-nav-item.active:hover {
-    background: rgba(124,92,252,0.22);
-}
-
-.sidebar-nav-icon {
-    display: flex;
-    align-items: center;
-    flex-shrink: 0;
-    opacity: 0.7;
-}
-
-.sidebar-nav-item.active .sidebar-nav-icon {
-    opacity: 1;
+[data-testid="stSidebar"] .stButton > button[data-testid="stBaseButton-primary"]:hover,
+[data-testid="stSidebar"] .stButton > button[kind="primary"]:hover {
+    background: rgba(124,92,252,0.22) !important;
+    border: none !important;
 }
 
 #MainMenu, footer, header { visibility: hidden; }
