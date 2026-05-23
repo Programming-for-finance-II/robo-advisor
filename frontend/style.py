@@ -10,46 +10,50 @@ html, body, [class*="css"] {
     font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
 }
 
-/* ── Sidebar nav ──────────────────────────────────────────────────────────── */
-[data-testid="stSidebar"] [data-testid="stRadio"] label {
-    display: flex !important;
-    align-items: center !important;
-    gap: 0.65rem !important;
-    padding: 0.65rem 0.85rem !important;
-    margin: 0.25rem 0 !important;
-    border-radius: 10px !important;
-    color: #94a3b8 !important;
-    min-height: 2.8rem !important;
+/* ── Sidebar custom HTML nav items ───────────────────────────────────────── */
+.sidebar-nav-item {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.65rem;
+    padding: 0.6rem 0.85rem;
+    margin: 0.1rem 0;
+    border-radius: 10px;
+    cursor: pointer;
+    color: #64748b;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.88rem;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    transition: background 0.15s ease, color 0.15s ease;
+    user-select: none;
+    text-align: left;
 }
 
-/* Force Streamlit internal radio wrapper to stay horizontal */
-[data-testid="stSidebar"] [data-testid="stRadio"] label > div {
-    display: flex !important;
-    align-items: center !important;
-    flex-direction: row !important;
-    gap: 0.65rem !important;
+.sidebar-nav-item:hover {
+    background: rgba(124,92,252,0.07);
+    color: #94a3b8;
 }
 
-/* Keep the circular radio marker aligned */
-[data-testid="stSidebar"] [data-testid="stRadio"] label > div:first-child {
-    flex: 0 0 auto !important;
-    margin: 0 !important;
+.sidebar-nav-item.active {
+    background: rgba(124,92,252,0.15);
+    color: #a78bfa;
+    font-weight: 600;
 }
 
-/* Selected item */
-[data-testid="stSidebar"] [data-testid="stRadio"] label:has(input:checked) {
-    background: rgba(124,92,252,0.15) !important;
-    color: #a78bfa !important;
+.sidebar-nav-item.active:hover {
+    background: rgba(124,92,252,0.22);
 }
 
-/* Text label */
-[data-testid="stSidebar"] [data-testid="stRadio"] label p {
-    margin: 0 !important;
-    padding: 0 !important;
-    line-height: 1.1 !important;
-    font-size: 0.95rem !important;
-    font-weight: 600 !important;
-    white-space: nowrap !important;
+.sidebar-nav-icon {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    opacity: 0.7;
+}
+
+.sidebar-nav-item.active .sidebar-nav-icon {
+    opacity: 1;
 }
 
 #MainMenu, footer, header { visibility: hidden; }
@@ -113,24 +117,32 @@ html, body, [class*="css"] {
 
 hr { border-color: #1e2640 !important; }
 
-/* ── Questionnaire section cards ──────────────────────────────────────────── */
+/* ── Questionnaire layout ──────────────────────────────────────────────────── */
 
-/* Section container: clip the gradient header to rounded corners */
-[data-testid="questionnaire_form"] [data-testid="stVerticalBlockBorderWrapper"] {
-    overflow: hidden !important;
+/* Hide the form's own outer border — only the 3 section cards should be visible */
+[data-testid="stForm"] {
+    border: none !important;
     padding: 0 !important;
-    background: #0b1120 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+/* Section cards: clip the gradient header at rounded corners */
+[data-testid="stVerticalBlockBorderWrapper"] {
+    overflow: hidden !important;
     border-color: #1e2640 !important;
 }
 
-/* Full-bleed gradient band at top of each section card */
+/* Gradient header band — full-bleed inside each section card */
 .qs-header {
     display: flex;
     align-items: center;
     gap: 1rem;
-    padding: 1.1rem 1.25rem;
+    padding: 1rem 1.25rem;
+    margin: -1rem -1rem 0.75rem -1rem;
     background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 55%, #0d1220 100%);
     border-bottom: 1px solid #2d3748;
+    border-radius: 10px 10px 0 0;
 }
 
 .qs-num {
@@ -163,11 +175,6 @@ hr { border-color: #1e2640 !important; }
     margin-top: 0.15rem;
 }
 
-/* Question body wrapper padding */
-.qs-body {
-    padding: 0.25rem 1.25rem 1rem 1.25rem;
-}
-
 /* Question badge + text row */
 .qs-q-row {
     display: flex;
@@ -197,9 +204,10 @@ hr { border-color: #1e2640 !important; }
     line-height: 1.35;
 }
 
-/* ── Radio options → 4-column card grid (questionnaire only) ─────────────── */
+/* ── Radio options → 4-column card grid ───────────────────────────────────── */
+/* Scoped to section cards (stVerticalBlockBorderWrapper) so it doesn't leak   */
 
-[data-testid="questionnaire_form"] div[data-testid="stRadio"] > div[role="radiogroup"] {
+[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stRadio"] > div[role="radiogroup"] {
     display: grid !important;
     grid-template-columns: repeat(4, 1fr) !important;
     gap: 0.5rem !important;
@@ -207,7 +215,7 @@ hr { border-color: #1e2640 !important; }
     margin-bottom: 0.5rem !important;
 }
 
-[data-testid="questionnaire_form"] div[data-testid="stRadio"] label {
+[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stRadio"] label {
     background: rgba(10, 15, 30, 0.65) !important;
     border: 1px solid #1e2640 !important;
     border-radius: 9px !important;
@@ -220,29 +228,29 @@ hr { border-color: #1e2640 !important; }
     transition: border-color 0.15s ease, background 0.15s ease !important;
 }
 
-[data-testid="questionnaire_form"] div[data-testid="stRadio"] label:hover {
+[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stRadio"] label:hover {
     border-color: rgba(124,92,252,0.45) !important;
     background: rgba(124,92,252,0.07) !important;
 }
 
-[data-testid="questionnaire_form"] div[data-testid="stRadio"] label:has(input:checked) {
+[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stRadio"] label:has(input:checked) {
     border-color: #7c5cfc !important;
     background: rgba(124,92,252,0.14) !important;
 }
 
-[data-testid="questionnaire_form"] div[data-testid="stRadio"] label p {
+[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stRadio"] label p {
     font-size: 0.8rem !important;
     color: #94a3b8 !important;
     line-height: 1.45 !important;
     margin: 0 !important;
 }
 
-[data-testid="questionnaire_form"] div[data-testid="stRadio"] label:has(input:checked) p {
+[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stRadio"] label:has(input:checked) p {
     color: #c4b5fd !important;
 }
 
 /* Submit button */
-[data-testid="questionnaire_form"] [data-testid="stFormSubmitButton"] button {
+[data-testid="stFormSubmitButton"] > button {
     width: 100% !important;
     background: rgba(124,92,252,0.15) !important;
     border: 1px solid #7c5cfc !important;
@@ -257,7 +265,7 @@ hr { border-color: #1e2640 !important; }
     transition: background 0.15s ease !important;
 }
 
-[data-testid="questionnaire_form"] [data-testid="stFormSubmitButton"] button:hover {
+[data-testid="stFormSubmitButton"] > button:hover {
     background: rgba(124,92,252,0.25) !important;
 }
 </style>
@@ -314,17 +322,31 @@ def render_stress_banner() -> None:
     st.markdown(STRESS_BANNER_HTML, unsafe_allow_html=True)
 
 
-def page_header(title: str, subtitle: str = "") -> None:
-    """Render a styled page header with Space Grotesk font."""
+def page_header(title: str, subtitle: str = "", icon: str = "") -> None:
+    """Render a styled page header with Space Grotesk font and optional icon."""
     sub_html = (
-        f'<div style="font-size:0.82rem;color:#475569;margin-top:3px;'
+        f'<div style="font-size:0.72rem;color:#475569;margin-top:4px;'
         f'letter-spacing:0.04em;">{subtitle}</div>'
         if subtitle else ""
     )
+    icon_html = (
+        f'<div style="'
+        f'width:2.4rem;height:2.4rem;'
+        f'background:rgba(124,92,252,0.12);'
+        f'border:1px solid rgba(124,92,252,0.25);'
+        f'border-radius:9px;'
+        f'display:inline-flex;align-items:center;justify-content:center;'
+        f'font-size:1.05rem;flex-shrink:0;">{icon}</div>'
+        if icon else ""
+    )
+    layout = "display:flex;align-items:center;gap:0.875rem;" if icon else ""
     st.markdown(
-        f'<div style="margin-bottom:1.25rem;">'
+        f'<div style="{layout}margin-bottom:1.25rem;">'
+        f'{icon_html}'
+        f'<div>'
         f'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:1.45rem;'
-        f'font-weight:600;color:#f1f5f9;">{title}</div>{sub_html}</div>',
+        f'font-weight:600;color:#f1f5f9;">{title}</div>{sub_html}'
+        f'</div></div>',
         unsafe_allow_html=True,
     )
 
