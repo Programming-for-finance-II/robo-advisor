@@ -14,6 +14,7 @@ W4 changes (Mon-Tue):
 import os
 import sys
 import uuid
+from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -23,15 +24,24 @@ import streamlit as st
 from backend.llm.narrator import NarratorClient, NarratorError
 from backend.llm.validator import validate
 from backend.schemas.mock_data import get_mock_payload
+from frontend.style import (
+    apply_plotly_dark_theme,
+    inject_css,
+    page_header,
+    render_disclaimer,
+    render_eu_note,
+)
 
 # ---------------------------------------------------------------------------
 # Page config -- must be the first Streamlit call in the file
 # ---------------------------------------------------------------------------
 st.set_page_config(
-    page_title="Robo-Advisor -- USI 2026",
-    page_icon=":chart_with_upwards_trend:",
+    page_title="RoboAdvisor · USI 2026",
+    page_icon="📊",
     layout="wide",
+    initial_sidebar_state="expanded",
 )
+inject_css()
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -44,6 +54,23 @@ DISCLAIMER = (
     "regulatory framework. Market data may be inaccurate or delayed."
 )
 
+# UCITS-eligible tickers (primary universe — see ADR-001)
+_UCITS_TICKERS: frozenset[str] = frozenset({"CSPX.L", "AGGH.MI", "XEON.MI"})
+
+# Mock portfolio data (Phase A fallback)
+_MOCK_WEIGHTS: dict[str, float] = {
+    "CSPX.L":  0.30,
+    "EFA":     0.15,
+    "GLD":     0.10,
+    "VNQ":     0.05,
+    "AGGH.MI": 0.20,
+    "TLT":     0.10,
+    "TIP":     0.05,
+    "XEON.MI": 0.05,
+}
+
+_MOCK_REGIME: str = "NORMAL"
+
 # Maps the uppercase profile label from the backend to the lowercase key
 # used by get_mock_payload()
 _LABEL_TO_MOCK: dict[str, str] = {
@@ -52,11 +79,11 @@ _LABEL_TO_MOCK: dict[str, str] = {
     "AGGRESSIVE": "aggressive",
 }
 
-# UCITS-eligible tickers in the universe -- used to display the EU badge
-_UCITS_TICKERS: frozenset[str] = frozenset({"CSPX.L", "AGGH.MI", "XEON.MI"})
-
 # Start date for the live market data download
 _DATA_START: str = "2023-01-01"
+
+ASSETS_DIR = Path(__file__).parent / "assets"
+LOGO_PATH = ASSETS_DIR / "logo.png"
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -64,7 +91,7 @@ _DATA_START: str = "2023-01-01"
 
 def show_disclaimer() -> None:
     # Show the mandatory MiFID II disclaimer at the top of every page
-    st.warning(DISCLAIMER)
+    render_disclaimer()  # use HTML custom of style.py
 
 
 # ---------------------------------------------------------------------------
@@ -171,21 +198,187 @@ def _mock_optimization(profile_key: str) -> dict:
 # Navigation
 # ---------------------------------------------------------------------------
 
-PAGES = ["Questionnaire", "Portfolio Dashboard", "Chat Advisor"]
+PAGES = [
+    "Questionnaire",
+    "Portfolio Dashboard",
+    "Chat Advisor",
+    "Backtesting",
+    "Compare (MV)",
+    "Settings",
+]
+
+_NAV_SVGS: dict[str, str] = {
+    "Questionnaire": (
+        '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"'
+        ' stroke="currentColor" stroke-width="2"'
+        ' stroke-linecap="round" stroke-linejoin="round">'
+        '<rect x="8" y="2" width="8" height="4" rx="1"/>'
+        '<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6'
+        'a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>'
+        '<line x1="12" y1="11" x2="16" y2="11"/>'
+        '<line x1="12" y1="16" x2="16" y2="16"/>'
+        '<circle cx="8" cy="11" r="1" fill="currentColor" stroke="none"/>'
+        '<circle cx="8" cy="16" r="1" fill="currentColor" stroke="none"/>'
+        "</svg>"
+    ),
+    "Portfolio Dashboard": (
+        '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"'
+        ' stroke="currentColor" stroke-width="2"'
+        ' stroke-linecap="round" stroke-linejoin="round">'
+        '<path d="M21.21 15.89A10 10 0 1 1 8 2.83"/>'
+        '<path d="M22 12A10 10 0 0 0 12 2v10z"/>'
+        "</svg>"
+    ),
+    "Chat Advisor": (
+        '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"'
+        ' stroke="currentColor" stroke-width="2"'
+        ' stroke-linecap="round" stroke-linejoin="round">'
+        '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14'
+        'a2 2 0 0 1 2 2z"/>'
+        "</svg>"
+    ),
+    "Backtesting": (
+        '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"'
+        ' stroke="currentColor" stroke-width="2"'
+        ' stroke-linecap="round" stroke-linejoin="round">'
+        '<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>'
+        '<polyline points="17 6 23 6 23 12"/>'
+        "</svg>"
+    ),
+    "Compare (MV)": (
+        '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"'
+        ' stroke="currentColor" stroke-width="2"'
+        ' stroke-linecap="round" stroke-linejoin="round">'
+        '<line x1="12" y1="2" x2="12" y2="22"/>'
+        '<path d="M5 7 2 14h6z"/>'
+        '<path d="M19 7 22 14h-6z"/>'
+        '<line x1="5" y1="7" x2="19" y2="7"/>'
+        '<line x1="9" y1="2" x2="15" y2="2"/>'
+        "</svg>"
+    ),
+    "Settings": (
+        '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"'
+        ' stroke="currentColor" stroke-width="2"'
+        ' stroke-linecap="round" stroke-linejoin="round">'
+        '<circle cx="12" cy="12" r="3"/>'
+        '<path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83'
+        'l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0'
+        'v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83'
+        '-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4'
+        'h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83'
+        '-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0'
+        'v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83'
+        ' 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4'
+        'h-.09a1.65 1.65 0 0 0-1.51 1z"/>'
+        "</svg>"
+    ),
+}
+
+_SHIELD_SVG = (
+    '<svg width="13" height="13" viewBox="0 0 24 24" fill="none"'
+    ' stroke="currentColor" stroke-width="2"'
+    ' stroke-linecap="round" stroke-linejoin="round">'
+    '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>'
+    "</svg>"
+)
 
 
 def main() -> None:
-    # Sidebar with page selector
-    st.sidebar.title("Robo-Advisor")
-    st.sidebar.caption("USI -- Programming in Finance II -- 2026")
-    page = st.sidebar.radio("Navigation", PAGES)
+    if "active_page" not in st.session_state:
+        st.session_state.active_page = PAGES[0]
 
-    if page == PAGES[0]:
+    # ── Sidebar ──────────────────────────────────────────────────────
+    with st.sidebar:
+        if LOGO_PATH.exists():
+            st.image(str(LOGO_PATH), use_container_width=True)
+        else:
+            st.markdown("### RoboAdvisor")
+
+        st.markdown(
+            """
+            <div style="
+                text-align: center;
+                margin-top: -0.5rem;
+                margin-bottom: 1rem;
+                font-size: 0.65rem;
+                letter-spacing: 0.1em;
+                color: #475569;
+                text-transform: uppercase;
+            ">
+                USI · Programming in Finance II · 2026
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            "<hr style='border-color:#1e2640; margin: 0.5rem 0 0.6rem 0;'>",
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            "<div style='font-size:0.58rem;letter-spacing:0.12em;color:#475569;"
+            "text-transform:uppercase;padding:0 0.85rem 0.5rem;font-weight:600;'>"
+            "NAVIGATION</div>",
+            unsafe_allow_html=True,
+        )
+
+        active = st.session_state.active_page
+        for page_name in PAGES:
+            btn_type = "primary" if page_name == active else "secondary"
+            wrap_cls = "nav-svg-wrap active" if page_name == active else "nav-svg-wrap"
+            col_icon, col_btn = st.columns([0.15, 0.85])
+            with col_icon:
+                st.markdown(
+                    f'<div class="{wrap_cls}">{_NAV_SVGS[page_name]}</div>',
+                    unsafe_allow_html=True,
+                )
+            with col_btn:
+                if st.button(
+                    page_name,
+                    key=f"nav_{page_name}",
+                    use_container_width=True,
+                    type=btn_type,
+                ):
+                    st.session_state.active_page = page_name
+                    st.rerun()
+
+        st.markdown(
+            f"""
+            <div style="
+                background: rgba(124,92,252,0.08);
+                border: 1px solid rgba(124,92,252,0.2);
+                border-radius: 10px;
+                padding: 0.75rem 0.875rem;
+                margin: 1.5rem 0 0 0;
+            ">
+                <div style="
+                    display:flex;align-items:center;gap:0.4rem;
+                    font-size:0.7rem;font-weight:600;color:#a78bfa;margin-bottom:0.3rem;
+                ">{_SHIELD_SVG} Educational Prototype</div>
+                <div style="font-size:0.67rem;color:#64748b;line-height:1.5;">
+                    This is an educational prototype and not financial advice.
+                </div>
+                <div style="font-size:0.63rem;color:#475569;margin-top:0.3rem;">
+                    Market data may be delayed or inaccurate.
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    # ── Pages ────────────────────────────────────────────────────────
+    active = st.session_state.active_page
+    if active == "Questionnaire":
         render_questionnaire()
-    elif page == PAGES[1]:
+    elif active == "Portfolio Dashboard":
         render_portfolio()
-    elif page == PAGES[2]:
+    elif active == "Chat Advisor":
         render_chat()
+    elif active == "Backtesting":
+        render_backtesting()
+    elif active == "Compare (MV)":
+        render_compare()
+    elif active == "Settings":
+        render_settings()
 
 
 # ---------------------------------------------------------------------------
@@ -372,36 +565,127 @@ def _compute_profile(answers: dict[str, int]) -> dict:
 # ---------------------------------------------------------------------------
 
 def render_questionnaire() -> None:
-    st.title("Investor Profile Questionnaire")
-    show_disclaimer()
-    st.markdown("---")
+    page_header("Investor Profile Questionnaire", "Grable-Lytton Scale · 10 questions")
+    render_disclaimer()
+
+    # Info card — Grable-Lytton explanation (only this one, no icon on page title)
     st.markdown(
-        "Answer all 10 questions honestly. "
-        "Your responses determine your investor risk profile."
+        """
+        <div style="
+            background: rgba(30,38,64,0.5);
+            border: 1px solid #1e2640;
+            border-radius: 10px;
+            padding: 0.9rem 1rem;
+            margin-bottom: 1.25rem;
+            display: flex;
+            gap: 0.875rem;
+            align-items: flex-start;
+        ">
+            <div style="
+                width:2rem;height:2rem;flex-shrink:0;
+                background:rgba(59,130,246,0.12);
+                border:1px solid rgba(59,130,246,0.25);
+                border-radius:7px;
+                display:inline-flex;align-items:center;
+                justify-content:center;font-size:0.95rem;
+            ">🎓</div>
+            <div>
+                <div style="
+                    font-family:'Space Grotesk',sans-serif;
+                    font-size:0.9rem;font-weight:600;
+                    color:#e2e8f0;margin-bottom:0.25rem;
+                ">What is the Grable-Lytton Scale?</div>
+                <div style="font-size:0.79rem;color:#64748b;line-height:1.55;">
+                    An academic risk-tolerance questionnaire used to estimate how much financial
+                    risk an investor is willing and able to take. In this prototype, it provides
+                    the rule-based baseline for the investor profile.
+                </div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
     )
 
-    answers: dict[str, int] = {}
-    current_section = ""
+    st.markdown(
+        '<div style="font-size:0.85rem;color:#64748b;margin:0 0 1.5rem 0;">'
+        "Complete the three sections below to generate your investor risk profile."
+        "</div>",
+        unsafe_allow_html=True,
+    )
+
+    answers: dict[str, int | None] = {}
+
+    sections = [
+        {
+            "number": "01",
+            "title": "Financial Situation",
+            "subtitle": "Basic information about your financial background.",
+            "key": "Who You Are Financially",
+        },
+        {
+            "number": "02",
+            "title": "Investment Behaviour",
+            "subtitle": "How you think about time horizon, return and uncertainty.",
+            "key": "How You Invest",
+        },
+        {
+            "number": "03",
+            "title": "Reaction to Risk",
+            "subtitle": "How you would react under market stress.",
+            "key": "How You React",
+        },
+    ]
 
     with st.form("questionnaire_form"):
-        for q in _QUESTIONS:
-            # Print a section header when the section changes
-            if q["section"] != current_section:
-                current_section = q["section"]
-                st.subheader(current_section)
+        for section in sections:
+            # Each section is its own independent card — siblings, not nested
+            with st.container(border=True):
+                st.markdown(
+                    f"""
+                    <div class="qs-header">
+                        <div class="qs-num">{section["number"]}</div>
+                        <div>
+                            <div class="qs-title">{section["title"]}</div>
+                            <div class="qs-sub">{section["subtitle"]}</div>
+                        </div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
 
-            selected = st.radio(
-                label=f"**{q['id']}. {q['text']}**",
-                options=q["options"],
-                index=None,  # no pre-selected default -- user must choose
-                key=f"q_{q['id']}",
-            )
-            answers[q["id"]] = q["options"].index(selected) if selected else None
+                for q in _QUESTIONS:
+                    if q["section"] != section["key"]:
+                        continue
 
-        submitted = st.form_submit_button("Calculate my profile")
+                    st.markdown(
+                        f"""
+                        <div class="qs-q-row">
+                            <span class="qs-q-badge">{q["id"]}</span>
+                            <span class="qs-q-text">{q["text"]}</span>
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
+
+                    selected = st.radio(
+                        label="",
+                        options=q["options"],
+                        index=None,
+                        key=f"q_{q['id']}",
+                        label_visibility="collapsed",
+                    )
+
+                    answers[q["id"]] = (
+                        q["options"].index(selected) if selected is not None else None
+                    )
+
+        submitted = st.form_submit_button(
+            "Calculate my profile",
+            type="primary",
+            use_container_width=True,
+        )
 
     if submitted:
-        # Make sure all questions are answered before computing
         if any(v is None for v in answers.values()):
             st.error("Please answer all questions before submitting.")
             return
@@ -409,16 +693,15 @@ def render_questionnaire() -> None:
         result = _compute_profile(answers)
         st.session_state["profile"] = result
         st.session_state["questionnaire_answers"] = answers
-
-        # Clear any cached portfolio so the Dashboard reloads for the new profile
         st.session_state.pop("portfolio_data", None)
 
         st.success("Profile calculated. Navigate to Portfolio Dashboard.")
-        st.metric("Your risk profile", result["profile_label"])
-        st.metric("Confidence", f"{result['confidence']:.0%}")
+        col_a, col_b = st.columns(2)
+        col_a.metric("Your risk profile", result["profile_label"])
+        col_b.metric("Confidence", f"{result['confidence']:.0%}")
 
         if result["low_confidence_flag"]:
-            st.warning("Borderline score -- consider reviewing your answers.")
+            st.warning("Borderline score — consider reviewing your answers.")
 
         if result["q7_override_applied"]:
             st.info(
@@ -439,9 +722,9 @@ def render_portfolio() -> None:
         Phase A (default): mock payload from backend/schemas/mock_data.py
         Phase B (live toggle on): ValidatedDataLoader + HRP + regime detector
     """
-    st.title("Portfolio Dashboard")
-    show_disclaimer()
-    st.markdown("---")
+    page_header("Portfolio Dashboard", "HRP optimization · Balanced profile")
+    render_disclaimer()
+    render_eu_note()
 
     # Read the profile that was set by the Questionnaire page
     profile_data = st.session_state.get("profile", {})
@@ -457,10 +740,15 @@ def render_portfolio() -> None:
         if confidence is not None:
             st.metric("Confidence", f"{confidence:.0%}")
 
+    default_live = (
+        st.session_state.get("default_data_mode", "")
+        == "Live market data (Phase B — requires network)"
+    )
+
     # Toggle between mock data (Phase A) and live optimizer (Phase B)
     use_live = st.toggle(
         "Load live market data",
-        value=False,
+        value=default_live,
         help=(
             "Downloads real prices from yfinance and runs the HRP optimizer. "
             "Takes about 10 seconds on first load."
@@ -557,31 +845,42 @@ def _render_hrp_tab(portfolio: dict) -> None:
         m_cols[3].metric("Max Drawdown (hist.)", f"{max_dd:.1%}")
 
     st.markdown("---")
-    st.markdown("**Portfolio Weights**")
 
-    # Build the weights table
-    # UCITS-eligible tickers show "EU" in the UCITS column, others show "-"
-    ucits_set = set(ucits_used) | _UCITS_TICKERS
-    rows = []
-    for ticker, w in sorted(weights.items(), key=lambda kv: -kv[1]):
-        rows.append({
-            "Ticker": ticker,
-            "Weight": f"{w:.1%}",
-            "UCITS": "EU" if ticker in ucits_set else "-",
-            "Risk Contrib.": f"{risk_contributions.get(ticker, 0.0):.1%}",
-        })
+    # Donut chart + weights table side by side
+    col_donut, col_table = st.columns([1, 1.1])
 
-    df = pd.DataFrame(rows)
-    st.dataframe(df, hide_index=True, use_container_width=True)
+    with col_donut:
+        try:
+            from backend.optimizer.charts import plot_weights_donut
+            fig_donut = plot_weights_donut(weights)
+            fig_donut = apply_plotly_dark_theme(fig_donut)
+            st.plotly_chart(fig_donut, use_container_width=True)
+        except Exception as exc:
+            st.caption(f"Chart unavailable: {exc}")
+
+    with col_table:
+        st.markdown("**Portfolio Weights**")
+        # UCITS-eligible tickers show "EU" in the UCITS column, others show "-"
+        ucits_set = set(ucits_used) | _UCITS_TICKERS
+        rows = []
+        for ticker, w in sorted(weights.items(), key=lambda kv: -kv[1]):
+            rows.append({
+                "Ticker": ticker,
+                "Weight": f"{w:.1%}",
+                "UCITS": "EU" if ticker in ucits_set else "-",
+                "Risk Contrib.": f"{risk_contributions.get(ticker, 0.0):.1%}",
+            })
+        df = pd.DataFrame(rows)
+        st.dataframe(df, hide_index=True, use_container_width=True)
 
     # Risk contribution bar chart
-    # plot_risk_contributions is defined in backend/optimizer/charts.py
     try:
         from backend.optimizer.charts import plot_risk_contributions
         fig = plot_risk_contributions(
             risk_contributions,
             profile_label=st.session_state.get("profile", {}).get("profile_label", ""),
         )
+        fig = apply_plotly_dark_theme(fig)
         st.plotly_chart(fig, use_container_width=True)
     except Exception as exc:
         st.caption(f"Chart unavailable: {exc}")
@@ -812,8 +1111,8 @@ def render_chat() -> None:
         Stage 2 -- call NarratorClient (Claude API)
         Stage 3 -- run 5-step validator before showing anything
     """
-    st.title("Chat Advisor")
-    show_disclaimer()
+    page_header("Chat Advisor", "LLM Narrator · Validated responses")
+    render_disclaimer()
     st.markdown("---")
 
     # Read profile from session_state; default to MODERATE if questionnaire not done
@@ -880,18 +1179,78 @@ def render_chat() -> None:
                 else:
                     # Clean response -- show the validated narrative
                     st.markdown(result.safe_text)
-
-                # Show any validator flags that were triggered
-                # Remove this block before the final demo
-                if result.flags:
-                    st.caption(f"Validator flags: {[f.value for f in result.flags]}")
-
+           
             except NarratorError:
                 # NarratorClient raised at construction -- API key is missing
                 st.error(
                     "ANTHROPIC_API_KEY is not configured. "
                     "Add it to .streamlit/secrets.toml or set it as an environment variable."
                 )
+
+
+# ---------------------------------------------------------------------------
+# Page 4 -- Backtesting (placeholder)
+# ---------------------------------------------------------------------------
+
+def render_backtesting() -> None:
+    page_header("Backtesting", "Historical performance simulation", icon="📈")
+    render_disclaimer()
+    st.info(
+        "Backtesting module coming in Phase B. "
+        "It will run walk-forward simulations on the HRP portfolio "
+        "using historical price data from yfinance."
+    )
+
+
+# ---------------------------------------------------------------------------
+# Page 5 -- Compare MV (placeholder)
+# ---------------------------------------------------------------------------
+
+def render_compare() -> None:
+    page_header("Compare (MV)", "HRP vs Markowitz mean-variance", icon="⚖")
+    render_disclaimer()
+    st.info(
+        "Side-by-side comparison of HRP and Mean-Variance portfolios "
+        "coming in Phase B (P2 W4 /compare endpoint)."
+    )
+
+
+# ---------------------------------------------------------------------------
+# Page 6 -- Settings
+# ---------------------------------------------------------------------------
+
+def render_settings() -> None:
+    """Platform configuration and status page."""
+    page_header("Settings", "Platform configuration")
+    render_disclaimer()
+    st.markdown("---")
+
+    st.markdown("**Data Source**")
+    st.radio(
+        "Default data mode for Portfolio Dashboard",
+        ["Mock data (Phase A — always works)", "Live market data (Phase B — requires network)"],
+        index=0,
+        key="default_data_mode",
+    )
+
+    st.markdown("---")
+    st.markdown("**API Status**")
+    api_key = os.environ.get("ANTHROPIC_API_KEY", "")
+    if not api_key:
+        try:
+            api_key = st.secrets.get("ANTHROPIC_API_KEY", "")
+        except Exception:
+            api_key = ""
+    if api_key:
+        st.success("Claude API key configured ✓")
+    else:
+        st.error("Claude API key not found — Chat Advisor will not work.")
+
+    st.markdown("---")
+    st.markdown("**About**")
+    st.caption("AI-Powered Robo-Advisor Platform · USI Programming in Finance II 2026")
+    st.caption("Design v3.1 · HRP + LLM Narrator + EU Awareness")
+    st.caption("Team: P1 Backend · P2 Quant · P3 ML · P4 Frontend/LLM/Docs")
 
 
 # ---------------------------------------------------------------------------

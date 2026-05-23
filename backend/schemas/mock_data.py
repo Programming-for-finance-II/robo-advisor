@@ -392,10 +392,7 @@ def get_mock_payload(profile: ProfileLabel) -> GroundTruthPayload:
     constraints = LLMConstraints(
         allowed_numbers=allowed,
         forbidden_phrases=[
-            "sell", "buy", "guaranteed", "safe",
-            # NOTE: "safe" may produce false positives on "safe haven" cluster
-            # descriptions (e.g. "The safe_haven cluster..."). Acceptable for
-            # academic prototype. Documented in ADR-004.
+            "sell", "buy", "guaranteed", "safe investment",
             "MiFID compliant", "you should", "I recommend",
             "invest", "liquidate", "move your money",
         ],

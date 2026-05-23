@@ -203,6 +203,9 @@ cython_debug/
 # Temporary file for partial code execution
 tempCodeRunnerFile.py
 
+# SCF raw data — too large for git, see README > Data Setup for download instructions
+data/scf/scf2022.csv
+
 # Ruff stuff:
 .ruff_cache/
 

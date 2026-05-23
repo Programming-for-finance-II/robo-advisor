@@ -3,6 +3,77 @@ from __future__ import annotations
 import plotly.graph_objects as go
 
 # ---------------------------------------------------------------------------
+# 0. Portfolio Weights Donut Chart
+# ---------------------------------------------------------------------------
+
+_CLUSTER_COLORS: dict[str, str] = {
+    "Equity":       "#7c5cfc",
+    "Alternatives": "#f59e0b",
+    "Bonds":        "#0dcfb0",
+    "Cash":         "#3b82f6",
+}
+
+_TICKER_CLUSTER: dict[str, str] = {
+    "CSPX.L":  "Equity",
+    "EFA":     "Equity",
+    "GLD":     "Alternatives",
+    "VNQ":     "Alternatives",
+    "AGGH.MI": "Bonds",
+    "TLT":     "Bonds",
+    "TIP":     "Bonds",
+    "XEON.MI": "Cash",
+}
+
+
+def plot_weights_donut(weights: dict[str, float]) -> go.Figure:
+    """Donut chart of portfolio weights coloured by asset cluster.
+
+    Args:
+        weights: {ticker: weight} from OptimizationResult. Values should sum to ~1.0.
+
+    Returns:
+        Plotly Figure ready for st.plotly_chart().
+    """
+    tickers = list(weights.keys())
+    values = [weights[t] for t in tickers]
+    colors = [_CLUSTER_COLORS.get(_TICKER_CLUSTER.get(t, ""), "#64748b") for t in tickers]
+
+    fig = go.Figure(go.Pie(
+        labels=tickers,
+        values=values,
+        hole=0.52,
+        marker=dict(colors=colors, line=dict(color="#0d1220", width=2)),
+        textinfo="label+percent",
+        textfont=dict(size=11),
+        hovertemplate="<b>%{label}</b><br>Weight: %{percent}<extra></extra>",
+    ))
+
+    cluster_legend = " · ".join(
+        f'<span style="color:{c}">■</span> {cl}'
+        for cl, c in _CLUSTER_COLORS.items()
+    )
+
+    fig.update_layout(
+        title=dict(text="Portfolio Allocation", font=dict(size=13)),
+        showlegend=False,
+        height=320,
+        margin=dict(l=8, r=8, t=40, b=8),
+        annotations=[
+            dict(
+                text=cluster_legend,
+                x=0.5, y=-0.06,
+                xanchor="center", yanchor="top",
+                showarrow=False,
+                font=dict(size=10),
+                xref="paper", yref="paper",
+            )
+        ],
+    )
+
+    return fig
+
+
+# ---------------------------------------------------------------------------
 # 1. Risk Contribution Bar Chart
 # ---------------------------------------------------------------------------
 
