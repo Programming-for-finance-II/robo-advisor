@@ -609,18 +609,28 @@ mode that Layer~1 alone cannot prevent.
 
 \begin{table}[H]
 \centering
-\caption{Backtest summary — HRP vs.\ Mean--Variance}
+\caption{Backtest summary — HRP vs.\ Mean--Variance vs.\ $1/N$ (US proxy tickers)}
 \label{tab:backtest}
-\begin{tabular}{lccccc}
+\begin{tabular}{llrrrr}
 \toprule
 Scenario & Model & Ann.\ Return & Volatility & Sharpe & Max DD \\
 \midrule
-COVID-19 (2020) & HRP & \textit{TBD} & \textit{TBD} & \textit{TBD} & \textit{TBD} \\
-                & MV  & \textit{TBD} & \textit{TBD} & \textit{TBD} & \textit{TBD} \\
-Rate hike (2022)& HRP & \textit{TBD} & \textit{TBD} & \textit{TBD} & \textit{TBD} \\
-                & MV  & \textit{TBD} & \textit{TBD} & \textit{TBD} & \textit{TBD} \\
+GFC (2008)       & HRP & $-0.1\%$ & $8.6\%$  & $-0.01$ & $-11.9\%$ \\
+                 & MV  & $-5.7\%$ & $10.7\%$ & $-0.53$ & $-18.0\%$ \\
+                 & $1/N$ & $-5.1\%$ & $18.4\%$ & $-0.28$ & $-25.1\%$ \\
+\midrule
+COVID-19 (2020)  & HRP & $+6.4\%$ & $7.7\%$  & $0.83$  & $-10.1\%$ \\
+                 & MV  & $+7.2\%$ & $13.8\%$ & $0.52$  & $-15.5\%$ \\
+                 & $1/N$ & $+11.9\%$ & $13.3\%$ & $0.90$  & $-15.7\%$ \\
+\midrule
+Rate Hike (2022) & HRP & $-8.9\%$ & $7.6\%$  & $-1.17$ & $-13.0\%$ \\
+                 & MV  & $-13.1\%$ & $10.4\%$ & $-1.27$ & $-16.3\%$ \\
+                 & $1/N$ & $-13.7\%$ & $11.3\%$ & $-1.21$ & $-19.1\%$ \\
 \bottomrule
 \end{tabular}
+\smallskip
+\newline
+\footnotesize{Backtest uses US proxy tickers (SPY, AGG, BIL, etc.) as historical equivalents for UCITS ETFs. Transaction cost: 10 bps per rebalance. Profile: MODERATE.}
 \end{table}
 
 % ─────────────────────────────────────────────────────────────
