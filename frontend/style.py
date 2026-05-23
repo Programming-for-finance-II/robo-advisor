@@ -14,20 +14,38 @@ html, body, [class*="css"] {
 [data-testid="stSidebar"] [data-testid="stRadio"] label {
     display: flex !important;
     align-items: center !important;
-    gap: 0.75rem !important;
+    gap: 0.65rem !important;
     padding: 0.65rem 0.85rem !important;
     margin: 0.25rem 0 !important;
     border-radius: 10px !important;
     color: #94a3b8 !important;
+    min-height: 2.8rem !important;
 }
 
+/* Force Streamlit internal radio wrapper to stay horizontal */
+[data-testid="stSidebar"] [data-testid="stRadio"] label > div {
+    display: flex !important;
+    align-items: center !important;
+    flex-direction: row !important;
+    gap: 0.65rem !important;
+}
+
+/* Keep the circular radio marker aligned */
+[data-testid="stSidebar"] [data-testid="stRadio"] label > div:first-child {
+    flex: 0 0 auto !important;
+    margin: 0 !important;
+}
+
+/* Selected item */
 [data-testid="stSidebar"] [data-testid="stRadio"] label:has(input:checked) {
     background: rgba(124,92,252,0.15) !important;
     color: #a78bfa !important;
 }
 
+/* Text label */
 [data-testid="stSidebar"] [data-testid="stRadio"] label p {
     margin: 0 !important;
+    padding: 0 !important;
     line-height: 1.1 !important;
     font-size: 0.95rem !important;
     font-weight: 600 !important;
@@ -299,13 +317,13 @@ def render_stress_banner() -> None:
 def page_header(title: str, subtitle: str = "") -> None:
     """Render a styled page header with Space Grotesk font."""
     sub_html = (
-        f'<div style="font-size:0.72rem;color:#475569;margin-top:3px;'
+        f'<div style="font-size:0.82rem;color:#475569;margin-top:3px;'
         f'letter-spacing:0.04em;">{subtitle}</div>'
         if subtitle else ""
     )
     st.markdown(
         f'<div style="margin-bottom:1.25rem;">'
-        f'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:1.1rem;'
+        f'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:1.45rem;'
         f'font-weight:600;color:#f1f5f9;">{title}</div>{sub_html}</div>',
         unsafe_allow_html=True,
     )

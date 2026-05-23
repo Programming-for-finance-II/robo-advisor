@@ -54,6 +54,23 @@ DISCLAIMER = (
     "regulatory framework. Market data may be inaccurate or delayed."
 )
 
+# UCITS-eligible tickers (primary universe — see ADR-001)
+_UCITS_TICKERS: frozenset[str] = frozenset({"CSPX.L", "AGGH.MI", "XEON.MI"})
+
+# Mock portfolio data (Phase A fallback)
+_MOCK_WEIGHTS: dict[str, float] = {
+    "CSPX.L":  0.30,
+    "EFA":     0.15,
+    "GLD":     0.10,
+    "VNQ":     0.05,
+    "AGGH.MI": 0.20,
+    "TLT":     0.10,
+    "TIP":     0.05,
+    "XEON.MI": 0.05,
+}
+
+_MOCK_REGIME: str = "NORMAL"
+
 # Maps the uppercase profile label from the backend to the lowercase key
 # used by get_mock_payload()
 _LABEL_TO_MOCK: dict[str, str] = {
@@ -61,9 +78,6 @@ _LABEL_TO_MOCK: dict[str, str] = {
     "MODERATE": "balanced",
     "AGGRESSIVE": "aggressive",
 }
-
-# UCITS-eligible tickers in the universe -- used to display the EU badge
-_UCITS_TICKERS: frozenset[str] = frozenset({"CSPX.L", "AGGH.MI", "XEON.MI"})
 
 # Start date for the live market data download
 _DATA_START: str = "2023-01-01"
@@ -414,6 +428,7 @@ def _compute_profile(answers: dict[str, int]) -> dict:
 def render_questionnaire() -> None:
     page_header("Investor Profile Questionnaire", "Grable-Lytton Scale · 10 questions")
     render_disclaimer()
+    st.markdown("---")
 
     st.markdown(
         """
@@ -581,10 +596,15 @@ def render_portfolio() -> None:
         if confidence is not None:
             st.metric("Confidence", f"{confidence:.0%}")
 
+    default_live = (
+        st.session_state.get("default_data_mode", "")
+        == "Live market data (Phase B — requires network)"
+    )
+
     # Toggle between mock data (Phase A) and live optimizer (Phase B)
     use_live = st.toggle(
         "Load live market data",
-        value=False,
+        value=default_live,
         help=(
             "Downloads real prices from yfinance and runs the HRP optimizer. "
             "Takes about 10 seconds on first load."
@@ -681,25 +701,35 @@ def _render_hrp_tab(portfolio: dict) -> None:
         m_cols[3].metric("Max Drawdown (hist.)", f"{max_dd:.1%}")
 
     st.markdown("---")
-    st.markdown("**Portfolio Weights**")
 
-    # Build the weights table
-    # UCITS-eligible tickers show "EU" in the UCITS column, others show "-"
-    ucits_set = set(ucits_used) | _UCITS_TICKERS
-    rows = []
-    for ticker, w in sorted(weights.items(), key=lambda kv: -kv[1]):
-        rows.append({
-            "Ticker": ticker,
-            "Weight": f"{w:.1%}",
-            "UCITS": "EU" if ticker in ucits_set else "-",
-            "Risk Contrib.": f"{risk_contributions.get(ticker, 0.0):.1%}",
-        })
+    # Donut chart + weights table side by side
+    col_donut, col_table = st.columns([1, 1.1])
 
-    df = pd.DataFrame(rows)
-    st.dataframe(df, hide_index=True, use_container_width=True)
+    with col_donut:
+        try:
+            from backend.optimizer.charts import plot_weights_donut
+            fig_donut = plot_weights_donut(weights)
+            fig_donut = apply_plotly_dark_theme(fig_donut)
+            st.plotly_chart(fig_donut, use_container_width=True)
+        except Exception as exc:
+            st.caption(f"Chart unavailable: {exc}")
+
+    with col_table:
+        st.markdown("**Portfolio Weights**")
+        # UCITS-eligible tickers show "EU" in the UCITS column, others show "-"
+        ucits_set = set(ucits_used) | _UCITS_TICKERS
+        rows = []
+        for ticker, w in sorted(weights.items(), key=lambda kv: -kv[1]):
+            rows.append({
+                "Ticker": ticker,
+                "Weight": f"{w:.1%}",
+                "UCITS": "EU" if ticker in ucits_set else "-",
+                "Risk Contrib.": f"{risk_contributions.get(ticker, 0.0):.1%}",
+            })
+        df = pd.DataFrame(rows)
+        st.dataframe(df, hide_index=True, use_container_width=True)
 
     # Risk contribution bar chart
-    # plot_risk_contributions is defined in backend/optimizer/charts.py
     try:
         from backend.optimizer.charts import plot_risk_contributions
         fig = plot_risk_contributions(
