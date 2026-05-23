@@ -414,9 +414,42 @@ def _compute_profile(answers: dict[str, int]) -> dict:
 def render_questionnaire() -> None:
     page_header("Investor Profile Questionnaire", "Grable-Lytton Scale · 10 questions")
     render_disclaimer()
-    st.markdown("---")
+
     st.markdown(
+        """
+        <div style="
+            background: rgba(30,38,64,0.5);
+            border: 1px solid #1e2640;
+            border-radius: 10px;
+            padding: 0.9rem 1rem;
+            margin-bottom: 1.25rem;
+            display: flex;
+            gap: 0.875rem;
+            align-items: flex-start;
+        ">
+            <div style="color:#3b82f6;font-size:1.1rem;flex-shrink:0;margin-top:0.1rem;">ℹ</div>
+            <div>
+                <div style="
+                    font-family:'Space Grotesk',sans-serif;
+                    font-size:0.9rem;font-weight:600;
+                    color:#e2e8f0;margin-bottom:0.25rem;
+                ">What is the Grable-Lytton Scale?</div>
+                <div style="font-size:0.79rem;color:#64748b;line-height:1.55;">
+                    An academic risk-tolerance questionnaire used to estimate how much financial
+                    risk an investor is willing and able to take. In this prototype, it provides
+                    the rule-based baseline for the investor profile.
+                </div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.markdown(
+        '<div style="font-size:0.85rem;color:#64748b;margin:0 0 1.25rem 0;">'
         "Complete the three sections below to generate your investor risk profile."
+        "</div>",
+        unsafe_allow_html=True,
     )
 
     answers: dict[str, int | None] = {}
@@ -444,50 +477,21 @@ def render_questionnaire() -> None:
 
     with st.form("questionnaire_form"):
         for section in sections:
-            st.markdown(
-                f"""
-                <div style="
-                    margin-top: 1.3rem;
-                    margin-bottom: 0.5rem;
-                ">
-                    <div style="
-                        display: flex;
-                        align-items: baseline;
-                        gap: 0.75rem;
-                    ">
-                        <span style="
-                            font-family: 'Space Grotesk', sans-serif;
-                            font-size: 0.75rem;
-                            letter-spacing: 0.14em;
-                            color: #7c5cfc;
-                            font-weight: 700;
-                        ">
-                            {section["number"]}
-                        </span>
-                        <span style="
-                            font-family: 'Space Grotesk', sans-serif;
-                            font-size: 1.25rem;
-                            color: #f8fafc;
-                            font-weight: 700;
-                        ">
-                            {section["title"]}
-                        </span>
-                    </div>
-                    <div style="
-                        margin-left: 2.45rem;
-                        color: #94a3b8;
-                        font-size: 0.98rem;
-                        margin-top: 0.1rem;
-                    ">
-                        {section["subtitle"]}
-                    </div>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-
             with st.container(border=True):
-                st.markdown("")
+                # Gradient header band — no decorative images, pure CSS gradient
+                st.markdown(
+                    f"""
+                    <div class="qs-header">
+                        <div class="qs-num">{section["number"]}</div>
+                        <div>
+                            <div class="qs-title">{section["title"]}</div>
+                            <div class="qs-sub">{section["subtitle"]}</div>
+                        </div>
+                    </div>
+                    <div class="qs-body">
+                    """,
+                    unsafe_allow_html=True,
+                )
 
                 for q in _QUESTIONS:
                     if q["section"] != section["key"]:
@@ -495,14 +499,9 @@ def render_questionnaire() -> None:
 
                     st.markdown(
                         f"""
-                        <div style="
-                            font-size: 1.05rem;
-                            font-weight: 700;
-                            color: #f8fafc;
-                            margin-top: 0.75rem;
-                            margin-bottom: 0.25rem;
-                        ">
-                            {q["id"]}. {q["text"]}
+                        <div class="qs-q-row">
+                            <span class="qs-q-badge">{q["id"]}</span>
+                            <span class="qs-q-text">{q["text"]}</span>
                         </div>
                         """,
                         unsafe_allow_html=True,
@@ -520,7 +519,13 @@ def render_questionnaire() -> None:
                         q["options"].index(selected) if selected else None
                     )
 
-        submitted = st.form_submit_button("Calculate my profile")
+                st.markdown("</div>", unsafe_allow_html=True)
+
+        submitted = st.form_submit_button(
+            "Calculate my profile",
+            type="primary",
+            use_container_width=True,
+        )
 
     if submitted:
         if any(v is None for v in answers.values()):
