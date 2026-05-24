@@ -373,6 +373,18 @@ hr { border-color: #1e2640 !important; }
     color: #fcd34d !important;
 }
 
+/* ── Section-aware radio dot colour (accent-color) ──────────────────────── */
+/* Colors the native radio circle to match the section accent.                  */
+[data-testid="stVerticalBlockBorderWrapper"]:has(.qs-s1) input[type="radio"] {
+    accent-color: #3b82f6 !important;
+}
+[data-testid="stVerticalBlockBorderWrapper"]:has(.qs-s2) input[type="radio"] {
+    accent-color: #7c5cfc !important;
+}
+[data-testid="stVerticalBlockBorderWrapper"]:has(.qs-s3) input[type="radio"] {
+    accent-color: #f59e0b !important;
+}
+
 /* ── Section colour accents ──────────────────────────────────────────────── */
 /* Header gradient + badge colours driven by modifier class on .qs-header.     */
 /* Card left-border accent driven by :has() on the wrapper — most visible cue. */
