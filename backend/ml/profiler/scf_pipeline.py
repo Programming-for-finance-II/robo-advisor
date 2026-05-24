@@ -97,17 +97,25 @@ def load_scf(
         Y1 % 10 == 2  →  implicate 2
         ...
 
-    Args:
-        path: Path to the SCF Summary Extract CSV file.
-        implicate: Implicate number to use (1–5). Default: 1.
+    Parameters
+    ----------
+    path : Path
+        Path to the SCF Summary Extract CSV file.
+    implicate : int
+        Implicate number to use (1–5). Default: 1.
 
-    Returns:
+    Returns
+    -------
+    pd.DataFrame
         DataFrame with all SCF columns for the selected implicate.
         Shape: (4595, 357) for implicate=1 on the 2022 extract.
 
-    Raises:
-        FileNotFoundError: If the CSV file is not found at the given path.
-        ValueError: If implicate is not in range [1, 5].
+    Raises
+    ------
+    FileNotFoundError
+        If the CSV file is not found at the given path.
+    ValueError
+        If implicate is not in range [1, 5].
     """
     if not 1 <= implicate <= 5:
         raise ValueError(f"implicate must be between 1 and 5, got: {implicate}")
@@ -139,15 +147,21 @@ def select_features(df: pd.DataFrame) -> pd.DataFrame:
     which captures each household's share of risky assets and is a
     strong signal for clustering risk profiles.
 
-    Args:
-        df: Raw SCF DataFrame returned by load_scf().
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Raw SCF DataFrame returned by ``load_scf()``.
 
-    Returns:
+    Returns
+    -------
+    pd.DataFrame
         DataFrame with only the columns required by the pipeline,
-        including the engineered EQUITY_RATIO feature.
+        including the engineered ``EQUITY_RATIO`` feature.
 
-    Raises:
-        ValueError: If any required raw columns are missing from the DataFrame.
+    Raises
+    ------
+    ValueError
+        If any required raw columns are missing from the DataFrame.
     """
     # Validate raw columns (before engineering)
     raw_required = (
@@ -187,13 +201,17 @@ def standardise_features(
     Sample weights (WGT) and allocation columns are not standardised —
     they remain in the DataFrame as auxiliary columns.
 
-    Args:
-        df: DataFrame with selected columns (output of select_features()).
-        feature_cols: List of columns to standardise.
-                      Default: SCF_FEATURE_COLUMNS.
+    Parameters
+    ----------
+    df : pd.DataFrame
+        DataFrame with selected columns (output of ``select_features()``).
+    feature_cols : list[str] or None
+        List of columns to standardise. Default: ``SCF_FEATURE_COLUMNS``.
 
-    Returns:
-        Tuple (df_standardised, scaler) where scaler is fitted and can
+    Returns
+    -------
+    tuple[pd.DataFrame, StandardScaler]
+        ``(df_standardised, scaler)`` where ``scaler`` is fitted and can
         be reused to transform new user inputs at inference time.
     """
     if feature_cols is None:
@@ -218,22 +236,29 @@ def build_pipeline(
 
     Executes in sequence: load -> select -> standardise.
 
-    Args:
-        path: Path to the SCF CSV file.
-        implicate: Implicate to use (default: 1).
+    Parameters
+    ----------
+    path : Path
+        Path to the SCF CSV file.
+    implicate : int
+        Implicate to use (default: 1).
 
-    Returns:
-        Tuple (X, alloc, weights, scaler, df_selected) where:
-            X           -- standardised features (n_samples x n_features)
-            alloc       -- raw allocation columns for clustering (n_samples x 4)
-            weights     -- SCF sample weights (n_samples,)
-            scaler      -- StandardScaler fitted on X
-            df_selected -- un-standardised selected DataFrame (n_samples x all cols)
+    Returns
+    -------
+    tuple[np.ndarray, pd.DataFrame, np.ndarray, StandardScaler, pd.DataFrame]
+        ``(X, alloc, weights, scaler, df_selected)`` where:
 
-    Example:
-        >>> X, alloc, weights, scaler, df_selected = build_pipeline()
-        >>> # X is ready for clustering.py
-        >>> # alloc is ready to build labels via K-Means / GMM
+        - ``X``           — standardised features (n_samples × n_features)
+        - ``alloc``       — raw allocation columns for clustering (n_samples × 4)
+        - ``weights``     — SCF sample weights (n_samples,)
+        - ``scaler``      — StandardScaler fitted on X
+        - ``df_selected`` — un-standardised selected DataFrame (n_samples × all cols)
+
+    Examples
+    --------
+    >>> X, alloc, weights, scaler, df_selected = build_pipeline()
+    >>> # X is ready for clustering.py
+    >>> # alloc is ready to build labels via K-Means / GMM
     """
     df_raw = load_scf(path=path, implicate=implicate)
     df_selected = select_features(df_raw)
