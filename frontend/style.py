@@ -119,9 +119,54 @@ section[data-testid="stSidebar"],
     margin-top: -1rem !important;
 }
 
-/* Hide the collapse arrow — nav buttons have <p> text, the arrow doesn't */
+/* Collapse button — styled to match dark theme, visible as a close hint */
 [data-testid="stSidebar"] button:not(:has(p)) {
-    display: none !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    position: absolute !important;
+    top: 0.75rem !important;
+    right: -1rem !important;
+    width: 1.75rem !important;
+    height: 1.75rem !important;
+    background: #0d1220 !important;
+    border: 1px solid #1e2640 !important;
+    border-radius: 50% !important;
+    color: #64748b !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.4) !important;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease !important;
+    z-index: 100 !important;
+    cursor: pointer !important;
+}
+
+[data-testid="stSidebar"] button:not(:has(p)):hover {
+    background: rgba(124,92,252,0.15) !important;
+    border-color: #7c5cfc !important;
+    color: #a78bfa !important;
+}
+
+[data-testid="stSidebar"] button:not(:has(p))::after {
+    content: "Chiudi menu";
+    position: absolute;
+    right: 2.2rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: #1e2640;
+    color: #94a3b8;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.72rem;
+    font-weight: 500;
+    padding: 0.3rem 0.6rem;
+    border-radius: 6px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+    border: 1px solid #2d3748;
+}
+
+[data-testid="stSidebar"] button:not(:has(p)):hover::after {
+    opacity: 1;
 }
 
 /* ── Metrics ──────────────────────────────────────────────────────────────── */
