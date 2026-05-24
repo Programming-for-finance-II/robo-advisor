@@ -235,13 +235,16 @@ hr { border-color: #1e2640 !important; }
     margin-top: 0.15rem;
 }
 
-/* Question badge + text row */
+/* Question badge + text row
+   padding-left: 0.25rem aligns Q-badge with the 01 section badge
+   (header has 1.25rem padding; container content defaults to 1rem) */
 .qs-q-row {
     display: flex;
     align-items: center;
     gap: 0.75rem;
     margin: 2rem 0 0.5rem 0;
     padding-top: 1rem;
+    padding-left: 0.25rem;
     border-top: 1px solid #1a2236;
 }
 
@@ -283,9 +286,9 @@ hr { border-color: #1e2640 !important; }
 /* Indented to align with question text (badge width 2.25rem + gap 0.75rem).   */
 /* Selected = coloured left accent bar matching section colour.                 */
 
-/* Indent the whole radio widget to sit under the question text */
+/* Indent radio widget: 0.25rem (q-row offset) + 2.25rem (badge) + 0.75rem (gap) */
 [data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stRadio"] {
-    padding-left: 3rem !important;
+    padding-left: 3.25rem !important;
     margin-bottom: 0.25rem !important;
 }
 
