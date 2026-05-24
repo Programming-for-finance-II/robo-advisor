@@ -53,4 +53,7 @@ def detect_regime(market_data: dict | None = None) -> RegimeOutput:
     RegimeOutput
         Regime classification with stress flag.
     """
+    # TODO(W4-future): implement VIX-threshold logic (VIX > 25 → stress regime)
+    # and optionally Hidden Markov Model for regime switching.
+    # Currently returns "normal" as a safe default for all market conditions.
     return RegimeOutput(stress_regime=False, regime_label="normal", vix_proxy=None)
