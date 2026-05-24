@@ -155,9 +155,22 @@ def validate(
 # ---------------------------------------------------------------------------
 
 def _check_forbidden_phrases(text: str, forbidden_phrases: list[str]) -> bool:
-    """Return True (= fail) if any forbidden phrase is found (case-insensitive)."""
+    """Return True (= fail) if any forbidden phrase is found (case-insensitive).
+
+    Single-word phrases use word-boundary matching to avoid false positives on
+    substrings (e.g. "invest" must not match "investitore" in Italian responses).
+    Multi-word phrases use plain substring matching.
+    """
     lower = text.lower()
-    return any(phrase.lower() in lower for phrase in forbidden_phrases)
+    for phrase in forbidden_phrases:
+        p = phrase.lower()
+        if " " in p:
+            if p in lower:
+                return True
+        else:
+            if re.search(rf"\b{re.escape(p)}\b", lower):
+                return True
+    return False
 
 
 def _extract_numbers(text: str) -> list[float]:
