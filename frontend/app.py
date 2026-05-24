@@ -570,46 +570,29 @@ def render_questionnaire() -> None:
     page_header("Investor Profile Questionnaire", "Grable-Lytton Scale · 10 questions")
     render_disclaimer()
 
-    # Info card — Grable-Lytton explanation (only this one, no icon on page title)
+    # Info card — Grable-Lytton explanation (native <details> for full style control)
     st.markdown(
         """
-        <div style="
-            background: rgba(30,38,64,0.5);
-            border: 1px solid #1e2640;
-            border-radius: 10px;
-            padding: 0.9rem 1rem;
-            margin-bottom: 1.25rem;
-            display: flex;
-            gap: 0.875rem;
-            align-items: flex-start;
-        ">
-            <div style="
-                width:2rem;height:2rem;flex-shrink:0;
-                background:rgba(59,130,246,0.12);
-                border:1px solid rgba(59,130,246,0.25);
-                border-radius:7px;
-                display:inline-flex;align-items:center;
-                justify-content:center;font-size:0.95rem;
-            ">🎓</div>
-            <div>
-                <div style="
-                    font-family:'Space Grotesk',sans-serif;
-                    font-size:0.9rem;font-weight:600;
-                    color:#e2e8f0;margin-bottom:0.25rem;
-                ">What is the Grable-Lytton Scale?</div>
-                <div style="font-size:0.79rem;color:#64748b;line-height:1.55;">
-                    An academic risk-tolerance questionnaire used to estimate how much financial
-                    risk an investor is willing and able to take. In this prototype, it provides
-                    the rule-based baseline for the investor profile.
-                </div>
-            </div>
-        </div>
+        <details class="qs-info-card">
+          <summary>
+            <span class="qs-info-icon">🎓</span>
+            <span class="qs-info-title">What is the Grable-Lytton Scale?</span>
+            <span class="qs-info-chevron">▾</span>
+          </summary>
+          <div class="qs-info-body">
+            An academic risk-tolerance questionnaire (Grable &amp; Lytton, 1999) used to
+            estimate how much financial risk an investor is willing and able to take.
+            In this prototype it provides the rule-based baseline for the investor profile.
+            The 10 items cover financial situation, investment behaviour and reactions to
+            market stress — yielding a composite score mapped to a risk category.
+          </div>
+        </details>
         """,
         unsafe_allow_html=True,
     )
 
     st.markdown(
-        '<div style="font-size:0.85rem;color:#64748b;margin:0 0 1.5rem 0;">'
+        '<div style="font-size:0.92rem;color:#64748b;margin:0 0 1.5rem 0;">'
         "Complete the three sections below to generate your investor risk profile."
         "</div>",
         unsafe_allow_html=True,
@@ -623,20 +606,86 @@ def render_questionnaire() -> None:
             "title": "Financial Situation",
             "subtitle": "Basic information about your financial background.",
             "key": "Who You Are Financially",
+            "css_class": "qs-s1",
+            "accent": "#60a5fa",
+            "accent_bg": "rgba(59,130,246,0.13)",
+            "accent_border": "rgba(59,130,246,0.28)",
         },
         {
             "number": "02",
             "title": "Investment Behaviour",
             "subtitle": "How you think about time horizon, return and uncertainty.",
             "key": "How You Invest",
+            "css_class": "qs-s2",
+            "accent": "#a78bfa",
+            "accent_bg": "rgba(124,92,252,0.13)",
+            "accent_border": "rgba(124,92,252,0.28)",
         },
         {
             "number": "03",
             "title": "Reaction to Risk",
             "subtitle": "How you would react under market stress.",
             "key": "How You React",
+            "css_class": "qs-s3",
+            "accent": "#fbbf24",
+            "accent_bg": "rgba(245,158,11,0.13)",
+            "accent_border": "rgba(245,158,11,0.28)",
         },
     ]
+
+    # ── Section stepper ──────────────────────────────────────────────────────
+    # align-items:flex-start + margin-top:1.4rem on connectors keeps the
+    # gradient lines perfectly centred on the circles (circle height = 2.8rem,
+    # centre = 1.4rem from top) regardless of the label below each circle.
+    st.markdown(
+        """
+        <div style="display:flex;align-items:flex-start;
+            padding:1rem 1.5rem;margin:0 0 1.25rem 0;
+            background:rgba(15,23,42,0.55);
+            border:1px solid #1e2640;border-radius:12px;">
+
+          <div style="display:flex;flex-direction:column;align-items:center;gap:0.4rem;">
+            <div style="width:2.8rem;height:2.8rem;border-radius:50%;
+              background:rgba(59,130,246,0.15);border:2px solid #3b82f6;
+              display:flex;align-items:center;justify-content:center;
+              font-family:'Space Grotesk',sans-serif;
+              font-size:0.88rem;font-weight:700;color:#60a5fa;">01</div>
+            <div style="font-size:0.75rem;font-weight:500;color:#60a5fa;
+              white-space:nowrap;">Financial</div>
+          </div>
+
+          <div style="flex:1;height:2px;
+            background:linear-gradient(to right,#3b82f6,#7c5cfc);
+            margin:1.4rem 0.8rem 0 0.8rem;"></div>
+
+          <div style="display:flex;flex-direction:column;align-items:center;gap:0.4rem;">
+            <div style="width:2.8rem;height:2.8rem;border-radius:50%;
+              background:rgba(124,92,252,0.15);border:2px solid #7c5cfc;
+              display:flex;align-items:center;justify-content:center;
+              font-family:'Space Grotesk',sans-serif;
+              font-size:0.88rem;font-weight:700;color:#a78bfa;">02</div>
+            <div style="font-size:0.75rem;font-weight:500;color:#a78bfa;
+              white-space:nowrap;">Behaviour</div>
+          </div>
+
+          <div style="flex:1;height:2px;
+            background:linear-gradient(to right,#7c5cfc,#f59e0b);
+            margin:1.4rem 0.8rem 0 0.8rem;"></div>
+
+          <div style="display:flex;flex-direction:column;align-items:center;gap:0.4rem;">
+            <div style="width:2.8rem;height:2.8rem;border-radius:50%;
+              background:rgba(245,158,11,0.15);border:2px solid #f59e0b;
+              display:flex;align-items:center;justify-content:center;
+              font-family:'Space Grotesk',sans-serif;
+              font-size:0.88rem;font-weight:700;color:#fbbf24;">03</div>
+            <div style="font-size:0.75rem;font-weight:500;color:#fbbf24;
+              white-space:nowrap;">Reaction</div>
+          </div>
+
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
     with st.form("questionnaire_form"):
         for section in sections:
@@ -644,7 +693,7 @@ def render_questionnaire() -> None:
             with st.container(border=True):
                 st.markdown(
                     f"""
-                    <div class="qs-header">
+                    <div class="qs-header {section['css_class']}">
                         <div class="qs-num">{section["number"]}</div>
                         <div>
                             <div class="qs-title">{section["title"]}</div>
@@ -662,7 +711,12 @@ def render_questionnaire() -> None:
                     st.markdown(
                         f"""
                         <div class="qs-q-row">
-                            <span class="qs-q-badge">{q["id"]}</span>
+                            <span class="qs-q-badge" style="
+                                color:{section['accent']};
+                                background:{section['accent_bg']};
+                                border-color:{section['accent_border']};">
+                                {q["id"]}
+                            </span>
                             <span class="qs-q-text">{q["text"]}</span>
                         </div>
                         """,
@@ -673,13 +727,17 @@ def render_questionnaire() -> None:
                         "questionnaire_answers", {}
                     ).get(q["id"])
 
-                    selected = st.radio(
-                        label="",
-                        options=q["options"],
-                        index=saved_idx,
-                        key=f"q_{q['id']}",
-                        label_visibility="collapsed",
-                    )
+                    # Indent radio options to align with the question text
+                    # (badge ≈ 11% wide, remaining 89% starts under the text)
+                    _spacer, _col = st.columns([0.11, 0.89])
+                    with _col:
+                        selected = st.radio(
+                            label="",
+                            options=q["options"],
+                            index=saved_idx,
+                            key=f"q_{q['id']}",
+                            label_visibility="collapsed",
+                        )
 
                     answers[q["id"]] = (
                         q["options"].index(selected) if selected is not None else None
@@ -703,24 +761,131 @@ def render_questionnaire() -> None:
 
     if st.session_state.get("profile"):
         result = st.session_state["profile"]
-        st.success("Profile calculated.")
-        col_a, col_b, col_c = st.columns([1, 1, 1])
-        col_a.metric("Your risk profile", result["profile_label"])
-        col_b.metric("Confidence", f"{result['confidence']:.0%}")
-        with col_c:
-            st.markdown("<div style='height:0.5rem'></div>", unsafe_allow_html=True)
-            if st.button("Go to Portfolio Dashboard →", type="primary", use_container_width=True):
-                st.session_state.active_page = "Portfolio Dashboard"
-                st.rerun()
+
+        _RESULT_META = {
+            "CONSERVATIVE": {
+                "icon": "🛡️",
+                "color": "#0dcfb0",
+                "label": "Conservative",
+                "desc": "Capital preservation focus · low-volatility, income-oriented assets",
+                "bar_gradient": "linear-gradient(90deg,#0dcfb0,#22d3ee)",
+            },
+            "MODERATE": {
+                "icon": "⚖️",
+                "color": "#7c5cfc",
+                "label": "Moderate",
+                "desc": "Balanced growth and protection · diversified multi-asset allocation",
+                "bar_gradient": "linear-gradient(90deg,#7c5cfc,#a78bfa)",
+            },
+            "AGGRESSIVE": {
+                "icon": "🚀",
+                "color": "#f87171",
+                "label": "Aggressive",
+                "desc": "Growth-oriented · higher volatility and drawdown accepted",
+                "bar_gradient": "linear-gradient(90deg,#f87171,#fbbf24)",
+            },
+        }
+        rm = _RESULT_META.get(result["profile_label"], _RESULT_META["MODERATE"])
+        score_pct = result["score"] / 30 * 100  # max possible = 10 × 3 = 30
+
+        # ── top drivers text ────────────────────────────────────────────────
+        driver_labels = {
+            "Q1": "Age", "Q2": "Income", "Q3": "Liquidity",
+            "Q4": "Dependents", "Q5": "Experience", "Q6": "Knowledge",
+            "Q7": "Investment purpose", "Q8": "Loss reaction",
+            "Q9": "Recovery horizon", "Q10": "Self-assessment",
+        }
+        top3 = result.get("top_drivers", [])[:3]
+        drivers_chips = "".join(
+            '<span style="background:rgba(255,255,255,0.06);border:1px solid #2d3a52;'
+            'border-radius:7px;padding:0.3rem 0.75rem;font-size:0.85rem;'
+            'font-weight:500;color:#94a3b8;">'
+            + driver_labels.get(d["feature"], d["feature"]) + "</span>"
+            for d in top3
+        )
+        # Pre-build the optional drivers block — avoids nested f-string inside the card
+        drivers_block = (
+            '<div style="font-size:0.75rem;font-weight:600;letter-spacing:0.1em;'
+            'text-transform:uppercase;color:#64748b;margin-bottom:0.55rem;">'
+            'Top scoring factors</div>'
+            '<div style="display:flex;flex-wrap:wrap;gap:0.5rem;">'
+            + drivers_chips + "</div>"
+        ) if top3 else ""
+
+        conf_pct = int(result["confidence"] * 100)
+
+        card_html = (
+            f'<div style="background:linear-gradient(135deg,{rm["color"]}12,{rm["color"]}06);'
+            f'border:1px solid {rm["color"]}45;border-radius:16px;'
+            f'padding:1.5rem 1.75rem 1.4rem 1.75rem;margin:1.5rem 0 1rem 0;">'
+
+            # ── header ──────────────────────────────────────────────────────
+            f'<div style="display:flex;align-items:flex-start;gap:1.25rem;margin-bottom:1.35rem;">'
+            f'<div style="font-size:2.8rem;line-height:1;flex-shrink:0;margin-top:0.1rem;">{rm["icon"]}</div>'
+            f'<div style="flex:1;">'
+            f'<div style="font-size:0.72rem;font-weight:700;letter-spacing:0.12em;'
+            f'text-transform:uppercase;color:{rm["color"]}90;margin-bottom:0.3rem;">'
+            f'YOUR INVESTOR RISK PROFILE</div>'
+            f'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:2.2rem;'
+            f'font-weight:700;color:{rm["color"]};letter-spacing:-0.02em;line-height:1.1;">'
+            f'{rm["label"]}</div>'
+            f'<div style="font-size:0.9rem;color:#64748b;margin-top:0.4rem;">{rm["desc"]}</div>'
+            f'</div></div>'
+
+            # ── metrics row ──────────────────────────────────────────────────
+            f'<div style="display:flex;gap:0.75rem;flex-wrap:wrap;margin-bottom:1.25rem;">'
+
+            # score card
+            f'<div style="flex:1;min-width:120px;background:rgba(0,0,0,0.25);'
+            f'border:1px solid #1e2640;border-radius:10px;padding:0.75rem 1.1rem;">'
+            f'<div style="font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;'
+            f'color:#475569;margin-bottom:0.35rem;">Score</div>'
+            f'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:1.7rem;'
+            f'font-weight:700;color:#f1f5f9;line-height:1;">'
+            f'{result["score"]}'
+            f'<span style="font-size:0.85rem;color:#475569;font-weight:400;">/30</span></div>'
+            f'<div style="margin-top:0.55rem;height:5px;border-radius:3px;background:#1e2640;overflow:hidden;">'
+            f'<div style="height:100%;width:{score_pct:.0f}%;background:{rm["bar_gradient"]};border-radius:3px;"></div>'
+            f'</div></div>'
+
+            # confidence card
+            f'<div style="flex:1;min-width:120px;background:rgba(0,0,0,0.25);'
+            f'border:1px solid #1e2640;border-radius:10px;padding:0.75rem 1.1rem;">'
+            f'<div style="font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;'
+            f'color:#475569;margin-bottom:0.35rem;">Model Confidence</div>'
+            f'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:1.7rem;'
+            f'font-weight:700;color:{rm["color"]};line-height:1;">{conf_pct}%</div>'
+            f'<div style="margin-top:0.55rem;height:5px;border-radius:3px;background:#1e2640;overflow:hidden;">'
+            f'<div style="height:100%;width:{conf_pct}%;background:{rm["bar_gradient"]};border-radius:3px;"></div>'
+            f'</div></div>'
+
+            f'</div>'  # end metrics row
+
+            # ── drivers ──────────────────────────────────────────────────────
+            + drivers_block +
+            f'</div>'  # end card
+        )
+        st.markdown(card_html, unsafe_allow_html=True)
 
         if result["low_confidence_flag"]:
-            st.warning("Borderline score — consider reviewing your answers.")
+            st.warning(
+                "⚠️  Borderline score — your answers sit near the boundary between two "
+                "profiles. Consider reviewing your responses for a more precise classification."
+            )
 
         if result["q7_override_applied"]:
             st.info(
-                "Q7 override applied: capital earmarked as a safety net "
-                "forces profile to CONSERVATIVE (MiFID II suitability rule)."
+                "ℹ️  MiFID II override applied: capital earmarked as a safety net (Q7) "
+                "forces your profile to **CONSERVATIVE** regardless of overall score."
             )
+
+        if st.button(
+            "View my Portfolio Dashboard →",
+            type="primary",
+            use_container_width=True,
+        ):
+            st.session_state.active_page = "Portfolio Dashboard"
+            st.rerun()
 
 
 # ---------------------------------------------------------------------------
@@ -735,23 +900,54 @@ def render_portfolio() -> None:
         Phase A (default): mock payload from backend/schemas/mock_data.py
         Phase B (live toggle on): ValidatedDataLoader + HRP + regime detector
     """
-    page_header("Portfolio Dashboard", "HRP optimization · Balanced profile")
-    render_disclaimer()
-    render_eu_note()
-
-    # Read the profile that was set by the Questionnaire page
+    # Read profile first so we can use it in the header
     profile_data = st.session_state.get("profile", {})
     profile_label = profile_data.get("profile_label", "MODERATE")
     confidence = profile_data.get("confidence", None)
     profile_key = _LABEL_TO_MOCK.get(profile_label, "balanced")
 
-    # Show current profile at the top
-    col1, col2 = st.columns(2)
-    with col1:
-        st.metric("Investor Profile", profile_label)
-    with col2:
-        if confidence is not None:
-            st.metric("Confidence", f"{confidence:.0%}")
+    page_header(
+        "Portfolio Dashboard",
+        f"HRP optimization · {profile_label.capitalize()} profile",
+    )
+    render_disclaimer()
+    # (EU note moved to bottom — avoid duplicate banners at top)
+
+    # ── Profile hero strip ───────────────────────────────────────────────────
+    _PROFILE_META = {
+        "CONSERVATIVE": {"icon": "🛡️", "color": "#0dcfb0", "label": "Conservative"},
+        "MODERATE":     {"icon": "⚖️",  "color": "#7c5cfc", "label": "Moderate"},
+        "AGGRESSIVE":   {"icon": "🚀", "color": "#f87171", "label": "Aggressive"},
+    }
+    pm = _PROFILE_META.get(profile_label, _PROFILE_META["MODERATE"])
+    conf_html = (
+        f'<div style="font-size:0.8rem;color:#94a3b8;margin-top:2px;">'
+        f'Confidence&nbsp;<span style="color:{pm["color"]};font-weight:600;">'
+        f'{confidence:.0%}</span></div>'
+        if confidence is not None else ""
+    )
+    st.markdown(
+        f"""
+        <div style="
+            display:flex;align-items:center;gap:1rem;
+            background:linear-gradient(135deg,{pm['color']}12,{pm['color']}06);
+            border:1px solid {pm['color']}35;
+            border-radius:12px;padding:0.85rem 1.25rem;
+            margin-bottom:1.25rem;">
+            <div style="font-size:1.6rem;flex-shrink:0;">{pm['icon']}</div>
+            <div>
+                <div style="
+                    font-family:'Space Grotesk',sans-serif;
+                    font-size:1.05rem;font-weight:700;
+                    color:{pm['color']};letter-spacing:0.03em;">
+                    {pm['label']} Investor
+                </div>
+                {conf_html}
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
     default_live = (
         st.session_state.get("default_data_mode", "")
