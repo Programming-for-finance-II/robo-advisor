@@ -99,17 +99,17 @@ html, body, [class*="css"] {
     border: none !important;
 }
 
-#MainMenu, footer, header { visibility: hidden; }
-.block-container { padding-top: 1.5rem !important; }
-
-/* Sidebar expand button (shown when sidebar is collapsed) must stay visible
-   even though the header is hidden — otherwise there's no way to reopen it */
-[data-testid="stSidebarCollapsedControl"],
-[data-testid="stSidebarNavCollapseButton"],
-[data-testid="stSidebarCollapseButton"] {
+#MainMenu, footer { visibility: hidden; }
+/* Hide header branding/toolbar but NOT the sidebar toggle button */
+header { visibility: hidden; }
+header button,
+header [role="button"] {
     visibility: visible !important;
     display: flex !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
 }
+.block-container { padding-top: 1.5rem !important; }
 
 section[data-testid="stSidebar"],
 [data-testid="stSidebar"] {
