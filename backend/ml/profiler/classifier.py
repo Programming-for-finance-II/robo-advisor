@@ -84,6 +84,8 @@ GBM_LEARNING_RATE: float = 0.05
 GBM_RANDOM_STATE: int = 42
 
 CV_N_FOLDS: int = 3
+LR_MAX_ITER: int = 1000
+SHAP_IMPORTANCE_DECIMALS: int = 6
 
 # Module-level cache so the model is loaded from disk only once per process.
 _MODEL_CACHE: dict[str, Any] = {}
@@ -160,7 +162,7 @@ def train_gbm() -> HistGradientBoostingClassifier:
     )
 
     # --- LogisticRegression baseline ---
-    lr = LogisticRegression(max_iter=1000, random_state=GBM_RANDOM_STATE)
+    lr = LogisticRegression(max_iter=LR_MAX_ITER, random_state=GBM_RANDOM_STATE)
     lr.fit(X, y, sample_weight=weights)
     lr_train_acc = lr.score(X, y, sample_weight=weights)
     lr_cv = cross_val_score(lr, X, y, cv=cv, scoring="accuracy")
@@ -291,7 +293,7 @@ def profile_user_gbm(user_features: dict[str, float]) -> ProfilerOutput:
     else:
         # Degenerate case: all SHAP values zero (should not occur in practice)
         top_drivers = [
-            TopDriver(feature=FEATURE_COLS[int(i)], importance=round(1.0 / N_TOP_DRIVERS, 6))
+            TopDriver(feature=FEATURE_COLS[int(i)], importance=round(1.0 / N_TOP_DRIVERS, SHAP_IMPORTANCE_DECIMALS))
             for i in top_idx
         ]
 
