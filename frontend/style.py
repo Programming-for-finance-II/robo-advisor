@@ -102,6 +102,15 @@ html, body, [class*="css"] {
 #MainMenu, footer, header { visibility: hidden; }
 .block-container { padding-top: 1.5rem !important; }
 
+/* Sidebar expand button (shown when sidebar is collapsed) must stay visible
+   even though the header is hidden — otherwise there's no way to reopen it */
+[data-testid="stSidebarCollapsedControl"],
+[data-testid="stSidebarNavCollapseButton"],
+[data-testid="stSidebarCollapseButton"] {
+    visibility: visible !important;
+    display: flex !important;
+}
+
 section[data-testid="stSidebar"],
 [data-testid="stSidebar"] {
     background: #0d1220 !important;
