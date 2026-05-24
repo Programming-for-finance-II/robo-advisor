@@ -1485,89 +1485,380 @@ def _render_mv_tab(portfolio: dict, profile_key: str) -> None:
 
 def render_chat() -> None:
     """
-    Chat Advisor: user types a question, the LLM narrator answers,
-    the validator checks the response, result is shown to the user.
-
-    3-stage pipeline:
-        Stage 1 -- build Ground Truth JSON from mock payload
-        Stage 2 -- call NarratorClient (Claude API)
-        Stage 3 -- run 5-step validator before showing anything
+    Chat Advisor: two-column layout.
+    Left  — unified chat panel (empty state / active bubbles + input form)
+    Right — info panel (capabilities, disclaimer footer)
     """
+    from datetime import datetime
+    import streamlit.components.v1 as components
+    import httpx as _httpx
+
+    # ── Fixed top section: title · disclaimer · divider · profile bar ─────
     page_header("Chat Advisor", "LLM Narrator · Validated responses")
     render_disclaimer()
     st.markdown("---")
 
-    # Read profile from session_state; default to MODERATE if questionnaire not done
     profile_data = st.session_state.get("profile", {})
-    raw_label = profile_data.get("profile_label", "MODERATE")
-    profile_key = _LABEL_TO_MOCK.get(raw_label, "balanced")
+    raw_label    = profile_data.get("profile_label", "MODERATE")
+    profile_key  = _LABEL_TO_MOCK.get(raw_label, "balanced")
 
     st.info(f"Active profile: **{raw_label}**")
 
-    # Show the recommendation_id that links this chat to the portfolio loaded
-    # in the Dashboard -- used for the DB audit trail in Phase B
-    rec_id = st.session_state.get("recommendation_id", "")
-    if rec_id and not rec_id.startswith("mock-"):
-        st.caption(f"Linked to portfolio recommendation {rec_id[:12]}...")
+    # ── Session state ──────────────────────────────────────────────────────
+    _now = datetime.now().strftime("%H:%M")
+    if "chat_history" not in st.session_state:
+        st.session_state["chat_history"] = [
+            {
+                "role": "assistant",
+                "content": (
+                    "Hi! I'm your AI Finance Assistant. "
+                    "How can I help you with your portfolio today?"
+                ),
+                "timestamp": _now,
+            }
+        ]
 
-    # Load API key from Streamlit secrets or environment variable
+    # ── API key ────────────────────────────────────────────────────────────
     if "ANTHROPIC_API_KEY" not in os.environ:
         try:
             os.environ["ANTHROPIC_API_KEY"] = st.secrets["ANTHROPIC_API_KEY"]
         except Exception:
             pass
 
-    user_message = st.text_input(
-        "Ask about your portfolio...",
-        placeholder="E.g. Why is my bond allocation high?",
-    )
-
-    if st.button("Ask") and user_message:
-        with st.spinner("Generating response..."):
-            try:
-                # Stage 1: build the Ground Truth JSON for this profile
-                # This is the only data the LLM is allowed to reference
-                payload = get_mock_payload(profile_key)
-
-                # Stage 2: call the LLM narrator
-                # narrator.py assembles the system prompt, injects the GT JSON,
-                # and calls the Claude API
-                narrator = NarratorClient()
-                narrator_response = narrator.narrate(payload, user_message)
-
-                # Stage 3: run the 5-step validator before showing anything
-                result = validate(
-                    response_text=narrator_response.raw_text,
-                    allowed_numbers=payload.llm_constraints.allowed_numbers,
-                    forbidden_phrases=payload.llm_constraints.forbidden_phrases,
-                    eu_awareness_required=(
-                        payload.regulatory_context.profiler_us_centric_caveat
-                    ),
+    # ── Backend helper ─────────────────────────────────────────────────────
+    def _call_backend(text: str) -> str:
+        """Call FastAPI /advice; fall back to direct NarratorClient. Never raises."""
+        try:
+            resp = _httpx.post(
+                "http://localhost:8000/advice",
+                json={"question": text, "profile": raw_label},
+                timeout=10.0,
+            )
+            if resp.status_code == 503:
+                return (
+                    "I'm currently unavailable — the backend is still starting up. "
+                    "Please try again in a moment."
                 )
+            if resp.status_code == 200:
+                data = resp.json()
+                return data.get("answer") or data.get("safe_text") or str(data)
+        except Exception:
+            pass
+        # Direct NarratorClient fallback
+        try:
+            payload  = get_mock_payload(profile_key)
+            narrator = NarratorClient()
+            nresp    = narrator.narrate(payload, text)
+            if nresp.injection_blocked:
+                return "Your question could not be processed. Please rephrase it."
+            if nresp.api_error:
+                return "Sorry, I could not reach the advisor. Please try again."
+            result = validate(
+                response_text=nresp.raw_text,
+                allowed_numbers=payload.llm_constraints.allowed_numbers,
+                forbidden_phrases=payload.llm_constraints.forbidden_phrases,
+                eu_awareness_required=payload.regulatory_context.profiler_us_centric_caveat,
+            )
+            return result.safe_text
+        except Exception:
+            return "Sorry, I could not reach the advisor. Please try again."
 
-                # Display based on what happened at each stage
-                if narrator_response.injection_blocked:
-                    # The input was flagged as a prompt injection attempt
-                    st.warning(
-                        "Your question could not be processed. "
-                        "Please rephrase it more concisely."
+    # ── CSS ────────────────────────────────────────────────────────────────
+    st.markdown("""
+<style>
+.ca-card {
+    background: #0f1628;
+    border: .5px solid #1e2d4a;
+    border-radius: 12px;
+    overflow: hidden;
+}
+/* chip pills */
+.ca-chip button {
+    background: #0a1020 !important;
+    border: 1px solid #1e2d4a !important;
+    border-radius: 20px !important;
+    color: #6a8aaa !important;
+    font-size: 10.5px !important;
+    padding: 5px 14px !important;
+    height: auto !important;
+    min-height: 0 !important;
+    line-height: 1.4 !important;
+    box-shadow: none !important;
+    width: auto !important;
+}
+.ca-chip button:hover {
+    background: #131c30 !important;
+    color: #90aace !important;
+    border-color: #2e4a6a !important;
+}
+/* input text box */
+.ca-input input[type="text"] {
+    background: #0a0f1e !important;
+    border: 1px solid #1e2d4a !important;
+    color: #c0d0f0 !important;
+    border-radius: 8px !important;
+}
+.ca-input input[type="text"]::placeholder { color: #3a4a6a !important; }
+/* send button */
+.ca-send button {
+    background: #185FA5 !important;
+    border: none !important;
+    border-radius: 8px !important;
+    width: 36px !important;
+    height: 36px !important;
+    padding: 0 !important;
+    color: white !important;
+    font-size: 15px !important;
+    min-height: 0 !important;
+    box-shadow: none !important;
+}
+.ca-send button:hover   { background: #1a70c0 !important; }
+.ca-send button:disabled { background: #0d2a4a !important; color: #3a4a6a !important; }
+</style>
+""", unsafe_allow_html=True)
+
+    # ── Layout ─────────────────────────────────────────────────────────────
+    col_left, col_right = st.columns([5, 1])
+    history  = st.session_state["chat_history"]
+    is_empty = len(history) == 1   # only the greeting
+
+    # ══════════════════════════════════════════════════════════════════════
+    # LEFT COLUMN — chat panel
+    # ══════════════════════════════════════════════════════════════════════
+    with col_left:
+
+        # ── Empty state ────────────────────────────────────────────────
+        if is_empty:
+            st.markdown('<div class="ca-card" style="padding:24px 20px 16px;">',
+                        unsafe_allow_html=True)
+            st.markdown("""
+<div style="text-align:center;padding:20px 0 12px;">
+  <div style="width:46px;height:46px;background:#131c30;border-radius:50%;
+              display:inline-flex;align-items:center;justify-content:center;
+              margin-bottom:10px;">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6a8aaa"
+         stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="8" width="18" height="12" rx="2"/>
+      <path d="M12 8V5"/><circle cx="12" cy="4" r="1"/>
+      <rect x="7" y="12" width="2" height="2"/>
+      <rect x="15" y="12" width="2" height="2"/>
+      <path d="M9 17h6"/>
+    </svg>
+  </div>
+  <div style="font-size:13px;color:#c0d0f0;font-weight:600;margin-bottom:6px;">
+    Hi! I'm your AI Finance Assistant.
+  </div>
+  <div style="font-size:11px;color:#3a4a6a;max-width:300px;margin:0 auto;line-height:1.5;">
+    Ask a question about your portfolio, market trends, or investment strategy.
+  </div>
+</div>
+<div style="font-size:10px;color:#3a4a6a;text-align:center;margin-bottom:10px;">
+  Try asking...
+</div>
+""", unsafe_allow_html=True)
+
+            _CHIPS = [
+                "Why is my bond allocation high?",
+                "Explain my risk profile",
+                "EU investor caveat?",
+            ]
+            chip_cols = st.columns(len(_CHIPS))
+            for _i, (_cc, _ctxt) in enumerate(zip(chip_cols, _CHIPS)):
+                with _cc:
+                    st.markdown('<div class="ca-chip">', unsafe_allow_html=True)
+                    if st.button(_ctxt, key=f"chip_{_i}"):
+                        _ts = datetime.now().strftime("%H:%M")
+                        st.session_state["chat_history"].append(
+                            {"role": "user", "content": _ctxt, "timestamp": _ts}
+                        )
+                        with st.spinner("Thinking..."):
+                            _reply = _call_backend(_ctxt)
+                        _ts2 = datetime.now().strftime("%H:%M")
+                        st.session_state["chat_history"].append(
+                            {"role": "assistant", "content": _reply, "timestamp": _ts2}
+                        )
+                        st.rerun()
+                    st.markdown("</div>", unsafe_allow_html=True)
+
+            st.markdown("</div>", unsafe_allow_html=True)
+
+        # ── Active chat state ──────────────────────────────────────────
+        else:
+            _DISC_HTML = (
+                '<div style="font-size:9px;color:#3a4a6a;margin-top:5px;">'
+                "This is an educational prototype. "
+                "No content constitutes financial advice under MiFID II."
+                "</div>"
+            )
+            first_ts   = history[0]["timestamp"]
+            msgs_html  = (
+                f'<div style="text-align:center;font-size:10px;color:#3a4a6a;'
+                f'margin-bottom:12px;">Today · {first_ts}</div>'
+            )
+            for _msg in history:
+                _safe = (
+                    _msg["content"]
+                    .replace("&", "&amp;")
+                    .replace("<", "&lt;")
+                    .replace(">", "&gt;")
+                    .replace("\n", "<br>")
+                )
+                if _msg["role"] == "assistant":
+                    msgs_html += (
+                        f'<div style="display:flex;align-items:flex-start;gap:8px;'
+                        f'margin-bottom:12px;">'
+                        f'<div style="width:28px;height:28px;background:#0d2a4a;'
+                        f'border-radius:50%;display:flex;align-items:center;'
+                        f'justify-content:center;flex-shrink:0;font-size:10px;'
+                        f'color:#60aaff;font-weight:600;">RA</div>'
+                        f'<div style="background:#131c2e;border:1px solid #1e2d45;'
+                        f'border-radius:4px 10px 10px 10px;padding:8px 12px;'
+                        f'color:#c8d8f0;font-size:12px;max-width:85%;line-height:1.5;">'
+                        f'{_safe}{_DISC_HTML}</div></div>'
                     )
-                elif narrator_response.api_error:
-                    # The Claude API call failed (timeout, rate limit, etc.)
-                    st.error("Could not reach the AI service. Please try again.")
-                elif not result.passed:
-                    # The validator blocked the response -- show safe fallback
-                    st.warning(result.safe_text)
                 else:
-                    # Clean response -- show the validated narrative
-                    st.markdown(result.safe_text)
-           
-            except NarratorError:
-                # NarratorClient raised at construction -- API key is missing
-                st.error(
-                    "ANTHROPIC_API_KEY is not configured. "
-                    "Add it to .streamlit/secrets.toml or set it as an environment variable."
+                    msgs_html += (
+                        f'<div style="display:flex;align-items:flex-start;gap:8px;'
+                        f'margin-bottom:12px;justify-content:flex-end;">'
+                        f'<div style="background:#0a2018;border:1px solid #0f3a28;'
+                        f'border-radius:10px 10px 4px 10px;padding:8px 12px;'
+                        f'color:#80c8a0;font-size:12px;max-width:85%;line-height:1.5;">'
+                        f'{_safe}</div>'
+                        f'<div style="width:28px;height:28px;background:#0f3d2e;'
+                        f'border-radius:50%;display:flex;align-items:center;'
+                        f'justify-content:center;flex-shrink:0;font-size:10px;'
+                        f'color:#1D9E75;font-weight:600;">U</div></div>'
+                    )
+
+            components.html(
+                f"""<!DOCTYPE html><html><head><style>
+*{{box-sizing:border-box;margin:0;padding:0;}}
+body{{background:#0f1628;font-family:'DM Sans',system-ui,sans-serif;}}
+#m{{height:380px;overflow-y:auto;padding:16px;}}
+#m::-webkit-scrollbar{{width:4px;}}
+#m::-webkit-scrollbar-track{{background:#0a0f1e;}}
+#m::-webkit-scrollbar-thumb{{background:#1e2d4a;border-radius:2px;}}
+</style></head><body>
+<div id="m">{msgs_html}</div>
+<script>var e=document.getElementById('m');e.scrollTop=e.scrollHeight;</script>
+</body></html>""",
+                height=412,
+                scrolling=False,
+            )
+
+        # ── Input row (shared by both states) ─────────────────────────
+        st.markdown(
+            '<div class="ca-input" style="background:#0d1220;'
+            'border-top:1px solid #1a2240;padding:10px 12px;'
+            'border-radius:0 0 12px 12px;">',
+            unsafe_allow_html=True,
+        )
+
+        # Callback captures value before clear_on_submit wipes it
+        def _on_submit() -> None:
+            st.session_state["_pending_chat"] = (
+                st.session_state.get("_chat_input", "") or ""
+            )
+
+        with st.form("chat_form", clear_on_submit=True):
+            _fi, _fb = st.columns([11, 1])
+            with _fi:
+                st.text_input(
+                    "",
+                    placeholder="Ask about your portfolio...",
+                    max_chars=500,
+                    label_visibility="collapsed",
+                    key="_chat_input",
                 )
+                _cur_len = len(st.session_state.get("_chat_input", "") or "")
+                if _cur_len > 400:
+                    st.caption(f"{_cur_len}/500")
+            with _fb:
+                st.markdown('<div class="ca-send">', unsafe_allow_html=True)
+                st.form_submit_button("➤", on_click=_on_submit)
+                st.markdown("</div>", unsafe_allow_html=True)
+
+        st.markdown("</div>", unsafe_allow_html=True)
+
+        # Process pending message after form clears
+        _pending = st.session_state.pop("_pending_chat", None)
+        if _pending and _pending.strip():
+            _ts = datetime.now().strftime("%H:%M")
+            st.session_state["chat_history"].append(
+                {"role": "user", "content": _pending.strip(), "timestamp": _ts}
+            )
+            with st.spinner("Thinking..."):
+                _reply = _call_backend(_pending.strip())
+            _ts2 = datetime.now().strftime("%H:%M")
+            st.session_state["chat_history"].append(
+                {"role": "assistant", "content": _reply, "timestamp": _ts2}
+            )
+            st.rerun()
+
+    # ══════════════════════════════════════════════════════════════════════
+    # RIGHT COLUMN — info panel
+    # ══════════════════════════════════════════════════════════════════════
+    with col_right:
+        _chk = (
+            '<svg width="11" height="11" viewBox="0 0 24 24" fill="none"'
+            ' stroke="#1D9E75" stroke-width="2.5">'
+            '<polyline points="20 6 9 17 4 12"/></svg>'
+        )
+        _xmk = (
+            '<svg width="11" height="11" viewBox="0 0 24 24" fill="none"'
+            ' stroke="#A32D2D" stroke-width="2.5">'
+            '<line x1="18" y1="6" x2="6" y2="18"/>'
+            '<line x1="6" y1="6" x2="18" y2="18"/></svg>'
+        )
+        _can_items = "".join(
+            f'<div style="display:flex;align-items:center;gap:6px;padding:5px 0;'
+            f'border-bottom:.5px solid #141e30;">{_chk}'
+            f'<span style="font-size:11px;color:#8aaad0;">{it}</span></div>'
+            for it in [
+                "Portfolio weights",
+                "Risk clusters",
+                "Historical drawdowns",
+                "EU / UCITS caveats",
+            ]
+        )
+        _cant_items = "".join(
+            f'<div style="display:flex;align-items:center;gap:6px;padding:5px 0;'
+            f'border-bottom:.5px solid #141e30;">{_xmk}'
+            f'<span style="font-size:11px;color:#8aaad0;">{it}</span></div>'
+            for it in [
+                "Buy/sell recommendations",
+                "Future return predictions",
+            ]
+        )
+        st.markdown(f"""
+<div class="ca-card" style="padding:14px 12px;display:flex;flex-direction:column;
+                             min-height:480px;">
+  <div style="font-size:12px;color:#8aaad0;font-weight:600;margin-bottom:10px;
+              display:flex;align-items:center;gap:6px;">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8aaad0"
+         stroke-width="2"><circle cx="12" cy="12" r="10"/>
+         <path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+    What this advisor can explain
+  </div>
+  <div style="font-size:10px;color:#3a4a6a;margin-bottom:6px;
+              text-transform:uppercase;letter-spacing:.04em;">Can explain</div>
+  {_can_items}
+  <div style="font-size:10px;color:#3a4a6a;margin-top:12px;margin-bottom:6px;
+              text-transform:uppercase;letter-spacing:.04em;">Cannot do</div>
+  {_cant_items}
+  <div style="margin-top:auto;padding-top:12px;border-top:.5px solid #141e30;
+              display:flex;align-items:flex-start;gap:6px;">
+    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#3a4a6a"
+         stroke-width="2" style="flex-shrink:0;margin-top:1px;">
+      <rect x="3" y="11" width="18" height="11" rx="2"/>
+      <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+    </svg>
+    <span style="font-size:10px;color:#3a4a6a;line-height:1.4;">
+      All responses are validated and grounded in approved data.
+    </span>
+  </div>
+</div>
+""", unsafe_allow_html=True)
 
 
 # ---------------------------------------------------------------------------
