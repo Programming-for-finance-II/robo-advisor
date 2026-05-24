@@ -373,16 +373,18 @@ hr { border-color: #1e2640 !important; }
     color: #fcd34d !important;
 }
 
-/* ── Section-aware radio dot colour (accent-color) ──────────────────────── */
-/* Colors the native radio circle to match the section accent.                  */
-[data-testid="stVerticalBlockBorderWrapper"]:has(.qs-s1) input[type="radio"] {
-    accent-color: #3b82f6 !important;
-}
-[data-testid="stVerticalBlockBorderWrapper"]:has(.qs-s2) input[type="radio"] {
-    accent-color: #7c5cfc !important;
-}
-[data-testid="stVerticalBlockBorderWrapper"]:has(.qs-s3) input[type="radio"] {
-    accent-color: #f59e0b !important;
+/* ── Section-aware radio dot colour ─────────────────────────────────────── */
+/* Strategy: set --radio-accent as a CSS variable on each section wrapper.      */
+/* CSS variables cascade to the nearest ancestor, so even if an outer container */
+/* matches multiple :has() rules, the inner section wrapper always wins because  */
+/* it is the closest ancestor — no selector specificity fight needed.            */
+[data-testid="stVerticalBlockBorderWrapper"]:has(.qs-s1) { --radio-accent: #3b82f6; }
+[data-testid="stVerticalBlockBorderWrapper"]:has(.qs-s2) { --radio-accent: #7c5cfc; }
+[data-testid="stVerticalBlockBorderWrapper"]:has(.qs-s3) { --radio-accent: #f59e0b; }
+
+/* Apply the variable to every radio input — closest ancestor wins */
+[data-testid="stVerticalBlockBorderWrapper"] input[type="radio"] {
+    accent-color: var(--radio-accent, #7c5cfc) !important;
 }
 
 /* ── Section colour accents ──────────────────────────────────────────────── */
