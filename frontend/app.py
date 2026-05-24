@@ -797,16 +797,18 @@ def render_questionnaire() -> None:
         }
         top3 = result.get("top_drivers", [])[:3]
         drivers_chips = "".join(
-            '<span style="background:rgba(255,255,255,0.05);border:1px solid #1e2640;'
-            'border-radius:6px;padding:0.2rem 0.55rem;font-size:0.72rem;color:#94a3b8;">'
+            '<span style="background:rgba(255,255,255,0.06);border:1px solid #2d3a52;'
+            'border-radius:7px;padding:0.3rem 0.75rem;font-size:0.85rem;'
+            'font-weight:500;color:#94a3b8;">'
             + driver_labels.get(d["feature"], d["feature"]) + "</span>"
             for d in top3
         )
         # Pre-build the optional drivers block — avoids nested f-string inside the card
         drivers_block = (
-            '<div style="font-size:0.62rem;letter-spacing:0.1em;text-transform:uppercase;'
-            'color:#475569;margin-bottom:0.4rem;">Top scoring factors</div>'
-            '<div style="display:flex;flex-wrap:wrap;gap:0.4rem;">'
+            '<div style="font-size:0.75rem;font-weight:600;letter-spacing:0.1em;'
+            'text-transform:uppercase;color:#64748b;margin-bottom:0.55rem;">'
+            'Top scoring factors</div>'
+            '<div style="display:flex;flex-wrap:wrap;gap:0.5rem;">'
             + drivers_chips + "</div>"
         ) if top3 else ""
 
@@ -815,46 +817,46 @@ def render_questionnaire() -> None:
         card_html = (
             f'<div style="background:linear-gradient(135deg,{rm["color"]}12,{rm["color"]}06);'
             f'border:1px solid {rm["color"]}45;border-radius:16px;'
-            f'padding:1.5rem 1.75rem 1.25rem 1.75rem;margin:1.5rem 0 1rem 0;">'
+            f'padding:1.5rem 1.75rem 1.4rem 1.75rem;margin:1.5rem 0 1rem 0;">'
 
             # ── header ──────────────────────────────────────────────────────
-            f'<div style="display:flex;align-items:flex-start;gap:1.25rem;margin-bottom:1.25rem;">'
-            f'<div style="font-size:2.6rem;line-height:1;flex-shrink:0;margin-top:0.1rem;">{rm["icon"]}</div>'
+            f'<div style="display:flex;align-items:flex-start;gap:1.25rem;margin-bottom:1.35rem;">'
+            f'<div style="font-size:2.8rem;line-height:1;flex-shrink:0;margin-top:0.1rem;">{rm["icon"]}</div>'
             f'<div style="flex:1;">'
-            f'<div style="font-size:0.6rem;font-weight:700;letter-spacing:0.14em;'
-            f'text-transform:uppercase;color:{rm["color"]}90;margin-bottom:0.25rem;">'
+            f'<div style="font-size:0.72rem;font-weight:700;letter-spacing:0.12em;'
+            f'text-transform:uppercase;color:{rm["color"]}90;margin-bottom:0.3rem;">'
             f'YOUR INVESTOR RISK PROFILE</div>'
-            f'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:2rem;'
+            f'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:2.2rem;'
             f'font-weight:700;color:{rm["color"]};letter-spacing:-0.02em;line-height:1.1;">'
             f'{rm["label"]}</div>'
-            f'<div style="font-size:0.82rem;color:#64748b;margin-top:0.35rem;">{rm["desc"]}</div>'
+            f'<div style="font-size:0.9rem;color:#64748b;margin-top:0.4rem;">{rm["desc"]}</div>'
             f'</div></div>'
 
             # ── metrics row ──────────────────────────────────────────────────
-            f'<div style="display:flex;gap:0.75rem;flex-wrap:wrap;margin-bottom:1.1rem;">'
+            f'<div style="display:flex;gap:0.75rem;flex-wrap:wrap;margin-bottom:1.25rem;">'
 
             # score card
-            f'<div style="flex:1;min-width:110px;background:rgba(0,0,0,0.25);'
-            f'border:1px solid #1e2640;border-radius:10px;padding:0.65rem 1rem;">'
-            f'<div style="font-size:0.58rem;letter-spacing:0.1em;text-transform:uppercase;'
-            f'color:#475569;margin-bottom:0.3rem;">Score</div>'
-            f'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:1.5rem;'
+            f'<div style="flex:1;min-width:120px;background:rgba(0,0,0,0.25);'
+            f'border:1px solid #1e2640;border-radius:10px;padding:0.75rem 1.1rem;">'
+            f'<div style="font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;'
+            f'color:#475569;margin-bottom:0.35rem;">Score</div>'
+            f'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:1.7rem;'
             f'font-weight:700;color:#f1f5f9;line-height:1;">'
             f'{result["score"]}'
-            f'<span style="font-size:0.75rem;color:#475569;font-weight:400;">/30</span></div>'
-            f'<div style="margin-top:0.5rem;height:4px;border-radius:2px;background:#1e2640;overflow:hidden;">'
-            f'<div style="height:100%;width:{score_pct:.0f}%;background:{rm["bar_gradient"]};border-radius:2px;"></div>'
+            f'<span style="font-size:0.85rem;color:#475569;font-weight:400;">/30</span></div>'
+            f'<div style="margin-top:0.55rem;height:5px;border-radius:3px;background:#1e2640;overflow:hidden;">'
+            f'<div style="height:100%;width:{score_pct:.0f}%;background:{rm["bar_gradient"]};border-radius:3px;"></div>'
             f'</div></div>'
 
             # confidence card
-            f'<div style="flex:1;min-width:110px;background:rgba(0,0,0,0.25);'
-            f'border:1px solid #1e2640;border-radius:10px;padding:0.65rem 1rem;">'
-            f'<div style="font-size:0.58rem;letter-spacing:0.1em;text-transform:uppercase;'
-            f'color:#475569;margin-bottom:0.3rem;">Model Confidence</div>'
-            f'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:1.5rem;'
+            f'<div style="flex:1;min-width:120px;background:rgba(0,0,0,0.25);'
+            f'border:1px solid #1e2640;border-radius:10px;padding:0.75rem 1.1rem;">'
+            f'<div style="font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;'
+            f'color:#475569;margin-bottom:0.35rem;">Model Confidence</div>'
+            f'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:1.7rem;'
             f'font-weight:700;color:{rm["color"]};line-height:1;">{conf_pct}%</div>'
-            f'<div style="margin-top:0.5rem;height:4px;border-radius:2px;background:#1e2640;overflow:hidden;">'
-            f'<div style="height:100%;width:{conf_pct}%;background:{rm["bar_gradient"]};border-radius:2px;"></div>'
+            f'<div style="margin-top:0.55rem;height:5px;border-radius:3px;background:#1e2640;overflow:hidden;">'
+            f'<div style="height:100%;width:{conf_pct}%;background:{rm["bar_gradient"]};border-radius:3px;"></div>'
             f'</div></div>'
 
             f'</div>'  # end metrics row
