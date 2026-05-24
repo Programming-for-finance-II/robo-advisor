@@ -108,10 +108,6 @@ section[data-testid="stSidebar"],
     border-right: 1px solid #1e2640 !important;
     min-width: 260px !important;
     width: 260px !important;
-    display: flex !important;
-    visibility: visible !important;
-    transform: translateX(0) !important;
-    opacity: 1 !important;
 }
 
 [data-testid="stSidebar"] > div:first-child {
