@@ -293,7 +293,10 @@ def profile_user_gbm(user_features: dict[str, float]) -> ProfilerOutput:
     else:
         # Degenerate case: all SHAP values zero (should not occur in practice)
         top_drivers = [
-            TopDriver(feature=FEATURE_COLS[int(i)], importance=round(1.0 / N_TOP_DRIVERS, SHAP_IMPORTANCE_DECIMALS))
+            TopDriver(
+                feature=FEATURE_COLS[int(i)],
+                importance=round(1.0 / N_TOP_DRIVERS, SHAP_IMPORTANCE_DECIMALS),
+            )
             for i in top_idx
         ]
 
