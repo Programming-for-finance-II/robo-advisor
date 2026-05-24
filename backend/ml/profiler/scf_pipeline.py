@@ -213,7 +213,7 @@ def standardise_features(
 def build_pipeline(
     path: Path = SCF_DEFAULT_PATH,
     implicate: int = SCF_IMPLICATE,
-) -> tuple[np.ndarray, pd.DataFrame, np.ndarray, StandardScaler]:
+) -> tuple[np.ndarray, pd.DataFrame, np.ndarray, StandardScaler, pd.DataFrame]:
     """Main entry point for the SCF preprocessing pipeline.
 
     Executes in sequence: load -> select -> standardise.
@@ -223,14 +223,15 @@ def build_pipeline(
         implicate: Implicate to use (default: 1).
 
     Returns:
-        Tuple (X, alloc, weights, scaler) where:
-            X       -- standardised features (n_samples x n_features)
-            alloc   -- raw allocation columns for clustering (n_samples x 4)
-            weights -- SCF sample weights (n_samples,)
-            scaler  -- StandardScaler fitted on X
+        Tuple (X, alloc, weights, scaler, df_selected) where:
+            X           -- standardised features (n_samples x n_features)
+            alloc       -- raw allocation columns for clustering (n_samples x 4)
+            weights     -- SCF sample weights (n_samples,)
+            scaler      -- StandardScaler fitted on X
+            df_selected -- un-standardised selected DataFrame (n_samples x all cols)
 
     Example:
-        >>> X, alloc, weights, scaler = build_pipeline()
+        >>> X, alloc, weights, scaler, df_selected = build_pipeline()
         >>> # X is ready for clustering.py
         >>> # alloc is ready to build labels via K-Means / GMM
     """
