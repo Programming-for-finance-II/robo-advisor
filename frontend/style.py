@@ -124,19 +124,16 @@ section[data-testid="stSidebar"],
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    position: absolute !important;
-    top: 0.75rem !important;
-    right: -1rem !important;
-    width: 1.75rem !important;
-    height: 1.75rem !important;
-    background: #0d1220 !important;
+    width: 2rem !important;
+    height: 2rem !important;
+    background: transparent !important;
     border: 1px solid #1e2640 !important;
     border-radius: 50% !important;
     color: #64748b !important;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.4) !important;
+    box-shadow: none !important;
     transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease !important;
-    z-index: 100 !important;
     cursor: pointer !important;
+    position: relative !important;
 }
 
 [data-testid="stSidebar"] button:not(:has(p)):hover {
@@ -148,7 +145,7 @@ section[data-testid="stSidebar"],
 [data-testid="stSidebar"] button:not(:has(p))::after {
     content: "Chiudi menu";
     position: absolute;
-    right: 2.2rem;
+    left: 2.4rem;
     top: 50%;
     transform: translateY(-50%);
     background: #1e2640;
@@ -163,6 +160,7 @@ section[data-testid="stSidebar"],
     pointer-events: none;
     transition: opacity 0.2s ease;
     border: 1px solid #2d3748;
+    z-index: 9999;
 }
 
 [data-testid="stSidebar"] button:not(:has(p)):hover::after {
