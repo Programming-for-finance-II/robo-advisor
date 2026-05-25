@@ -863,7 +863,7 @@ def render_questionnaire() -> None:
             f'background:{rm["bar_gradient"]};border-radius:3px;"></div>'
             f'</div></div>'
 
-            f'</div>'  # end metrics row
+            '</div>'  # end metrics row
 
             # ── drivers ──────────────────────────────────────────────────────
             + drivers_block +
