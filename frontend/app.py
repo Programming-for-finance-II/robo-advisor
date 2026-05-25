@@ -1605,33 +1605,29 @@ def render_chat() -> None:
     padding: 0 !important;
     background: transparent !important;
 }
-.ca-input [data-testid="stHorizontalBlock"] {
-    align-items: center !important;
-    gap: 6px !important;
-}
-.ca-input [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] {
+.ca-input div[data-testid="column"],
+.ca-input div[data-testid="stColumn"] {
     padding: 0 !important;
-    min-width: 0 !important;
+    gap: 0 !important;
 }
-.ca-input [data-baseweb="input"] { margin-bottom: 0 !important; }
-/* send button */
-.ca-send button {
+.ca-input div[data-testid="stTextInput"] { margin-bottom: 0 !important; }
+.ca-input div[data-testid="stFormSubmitButton"] > button,
+.ca-input div[data-testid="stButton"] > button {
+    height: 38px !important;
+    width: 100% !important;
+    margin-top: 0 !important;
+    padding: 0 !important;
     background: #185FA5 !important;
     border: none !important;
     border-radius: 8px !important;
-    width: 36px !important;
-    height: 36px !important;
-    padding: 0 !important;
     color: white !important;
-    font-size: 15px !important;
-    min-height: 0 !important;
+    font-size: 16px !important;
     box-shadow: none !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
 }
-.ca-send button:hover   { background: #1a70c0 !important; }
-.ca-send button:disabled { background: #0d2a4a !important; color: #3a4a6a !important; }
+.ca-input div[data-testid="stFormSubmitButton"] > button:hover,
+.ca-input div[data-testid="stButton"] > button:hover {
+    background: #1a70c0 !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -1792,7 +1788,7 @@ body{{background:#0f1628;font-family:'DM Sans',system-ui,sans-serif;}}
                 if _cur_len > 400:
                     st.caption(f"{_cur_len}/500")
             with _fb:
-                st.markdown('<div class="ca-send">', unsafe_allow_html=True)
+                st.markdown("<div style='margin-top:4px'>", unsafe_allow_html=True)
                 st.form_submit_button("➤", on_click=_on_submit)
                 st.markdown("</div>", unsafe_allow_html=True)
 
