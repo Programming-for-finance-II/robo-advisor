@@ -1599,6 +1599,21 @@ def render_chat() -> None:
     border-radius: 8px !important;
 }
 .ca-input input[type="text"]::placeholder { color: #3a4a6a !important; }
+/* ── align input + send button on the same row ── */
+.ca-input [data-testid="stForm"] {
+    border: none !important;
+    padding: 0 !important;
+    background: transparent !important;
+}
+.ca-input [data-testid="stHorizontalBlock"] {
+    align-items: center !important;
+    gap: 6px !important;
+}
+.ca-input [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] {
+    padding: 0 !important;
+    min-width: 0 !important;
+}
+.ca-input [data-baseweb="input"] { margin-bottom: 0 !important; }
 /* send button */
 .ca-send button {
     background: #185FA5 !important;
@@ -1611,6 +1626,9 @@ def render_chat() -> None:
     font-size: 15px !important;
     min-height: 0 !important;
     box-shadow: none !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
 }
 .ca-send button:hover   { background: #1a70c0 !important; }
 .ca-send button:disabled { background: #0d2a4a !important; color: #3a4a6a !important; }
@@ -1811,9 +1829,9 @@ body{{background:#0f1628;font-family:'DM Sans',system-ui,sans-serif;}}
             '<line x1="6" y1="6" x2="18" y2="18"/></svg>'
         )
         _can_items = "".join(
-            f'<div style="display:flex;align-items:center;gap:6px;padding:5px 0;'
+            f'<div style="display:flex;align-items:center;gap:6px;padding:6px 0;'
             f'border-bottom:.5px solid #141e30;">{_chk}'
-            f'<span style="font-size:11px;color:#8aaad0;">{it}</span></div>'
+            f'<span style="font-size:12.5px;color:#8aaad0;">{it}</span></div>'
             for it in [
                 "Portfolio weights",
                 "Risk clusters",
@@ -1822,9 +1840,9 @@ body{{background:#0f1628;font-family:'DM Sans',system-ui,sans-serif;}}
             ]
         )
         _cant_items = "".join(
-            f'<div style="display:flex;align-items:center;gap:6px;padding:5px 0;'
+            f'<div style="display:flex;align-items:center;gap:6px;padding:6px 0;'
             f'border-bottom:.5px solid #141e30;">{_xmk}'
-            f'<span style="font-size:11px;color:#8aaad0;">{it}</span></div>'
+            f'<span style="font-size:12.5px;color:#8aaad0;">{it}</span></div>'
             for it in [
                 "Buy/sell recommendations",
                 "Future return predictions",
@@ -1833,17 +1851,17 @@ body{{background:#0f1628;font-family:'DM Sans',system-ui,sans-serif;}}
         st.markdown(f"""
 <div class="ca-card" style="padding:14px 12px;display:flex;flex-direction:column;
                              min-height:480px;">
-  <div style="font-size:12px;color:#8aaad0;font-weight:600;margin-bottom:10px;
+  <div style="font-size:13px;color:#8aaad0;font-weight:600;margin-bottom:10px;
               display:flex;align-items:center;gap:6px;">
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8aaad0"
          stroke-width="2"><circle cx="12" cy="12" r="10"/>
          <path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
     What this advisor can explain
   </div>
-  <div style="font-size:10px;color:#3a4a6a;margin-bottom:6px;
+  <div style="font-size:11px;color:#3a4a6a;margin-bottom:6px;
               text-transform:uppercase;letter-spacing:.04em;">Can explain</div>
   {_can_items}
-  <div style="font-size:10px;color:#3a4a6a;margin-top:12px;margin-bottom:6px;
+  <div style="font-size:11px;color:#3a4a6a;margin-top:12px;margin-bottom:6px;
               text-transform:uppercase;letter-spacing:.04em;">Cannot do</div>
   {_cant_items}
   <div style="margin-top:auto;padding-top:12px;border-top:.5px solid #141e30;
@@ -1853,7 +1871,7 @@ body{{background:#0f1628;font-family:'DM Sans',system-ui,sans-serif;}}
       <rect x="3" y="11" width="18" height="11" rx="2"/>
       <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
     </svg>
-    <span style="font-size:10px;color:#3a4a6a;line-height:1.4;">
+    <span style="font-size:11px;color:#3a4a6a;line-height:1.4;">
       All responses are validated and grounded in approved data.
     </span>
   </div>
