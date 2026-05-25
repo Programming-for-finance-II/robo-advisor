@@ -1599,19 +1599,10 @@ def render_chat() -> None:
     border-radius: 8px !important;
 }
 .ca-input input[type="text"]::placeholder { color: #3a4a6a !important; }
-/* ── align input + send button on the same row ── */
-.ca-input [data-testid="stForm"] {
-    border: none !important;
-    padding: 0 !important;
-    background: transparent !important;
-}
-.ca-input div[data-testid="column"],
-.ca-input div[data-testid="stColumn"] {
-    padding: 0 !important;
-    gap: 0 !important;
-}
-.ca-input div[data-testid="stTextInput"] { margin-bottom: 0 !important; }
-.ca-input div[data-testid="stFormSubmitButton"] > button,
+/* remove hidden-label gap so button aligns with input field */
+.ca-input div[data-testid="stTextInput"] > label { display: none !important; }
+.ca-input div[data-testid="stTextInput"] { margin-bottom: 0 !important; padding-top: 0 !important; }
+/* send button */
 .ca-input div[data-testid="stButton"] > button {
     height: 38px !important;
     width: 100% !important;
@@ -1624,10 +1615,7 @@ def render_chat() -> None:
     font-size: 16px !important;
     box-shadow: none !important;
 }
-.ca-input div[data-testid="stFormSubmitButton"] > button:hover,
-.ca-input div[data-testid="stButton"] > button:hover {
-    background: #1a70c0 !important;
-}
+.ca-input div[data-testid="stButton"] > button:hover { background: #1a70c0 !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -1763,46 +1751,40 @@ body{{background:#0f1628;font-family:'DM Sans',system-ui,sans-serif;}}
         # ── Input row (shared by both states) ─────────────────────────
         st.markdown(
             '<div class="ca-input" style="background:#0d1220;'
-            'border-top:1px solid #1a2240;padding:10px 12px;'
+            'border-top:1px solid #1a2240;padding:8px 12px 10px;'
             'border-radius:0 0 12px 12px;">',
             unsafe_allow_html=True,
         )
 
-        # Callback captures value before clear_on_submit wipes it
-        def _on_submit() -> None:
-            st.session_state["_pending_chat"] = (
-                st.session_state.get("_chat_input", "") or ""
+        _col_i, _col_b = st.columns([11, 1])
+        with _col_i:
+            _user_input = st.text_input(
+                "",
+                placeholder="Ask about your portfolio...",
+                max_chars=500,
+                label_visibility="collapsed",
+                key="_chat_input",
             )
-
-        with st.form("chat_form", clear_on_submit=True):
-            _fi, _fb = st.columns([11, 1])
-            with _fi:
-                st.text_input(
-                    "",
-                    placeholder="Ask about your portfolio...",
-                    max_chars=500,
-                    label_visibility="collapsed",
-                    key="_chat_input",
-                )
-                _cur_len = len(st.session_state.get("_chat_input", "") or "")
-                if _cur_len > 400:
-                    st.caption(f"{_cur_len}/500")
-            with _fb:
-                st.markdown("<div style='margin-top:4px'>", unsafe_allow_html=True)
-                st.form_submit_button("➤", on_click=_on_submit)
-                st.markdown("</div>", unsafe_allow_html=True)
+            _cur_len = len(st.session_state.get("_chat_input", "") or "")
+            if _cur_len > 400:
+                st.caption(f"{_cur_len}/500")
+        with _col_b:
+            st.markdown("<div style='margin-top:2px'>", unsafe_allow_html=True)
+            _send_clicked = st.button("➤", key="send_btn", use_container_width=True)
+            st.markdown("</div>", unsafe_allow_html=True)
 
         st.markdown("</div>", unsafe_allow_html=True)
 
-        # Process pending message after form clears
-        _pending = st.session_state.pop("_pending_chat", None)
-        if _pending and _pending.strip():
+        # Process send
+        if _send_clicked and _user_input and _user_input.strip():
+            _pending = _user_input.strip()
+            st.session_state["_chat_input"] = ""  # clear input
             _ts = datetime.now().strftime("%H:%M")
             st.session_state["chat_history"].append(
-                {"role": "user", "content": _pending.strip(), "timestamp": _ts}
+                {"role": "user", "content": _pending, "timestamp": _ts}
             )
             with st.spinner("Thinking..."):
-                _reply = _call_backend(_pending.strip())
+                _reply = _call_backend(_pending)
             _ts2 = datetime.now().strftime("%H:%M")
             st.session_state["chat_history"].append(
                 {"role": "assistant", "content": _reply, "timestamp": _ts2}
