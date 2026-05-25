@@ -1754,42 +1754,79 @@ body{{background:#0f1628;font-family:'DM Sans',system-ui,sans-serif;}}
             )
 
         # ── Input row (shared by both states) ─────────────────────────
-        st.markdown(
-            '<div class="ca-input" style="background:#0d1220;'
-            'border-top:1px solid #1a2240;padding:8px 12px 10px;'
-            'border-radius:0 0 12px 12px;">',
-            unsafe_allow_html=True,
+        # Step 1 — hidden input captures value posted from the HTML form
+        _user_msg = st.text_input(
+            "hidden", key="chat_input_value", label_visibility="collapsed"
         )
 
-        _col_i, _col_b = st.columns([11, 1])
-        with _col_i:
-            _user_input = st.text_input(
-                "",
-                placeholder="Ask about your portfolio...",
-                max_chars=500,
-                label_visibility="collapsed",
-                key="_chat_input",
-            )
-            _cur_len = len(st.session_state.get("_chat_input", "") or "")
-            if _cur_len > 400:
-                st.caption(f"{_cur_len}/500")
-        with _col_b:
-            st.markdown("<div style='margin-top:2px'>", unsafe_allow_html=True)
-            _send_clicked = st.button("➤", key="send_btn", use_container_width=True)
-            st.markdown("</div>", unsafe_allow_html=True)
+        # Step 2 — self-contained HTML form: input + button perfectly aligned
+        components.html("""
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: transparent; }
+  .row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0;
+    width: 100%;
+  }
+  input[type="text"] {
+    flex: 1;
+    height: 38px;
+    background: #0a0f1e;
+    border: 1px solid #1e2d4a;
+    border-radius: 8px;
+    padding: 0 12px;
+    font-size: 13px;
+    color: #c0d0f0;
+    outline: none;
+    font-family: sans-serif;
+  }
+  input[type="text"]::placeholder { color: #3a4a6a; }
+  button {
+    width: 38px;
+    height: 38px;
+    flex-shrink: 0;
+    background: #185FA5;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    color: white;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  button:hover { background: #1a6fbe; }
+</style>
+<div class="row">
+  <input id="msg" type="text"
+         placeholder="Ask about your portfolio..."
+         onkeydown="if(event.key==='Enter') send()">
+  <button onclick="send()">&#9658;</button>
+</div>
+<script>
+  function send() {
+    const val = document.getElementById('msg').value.trim();
+    if (!val) return;
+    window.parent.postMessage(
+      {type: 'streamlit:setComponentValue', value: val}, '*'
+    );
+    document.getElementById('msg').value = '';
+  }
+</script>
+""", height=56)
 
-        st.markdown("</div>", unsafe_allow_html=True)
-
-        # Process send
-        if _send_clicked and _user_input and _user_input.strip():
-            _pending = _user_input.strip()
-            st.session_state["_chat_input"] = ""  # clear input
+        # Step 3 — process submitted value
+        if _user_msg and _user_msg != st.session_state.get("last_sent", ""):
+            st.session_state["last_sent"] = _user_msg
             _ts = datetime.now().strftime("%H:%M")
             st.session_state["chat_history"].append(
-                {"role": "user", "content": _pending, "timestamp": _ts}
+                {"role": "user", "content": _user_msg, "timestamp": _ts}
             )
             with st.spinner("Thinking..."):
-                _reply = _call_backend(_pending)
+                _reply = _call_backend(_user_msg)
             _ts2 = datetime.now().strftime("%H:%M")
             st.session_state["chat_history"].append(
                 {"role": "assistant", "content": _reply, "timestamp": _ts2}
