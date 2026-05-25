@@ -23,7 +23,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
-from backend.llm.narrator import NarratorClient, NarratorError
+from backend.llm.narrator import NarratorClient
 from backend.llm.validator import validate
 from backend.schemas.mock_data import get_mock_payload
 from frontend.style import (
@@ -31,7 +31,6 @@ from frontend.style import (
     inject_css,
     page_header,
     render_disclaimer,
-    render_eu_note,
 )
 
 # ---------------------------------------------------------------------------
@@ -821,7 +820,8 @@ def render_questionnaire() -> None:
 
             # ── header ──────────────────────────────────────────────────────
             f'<div style="display:flex;align-items:flex-start;gap:1.25rem;margin-bottom:1.35rem;">'
-            f'<div style="font-size:2.8rem;line-height:1;flex-shrink:0;margin-top:0.1rem;">{rm["icon"]}</div>'
+            f'<div style="font-size:2.8rem;line-height:1;flex-shrink:0;margin-top:0.1rem;">'
+            f'{rm["icon"]}</div>'
             f'<div style="flex:1;">'
             f'<div style="font-size:0.72rem;font-weight:700;letter-spacing:0.12em;'
             f'text-transform:uppercase;color:{rm["color"]}90;margin-bottom:0.3rem;">'
@@ -844,8 +844,10 @@ def render_questionnaire() -> None:
             f'font-weight:700;color:#f1f5f9;line-height:1;">'
             f'{result["score"]}'
             f'<span style="font-size:0.85rem;color:#475569;font-weight:400;">/30</span></div>'
-            f'<div style="margin-top:0.55rem;height:5px;border-radius:3px;background:#1e2640;overflow:hidden;">'
-            f'<div style="height:100%;width:{score_pct:.0f}%;background:{rm["bar_gradient"]};border-radius:3px;"></div>'
+            f'<div style="margin-top:0.55rem;height:5px;border-radius:3px;'
+            f'background:#1e2640;overflow:hidden;">'
+            f'<div style="height:100%;width:{score_pct:.0f}%;'
+            f'background:{rm["bar_gradient"]};border-radius:3px;"></div>'
             f'</div></div>'
 
             # confidence card
@@ -855,15 +857,17 @@ def render_questionnaire() -> None:
             f'color:#475569;margin-bottom:0.35rem;">Model Confidence</div>'
             f'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:1.7rem;'
             f'font-weight:700;color:{rm["color"]};line-height:1;">{conf_pct}%</div>'
-            f'<div style="margin-top:0.55rem;height:5px;border-radius:3px;background:#1e2640;overflow:hidden;">'
-            f'<div style="height:100%;width:{conf_pct}%;background:{rm["bar_gradient"]};border-radius:3px;"></div>'
+            f'<div style="margin-top:0.55rem;height:5px;border-radius:3px;'
+            f'background:#1e2640;overflow:hidden;">'
+            f'<div style="height:100%;width:{conf_pct}%;'
+            f'background:{rm["bar_gradient"]};border-radius:3px;"></div>'
             f'</div></div>'
 
             f'</div>'  # end metrics row
 
             # ── drivers ──────────────────────────────────────────────────────
             + drivers_block +
-            f'</div>'  # end card
+            '</div>'  # end card
         )
         st.markdown(card_html, unsafe_allow_html=True)
 
@@ -1490,8 +1494,9 @@ def render_chat() -> None:
     Right — info panel (capabilities, disclaimer footer)
     """
     from datetime import datetime
-    import streamlit.components.v1 as components
+
     import httpx as _httpx
+    import streamlit.components.v1 as components
 
     # ── Fixed top section: title · disclaimer · divider · profile bar ─────
     page_header("Chat Advisor", "LLM Narrator · Validated responses")

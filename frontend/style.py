@@ -403,21 +403,25 @@ hr { border-color: #1e2640 !important; }
 [data-testid="stVerticalBlockBorderWrapper"]:has(.qs-s1) div[data-testid="stRadio"] label:hover {
     border-left-color: rgba(59,130,246,0.35) !important;
 }
-[data-testid="stVerticalBlockBorderWrapper"]:has(.qs-s1) div[data-testid="stRadio"] label:has(input:checked) {
+[data-testid="stVerticalBlockBorderWrapper"]:has(.qs-s1)
+div[data-testid="stRadio"] label:has(input:checked) {
     border-left-color: #3b82f6 !important;
     background: rgba(59,130,246,0.1) !important;
 }
-[data-testid="stVerticalBlockBorderWrapper"]:has(.qs-s1) div[data-testid="stRadio"] label:has(input:checked) p {
+[data-testid="stVerticalBlockBorderWrapper"]:has(.qs-s1)
+div[data-testid="stRadio"] label:has(input:checked) p {
     color: #93c5fd !important;
 }
 [data-testid="stVerticalBlockBorderWrapper"]:has(.qs-s3) div[data-testid="stRadio"] label:hover {
     border-left-color: rgba(245,158,11,0.35) !important;
 }
-[data-testid="stVerticalBlockBorderWrapper"]:has(.qs-s3) div[data-testid="stRadio"] label:has(input:checked) {
+[data-testid="stVerticalBlockBorderWrapper"]:has(.qs-s3)
+div[data-testid="stRadio"] label:has(input:checked) {
     border-left-color: #f59e0b !important;
     background: rgba(245,158,11,0.1) !important;
 }
-[data-testid="stVerticalBlockBorderWrapper"]:has(.qs-s3) div[data-testid="stRadio"] label:has(input:checked) p {
+[data-testid="stVerticalBlockBorderWrapper"]:has(.qs-s3)
+div[data-testid="stRadio"] label:has(input:checked) p {
     color: #fcd34d !important;
 }
 
@@ -584,7 +588,8 @@ details.qs-info-card[open] .qs-info-chevron {
 }
 
 [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stPills"] button[aria-pressed="true"],
-[data-testid="stVerticalBlockBorderWrapper"] button[data-testid="stPills-pill"][aria-pressed="true"],
+[data-testid="stVerticalBlockBorderWrapper"]
+button[data-testid="stPills-pill"][aria-pressed="true"],
 [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stPills"] button[data-selected="true"] {
     background: rgba(124,92,252,0.18) !important;
     border-color: #7c5cfc !important;
@@ -594,13 +599,15 @@ details.qs-info-card[open] .qs-info-chevron {
 }
 
 /* Section-aware pill accent on selected */
-[data-testid="stVerticalBlockBorderWrapper"]:has(.qs-s1) [data-testid="stPills"] button[aria-pressed="true"] {
+[data-testid="stVerticalBlockBorderWrapper"]:has(.qs-s1)
+[data-testid="stPills"] button[aria-pressed="true"] {
     border-color: #3b82f6 !important;
     background: rgba(59,130,246,0.18) !important;
     color: #93c5fd !important;
     box-shadow: inset 0 0 0 1px rgba(59,130,246,0.35) !important;
 }
-[data-testid="stVerticalBlockBorderWrapper"]:has(.qs-s3) [data-testid="stPills"] button[aria-pressed="true"] {
+[data-testid="stVerticalBlockBorderWrapper"]:has(.qs-s3)
+[data-testid="stPills"] button[aria-pressed="true"] {
     border-color: #f59e0b !important;
     background: rgba(245,158,11,0.18) !important;
     color: #fcd34d !important;
