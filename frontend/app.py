@@ -1077,18 +1077,10 @@ def _build_perf_chart(exp_ret: float, vol: float, n_days: int, seed: int = 42):
     return fig
 
 
-def _section_header(number: str, title: str) -> None:
-    st.markdown(
-        f"""
-        <div style="
-            border-left:3px solid #7c5cfc;
-            padding-left:0.875rem;
-            margin-bottom:0.75rem;
-        ">
-            <div style="
-                font-family:'Space Grotesk',sans-serif;
-                font-size:1.05rem;font-weight:600;color:#f1f5f9;
-            ">{number}. {title}</div>
+# ---------------------------------------------------------------------------
+# Dashboard display constants (HRP cluster colours and profile palette)
+# ---------------------------------------------------------------------------
+
 _HRP_TICKER_CLUSTER: dict[str, str] = {
     "CSPX.L":  "Equity",
     "EFA":     "Equity",
@@ -1121,30 +1113,18 @@ _PROFILE_COLOR: dict[str, str] = {
 }
 
 
-def _render_hrp_tab(portfolio: dict) -> None:
-    """
-    HRP tab: cluster breakdown, key metrics, weights table, colored risk chart.
-    """
-    profile_label = st.session_state.get("profile", {}).get("profile_label", "MODERATE")
-    profile_color = _PROFILE_COLOR.get(profile_label, "#7c5cfc")
-
-    # ── Section header ───────────────────────────────────────────────────────
+def _section_header(number: str, title: str) -> None:
     st.markdown(
         f"""
-        <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:1.25rem;">
+        <div style="
+            border-left:3px solid #7c5cfc;
+            padding-left:0.875rem;
+            margin-bottom:0.75rem;
+        ">
             <div style="
-                font-family:'Space Grotesk',sans-serif;font-size:1.1rem;
-                font-weight:600;color:#f1f5f9;">
-                Hierarchical Risk Parity
-            </div>
-            <div style="
-                font-family:'Space Grotesk',sans-serif;font-size:0.7rem;
-                font-weight:700;color:{profile_color};
-                background:rgba(124,92,252,0.1);
-                border:1px solid {profile_color}40;
-                border-radius:5px;padding:0.1rem 0.5rem;letter-spacing:0.06em;">
-                {profile_label}
-            </div>
+                font-family:'Space Grotesk',sans-serif;
+                font-size:1.05rem;font-weight:600;color:#f1f5f9;
+            ">{number}. {title}</div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -1159,7 +1139,7 @@ def _section_desc(text: str) -> None:
     )
 
 
-def _spacer(rem: float = 2.0) -> None:
+def _v_spacer(rem: float = 2.0) -> None:
     st.markdown(f'<div style="height:{rem}rem"></div>', unsafe_allow_html=True)
 
 
@@ -1171,6 +1151,24 @@ def _render_hrp_tab(portfolio: dict) -> None:
     exp_ret = portfolio.get("expected_return")
     max_dd = portfolio.get("max_drawdown")
 
+    profile_label: str = (
+        st.session_state.get("profile", {}).get("profile_label", "MODERATE").upper()
+    )
+    profile_color: str = _PROFILE_COLOR.get(profile_label, "#7c5cfc")
+
+    # ── Profile badge ───────────────────────────────────────────────────────
+    st.markdown(
+        f'<div style="display:inline-flex;align-items:center;gap:0.5rem;'
+        f'background:rgba(124,92,252,0.1);border:1px solid {profile_color}40;'
+        f'border-radius:20px;padding:0.35rem 1rem;margin-bottom:1.25rem;">'
+        f'<span style="width:8px;height:8px;border-radius:50%;'
+        f'background:{profile_color};flex-shrink:0;"></span>'
+        f'<span style="font-size:0.8rem;color:{profile_color};font-weight:600;'
+        f'font-family:\'Space Grotesk\',sans-serif;">{profile_label}</span>'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
+
     # ── KPI Cards ──────────────────────────────────────────────────────────
     c1, c2, c3, c4 = st.columns(4)
     c1.metric("Portfolio Value", "$100,000")
@@ -1178,7 +1176,7 @@ def _render_hrp_tab(portfolio: dict) -> None:
     c3.metric("Risk Score", f"{vol:.1%}")
     c4.metric("Historical Max Drawdown", f"{max_dd:.1%}" if max_dd is not None else "—")
 
-    _spacer(2.5)
+    _v_spacer(2.5)
 
     # ── Section 1: Portfolio Performance ───────────────────────────────────
     _section_header("1", "Portfolio Performance")
@@ -1212,8 +1210,9 @@ def _render_hrp_tab(portfolio: dict) -> None:
     except Exception as exc:
         st.caption(f"Performance chart unavailable: {exc}")
 
-    _spacer(2.5)
-    # ── Cluster breakdown pills ──────────────────────────────────────────────
+    _v_spacer(2.5)
+
+    # ── Cluster breakdown pills ─────────────────────────────────────────────
     cluster_totals: dict[str, float] = {}
     for ticker, w in weights.items():
         cl = _HRP_TICKER_CLUSTER.get(ticker, "Other")
@@ -1240,143 +1239,7 @@ def _render_hrp_tab(portfolio: dict) -> None:
     pills_html += "</div>"
     st.markdown(pills_html, unsafe_allow_html=True)
 
-    # ── Key metrics row ──────────────────────────────────────────────────────
-    metrics = [("Annual Volatility", f"{vol:.1%}")]
-    if exp_ret is not None:
-        metrics.append(("Exp. Return (hist.)", f"{exp_ret:.1%}"))
-    if sharpe is not None:
-        metrics.append(("Sharpe Ratio", f"{sharpe:.2f}"))
-    if max_dd is not None:
-        metrics.append(("Max Drawdown (hist.)", f"{max_dd:.1%}"))
-
-    m_cols = st.columns(len(metrics))
-    for col, (label, value) in zip(m_cols, metrics):
-        col.metric(label, value)
-
-    st.markdown("---")
-
-    # ── Donut chart + weights table ──────────────────────────────────────────
-    col_donut, col_table = st.columns([1, 1.1])
-
-    with col_donut:
-        st.markdown("**Portfolio Allocation**")
-        try:
-            from backend.optimizer.charts import plot_weights_donut
-            fig_donut = plot_weights_donut(weights)
-            fig_donut = apply_plotly_dark_theme(fig_donut)
-            fig_donut.update_layout(
-                title={"text": ""},
-                paper_bgcolor="rgba(0,0,0,0)",
-                plot_bgcolor="rgba(0,0,0,0)",
-            )
-            st.plotly_chart(fig_donut, use_container_width=True)
-        except Exception as exc:
-            st.caption(f"Chart unavailable: {exc}")
-
-    with col_table:
-        st.markdown("**Portfolio Weights**")
-        ucits_set = set(ucits_used) | _UCITS_TICKERS
-        rows = []
-        for ticker, w in sorted(weights.items(), key=lambda kv: -kv[1]):
-            rows.append({
-                "Ticker": ticker,
-                "Weight": w,
-                "UCITS": "EU ✓" if ticker in ucits_set else "—",
-            })
-        df = pd.DataFrame(rows)
-        st.dataframe(
-            df,
-            hide_index=True,
-            use_container_width=True,
-            column_config={
-                "Weight": st.column_config.ProgressColumn(
-                    "Weight", format="%.1f%%", min_value=0, max_value=1,
-                ),
-            },
-        )
-
-    # ── Risk contribution bar chart — colored by cluster ─────────────────────
-    tickers_sorted = sorted(
-        risk_contributions.keys(),
-        key=lambda t: risk_contributions[t],
-    )
-    bar_colors = [
-        _HRP_CLUSTER_COLOR.get(_HRP_TICKER_CLUSTER.get(t, ""), "#64748b")
-        for t in tickers_sorted
-    ]
-    rc_values = [risk_contributions[t] * 100 for t in tickers_sorted]
-    equal_risk = 100.0 / len(tickers_sorted) if tickers_sorted else 0
-
-    fig_rc = go.Figure()
-    fig_rc.add_trace(go.Bar(
-        x=rc_values,
-        y=tickers_sorted,
-        orientation="h",
-        marker=dict(
-            color=bar_colors,
-            line=dict(color="#0d1220", width=1),
-        ),
-        text=[f"{v:.1f}%" for v in rc_values],
-        textposition="outside",
-        hovertemplate="%{y}: %{x:.1f}%<extra></extra>",
-    ))
-    fig_rc.add_vline(
-        x=equal_risk,
-        line_dash="dot",
-        line_color="#475569",
-        line_width=1.5,
-        annotation_text="1/N",
-        annotation_font_color="#475569",
-        annotation_font_size=10,
-    )
-
-    profile_str = st.session_state.get("profile", {}).get("profile_label", "")
-    fig_rc.update_layout(
-        title=f"Risk Contributions — {profile_str}" if profile_str else "Risk Contributions",
-        xaxis_title="Risk Contribution (%)",
-        xaxis=dict(range=[0, max(rc_values) * 1.25]),
-        height=380,
-        margin=dict(l=8, r=40, t=50, b=40),
-    )
-    fig_rc = apply_plotly_dark_theme(fig_rc)
-    fig_rc.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
-    st.plotly_chart(fig_rc, use_container_width=True)
-
-    # --- Dendrogram ---
-    try:
-        import numpy as np
-        from scipy.cluster.hierarchy import linkage
-        from scipy.spatial.distance import squareform
-
-        from backend.optimizer.charts import plot_dendrogram
-
-        tickers_list = list(weights.keys())
-        n = len(tickers_list)
-
-        _CLUSTER_GROUPS = {
-            "CSPX.L": 0, "EFA": 0,
-            "GLD": 1, "VNQ": 1,
-            "AGGH.MI": 2, "TLT": 2, "TIP": 2,
-            "XEON.MI": 3,
-        }
-        corr = np.eye(n)
-        for i in range(n):
-            for j in range(n):
-                if i != j:
-                    ci = _CLUSTER_GROUPS.get(tickers_list[i], -1)
-                    cj = _CLUSTER_GROUPS.get(tickers_list[j], -1)
-                    corr[i, j] = 0.70 if ci == cj else 0.10
-
-        dist = np.sqrt(0.5 * (1 - corr))
-        np.fill_diagonal(dist, 0.0)
-        condensed = squareform(dist, checks=False)
-        link = linkage(condensed, method="ward")
-
-        st.markdown("**Cluster Structure (Dendrogram)**")
-        fig_dend = plot_dendrogram(link, tickers_list)
-        fig_dend = apply_plotly_dark_theme(fig_dend)
-        fig_dend.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
-        st.plotly_chart(fig_dend, use_container_width=True)
+    _v_spacer(2.5)
 
     # ── Section 2: Portfolio Allocation ────────────────────────────────────
     _section_header("2", "Portfolio Allocation")
@@ -1395,20 +1258,30 @@ def _render_hrp_tab(portfolio: dict) -> None:
     except Exception as exc:
         st.caption(f"Allocation chart unavailable: {exc}")
 
-    _spacer(1.0)
+    _v_spacer(1.0)
 
     ucits_set = set(ucits_used) | _UCITS_TICKERS
     rows = []
     for ticker, w in sorted(weights.items(), key=lambda kv: -kv[1]):
         rows.append({
             "Ticker": ticker,
-            "Weight": f"{w:.1%}",
-            "UCITS": "EU" if ticker in ucits_set else "—",
+            "Weight": w,
+            "UCITS": "EU ✓" if ticker in ucits_set else "—",
             "Risk Contribution": f"{risk_contributions.get(ticker, 0.0):.1%}",
         })
-    st.dataframe(pd.DataFrame(rows), hide_index=True, use_container_width=True)
+    df = pd.DataFrame(rows)
+    st.dataframe(
+        df,
+        hide_index=True,
+        use_container_width=True,
+        column_config={
+            "Weight": st.column_config.ProgressColumn(
+                "Weight", format="%.1f%%", min_value=0, max_value=1,
+            ),
+        },
+    )
 
-    _spacer(2.5)
+    _v_spacer(2.5)
 
     # ── Section 3: Risk Contributions ──────────────────────────────────────
     _section_header("3", "Risk Contributions")
@@ -1422,14 +1295,14 @@ def _render_hrp_tab(portfolio: dict) -> None:
         from backend.optimizer.charts import plot_risk_contributions
         fig_risk = plot_risk_contributions(
             risk_contributions,
-            profile_label=st.session_state.get("profile", {}).get("profile_label", ""),
+            profile_label=profile_label,
         )
         fig_risk = apply_plotly_dark_theme(fig_risk)
         st.plotly_chart(fig_risk, use_container_width=True)
     except Exception as exc:
         st.caption(f"Risk contribution chart unavailable: {exc}")
 
-    _spacer(2.5)
+    _v_spacer(2.5)
 
     # ── Section 4: Cluster Structure ───────────────────────────────────────
     _section_header("4", "Cluster Structure")
@@ -1471,6 +1344,7 @@ def _render_hrp_tab(portfolio: dict) -> None:
 
         fig_dend = plot_dendrogram(link, tickers_list)
         fig_dend = apply_plotly_dark_theme(fig_dend)
+        fig_dend.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
         st.plotly_chart(fig_dend, use_container_width=True)
 
     except Exception as exc:
