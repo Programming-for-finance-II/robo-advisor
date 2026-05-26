@@ -596,31 +596,49 @@ mode that Layer~1 alone cannot prevent.
 \section{Backtest Results}
 \label{sec:backtest}
 % Owner: P2 (tables) — P4 integrates
-% TODO W4: 3 historical scenarios, Sharpe, max drawdown, table
 % ─────────────────────────────────────────────────────────────
 
 \subsection{Scenarios}
-% TODO P2: COVID crash (2020), rate hike cycle (2022),
-%          2008 stress test if data available
+
+Three historical stress periods are used to evaluate portfolio resilience.
+The \textbf{Global Financial Crisis} (August 2008 -- March 2009) represents
+a severe deflationary shock with peak equity drawdowns exceeding 50\,\%.
+The \textbf{COVID-19 Crash} (January -- December 2020) covers both the
+sharp drawdown of February--March 2020 and the subsequent recovery.
+The \textbf{Rate Hike Cycle} (January -- December 2022) represents a
+simultaneous equity and bond selloff driven by aggressive Fed tightening
+--- a scenario in which traditional 60/40 diversification fails.
+All scenarios are run on US proxy tickers (SPY, AGG, BIL, etc.)\ as
+historical equivalents for the UCITS primary tickers, which lack
+sufficient history prior to 2019.
+Transaction costs of 10\,bps per rebalance are applied to all strategies.
 
 \subsection{Performance Metrics}
 
-% TODO P2: fill table with real numbers after backtest runs
-
 \begin{table}[H]
 \centering
-\caption{Backtest summary — HRP vs.\ Mean--Variance}
+\caption{Backtest summary — HRP vs.\ Mean--Variance vs.\ $1/N$ (US proxy tickers)}
 \label{tab:backtest}
-\begin{tabular}{lccccc}
+\begin{tabular}{llrrrr}
 \toprule
 Scenario & Model & Ann.\ Return & Volatility & Sharpe & Max DD \\
 \midrule
-COVID-19 (2020) & HRP & \textit{TBD} & \textit{TBD} & \textit{TBD} & \textit{TBD} \\
-                & MV  & \textit{TBD} & \textit{TBD} & \textit{TBD} & \textit{TBD} \\
-Rate hike (2022)& HRP & \textit{TBD} & \textit{TBD} & \textit{TBD} & \textit{TBD} \\
-                & MV  & \textit{TBD} & \textit{TBD} & \textit{TBD} & \textit{TBD} \\
+GFC (2008)       & HRP & $-0.1\%$ & $8.6\%$  & $-0.01$ & $-11.9\%$ \\
+                 & MV  & $-5.7\%$ & $10.7\%$ & $-0.53$ & $-18.0\%$ \\
+                 & $1/N$ & $-5.1\%$ & $18.4\%$ & $-0.28$ & $-25.1\%$ \\
+\midrule
+COVID-19 (2020)  & HRP & $+6.4\%$ & $7.7\%$  & $0.83$  & $-10.1\%$ \\
+                 & MV  & $+7.2\%$ & $13.8\%$ & $0.52$  & $-15.5\%$ \\
+                 & $1/N$ & $+11.9\%$ & $13.3\%$ & $0.90$  & $-15.7\%$ \\
+\midrule
+Rate Hike (2022) & HRP & $-8.9\%$ & $7.6\%$  & $-1.17$ & $-13.0\%$ \\
+                 & MV  & $-13.1\%$ & $10.4\%$ & $-1.27$ & $-16.3\%$ \\
+                 & $1/N$ & $-13.7\%$ & $11.3\%$ & $-1.21$ & $-19.1\%$ \\
 \bottomrule
 \end{tabular}
+\smallskip
+\newline
+\footnotesize{Backtest uses US proxy tickers (SPY, AGG, BIL, etc.) as historical equivalents for UCITS ETFs. Transaction cost: 10 bps per rebalance. Profile: MODERATE.}
 \end{table}
 
 % ─────────────────────────────────────────────────────────────
