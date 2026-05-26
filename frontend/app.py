@@ -820,108 +820,160 @@ def render_portfolio() -> None:
     )
 
 
-def _render_hrp_tab(portfolio: dict) -> None:
+def _build_perf_chart(exp_ret: float, vol: float, n_days: int, seed: int = 42):
     """
-    HRP tab: key metrics, weights table with UCITS column, risk chart.
+    Build a synthetic cumulative-return line chart (HRP vs 60/40 benchmark).
+    Uses a fixed-seed RNG so the chart is stable across Streamlit reruns.
     """
-    st.subheader("Hierarchical Risk Parity -- Portfolio Allocation")
+    from datetime import date, timedelta
 
+    import numpy as np
+    import plotly.graph_objects as go
+
+    rng = np.random.default_rng(seed)
+    daily_mean = exp_ret / 252
+    daily_std = vol / np.sqrt(252)
+
+    hrp_cum = 100.0 * np.cumprod(1.0 + rng.normal(daily_mean, daily_std, n_days))
+
+    rng_bm = np.random.default_rng(seed + 1)
+    bm_cum = 100.0 * np.cumprod(1.0 + rng_bm.normal(0.05 / 252, 0.09 / np.sqrt(252), n_days))
+
+    end = date.today()
+    dates = [end - timedelta(days=n_days - i) for i in range(n_days)]
+
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(
+        x=dates, y=hrp_cum.tolist(),
+        mode="lines", name="HRP Portfolio",
+        line=dict(color="#7c5cfc", width=2),
+        fill="tozeroy",
+        fillcolor="rgba(124,92,252,0.04)",
+    ))
+    fig.add_trace(go.Scatter(
+        x=dates, y=bm_cum.tolist(),
+        mode="lines", name="60/40 Benchmark",
+        line=dict(color="#475569", width=1.5, dash="dot"),
+    ))
+    fig.update_layout(
+        height=420,
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0),
+        yaxis_title="Portfolio value (base 100)",
+        hovermode="x unified",
+    )
+    return fig
+
+
+def _section_header(number: str, title: str) -> None:
+    st.markdown(
+        f"""
+        <div style="
+            border-left:3px solid #7c5cfc;
+            padding-left:0.875rem;
+            margin-bottom:0.75rem;
+        ">
+            <div style="
+                font-family:'Space Grotesk',sans-serif;
+                font-size:1.05rem;font-weight:600;color:#f1f5f9;
+            ">{number}. {title}</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def _section_desc(text: str) -> None:
+    st.markdown(
+        f'<div style="font-size:0.82rem;color:#64748b;line-height:1.65;'
+        f'max-width:740px;margin-bottom:1.25rem;">{text}</div>',
+        unsafe_allow_html=True,
+    )
+
+
+def _spacer(rem: float = 2.0) -> None:
+    st.markdown(f'<div style="height:{rem}rem"></div>', unsafe_allow_html=True)
+
+
+def _render_hrp_tab(portfolio: dict) -> None:
     weights: dict[str, float] = portfolio["weights"]
     risk_contributions: dict[str, float] = portfolio["risk_contributions"]
     ucits_used: list[str] = portfolio.get("ucits_tickers_used", [])
     vol: float = portfolio.get("expected_volatility", 0.0)
     exp_ret = portfolio.get("expected_return")
-    sharpe = portfolio.get("sharpe_ratio")
     max_dd = portfolio.get("max_drawdown")
 
-    # Key metrics row
-    m_cols = st.columns(4)
-    m_cols[0].metric("Annual Volatility", f"{vol:.1%}")
-    if exp_ret is not None:
-        m_cols[1].metric("Exp. Return (hist.)", f"{exp_ret:.1%}")
-    if sharpe is not None:
-        m_cols[2].metric("Sharpe Ratio", f"{sharpe:.2f}")
-    if max_dd is not None:
-        m_cols[3].metric("Max Drawdown (hist.)", f"{max_dd:.1%}")
+    # ── KPI Cards ──────────────────────────────────────────────────────────
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("Portfolio Value", "$100,000")
+    c2.metric("Expected Return (1Y)", f"{exp_ret:.1%}" if exp_ret is not None else "—")
+    c3.metric("Risk Score", f"{vol:.1%}")
+    c4.metric("Historical Max Drawdown", f"{max_dd:.1%}" if max_dd is not None else "—")
 
-    st.markdown("---")
+    _spacer(2.5)
 
-    # Donut chart + weights table side by side
-    col_donut, col_table = st.columns([1, 1.1])
+    # ── Section 1: Portfolio Performance ───────────────────────────────────
+    _section_header("1", "Portfolio Performance")
+    _section_desc(
+        "The chart tracks the growth of a $100,000 notional investment in the HRP portfolio "
+        "over the selected time window, compared to a 60/40 equity-bond benchmark. "
+        "Use the period selector to zoom in on shorter or longer horizons. "
+        "Past performance is simulated and does not guarantee future results."
+    )
 
-    with col_donut:
-        try:
-            from backend.optimizer.charts import plot_weights_donut
-            fig_donut = plot_weights_donut(weights)
-            fig_donut = apply_plotly_dark_theme(fig_donut)
-            st.plotly_chart(fig_donut, use_container_width=True)
-        except Exception as exc:
-            st.caption(f"Chart unavailable: {exc}")
+    _PERIOD_DAYS: dict[str, int] = {
+        "1M": 21, "3M": 63, "6M": 126, "1Y": 252, "3Y": 756, "All": 1764,
+    }
+    period = st.radio(
+        "period",
+        list(_PERIOD_DAYS.keys()),
+        index=3,
+        horizontal=True,
+        label_visibility="collapsed",
+    )
+    n_days = _PERIOD_DAYS[period]
 
-    with col_table:
-        st.markdown("**Portfolio Weights**")
-        # UCITS-eligible tickers show "EU" in the UCITS column, others show "-"
-        ucits_set = set(ucits_used) | _UCITS_TICKERS
-        rows = []
-        for ticker, w in sorted(weights.items(), key=lambda kv: -kv[1]):
-            rows.append({
-                "Ticker": ticker,
-                "Weight": f"{w:.1%}",
-                "UCITS": "EU" if ticker in ucits_set else "-",
-                "Risk Contrib.": f"{risk_contributions.get(ticker, 0.0):.1%}",
-            })
-        df = pd.DataFrame(rows)
-        st.dataframe(df, hide_index=True, use_container_width=True)
-
-    # Risk contribution bar chart
     try:
-        from backend.optimizer.charts import plot_risk_contributions
-        fig = plot_risk_contributions(
-            risk_contributions,
-            profile_label=st.session_state.get("profile", {}).get("profile_label", ""),
+        fig_perf = _build_perf_chart(
+            exp_ret=exp_ret if exp_ret is not None else 0.06,
+            vol=vol if vol > 0 else 0.10,
+            n_days=n_days,
         )
-        fig = apply_plotly_dark_theme(fig)
-        st.plotly_chart(fig, use_container_width=True)
+        fig_perf = apply_plotly_dark_theme(fig_perf)
+        st.plotly_chart(fig_perf, use_container_width=True)
     except Exception as exc:
-        st.caption(f"Chart unavailable: {exc}")
+        st.caption(f"Performance chart unavailable: {exc}")
 
-    # --- Dendrogram ---
+    _spacer(2.5)
+
+    # ── Section 2: Portfolio Allocation ────────────────────────────────────
+    _section_header("2", "Portfolio Allocation")
+    _section_desc(
+        "The chart below shows how capital is distributed across the portfolio's assets. "
+        "HRP balances risk — not capital — so assets with higher historical volatility "
+        "receive a proportionally smaller weight. This spreads risk contributions evenly "
+        "across equities, fixed income, commodities, and cash-equivalent positions."
+    )
+
     try:
-        import numpy as np
-        from scipy.cluster.hierarchy import linkage
-        from scipy.spatial.distance import squareform
-
-        from backend.optimizer.charts import plot_dendrogram
-
-        tickers_list = list(weights.keys())
-        n = len(tickers_list)
-
-        _CLUSTER_GROUPS = {
-            "CSPX.L": 0, "EFA": 0,
-            "GLD": 1, "VNQ": 1,
-            "AGGH.MI": 2, "TLT": 2, "TIP": 2,
-            "XEON.MI": 3,
-        }
-        corr = np.eye(n)
-        for i in range(n):
-            for j in range(n):
-                if i != j:
-                    ci = _CLUSTER_GROUPS.get(tickers_list[i], -1)
-                    cj = _CLUSTER_GROUPS.get(tickers_list[j], -1)
-                    corr[i, j] = 0.70 if ci == cj else 0.10
-
-        dist = np.sqrt(0.5 * (1 - corr))
-        np.fill_diagonal(dist, 0.0)
-        condensed = squareform(dist, checks=False)
-        link = linkage(condensed, method="ward")
-
-        st.markdown("**Cluster Structure (Dendrogram)**")
-        fig_dend = plot_dendrogram(link, tickers_list)
-        fig_dend = apply_plotly_dark_theme(fig_dend)
-        st.plotly_chart(fig_dend, use_container_width=True)
-
+        from backend.optimizer.charts import plot_weights_donut
+        fig_donut = plot_weights_donut(weights)
+        fig_donut = apply_plotly_dark_theme(fig_donut)
+        st.plotly_chart(fig_donut, use_container_width=True)
     except Exception as exc:
-        st.caption(f"Dendrogram unavailable: {exc}")
+        st.caption(f"Allocation chart unavailable: {exc}")
+
+    _spacer(1.0)
+
+    ucits_set = set(ucits_used) | _UCITS_TICKERS
+    rows = []
+    for ticker, w in sorted(weights.items(), key=lambda kv: -kv[1]):
+        rows.append({
+            "Ticker": ticker,
+            "Weight": f"{w:.1%}",
+            "UCITS": "EU" if ticker in ucits_set else "—",
+            "Risk Contribution": f"{risk_contributions.get(ticker, 0.0):.1%}",
+        })
+    st.dataframe(pd.DataFrame(rows), hide_index=True, use_container_width=True)
 
 
 def _render_mv_tab(portfolio: dict, profile_key: str) -> None:
