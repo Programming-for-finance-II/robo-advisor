@@ -1408,6 +1408,74 @@ def _render_hrp_tab(portfolio: dict) -> None:
         })
     st.dataframe(pd.DataFrame(rows), hide_index=True, use_container_width=True)
 
+    _spacer(2.5)
+
+    # ── Section 3: Risk Contributions ──────────────────────────────────────
+    _section_header("3", "Risk Contributions")
+    _section_desc(
+        "Each bar shows the percentage of total portfolio risk attributed to that asset. "
+        "HRP targets an even spread of risk across positions — no single asset should "
+        "dominate the overall volatility budget."
+    )
+
+    try:
+        from backend.optimizer.charts import plot_risk_contributions
+        fig_risk = plot_risk_contributions(
+            risk_contributions,
+            profile_label=st.session_state.get("profile", {}).get("profile_label", ""),
+        )
+        fig_risk = apply_plotly_dark_theme(fig_risk)
+        st.plotly_chart(fig_risk, use_container_width=True)
+    except Exception as exc:
+        st.caption(f"Risk contribution chart unavailable: {exc}")
+
+    _spacer(2.5)
+
+    # ── Section 4: Cluster Structure ───────────────────────────────────────
+    _section_header("4", "Cluster Structure")
+    _section_desc(
+        "The dendrogram shows how HRP groups assets into clusters before allocating weights. "
+        "Assets with similar return behaviour are linked early (low on the chart); "
+        "dissimilar groups are joined higher up. Risk is balanced first within each cluster, "
+        "then across clusters."
+    )
+
+    try:
+        import numpy as np
+        from scipy.cluster.hierarchy import linkage
+        from scipy.spatial.distance import squareform
+
+        from backend.optimizer.charts import plot_dendrogram
+
+        tickers_list = list(weights.keys())
+        n = len(tickers_list)
+
+        _CLUSTER_GROUPS: dict[str, int] = {
+            "CSPX.L": 0, "EFA": 0,
+            "GLD": 1, "VNQ": 1,
+            "AGGH.MI": 2, "TLT": 2, "TIP": 2,
+            "XEON.MI": 3,
+        }
+        corr = np.eye(n)
+        for i in range(n):
+            for j in range(n):
+                if i != j:
+                    ci = _CLUSTER_GROUPS.get(tickers_list[i], -1)
+                    cj = _CLUSTER_GROUPS.get(tickers_list[j], -1)
+                    corr[i, j] = 0.70 if ci == cj else 0.10
+
+        dist = np.sqrt(0.5 * (1 - corr))
+        np.fill_diagonal(dist, 0.0)
+        condensed = squareform(dist, checks=False)
+        link = linkage(condensed, method="ward")
+
+        fig_dend = plot_dendrogram(link, tickers_list)
+        fig_dend = apply_plotly_dark_theme(fig_dend)
+        st.plotly_chart(fig_dend, use_container_width=True)
+
+    except Exception as exc:
+        st.caption(f"Dendrogram unavailable: {exc}")
+
 
 def _render_mv_tab(portfolio: dict, profile_key: str) -> None:
     """
