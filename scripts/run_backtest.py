@@ -21,8 +21,8 @@ import yfinance as yf
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from backend.data.universe_config import get_cluster_map, get_fallback_map, get_primary_tickers
-from backend.optimizer.backtest import (
+from backend.data.universe_config import get_cluster_map, get_fallback_map, get_primary_tickers  # noqa: E402
+from backend.optimizer.backtest import (  # noqa: E402
     LOOKBACK_DAYS,
     SCENARIOS,
     ScenarioResult,
