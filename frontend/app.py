@@ -2004,26 +2004,35 @@ def render_backtesting() -> None:
 
     profile_data = st.session_state.get("profile", {})
     profile_label = profile_data.get("profile_label", "MODERATE").lower()
-    if profile_label == "aggressive":
-        profile_label = "moderate"  # only moderate JSON available
 
     summary_file = _BACKTEST_DIR / f"backtest_summary_{profile_label}.json"
 
     if not summary_file.exists():
-        st.info(
-            "Backtest data not found. Run `scripts/run_backtest.py` to generate it. "
-            "Walk-forward simulations will appear here automatically once the file is present."
+        st.warning(
+            f"Backtest data for **{profile_label.upper()}** profile not found. "
+            "Run `scripts/run_backtest.py` to generate it."
         )
-        return
+        # Try to fall back to moderate if available
+        fallback_file = _BACKTEST_DIR / "backtest_summary_moderate.json"
+        if fallback_file.exists():
+            st.caption("Showing MODERATE profile data as fallback.")
+            summary_file = fallback_file
+            profile_label = "moderate"
+        else:
+            return
 
     with open(summary_file) as fh:
         summary = json.load(fh)
 
-    selected = st.selectbox(
+    selected = st.segmented_control(
         "Stress scenario",
         options=list(_SCENARIO_LABELS.keys()),
         format_func=lambda k: _SCENARIO_LABELS[k],
+        default=list(_SCENARIO_LABELS.keys())[0],
+        required=True,
     )
+    if selected is None:
+        return
 
     st.markdown("---")
 
@@ -2080,9 +2089,10 @@ def render_backtesting() -> None:
             xaxis_title="Date",
             yaxis_title="Portfolio value (start = 1.0)",
             height=400,
-            legend=dict(orientation="h", yanchor="bottom", y=1.02),
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
         )
         fig = apply_plotly_dark_theme(fig)
+        fig.update_layout(margin=dict(t=56))
         st.plotly_chart(fig, use_container_width=True)
 
         # ── Drawdown chart ───────────────────────────────────────────────────
@@ -2113,9 +2123,10 @@ def render_backtesting() -> None:
             xaxis_title="Date",
             yaxis_title="Drawdown (%)",
             height=320,
-            legend=dict(orientation="h", yanchor="bottom", y=1.02),
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
         )
         fig_dd = apply_plotly_dark_theme(fig_dd)
+        fig_dd.update_layout(margin=dict(t=56))
         st.plotly_chart(fig_dd, use_container_width=True)
 
     st.caption(

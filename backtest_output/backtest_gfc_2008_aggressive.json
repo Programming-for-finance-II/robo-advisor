@@ -1,0 +1,5332 @@
+{
+  "scenario_key": "gfc_2008",
+  "scenario_label": "Global Financial Crisis (2008)",
+  "test_start": "2008-01-02",
+  "test_end": "2009-06-30",
+  "profile": "AGGRESSIVE",
+  "tickers_used": [
+    "AGGH.MI",
+    "CSPX.L",
+    "EFA",
+    "GLD",
+    "TIP",
+    "TLT",
+    "VNQ",
+    "XEON.MI",
+    "SPY",
+    "AGG",
+    "BIL"
+  ],
+  "strategies": {
+    "HRP": {
+      "strategy": "HRP",
+      "cagr": -0.017974,
+      "annualised_volatility": 0.091688,
+      "sharpe_ratio": -0.196038,
+      "max_drawdown": -0.130283,
+      "calmar_ratio": -0.137965,
+      "total_transaction_cost": 0.001108,
+      "n_rebalances": 12,
+      "equity_curve": [
+        {
+          "date": "2008-01-02",
+          "portfolio_value": 0.999322
+        },
+        {
+          "date": "2008-01-03",
+          "portfolio_value": 0.998321
+        },
+        {
+          "date": "2008-01-04",
+          "portfolio_value": 0.992606
+        },
+        {
+          "date": "2008-01-07",
+          "portfolio_value": 0.993647
+        },
+        {
+          "date": "2008-01-08",
+          "portfolio_value": 0.99119
+        },
+        {
+          "date": "2008-01-09",
+          "portfolio_value": 0.992752
+        },
+        {
+          "date": "2008-01-10",
+          "portfolio_value": 0.994159
+        },
+        {
+          "date": "2008-01-11",
+          "portfolio_value": 0.994098
+        },
+        {
+          "date": "2008-01-14",
+          "portfolio_value": 0.996969
+        },
+        {
+          "date": "2008-01-15",
+          "portfolio_value": 0.992445
+        },
+        {
+          "date": "2008-01-16",
+          "portfolio_value": 0.989392
+        },
+        {
+          "date": "2008-01-17",
+          "portfolio_value": 0.986844
+        },
+        {
+          "date": "2008-01-18",
+          "portfolio_value": 0.986003
+        },
+        {
+          "date": "2008-01-21",
+          "portfolio_value": 0.986003
+        },
+        {
+          "date": "2008-01-22",
+          "portfolio_value": 0.986554
+        },
+        {
+          "date": "2008-01-23",
+          "portfolio_value": 0.993103
+        },
+        {
+          "date": "2008-01-24",
+          "portfolio_value": 0.994322
+        },
+        {
+          "date": "2008-01-25",
+          "portfolio_value": 0.992902
+        },
+        {
+          "date": "2008-01-28",
+          "portfolio_value": 0.997806
+        },
+        {
+          "date": "2008-01-29",
+          "portfolio_value": 0.997518
+        },
+        {
+          "date": "2008-01-30",
+          "portfolio_value": 0.995831
+        },
+        {
+          "date": "2008-01-31",
+          "portfolio_value": 1.000001
+        },
+        {
+          "date": "2008-02-01",
+          "portfolio_value": 1.003546
+        },
+        {
+          "date": "2008-02-04",
+          "portfolio_value": 1.000331
+        },
+        {
+          "date": "2008-02-05",
+          "portfolio_value": 0.993516
+        },
+        {
+          "date": "2008-02-06",
+          "portfolio_value": 0.992707
+        },
+        {
+          "date": "2008-02-07",
+          "portfolio_value": 0.991795
+        },
+        {
+          "date": "2008-02-08",
+          "portfolio_value": 0.991427
+        },
+        {
+          "date": "2008-02-11",
+          "portfolio_value": 0.992109
+        },
+        {
+          "date": "2008-02-12",
+          "portfolio_value": 0.993874
+        },
+        {
+          "date": "2008-02-13",
+          "portfolio_value": 0.993994
+        },
+        {
+          "date": "2008-02-14",
+          "portfolio_value": 0.990732
+        },
+        {
+          "date": "2008-02-15",
+          "portfolio_value": 0.99155
+        },
+        {
+          "date": "2008-02-18",
+          "portfolio_value": 0.99155
+        },
+        {
+          "date": "2008-02-19",
+          "portfolio_value": 0.992087
+        },
+        {
+          "date": "2008-02-20",
+          "portfolio_value": 0.993403
+        },
+        {
+          "date": "2008-02-21",
+          "portfolio_value": 0.993555
+        },
+        {
+          "date": "2008-02-22",
+          "portfolio_value": 0.995123
+        },
+        {
+          "date": "2008-02-25",
+          "portfolio_value": 0.99687
+        },
+        {
+          "date": "2008-02-26",
+          "portfolio_value": 1.000223
+        },
+        {
+          "date": "2008-02-27",
+          "portfolio_value": 1.001146
+        },
+        {
+          "date": "2008-02-28",
+          "portfolio_value": 1.001683
+        },
+        {
+          "date": "2008-02-29",
+          "portfolio_value": 0.999291
+        },
+        {
+          "date": "2008-03-03",
+          "portfolio_value": 1.000135
+        },
+        {
+          "date": "2008-03-04",
+          "portfolio_value": 0.996434
+        },
+        {
+          "date": "2008-03-05",
+          "portfolio_value": 0.998296
+        },
+        {
+          "date": "2008-03-06",
+          "portfolio_value": 0.993248
+        },
+        {
+          "date": "2008-03-07",
+          "portfolio_value": 0.992793
+        },
+        {
+          "date": "2008-03-10",
+          "portfolio_value": 0.992051
+        },
+        {
+          "date": "2008-03-11",
+          "portfolio_value": 0.998961
+        },
+        {
+          "date": "2008-03-12",
+          "portfolio_value": 1.000092
+        },
+        {
+          "date": "2008-03-13",
+          "portfolio_value": 1.000407
+        },
+        {
+          "date": "2008-03-14",
+          "portfolio_value": 0.998697
+        },
+        {
+          "date": "2008-03-17",
+          "portfolio_value": 0.997626
+        },
+        {
+          "date": "2008-03-18",
+          "portfolio_value": 1.004266
+        },
+        {
+          "date": "2008-03-19",
+          "portfolio_value": 0.999245
+        },
+        {
+          "date": "2008-03-20",
+          "portfolio_value": 1.002294
+        },
+        {
+          "date": "2008-03-24",
+          "portfolio_value": 1.003377
+        },
+        {
+          "date": "2008-03-25",
+          "portfolio_value": 1.00575
+        },
+        {
+          "date": "2008-03-26",
+          "portfolio_value": 1.004141
+        },
+        {
+          "date": "2008-03-27",
+          "portfolio_value": 1.003097
+        },
+        {
+          "date": "2008-03-28",
+          "portfolio_value": 1.001283
+        },
+        {
+          "date": "2008-03-31",
+          "portfolio_value": 1.001789
+        },
+        {
+          "date": "2008-04-01",
+          "portfolio_value": 1.005274
+        },
+        {
+          "date": "2008-04-02",
+          "portfolio_value": 1.006773
+        },
+        {
+          "date": "2008-04-03",
+          "portfolio_value": 1.009222
+        },
+        {
+          "date": "2008-04-04",
+          "portfolio_value": 1.010619
+        },
+        {
+          "date": "2008-04-07",
+          "portfolio_value": 1.010408
+        },
+        {
+          "date": "2008-04-08",
+          "portfolio_value": 1.009314
+        },
+        {
+          "date": "2008-04-09",
+          "portfolio_value": 1.009442
+        },
+        {
+          "date": "2008-04-10",
+          "portfolio_value": 1.008825
+        },
+        {
+          "date": "2008-04-11",
+          "portfolio_value": 1.006317
+        },
+        {
+          "date": "2008-04-14",
+          "portfolio_value": 1.005308
+        },
+        {
+          "date": "2008-04-15",
+          "portfolio_value": 1.005177
+        },
+        {
+          "date": "2008-04-16",
+          "portfolio_value": 1.010776
+        },
+        {
+          "date": "2008-04-17",
+          "portfolio_value": 1.009837
+        },
+        {
+          "date": "2008-04-18",
+          "portfolio_value": 1.009831
+        },
+        {
+          "date": "2008-04-21",
+          "portfolio_value": 1.010159
+        },
+        {
+          "date": "2008-04-22",
+          "portfolio_value": 1.00969
+        },
+        {
+          "date": "2008-04-23",
+          "portfolio_value": 1.00938
+        },
+        {
+          "date": "2008-04-24",
+          "portfolio_value": 1.008089
+        },
+        {
+          "date": "2008-04-25",
+          "portfolio_value": 1.009252
+        },
+        {
+          "date": "2008-04-28",
+          "portfolio_value": 1.009976
+        },
+        {
+          "date": "2008-04-29",
+          "portfolio_value": 1.008465
+        },
+        {
+          "date": "2008-04-30",
+          "portfolio_value": 1.008792
+        },
+        {
+          "date": "2008-05-01",
+          "portfolio_value": 1.010844
+        },
+        {
+          "date": "2008-05-02",
+          "portfolio_value": 1.010239
+        },
+        {
+          "date": "2008-05-05",
+          "portfolio_value": 1.010993
+        },
+        {
+          "date": "2008-05-06",
+          "portfolio_value": 1.011736
+        },
+        {
+          "date": "2008-05-07",
+          "portfolio_value": 1.008272
+        },
+        {
+          "date": "2008-05-08",
+          "portfolio_value": 1.009927
+        },
+        {
+          "date": "2008-05-09",
+          "portfolio_value": 1.009766
+        },
+        {
+          "date": "2008-05-12",
+          "portfolio_value": 1.011973
+        },
+        {
+          "date": "2008-05-13",
+          "portfolio_value": 1.00915
+        },
+        {
+          "date": "2008-05-14",
+          "portfolio_value": 1.009832
+        },
+        {
+          "date": "2008-05-15",
+          "portfolio_value": 1.015181
+        },
+        {
+          "date": "2008-05-16",
+          "portfolio_value": 1.016349
+        },
+        {
+          "date": "2008-05-19",
+          "portfolio_value": 1.017124
+        },
+        {
+          "date": "2008-05-20",
+          "portfolio_value": 1.016643
+        },
+        {
+          "date": "2008-05-21",
+          "portfolio_value": 1.013595
+        },
+        {
+          "date": "2008-05-22",
+          "portfolio_value": 1.011798
+        },
+        {
+          "date": "2008-05-23",
+          "portfolio_value": 1.010709
+        },
+        {
+          "date": "2008-05-26",
+          "portfolio_value": 1.010709
+        },
+        {
+          "date": "2008-05-27",
+          "portfolio_value": 1.009562
+        },
+        {
+          "date": "2008-05-28",
+          "portfolio_value": 1.008672
+        },
+        {
+          "date": "2008-05-29",
+          "portfolio_value": 1.006961
+        },
+        {
+          "date": "2008-05-30",
+          "portfolio_value": 1.009053
+        },
+        {
+          "date": "2008-06-02",
+          "portfolio_value": 1.008224
+        },
+        {
+          "date": "2008-06-03",
+          "portfolio_value": 1.007863
+        },
+        {
+          "date": "2008-06-04",
+          "portfolio_value": 1.00634
+        },
+        {
+          "date": "2008-06-05",
+          "portfolio_value": 1.008928
+        },
+        {
+          "date": "2008-06-06",
+          "portfolio_value": 1.005817
+        },
+        {
+          "date": "2008-06-09",
+          "portfolio_value": 1.003667
+        },
+        {
+          "date": "2008-06-10",
+          "portfolio_value": 0.999975
+        },
+        {
+          "date": "2008-06-11",
+          "portfolio_value": 0.998459
+        },
+        {
+          "date": "2008-06-12",
+          "portfolio_value": 0.996224
+        },
+        {
+          "date": "2008-06-13",
+          "portfolio_value": 0.998791
+        },
+        {
+          "date": "2008-06-16",
+          "portfolio_value": 1.000739
+        },
+        {
+          "date": "2008-06-17",
+          "portfolio_value": 0.99972
+        },
+        {
+          "date": "2008-06-18",
+          "portfolio_value": 0.999675
+        },
+        {
+          "date": "2008-06-19",
+          "portfolio_value": 0.999535
+        },
+        {
+          "date": "2008-06-20",
+          "portfolio_value": 0.997081
+        },
+        {
+          "date": "2008-06-23",
+          "portfolio_value": 0.994627
+        },
+        {
+          "date": "2008-06-24",
+          "portfolio_value": 0.995357
+        },
+        {
+          "date": "2008-06-25",
+          "portfolio_value": 0.997383
+        },
+        {
+          "date": "2008-06-26",
+          "portfolio_value": 0.994509
+        },
+        {
+          "date": "2008-06-27",
+          "portfolio_value": 0.995545
+        },
+        {
+          "date": "2008-06-30",
+          "portfolio_value": 0.99601
+        },
+        {
+          "date": "2008-07-01",
+          "portfolio_value": 0.996042
+        },
+        {
+          "date": "2008-07-02",
+          "portfolio_value": 0.993615
+        },
+        {
+          "date": "2008-07-03",
+          "portfolio_value": 0.992998
+        },
+        {
+          "date": "2008-07-04",
+          "portfolio_value": 0.992998
+        },
+        {
+          "date": "2008-07-07",
+          "portfolio_value": 0.990552
+        },
+        {
+          "date": "2008-07-08",
+          "portfolio_value": 0.996642
+        },
+        {
+          "date": "2008-07-09",
+          "portfolio_value": 0.992167
+        },
+        {
+          "date": "2008-07-10",
+          "portfolio_value": 0.995615
+        },
+        {
+          "date": "2008-07-11",
+          "portfolio_value": 0.992721
+        },
+        {
+          "date": "2008-07-14",
+          "portfolio_value": 0.991386
+        },
+        {
+          "date": "2008-07-15",
+          "portfolio_value": 0.989427
+        },
+        {
+          "date": "2008-07-16",
+          "portfolio_value": 0.993443
+        },
+        {
+          "date": "2008-07-17",
+          "portfolio_value": 0.993732
+        },
+        {
+          "date": "2008-07-18",
+          "portfolio_value": 0.994214
+        },
+        {
+          "date": "2008-07-21",
+          "portfolio_value": 0.995883
+        },
+        {
+          "date": "2008-07-22",
+          "portfolio_value": 0.996723
+        },
+        {
+          "date": "2008-07-23",
+          "portfolio_value": 0.997468
+        },
+        {
+          "date": "2008-07-24",
+          "portfolio_value": 0.993258
+        },
+        {
+          "date": "2008-07-25",
+          "portfolio_value": 0.992947
+        },
+        {
+          "date": "2008-07-28",
+          "portfolio_value": 0.991396
+        },
+        {
+          "date": "2008-07-29",
+          "portfolio_value": 0.994996
+        },
+        {
+          "date": "2008-07-30",
+          "portfolio_value": 0.99699
+        },
+        {
+          "date": "2008-07-31",
+          "portfolio_value": 0.99623
+        },
+        {
+          "date": "2008-08-01",
+          "portfolio_value": 0.994715
+        },
+        {
+          "date": "2008-08-04",
+          "portfolio_value": 0.991282
+        },
+        {
+          "date": "2008-08-05",
+          "portfolio_value": 0.995533
+        },
+        {
+          "date": "2008-08-06",
+          "portfolio_value": 0.995374
+        },
+        {
+          "date": "2008-08-07",
+          "portfolio_value": 0.993608
+        },
+        {
+          "date": "2008-08-08",
+          "portfolio_value": 0.995909
+        },
+        {
+          "date": "2008-08-11",
+          "portfolio_value": 0.995421
+        },
+        {
+          "date": "2008-08-12",
+          "portfolio_value": 0.993447
+        },
+        {
+          "date": "2008-08-13",
+          "portfolio_value": 0.992036
+        },
+        {
+          "date": "2008-08-14",
+          "portfolio_value": 0.992817
+        },
+        {
+          "date": "2008-08-15",
+          "portfolio_value": 0.992865
+        },
+        {
+          "date": "2008-08-18",
+          "portfolio_value": 0.991448
+        },
+        {
+          "date": "2008-08-19",
+          "portfolio_value": 0.989712
+        },
+        {
+          "date": "2008-08-20",
+          "portfolio_value": 0.990863
+        },
+        {
+          "date": "2008-08-21",
+          "portfolio_value": 0.991868
+        },
+        {
+          "date": "2008-08-22",
+          "portfolio_value": 0.994233
+        },
+        {
+          "date": "2008-08-25",
+          "portfolio_value": 0.99081
+        },
+        {
+          "date": "2008-08-26",
+          "portfolio_value": 0.992134
+        },
+        {
+          "date": "2008-08-27",
+          "portfolio_value": 0.994514
+        },
+        {
+          "date": "2008-08-28",
+          "portfolio_value": 0.998093
+        },
+        {
+          "date": "2008-08-29",
+          "portfolio_value": 0.995608
+        },
+        {
+          "date": "2008-09-01",
+          "portfolio_value": 0.995608
+        },
+        {
+          "date": "2008-09-02",
+          "portfolio_value": 0.994258
+        },
+        {
+          "date": "2008-09-03",
+          "portfolio_value": 0.994657
+        },
+        {
+          "date": "2008-09-04",
+          "portfolio_value": 0.988621
+        },
+        {
+          "date": "2008-09-05",
+          "portfolio_value": 0.988847
+        },
+        {
+          "date": "2008-09-08",
+          "portfolio_value": 0.995265
+        },
+        {
+          "date": "2008-09-09",
+          "portfolio_value": 0.988382
+        },
+        {
+          "date": "2008-09-10",
+          "portfolio_value": 0.98769
+        },
+        {
+          "date": "2008-09-11",
+          "portfolio_value": 0.988741
+        },
+        {
+          "date": "2008-09-12",
+          "portfolio_value": 0.990394
+        },
+        {
+          "date": "2008-09-15",
+          "portfolio_value": 0.985005
+        },
+        {
+          "date": "2008-09-16",
+          "portfolio_value": 0.986648
+        },
+        {
+          "date": "2008-09-17",
+          "portfolio_value": 0.986037
+        },
+        {
+          "date": "2008-09-18",
+          "portfolio_value": 0.990685
+        },
+        {
+          "date": "2008-09-19",
+          "portfolio_value": 0.998979
+        },
+        {
+          "date": "2008-09-22",
+          "portfolio_value": 0.991028
+        },
+        {
+          "date": "2008-09-23",
+          "portfolio_value": 0.988722
+        },
+        {
+          "date": "2008-09-24",
+          "portfolio_value": 0.986506
+        },
+        {
+          "date": "2008-09-25",
+          "portfolio_value": 0.989857
+        },
+        {
+          "date": "2008-09-26",
+          "portfolio_value": 0.99152
+        },
+        {
+          "date": "2008-09-29",
+          "portfolio_value": 0.979477
+        },
+        {
+          "date": "2008-09-30",
+          "portfolio_value": 0.984288
+        },
+        {
+          "date": "2008-10-01",
+          "portfolio_value": 0.98331
+        },
+        {
+          "date": "2008-10-02",
+          "portfolio_value": 0.973085
+        },
+        {
+          "date": "2008-10-03",
+          "portfolio_value": 0.971432
+        },
+        {
+          "date": "2008-10-06",
+          "portfolio_value": 0.964071
+        },
+        {
+          "date": "2008-10-07",
+          "portfolio_value": 0.951003
+        },
+        {
+          "date": "2008-10-08",
+          "portfolio_value": 0.942309
+        },
+        {
+          "date": "2008-10-09",
+          "portfolio_value": 0.929811
+        },
+        {
+          "date": "2008-10-10",
+          "portfolio_value": 0.915062
+        },
+        {
+          "date": "2008-10-13",
+          "portfolio_value": 0.940944
+        },
+        {
+          "date": "2008-10-14",
+          "portfolio_value": 0.940446
+        },
+        {
+          "date": "2008-10-15",
+          "portfolio_value": 0.924053
+        },
+        {
+          "date": "2008-10-16",
+          "portfolio_value": 0.92786
+        },
+        {
+          "date": "2008-10-17",
+          "portfolio_value": 0.923701
+        },
+        {
+          "date": "2008-10-20",
+          "portfolio_value": 0.938193
+        },
+        {
+          "date": "2008-10-21",
+          "portfolio_value": 0.931395
+        },
+        {
+          "date": "2008-10-22",
+          "portfolio_value": 0.919546
+        },
+        {
+          "date": "2008-10-23",
+          "portfolio_value": 0.917425
+        },
+        {
+          "date": "2008-10-24",
+          "portfolio_value": 0.904823
+        },
+        {
+          "date": "2008-10-27",
+          "portfolio_value": 0.895313
+        },
+        {
+          "date": "2008-10-28",
+          "portfolio_value": 0.919467
+        },
+        {
+          "date": "2008-10-29",
+          "portfolio_value": 0.919994
+        },
+        {
+          "date": "2008-10-30",
+          "portfolio_value": 0.926155
+        },
+        {
+          "date": "2008-10-31",
+          "portfolio_value": 0.927207
+        },
+        {
+          "date": "2008-11-03",
+          "portfolio_value": 0.924368
+        },
+        {
+          "date": "2008-11-04",
+          "portfolio_value": 0.940049
+        },
+        {
+          "date": "2008-11-05",
+          "portfolio_value": 0.930371
+        },
+        {
+          "date": "2008-11-06",
+          "portfolio_value": 0.919292
+        },
+        {
+          "date": "2008-11-07",
+          "portfolio_value": 0.928142
+        },
+        {
+          "date": "2008-11-10",
+          "portfolio_value": 0.922248
+        },
+        {
+          "date": "2008-11-11",
+          "portfolio_value": 0.917508
+        },
+        {
+          "date": "2008-11-12",
+          "portfolio_value": 0.905789
+        },
+        {
+          "date": "2008-11-13",
+          "portfolio_value": 0.920693
+        },
+        {
+          "date": "2008-11-14",
+          "portfolio_value": 0.910819
+        },
+        {
+          "date": "2008-11-17",
+          "portfolio_value": 0.907519
+        },
+        {
+          "date": "2008-11-18",
+          "portfolio_value": 0.90818
+        },
+        {
+          "date": "2008-11-19",
+          "portfolio_value": 0.894483
+        },
+        {
+          "date": "2008-11-20",
+          "portfolio_value": 0.88461
+        },
+        {
+          "date": "2008-11-21",
+          "portfolio_value": 0.896807
+        },
+        {
+          "date": "2008-11-24",
+          "portfolio_value": 0.912911
+        },
+        {
+          "date": "2008-11-25",
+          "portfolio_value": 0.920659
+        },
+        {
+          "date": "2008-11-26",
+          "portfolio_value": 0.926979
+        },
+        {
+          "date": "2008-11-27",
+          "portfolio_value": 0.926979
+        },
+        {
+          "date": "2008-11-28",
+          "portfolio_value": 0.92646
+        },
+        {
+          "date": "2008-12-01",
+          "portfolio_value": 0.908658
+        },
+        {
+          "date": "2008-12-02",
+          "portfolio_value": 0.922586
+        },
+        {
+          "date": "2008-12-03",
+          "portfolio_value": 0.927661
+        },
+        {
+          "date": "2008-12-04",
+          "portfolio_value": 0.923946
+        },
+        {
+          "date": "2008-12-05",
+          "portfolio_value": 0.929853
+        },
+        {
+          "date": "2008-12-08",
+          "portfolio_value": 0.939861
+        },
+        {
+          "date": "2008-12-09",
+          "portfolio_value": 0.936139
+        },
+        {
+          "date": "2008-12-10",
+          "portfolio_value": 0.943753
+        },
+        {
+          "date": "2008-12-11",
+          "portfolio_value": 0.935908
+        },
+        {
+          "date": "2008-12-12",
+          "portfolio_value": 0.942509
+        },
+        {
+          "date": "2008-12-15",
+          "portfolio_value": 0.941238
+        },
+        {
+          "date": "2008-12-16",
+          "portfolio_value": 0.958877
+        },
+        {
+          "date": "2008-12-17",
+          "portfolio_value": 0.961861
+        },
+        {
+          "date": "2008-12-18",
+          "portfolio_value": 0.955542
+        },
+        {
+          "date": "2008-12-19",
+          "portfolio_value": 0.956107
+        },
+        {
+          "date": "2008-12-22",
+          "portfolio_value": 0.954597
+        },
+        {
+          "date": "2008-12-23",
+          "portfolio_value": 0.953082
+        },
+        {
+          "date": "2008-12-24",
+          "portfolio_value": 0.956368
+        },
+        {
+          "date": "2008-12-26",
+          "portfolio_value": 0.958889
+        },
+        {
+          "date": "2008-12-29",
+          "portfolio_value": 0.955372
+        },
+        {
+          "date": "2008-12-30",
+          "portfolio_value": 0.96215
+        },
+        {
+          "date": "2008-12-31",
+          "portfolio_value": 0.965167
+        },
+        {
+          "date": "2009-01-02",
+          "portfolio_value": 0.964204
+        },
+        {
+          "date": "2009-01-05",
+          "portfolio_value": 0.961936
+        },
+        {
+          "date": "2009-01-06",
+          "portfolio_value": 0.965193
+        },
+        {
+          "date": "2009-01-07",
+          "portfolio_value": 0.958418
+        },
+        {
+          "date": "2009-01-08",
+          "portfolio_value": 0.959061
+        },
+        {
+          "date": "2009-01-09",
+          "portfolio_value": 0.953016
+        },
+        {
+          "date": "2009-01-12",
+          "portfolio_value": 0.946143
+        },
+        {
+          "date": "2009-01-13",
+          "portfolio_value": 0.947828
+        },
+        {
+          "date": "2009-01-14",
+          "portfolio_value": 0.940572
+        },
+        {
+          "date": "2009-01-15",
+          "portfolio_value": 0.943101
+        },
+        {
+          "date": "2009-01-16",
+          "portfolio_value": 0.94662
+        },
+        {
+          "date": "2009-01-19",
+          "portfolio_value": 0.94662
+        },
+        {
+          "date": "2009-01-20",
+          "portfolio_value": 0.932379
+        },
+        {
+          "date": "2009-01-21",
+          "portfolio_value": 0.941388
+        },
+        {
+          "date": "2009-01-22",
+          "portfolio_value": 0.935282
+        },
+        {
+          "date": "2009-01-23",
+          "portfolio_value": 0.938492
+        },
+        {
+          "date": "2009-01-26",
+          "portfolio_value": 0.939212
+        },
+        {
+          "date": "2009-01-27",
+          "portfolio_value": 0.943359
+        },
+        {
+          "date": "2009-01-28",
+          "portfolio_value": 0.950215
+        },
+        {
+          "date": "2009-01-29",
+          "portfolio_value": 0.939825
+        },
+        {
+          "date": "2009-01-30",
+          "portfolio_value": 0.937732
+        },
+        {
+          "date": "2009-02-02",
+          "portfolio_value": 0.938009
+        },
+        {
+          "date": "2009-02-03",
+          "portfolio_value": 0.937765
+        },
+        {
+          "date": "2009-02-04",
+          "portfolio_value": 0.936202
+        },
+        {
+          "date": "2009-02-05",
+          "portfolio_value": 0.937169
+        },
+        {
+          "date": "2009-02-06",
+          "portfolio_value": 0.943601
+        },
+        {
+          "date": "2009-02-09",
+          "portfolio_value": 0.945074
+        },
+        {
+          "date": "2009-02-10",
+          "portfolio_value": 0.937075
+        },
+        {
+          "date": "2009-02-11",
+          "portfolio_value": 0.940459
+        },
+        {
+          "date": "2009-02-12",
+          "portfolio_value": 0.940034
+        },
+        {
+          "date": "2009-02-13",
+          "portfolio_value": 0.933935
+        },
+        {
+          "date": "2009-02-16",
+          "portfolio_value": 0.933935
+        },
+        {
+          "date": "2009-02-17",
+          "portfolio_value": 0.927451
+        },
+        {
+          "date": "2009-02-18",
+          "portfolio_value": 0.927732
+        },
+        {
+          "date": "2009-02-19",
+          "portfolio_value": 0.923017
+        },
+        {
+          "date": "2009-02-20",
+          "portfolio_value": 0.925367
+        },
+        {
+          "date": "2009-02-23",
+          "portfolio_value": 0.917647
+        },
+        {
+          "date": "2009-02-24",
+          "portfolio_value": 0.924513
+        },
+        {
+          "date": "2009-02-25",
+          "portfolio_value": 0.919719
+        },
+        {
+          "date": "2009-02-26",
+          "portfolio_value": 0.914071
+        },
+        {
+          "date": "2009-02-27",
+          "portfolio_value": 0.910981
+        },
+        {
+          "date": "2009-03-02",
+          "portfolio_value": 0.902302
+        },
+        {
+          "date": "2009-03-03",
+          "portfolio_value": 0.900529
+        },
+        {
+          "date": "2009-03-04",
+          "portfolio_value": 0.904041
+        },
+        {
+          "date": "2009-03-05",
+          "portfolio_value": 0.899431
+        },
+        {
+          "date": "2009-03-06",
+          "portfolio_value": 0.898631
+        },
+        {
+          "date": "2009-03-09",
+          "portfolio_value": 0.895313
+        },
+        {
+          "date": "2009-03-10",
+          "portfolio_value": 0.907788
+        },
+        {
+          "date": "2009-03-11",
+          "portfolio_value": 0.909452
+        },
+        {
+          "date": "2009-03-12",
+          "portfolio_value": 0.919567
+        },
+        {
+          "date": "2009-03-13",
+          "portfolio_value": 0.919471
+        },
+        {
+          "date": "2009-03-16",
+          "portfolio_value": 0.914588
+        },
+        {
+          "date": "2009-03-17",
+          "portfolio_value": 0.921342
+        },
+        {
+          "date": "2009-03-18",
+          "portfolio_value": 0.934259
+        },
+        {
+          "date": "2009-03-19",
+          "portfolio_value": 0.931102
+        },
+        {
+          "date": "2009-03-20",
+          "portfolio_value": 0.923145
+        },
+        {
+          "date": "2009-03-23",
+          "portfolio_value": 0.939513
+        },
+        {
+          "date": "2009-03-24",
+          "portfolio_value": 0.93181
+        },
+        {
+          "date": "2009-03-25",
+          "portfolio_value": 0.933812
+        },
+        {
+          "date": "2009-03-26",
+          "portfolio_value": 0.938572
+        },
+        {
+          "date": "2009-03-27",
+          "portfolio_value": 0.933076
+        },
+        {
+          "date": "2009-03-30",
+          "portfolio_value": 0.925871
+        },
+        {
+          "date": "2009-03-31",
+          "portfolio_value": 0.931772
+        },
+        {
+          "date": "2009-04-01",
+          "portfolio_value": 0.935548
+        },
+        {
+          "date": "2009-04-02",
+          "portfolio_value": 0.941086
+        },
+        {
+          "date": "2009-04-03",
+          "portfolio_value": 0.944365
+        },
+        {
+          "date": "2009-04-06",
+          "portfolio_value": 0.940488
+        },
+        {
+          "date": "2009-04-07",
+          "portfolio_value": 0.934471
+        },
+        {
+          "date": "2009-04-08",
+          "portfolio_value": 0.937812
+        },
+        {
+          "date": "2009-04-09",
+          "portfolio_value": 0.947687
+        },
+        {
+          "date": "2009-04-13",
+          "portfolio_value": 0.951027
+        },
+        {
+          "date": "2009-04-14",
+          "portfolio_value": 0.944651
+        },
+        {
+          "date": "2009-04-15",
+          "portfolio_value": 0.950726
+        },
+        {
+          "date": "2009-04-16",
+          "portfolio_value": 0.952659
+        },
+        {
+          "date": "2009-04-17",
+          "portfolio_value": 0.951467
+        },
+        {
+          "date": "2009-04-20",
+          "portfolio_value": 0.943264
+        },
+        {
+          "date": "2009-04-21",
+          "portfolio_value": 0.949226
+        },
+        {
+          "date": "2009-04-22",
+          "portfolio_value": 0.947353
+        },
+        {
+          "date": "2009-04-23",
+          "portfolio_value": 0.95299
+        },
+        {
+          "date": "2009-04-24",
+          "portfolio_value": 0.957671
+        },
+        {
+          "date": "2009-04-27",
+          "portfolio_value": 0.953285
+        },
+        {
+          "date": "2009-04-28",
+          "portfolio_value": 0.951785
+        },
+        {
+          "date": "2009-04-29",
+          "portfolio_value": 0.956193
+        },
+        {
+          "date": "2009-04-30",
+          "portfolio_value": 0.955869
+        },
+        {
+          "date": "2009-05-01",
+          "portfolio_value": 0.954128
+        },
+        {
+          "date": "2009-05-04",
+          "portfolio_value": 0.963888
+        },
+        {
+          "date": "2009-05-05",
+          "portfolio_value": 0.961377
+        },
+        {
+          "date": "2009-05-06",
+          "portfolio_value": 0.966978
+        },
+        {
+          "date": "2009-05-07",
+          "portfolio_value": 0.960355
+        },
+        {
+          "date": "2009-05-08",
+          "portfolio_value": 0.968639
+        },
+        {
+          "date": "2009-05-11",
+          "portfolio_value": 0.964496
+        },
+        {
+          "date": "2009-05-12",
+          "portfolio_value": 0.96655
+        },
+        {
+          "date": "2009-05-13",
+          "portfolio_value": 0.959795
+        },
+        {
+          "date": "2009-05-14",
+          "portfolio_value": 0.96283
+        },
+        {
+          "date": "2009-05-15",
+          "portfolio_value": 0.960612
+        },
+        {
+          "date": "2009-05-18",
+          "portfolio_value": 0.967645
+        },
+        {
+          "date": "2009-05-19",
+          "portfolio_value": 0.967195
+        },
+        {
+          "date": "2009-05-20",
+          "portfolio_value": 0.967839
+        },
+        {
+          "date": "2009-05-21",
+          "portfolio_value": 0.965339
+        },
+        {
+          "date": "2009-05-22",
+          "portfolio_value": 0.963725
+        },
+        {
+          "date": "2009-05-25",
+          "portfolio_value": 0.963725
+        },
+        {
+          "date": "2009-05-26",
+          "portfolio_value": 0.968737
+        },
+        {
+          "date": "2009-05-27",
+          "portfolio_value": 0.962539
+        },
+        {
+          "date": "2009-05-28",
+          "portfolio_value": 0.966129
+        },
+        {
+          "date": "2009-05-29",
+          "portfolio_value": 0.97464
+        },
+        {
+          "date": "2009-06-01",
+          "portfolio_value": 0.976768
+        },
+        {
+          "date": "2009-06-02",
+          "portfolio_value": 0.978003
+        },
+        {
+          "date": "2009-06-03",
+          "portfolio_value": 0.975226
+        },
+        {
+          "date": "2009-06-04",
+          "portfolio_value": 0.976475
+        },
+        {
+          "date": "2009-06-05",
+          "portfolio_value": 0.973204
+        },
+        {
+          "date": "2009-06-08",
+          "portfolio_value": 0.971213
+        },
+        {
+          "date": "2009-06-09",
+          "portfolio_value": 0.973183
+        },
+        {
+          "date": "2009-06-10",
+          "portfolio_value": 0.971237
+        },
+        {
+          "date": "2009-06-11",
+          "portfolio_value": 0.97213
+        },
+        {
+          "date": "2009-06-12",
+          "portfolio_value": 0.974483
+        },
+        {
+          "date": "2009-06-15",
+          "portfolio_value": 0.968449
+        },
+        {
+          "date": "2009-06-16",
+          "portfolio_value": 0.967403
+        },
+        {
+          "date": "2009-06-17",
+          "portfolio_value": 0.966385
+        },
+        {
+          "date": "2009-06-18",
+          "portfolio_value": 0.965228
+        },
+        {
+          "date": "2009-06-19",
+          "portfolio_value": 0.968485
+        },
+        {
+          "date": "2009-06-22",
+          "portfolio_value": 0.961506
+        },
+        {
+          "date": "2009-06-23",
+          "portfolio_value": 0.963949
+        },
+        {
+          "date": "2009-06-24",
+          "portfolio_value": 0.965115
+        },
+        {
+          "date": "2009-06-25",
+          "portfolio_value": 0.971027
+        },
+        {
+          "date": "2009-06-26",
+          "portfolio_value": 0.971508
+        },
+        {
+          "date": "2009-06-29",
+          "portfolio_value": 0.97267
+        }
+      ],
+      "rebalance_log": [
+        {
+          "date": "2008-01-02",
+          "weights": {
+            "GLD": 0.05,
+            "VNQ": 0.05,
+            "EFA": 0.05,
+            "CSPX.L": 0.05,
+            "SPY": 0.05,
+            "TIP": 0.05,
+            "TLT": 0.05,
+            "AGGH.MI": 0.05,
+            "AGG": 0.079422,
+            "XEON.MI": 0.260289,
+            "BIL": 0.260289
+          },
+          "turnover": 0.67752,
+          "transaction_cost": 0.000678
+        },
+        {
+          "date": "2008-01-31",
+          "weights": {
+            "GLD": 0.05,
+            "VNQ": 0.05,
+            "EFA": 0.05,
+            "CSPX.L": 0.05,
+            "SPY": 0.05,
+            "TIP": 0.05,
+            "TLT": 0.05,
+            "AGGH.MI": 0.052425,
+            "AGG": 0.086967,
+            "XEON.MI": 0.255304,
+            "BIL": 0.255304
+          },
+          "turnover": 0.019941,
+          "transaction_cost": 2e-05
+        },
+        {
+          "date": "2008-02-29",
+          "weights": {
+            "TIP": 0.05,
+            "TLT": 0.05,
+            "AGGH.MI": 0.05,
+            "AGG": 0.05,
+            "VNQ": 0.05,
+            "EFA": 0.05,
+            "CSPX.L": 0.05,
+            "SPY": 0.05,
+            "GLD": 0.05,
+            "XEON.MI": 0.275001,
+            "BIL": 0.275001
+          },
+          "turnover": 0.078789,
+          "transaction_cost": 7.9e-05
+        },
+        {
+          "date": "2008-03-31",
+          "weights": {
+            "VNQ": 0.05,
+            "EFA": 0.05,
+            "CSPX.L": 0.05,
+            "SPY": 0.05,
+            "AGGH.MI": 0.083842,
+            "AGG": 0.050444,
+            "TIP": 0.05,
+            "TLT": 0.05,
+            "GLD": 0.05,
+            "XEON.MI": 0.257857,
+            "BIL": 0.257857
+          },
+          "turnover": 0.068578,
+          "transaction_cost": 6.9e-05
+        },
+        {
+          "date": "2008-04-30",
+          "weights": {
+            "VNQ": 0.05,
+            "EFA": 0.05,
+            "CSPX.L": 0.05,
+            "SPY": 0.05,
+            "AGGH.MI": 0.085237,
+            "AGG": 0.05,
+            "TIP": 0.05,
+            "TLT": 0.05,
+            "GLD": 0.05,
+            "XEON.MI": 0.257382,
+            "BIL": 0.257382
+          },
+          "turnover": 0.002789,
+          "transaction_cost": 3e-06
+        },
+        {
+          "date": "2008-06-30",
+          "weights": {
+            "VNQ": 0.05,
+            "EFA": 0.05,
+            "CSPX.L": 0.05,
+            "SPY": 0.05,
+            "AGGH.MI": 0.083573,
+            "AGG": 0.05,
+            "TIP": 0.05,
+            "TLT": 0.05,
+            "GLD": 0.05,
+            "XEON.MI": 0.258214,
+            "BIL": 0.258214
+          },
+          "turnover": 0.003329,
+          "transaction_cost": 3e-06
+        },
+        {
+          "date": "2008-07-31",
+          "weights": {
+            "VNQ": 0.05,
+            "EFA": 0.05,
+            "CSPX.L": 0.05,
+            "SPY": 0.05,
+            "AGGH.MI": 0.08044,
+            "AGG": 0.05,
+            "TIP": 0.05,
+            "TLT": 0.05,
+            "GLD": 0.05,
+            "XEON.MI": 0.25978,
+            "BIL": 0.25978
+          },
+          "turnover": 0.006265,
+          "transaction_cost": 6e-06
+        },
+        {
+          "date": "2008-09-30",
+          "weights": {
+            "VNQ": 0.05,
+            "EFA": 0.05,
+            "CSPX.L": 0.05,
+            "SPY": 0.05,
+            "AGGH.MI": 0.101914,
+            "AGG": 0.06913,
+            "TIP": 0.05,
+            "TLT": 0.05,
+            "GLD": 0.05,
+            "XEON.MI": 0.239478,
+            "BIL": 0.239478
+          },
+          "turnover": 0.081208,
+          "transaction_cost": 8.1e-05
+        },
+        {
+          "date": "2008-10-31",
+          "weights": {
+            "VNQ": 0.05,
+            "EFA": 0.05,
+            "CSPX.L": 0.05,
+            "SPY": 0.05,
+            "BIL": 0.273349,
+            "GLD": 0.05,
+            "XEON.MI": 0.231823,
+            "AGGH.MI": 0.07639,
+            "AGG": 0.062581,
+            "TIP": 0.055858,
+            "TLT": 0.05
+          },
+          "turnover": 0.079458,
+          "transaction_cost": 7.9e-05
+        },
+        {
+          "date": "2008-12-31",
+          "weights": {
+            "VNQ": 0.05,
+            "EFA": 0.05,
+            "CSPX.L": 0.05,
+            "SPY": 0.05,
+            "AGGH.MI": 0.061534,
+            "AGG": 0.063178,
+            "TIP": 0.052253,
+            "TLT": 0.05,
+            "GLD": 0.05,
+            "XEON.MI": 0.261517,
+            "BIL": 0.261517
+          },
+          "turnover": 0.060584,
+          "transaction_cost": 6.1e-05
+        },
+        {
+          "date": "2009-03-31",
+          "weights": {
+            "VNQ": 0.05,
+            "EFA": 0.05,
+            "CSPX.L": 0.05,
+            "SPY": 0.05,
+            "GLD": 0.05,
+            "XEON.MI": 0.259953,
+            "BIL": 0.264496,
+            "AGGH.MI": 0.06857,
+            "AGG": 0.056981,
+            "TIP": 0.05,
+            "TLT": 0.05
+          },
+          "turnover": 0.02003,
+          "transaction_cost": 2e-05
+        },
+        {
+          "date": "2009-04-30",
+          "weights": {
+            "VNQ": 0.05,
+            "EFA": 0.05,
+            "CSPX.L": 0.05,
+            "SPY": 0.05,
+            "GLD": 0.05,
+            "XEON.MI": 0.262495,
+            "BIL": 0.266783,
+            "AGGH.MI": 0.065808,
+            "AGG": 0.054914,
+            "TIP": 0.05,
+            "TLT": 0.05
+          },
+          "turnover": 0.009658,
+          "transaction_cost": 1e-05
+        }
+      ]
+    },
+    "MV": {
+      "strategy": "MV",
+      "cagr": -0.10238,
+      "annualised_volatility": 0.121292,
+      "sharpe_ratio": -0.844078,
+      "max_drawdown": -0.214971,
+      "calmar_ratio": -0.476249,
+      "total_transaction_cost": 0.002949,
+      "n_rebalances": 12,
+      "equity_curve": [
+        {
+          "date": "2008-01-02",
+          "portfolio_value": 1.0
+        },
+        {
+          "date": "2008-01-03",
+          "portfolio_value": 0.998536
+        },
+        {
+          "date": "2008-01-04",
+          "portfolio_value": 0.9882
+        },
+        {
+          "date": "2008-01-07",
+          "portfolio_value": 0.989357
+        },
+        {
+          "date": "2008-01-08",
+          "portfolio_value": 0.985269
+        },
+        {
+          "date": "2008-01-09",
+          "portfolio_value": 0.988709
+        },
+        {
+          "date": "2008-01-10",
+          "portfolio_value": 0.991036
+        },
+        {
+          "date": "2008-01-11",
+          "portfolio_value": 0.990365
+        },
+        {
+          "date": "2008-01-14",
+          "portfolio_value": 0.994863
+        },
+        {
+          "date": "2008-01-15",
+          "portfolio_value": 0.98663
+        },
+        {
+          "date": "2008-01-16",
+          "portfolio_value": 0.981269
+        },
+        {
+          "date": "2008-01-17",
+          "portfolio_value": 0.976685
+        },
+        {
+          "date": "2008-01-18",
+          "portfolio_value": 0.974694
+        },
+        {
+          "date": "2008-01-21",
+          "portfolio_value": 0.974694
+        },
+        {
+          "date": "2008-01-22",
+          "portfolio_value": 0.975276
+        },
+        {
+          "date": "2008-01-23",
+          "portfolio_value": 0.986392
+        },
+        {
+          "date": "2008-01-24",
+          "portfolio_value": 0.988399
+        },
+        {
+          "date": "2008-01-25",
+          "portfolio_value": 0.986561
+        },
+        {
+          "date": "2008-01-28",
+          "portfolio_value": 0.99499
+        },
+        {
+          "date": "2008-01-29",
+          "portfolio_value": 0.99397
+        },
+        {
+          "date": "2008-01-30",
+          "portfolio_value": 0.990501
+        },
+        {
+          "date": "2008-01-31",
+          "portfolio_value": 0.991965
+        },
+        {
+          "date": "2008-02-01",
+          "portfolio_value": 0.98822
+        },
+        {
+          "date": "2008-02-04",
+          "portfolio_value": 0.983401
+        },
+        {
+          "date": "2008-02-05",
+          "portfolio_value": 0.972175
+        },
+        {
+          "date": "2008-02-06",
+          "portfolio_value": 0.975619
+        },
+        {
+          "date": "2008-02-07",
+          "portfolio_value": 0.977075
+        },
+        {
+          "date": "2008-02-08",
+          "portfolio_value": 0.981842
+        },
+        {
+          "date": "2008-02-11",
+          "portfolio_value": 0.983828
+        },
+        {
+          "date": "2008-02-12",
+          "portfolio_value": 0.978293
+        },
+        {
+          "date": "2008-02-13",
+          "portfolio_value": 0.977912
+        },
+        {
+          "date": "2008-02-14",
+          "portfolio_value": 0.974955
+        },
+        {
+          "date": "2008-02-15",
+          "portfolio_value": 0.974327
+        },
+        {
+          "date": "2008-02-18",
+          "portfolio_value": 0.974327
+        },
+        {
+          "date": "2008-02-19",
+          "portfolio_value": 0.983229
+        },
+        {
+          "date": "2008-02-20",
+          "portfolio_value": 0.991094
+        },
+        {
+          "date": "2008-02-21",
+          "portfolio_value": 0.99133
+        },
+        {
+          "date": "2008-02-22",
+          "portfolio_value": 0.993274
+        },
+        {
+          "date": "2008-02-25",
+          "portfolio_value": 0.992449
+        },
+        {
+          "date": "2008-02-26",
+          "portfolio_value": 0.999558
+        },
+        {
+          "date": "2008-02-27",
+          "portfolio_value": 1.004306
+        },
+        {
+          "date": "2008-02-28",
+          "portfolio_value": 1.010434
+        },
+        {
+          "date": "2008-02-29",
+          "portfolio_value": 1.009729
+        },
+        {
+          "date": "2008-03-03",
+          "portfolio_value": 1.014268
+        },
+        {
+          "date": "2008-03-04",
+          "portfolio_value": 1.002764
+        },
+        {
+          "date": "2008-03-05",
+          "portfolio_value": 1.014037
+        },
+        {
+          "date": "2008-03-06",
+          "portfolio_value": 1.004826
+        },
+        {
+          "date": "2008-03-07",
+          "portfolio_value": 1.003245
+        },
+        {
+          "date": "2008-03-10",
+          "portfolio_value": 1.002443
+        },
+        {
+          "date": "2008-03-11",
+          "portfolio_value": 1.008894
+        },
+        {
+          "date": "2008-03-12",
+          "portfolio_value": 1.014658
+        },
+        {
+          "date": "2008-03-13",
+          "portfolio_value": 1.019291
+        },
+        {
+          "date": "2008-03-14",
+          "portfolio_value": 1.01852
+        },
+        {
+          "date": "2008-03-17",
+          "portfolio_value": 1.018097
+        },
+        {
+          "date": "2008-03-18",
+          "portfolio_value": 1.01467
+        },
+        {
+          "date": "2008-03-19",
+          "portfolio_value": 0.99719
+        },
+        {
+          "date": "2008-03-20",
+          "portfolio_value": 0.988806
+        },
+        {
+          "date": "2008-03-24",
+          "portfolio_value": 0.989247
+        },
+        {
+          "date": "2008-03-25",
+          "portfolio_value": 1.001819
+        },
+        {
+          "date": "2008-03-26",
+          "portfolio_value": 1.004265
+        },
+        {
+          "date": "2008-03-27",
+          "portfolio_value": 1.002051
+        },
+        {
+          "date": "2008-03-28",
+          "portfolio_value": 0.995448
+        },
+        {
+          "date": "2008-03-31",
+          "portfolio_value": 0.992021
+        },
+        {
+          "date": "2008-04-01",
+          "portfolio_value": 0.984714
+        },
+        {
+          "date": "2008-04-02",
+          "portfolio_value": 0.992815
+        },
+        {
+          "date": "2008-04-03",
+          "portfolio_value": 0.996657
+        },
+        {
+          "date": "2008-04-04",
+          "portfolio_value": 1.001113
+        },
+        {
+          "date": "2008-04-07",
+          "portfolio_value": 1.003097
+        },
+        {
+          "date": "2008-04-08",
+          "portfolio_value": 0.999184
+        },
+        {
+          "date": "2008-04-09",
+          "portfolio_value": 1.005752
+        },
+        {
+          "date": "2008-04-10",
+          "portfolio_value": 1.00297
+        },
+        {
+          "date": "2008-04-11",
+          "portfolio_value": 1.000697
+        },
+        {
+          "date": "2008-04-14",
+          "portfolio_value": 0.998404
+        },
+        {
+          "date": "2008-04-15",
+          "portfolio_value": 0.999168
+        },
+        {
+          "date": "2008-04-16",
+          "portfolio_value": 1.00813
+        },
+        {
+          "date": "2008-04-17",
+          "portfolio_value": 1.004464
+        },
+        {
+          "date": "2008-04-18",
+          "portfolio_value": 0.999324
+        },
+        {
+          "date": "2008-04-21",
+          "portfolio_value": 0.998547
+        },
+        {
+          "date": "2008-04-22",
+          "portfolio_value": 0.998514
+        },
+        {
+          "date": "2008-04-23",
+          "portfolio_value": 0.994784
+        },
+        {
+          "date": "2008-04-24",
+          "portfolio_value": 0.986267
+        },
+        {
+          "date": "2008-04-25",
+          "portfolio_value": 0.987288
+        },
+        {
+          "date": "2008-04-28",
+          "portfolio_value": 0.989683
+        },
+        {
+          "date": "2008-04-29",
+          "portfolio_value": 0.982559
+        },
+        {
+          "date": "2008-04-30",
+          "portfolio_value": 0.986006
+        },
+        {
+          "date": "2008-05-01",
+          "portfolio_value": 0.981954
+        },
+        {
+          "date": "2008-05-02",
+          "portfolio_value": 0.982316
+        },
+        {
+          "date": "2008-05-05",
+          "portfolio_value": 0.987206
+        },
+        {
+          "date": "2008-05-06",
+          "portfolio_value": 0.988793
+        },
+        {
+          "date": "2008-05-07",
+          "portfolio_value": 0.983958
+        },
+        {
+          "date": "2008-05-08",
+          "portfolio_value": 0.990613
+        },
+        {
+          "date": "2008-05-09",
+          "portfolio_value": 0.991348
+        },
+        {
+          "date": "2008-05-12",
+          "portfolio_value": 0.992256
+        },
+        {
+          "date": "2008-05-13",
+          "portfolio_value": 0.984502
+        },
+        {
+          "date": "2008-05-14",
+          "portfolio_value": 0.984952
+        },
+        {
+          "date": "2008-05-15",
+          "portfolio_value": 0.995726
+        },
+        {
+          "date": "2008-05-16",
+          "portfolio_value": 1.001337
+        },
+        {
+          "date": "2008-05-19",
+          "portfolio_value": 1.003481
+        },
+        {
+          "date": "2008-05-20",
+          "portfolio_value": 1.007858
+        },
+        {
+          "date": "2008-05-21",
+          "portfolio_value": 1.007364
+        },
+        {
+          "date": "2008-05-22",
+          "portfolio_value": 1.001663
+        },
+        {
+          "date": "2008-05-23",
+          "portfolio_value": 1.001988
+        },
+        {
+          "date": "2008-05-26",
+          "portfolio_value": 1.001988
+        },
+        {
+          "date": "2008-05-27",
+          "portfolio_value": 0.995401
+        },
+        {
+          "date": "2008-05-28",
+          "portfolio_value": 0.991684
+        },
+        {
+          "date": "2008-05-29",
+          "portfolio_value": 0.983833
+        },
+        {
+          "date": "2008-05-30",
+          "portfolio_value": 0.988588
+        },
+        {
+          "date": "2008-06-02",
+          "portfolio_value": 0.989264
+        },
+        {
+          "date": "2008-06-03",
+          "portfolio_value": 0.986586
+        },
+        {
+          "date": "2008-06-04",
+          "portfolio_value": 0.983474
+        },
+        {
+          "date": "2008-06-05",
+          "portfolio_value": 0.985165
+        },
+        {
+          "date": "2008-06-06",
+          "portfolio_value": 0.990558
+        },
+        {
+          "date": "2008-06-09",
+          "portfolio_value": 0.984852
+        },
+        {
+          "date": "2008-06-10",
+          "portfolio_value": 0.974671
+        },
+        {
+          "date": "2008-06-11",
+          "portfolio_value": 0.976485
+        },
+        {
+          "date": "2008-06-12",
+          "portfolio_value": 0.969402
+        },
+        {
+          "date": "2008-06-13",
+          "portfolio_value": 0.972182
+        },
+        {
+          "date": "2008-06-16",
+          "portfolio_value": 0.977162
+        },
+        {
+          "date": "2008-06-17",
+          "portfolio_value": 0.977376
+        },
+        {
+          "date": "2008-06-18",
+          "portfolio_value": 0.980552
+        },
+        {
+          "date": "2008-06-19",
+          "portfolio_value": 0.979355
+        },
+        {
+          "date": "2008-06-20",
+          "portfolio_value": 0.978595
+        },
+        {
+          "date": "2008-06-23",
+          "portfolio_value": 0.972428
+        },
+        {
+          "date": "2008-06-24",
+          "portfolio_value": 0.975418
+        },
+        {
+          "date": "2008-06-25",
+          "portfolio_value": 0.977389
+        },
+        {
+          "date": "2008-06-26",
+          "portfolio_value": 0.983392
+        },
+        {
+          "date": "2008-06-27",
+          "portfolio_value": 0.987126
+        },
+        {
+          "date": "2008-06-30",
+          "portfolio_value": 0.987911
+        },
+        {
+          "date": "2008-07-01",
+          "portfolio_value": 0.990631
+        },
+        {
+          "date": "2008-07-02",
+          "portfolio_value": 0.9909
+        },
+        {
+          "date": "2008-07-03",
+          "portfolio_value": 0.988631
+        },
+        {
+          "date": "2008-07-04",
+          "portfolio_value": 0.988631
+        },
+        {
+          "date": "2008-07-07",
+          "portfolio_value": 0.984316
+        },
+        {
+          "date": "2008-07-08",
+          "portfolio_value": 0.989453
+        },
+        {
+          "date": "2008-07-09",
+          "portfolio_value": 0.987622
+        },
+        {
+          "date": "2008-07-10",
+          "portfolio_value": 0.994913
+        },
+        {
+          "date": "2008-07-11",
+          "portfolio_value": 0.993027
+        },
+        {
+          "date": "2008-07-14",
+          "portfolio_value": 0.99505
+        },
+        {
+          "date": "2008-07-15",
+          "portfolio_value": 0.993225
+        },
+        {
+          "date": "2008-07-16",
+          "portfolio_value": 0.992654
+        },
+        {
+          "date": "2008-07-17",
+          "portfolio_value": 0.991623
+        },
+        {
+          "date": "2008-07-18",
+          "portfolio_value": 0.990498
+        },
+        {
+          "date": "2008-07-21",
+          "portfolio_value": 0.99434
+        },
+        {
+          "date": "2008-07-22",
+          "portfolio_value": 0.989702
+        },
+        {
+          "date": "2008-07-23",
+          "portfolio_value": 0.983348
+        },
+        {
+          "date": "2008-07-24",
+          "portfolio_value": 0.982452
+        },
+        {
+          "date": "2008-07-25",
+          "portfolio_value": 0.981253
+        },
+        {
+          "date": "2008-07-28",
+          "portfolio_value": 0.981793
+        },
+        {
+          "date": "2008-07-29",
+          "portfolio_value": 0.981323
+        },
+        {
+          "date": "2008-07-30",
+          "portfolio_value": 0.981949
+        },
+        {
+          "date": "2008-07-31",
+          "portfolio_value": 0.983296
+        },
+        {
+          "date": "2008-08-01",
+          "portfolio_value": 0.981402
+        },
+        {
+          "date": "2008-08-04",
+          "portfolio_value": 0.973623
+        },
+        {
+          "date": "2008-08-05",
+          "portfolio_value": 0.971134
+        },
+        {
+          "date": "2008-08-06",
+          "portfolio_value": 0.972211
+        },
+        {
+          "date": "2008-08-07",
+          "portfolio_value": 0.97063
+        },
+        {
+          "date": "2008-08-08",
+          "portfolio_value": 0.968189
+        },
+        {
+          "date": "2008-08-11",
+          "portfolio_value": 0.956688
+        },
+        {
+          "date": "2008-08-12",
+          "portfolio_value": 0.954101
+        },
+        {
+          "date": "2008-08-13",
+          "portfolio_value": 0.955429
+        },
+        {
+          "date": "2008-08-14",
+          "portfolio_value": 0.950906
+        },
+        {
+          "date": "2008-08-15",
+          "portfolio_value": 0.946243
+        },
+        {
+          "date": "2008-08-18",
+          "portfolio_value": 0.94876
+        },
+        {
+          "date": "2008-08-19",
+          "portfolio_value": 0.951352
+        },
+        {
+          "date": "2008-08-20",
+          "portfolio_value": 0.952161
+        },
+        {
+          "date": "2008-08-21",
+          "portfolio_value": 0.959854
+        },
+        {
+          "date": "2008-08-22",
+          "portfolio_value": 0.95786
+        },
+        {
+          "date": "2008-08-25",
+          "portfolio_value": 0.954873
+        },
+        {
+          "date": "2008-08-26",
+          "portfolio_value": 0.957032
+        },
+        {
+          "date": "2008-08-27",
+          "portfolio_value": 0.960184
+        },
+        {
+          "date": "2008-08-28",
+          "portfolio_value": 0.965359
+        },
+        {
+          "date": "2008-08-29",
+          "portfolio_value": 0.961217
+        },
+        {
+          "date": "2008-09-01",
+          "portfolio_value": 0.961217
+        },
+        {
+          "date": "2008-09-02",
+          "portfolio_value": 0.952231
+        },
+        {
+          "date": "2008-09-03",
+          "portfolio_value": 0.951376
+        },
+        {
+          "date": "2008-09-04",
+          "portfolio_value": 0.943729
+        },
+        {
+          "date": "2008-09-05",
+          "portfolio_value": 0.945729
+        },
+        {
+          "date": "2008-09-08",
+          "portfolio_value": 0.952098
+        },
+        {
+          "date": "2008-09-09",
+          "portfolio_value": 0.93884
+        },
+        {
+          "date": "2008-09-10",
+          "portfolio_value": 0.931153
+        },
+        {
+          "date": "2008-09-11",
+          "portfolio_value": 0.928927
+        },
+        {
+          "date": "2008-09-12",
+          "portfolio_value": 0.936711
+        },
+        {
+          "date": "2008-09-15",
+          "portfolio_value": 0.938284
+        },
+        {
+          "date": "2008-09-16",
+          "portfolio_value": 0.935774
+        },
+        {
+          "date": "2008-09-17",
+          "portfolio_value": 0.959848
+        },
+        {
+          "date": "2008-09-18",
+          "portfolio_value": 0.955688
+        },
+        {
+          "date": "2008-09-19",
+          "portfolio_value": 0.9749
+        },
+        {
+          "date": "2008-09-22",
+          "portfolio_value": 0.97696
+        },
+        {
+          "date": "2008-09-23",
+          "portfolio_value": 0.969032
+        },
+        {
+          "date": "2008-09-24",
+          "portfolio_value": 0.962772
+        },
+        {
+          "date": "2008-09-25",
+          "portfolio_value": 0.964876
+        },
+        {
+          "date": "2008-09-26",
+          "portfolio_value": 0.96603
+        },
+        {
+          "date": "2008-09-29",
+          "portfolio_value": 0.961423
+        },
+        {
+          "date": "2008-09-30",
+          "portfolio_value": 0.947688
+        },
+        {
+          "date": "2008-10-01",
+          "portfolio_value": 0.951982
+        },
+        {
+          "date": "2008-10-02",
+          "portfolio_value": 0.928634
+        },
+        {
+          "date": "2008-10-03",
+          "portfolio_value": 0.928401
+        },
+        {
+          "date": "2008-10-06",
+          "portfolio_value": 0.929759
+        },
+        {
+          "date": "2008-10-07",
+          "portfolio_value": 0.929862
+        },
+        {
+          "date": "2008-10-08",
+          "portfolio_value": 0.929678
+        },
+        {
+          "date": "2008-10-09",
+          "portfolio_value": 0.917621
+        },
+        {
+          "date": "2008-10-10",
+          "portfolio_value": 0.882711
+        },
+        {
+          "date": "2008-10-13",
+          "portfolio_value": 0.900863
+        },
+        {
+          "date": "2008-10-14",
+          "portfolio_value": 0.898672
+        },
+        {
+          "date": "2008-10-15",
+          "portfolio_value": 0.887019
+        },
+        {
+          "date": "2008-10-16",
+          "portfolio_value": 0.876374
+        },
+        {
+          "date": "2008-10-17",
+          "portfolio_value": 0.864294
+        },
+        {
+          "date": "2008-10-20",
+          "portfolio_value": 0.881716
+        },
+        {
+          "date": "2008-10-21",
+          "portfolio_value": 0.865533
+        },
+        {
+          "date": "2008-10-22",
+          "portfolio_value": 0.838781
+        },
+        {
+          "date": "2008-10-23",
+          "portfolio_value": 0.833762
+        },
+        {
+          "date": "2008-10-24",
+          "portfolio_value": 0.828709
+        },
+        {
+          "date": "2008-10-27",
+          "portfolio_value": 0.820048
+        },
+        {
+          "date": "2008-10-28",
+          "portfolio_value": 0.847242
+        },
+        {
+          "date": "2008-10-29",
+          "portfolio_value": 0.847349
+        },
+        {
+          "date": "2008-10-30",
+          "portfolio_value": 0.846741
+        },
+        {
+          "date": "2008-10-31",
+          "portfolio_value": 0.845872
+        },
+        {
+          "date": "2008-11-03",
+          "portfolio_value": 0.844104
+        },
+        {
+          "date": "2008-11-04",
+          "portfolio_value": 0.85998
+        },
+        {
+          "date": "2008-11-05",
+          "portfolio_value": 0.851958
+        },
+        {
+          "date": "2008-11-06",
+          "portfolio_value": 0.840998
+        },
+        {
+          "date": "2008-11-07",
+          "portfolio_value": 0.848188
+        },
+        {
+          "date": "2008-11-10",
+          "portfolio_value": 0.843586
+        },
+        {
+          "date": "2008-11-11",
+          "portfolio_value": 0.839335
+        },
+        {
+          "date": "2008-11-12",
+          "portfolio_value": 0.829619
+        },
+        {
+          "date": "2008-11-13",
+          "portfolio_value": 0.840436
+        },
+        {
+          "date": "2008-11-14",
+          "portfolio_value": 0.833583
+        },
+        {
+          "date": "2008-11-17",
+          "portfolio_value": 0.830947
+        },
+        {
+          "date": "2008-11-18",
+          "portfolio_value": 0.833214
+        },
+        {
+          "date": "2008-11-19",
+          "portfolio_value": 0.823529
+        },
+        {
+          "date": "2008-11-20",
+          "portfolio_value": 0.820334
+        },
+        {
+          "date": "2008-11-21",
+          "portfolio_value": 0.830323
+        },
+        {
+          "date": "2008-11-24",
+          "portfolio_value": 0.843515
+        },
+        {
+          "date": "2008-11-25",
+          "portfolio_value": 0.853184
+        },
+        {
+          "date": "2008-11-26",
+          "portfolio_value": 0.859265
+        },
+        {
+          "date": "2008-11-27",
+          "portfolio_value": 0.859265
+        },
+        {
+          "date": "2008-11-28",
+          "portfolio_value": 0.860549
+        },
+        {
+          "date": "2008-12-01",
+          "portfolio_value": 0.847782
+        },
+        {
+          "date": "2008-12-02",
+          "portfolio_value": 0.861083
+        },
+        {
+          "date": "2008-12-03",
+          "portfolio_value": 0.866209
+        },
+        {
+          "date": "2008-12-04",
+          "portfolio_value": 0.864987
+        },
+        {
+          "date": "2008-12-05",
+          "portfolio_value": 0.868796
+        },
+        {
+          "date": "2008-12-08",
+          "portfolio_value": 0.877977
+        },
+        {
+          "date": "2008-12-09",
+          "portfolio_value": 0.87659
+        },
+        {
+          "date": "2008-12-10",
+          "portfolio_value": 0.883469
+        },
+        {
+          "date": "2008-12-11",
+          "portfolio_value": 0.876219
+        },
+        {
+          "date": "2008-12-12",
+          "portfolio_value": 0.882374
+        },
+        {
+          "date": "2008-12-15",
+          "portfolio_value": 0.882535
+        },
+        {
+          "date": "2008-12-16",
+          "portfolio_value": 0.90174
+        },
+        {
+          "date": "2008-12-17",
+          "portfolio_value": 0.907702
+        },
+        {
+          "date": "2008-12-18",
+          "portfolio_value": 0.904181
+        },
+        {
+          "date": "2008-12-19",
+          "portfolio_value": 0.904998
+        },
+        {
+          "date": "2008-12-22",
+          "portfolio_value": 0.902265
+        },
+        {
+          "date": "2008-12-23",
+          "portfolio_value": 0.900431
+        },
+        {
+          "date": "2008-12-24",
+          "portfolio_value": 0.903008
+        },
+        {
+          "date": "2008-12-26",
+          "portfolio_value": 0.905909
+        },
+        {
+          "date": "2008-12-29",
+          "portfolio_value": 0.902481
+        },
+        {
+          "date": "2008-12-30",
+          "portfolio_value": 0.909842
+        },
+        {
+          "date": "2008-12-31",
+          "portfolio_value": 0.9064
+        },
+        {
+          "date": "2009-01-02",
+          "portfolio_value": 0.89705
+        },
+        {
+          "date": "2009-01-05",
+          "portfolio_value": 0.887928
+        },
+        {
+          "date": "2009-01-06",
+          "portfolio_value": 0.887338
+        },
+        {
+          "date": "2009-01-07",
+          "portfolio_value": 0.881138
+        },
+        {
+          "date": "2009-01-08",
+          "portfolio_value": 0.881367
+        },
+        {
+          "date": "2009-01-09",
+          "portfolio_value": 0.875791
+        },
+        {
+          "date": "2009-01-12",
+          "portfolio_value": 0.873155
+        },
+        {
+          "date": "2009-01-13",
+          "portfolio_value": 0.874657
+        },
+        {
+          "date": "2009-01-14",
+          "portfolio_value": 0.872837
+        },
+        {
+          "date": "2009-01-15",
+          "portfolio_value": 0.875598
+        },
+        {
+          "date": "2009-01-16",
+          "portfolio_value": 0.874729
+        },
+        {
+          "date": "2009-01-19",
+          "portfolio_value": 0.874729
+        },
+        {
+          "date": "2009-01-20",
+          "portfolio_value": 0.861819
+        },
+        {
+          "date": "2009-01-21",
+          "portfolio_value": 0.85967
+        },
+        {
+          "date": "2009-01-22",
+          "portfolio_value": 0.847943
+        },
+        {
+          "date": "2009-01-23",
+          "portfolio_value": 0.8485
+        },
+        {
+          "date": "2009-01-26",
+          "portfolio_value": 0.846581
+        },
+        {
+          "date": "2009-01-27",
+          "portfolio_value": 0.857751
+        },
+        {
+          "date": "2009-01-28",
+          "portfolio_value": 0.856678
+        },
+        {
+          "date": "2009-01-29",
+          "portfolio_value": 0.839852
+        },
+        {
+          "date": "2009-01-30",
+          "portfolio_value": 0.83713
+        },
+        {
+          "date": "2009-02-02",
+          "portfolio_value": 0.842497
+        },
+        {
+          "date": "2009-02-03",
+          "portfolio_value": 0.835292
+        },
+        {
+          "date": "2009-02-04",
+          "portfolio_value": 0.832563
+        },
+        {
+          "date": "2009-02-05",
+          "portfolio_value": 0.833635
+        },
+        {
+          "date": "2009-02-06",
+          "portfolio_value": 0.839142
+        },
+        {
+          "date": "2009-02-09",
+          "portfolio_value": 0.840921
+        },
+        {
+          "date": "2009-02-10",
+          "portfolio_value": 0.840657
+        },
+        {
+          "date": "2009-02-11",
+          "portfolio_value": 0.84758
+        },
+        {
+          "date": "2009-02-12",
+          "portfolio_value": 0.84475
+        },
+        {
+          "date": "2009-02-13",
+          "portfolio_value": 0.830903
+        },
+        {
+          "date": "2009-02-16",
+          "portfolio_value": 0.830903
+        },
+        {
+          "date": "2009-02-17",
+          "portfolio_value": 0.834231
+        },
+        {
+          "date": "2009-02-18",
+          "portfolio_value": 0.8318
+        },
+        {
+          "date": "2009-02-19",
+          "portfolio_value": 0.822531
+        },
+        {
+          "date": "2009-02-20",
+          "portfolio_value": 0.827098
+        },
+        {
+          "date": "2009-02-23",
+          "portfolio_value": 0.823271
+        },
+        {
+          "date": "2009-02-24",
+          "portfolio_value": 0.829251
+        },
+        {
+          "date": "2009-02-25",
+          "portfolio_value": 0.821706
+        },
+        {
+          "date": "2009-02-26",
+          "portfolio_value": 0.813249
+        },
+        {
+          "date": "2009-02-27",
+          "portfolio_value": 0.808652
+        },
+        {
+          "date": "2009-03-02",
+          "portfolio_value": 0.805626
+        },
+        {
+          "date": "2009-03-03",
+          "portfolio_value": 0.802159
+        },
+        {
+          "date": "2009-03-04",
+          "portfolio_value": 0.803722
+        },
+        {
+          "date": "2009-03-05",
+          "portfolio_value": 0.807556
+        },
+        {
+          "date": "2009-03-06",
+          "portfolio_value": 0.805203
+        },
+        {
+          "date": "2009-03-09",
+          "portfolio_value": 0.800172
+        },
+        {
+          "date": "2009-03-10",
+          "portfolio_value": 0.806095
+        },
+        {
+          "date": "2009-03-11",
+          "portfolio_value": 0.810761
+        },
+        {
+          "date": "2009-03-12",
+          "portfolio_value": 0.821308
+        },
+        {
+          "date": "2009-03-13",
+          "portfolio_value": 0.819912
+        },
+        {
+          "date": "2009-03-16",
+          "portfolio_value": 0.81092
+        },
+        {
+          "date": "2009-03-17",
+          "portfolio_value": 0.81496
+        },
+        {
+          "date": "2009-03-18",
+          "portfolio_value": 0.838024
+        },
+        {
+          "date": "2009-03-19",
+          "portfolio_value": 0.835936
+        },
+        {
+          "date": "2009-03-20",
+          "portfolio_value": 0.826671
+        },
+        {
+          "date": "2009-03-23",
+          "portfolio_value": 0.838747
+        },
+        {
+          "date": "2009-03-24",
+          "portfolio_value": 0.8343
+        },
+        {
+          "date": "2009-03-25",
+          "portfolio_value": 0.831736
+        },
+        {
+          "date": "2009-03-26",
+          "portfolio_value": 0.839532
+        },
+        {
+          "date": "2009-03-27",
+          "portfolio_value": 0.836773
+        },
+        {
+          "date": "2009-03-30",
+          "portfolio_value": 0.831801
+        },
+        {
+          "date": "2009-03-31",
+          "portfolio_value": 0.839672
+        },
+        {
+          "date": "2009-04-01",
+          "portfolio_value": 0.845665
+        },
+        {
+          "date": "2009-04-02",
+          "portfolio_value": 0.847089
+        },
+        {
+          "date": "2009-04-03",
+          "portfolio_value": 0.843532
+        },
+        {
+          "date": "2009-04-06",
+          "portfolio_value": 0.838872
+        },
+        {
+          "date": "2009-04-07",
+          "portfolio_value": 0.83415
+        },
+        {
+          "date": "2009-04-08",
+          "portfolio_value": 0.839769
+        },
+        {
+          "date": "2009-04-09",
+          "portfolio_value": 0.845066
+        },
+        {
+          "date": "2009-04-13",
+          "portfolio_value": 0.850982
+        },
+        {
+          "date": "2009-04-14",
+          "portfolio_value": 0.84698
+        },
+        {
+          "date": "2009-04-15",
+          "portfolio_value": 0.852087
+        },
+        {
+          "date": "2009-04-16",
+          "portfolio_value": 0.85111
+        },
+        {
+          "date": "2009-04-17",
+          "portfolio_value": 0.846815
+        },
+        {
+          "date": "2009-04-20",
+          "portfolio_value": 0.844209
+        },
+        {
+          "date": "2009-04-21",
+          "portfolio_value": 0.846505
+        },
+        {
+          "date": "2009-04-22",
+          "portfolio_value": 0.842971
+        },
+        {
+          "date": "2009-04-23",
+          "portfolio_value": 0.847883
+        },
+        {
+          "date": "2009-04-24",
+          "portfolio_value": 0.849136
+        },
+        {
+          "date": "2009-04-27",
+          "portfolio_value": 0.846696
+        },
+        {
+          "date": "2009-04-28",
+          "portfolio_value": 0.840425
+        },
+        {
+          "date": "2009-04-29",
+          "portfolio_value": 0.841532
+        },
+        {
+          "date": "2009-04-30",
+          "portfolio_value": 0.840411
+        },
+        {
+          "date": "2009-05-01",
+          "portfolio_value": 0.836481
+        },
+        {
+          "date": "2009-05-04",
+          "portfolio_value": 0.846525
+        },
+        {
+          "date": "2009-05-05",
+          "portfolio_value": 0.844015
+        },
+        {
+          "date": "2009-05-06",
+          "portfolio_value": 0.848465
+        },
+        {
+          "date": "2009-05-07",
+          "portfolio_value": 0.835105
+        },
+        {
+          "date": "2009-05-08",
+          "portfolio_value": 0.843065
+        },
+        {
+          "date": "2009-05-11",
+          "portfolio_value": 0.84378
+        },
+        {
+          "date": "2009-05-12",
+          "portfolio_value": 0.846704
+        },
+        {
+          "date": "2009-05-13",
+          "portfolio_value": 0.844304
+        },
+        {
+          "date": "2009-05-14",
+          "portfolio_value": 0.848084
+        },
+        {
+          "date": "2009-05-15",
+          "portfolio_value": 0.846191
+        },
+        {
+          "date": "2009-05-18",
+          "portfolio_value": 0.847359
+        },
+        {
+          "date": "2009-05-19",
+          "portfolio_value": 0.845537
+        },
+        {
+          "date": "2009-05-20",
+          "portfolio_value": 0.849734
+        },
+        {
+          "date": "2009-05-21",
+          "portfolio_value": 0.839609
+        },
+        {
+          "date": "2009-05-22",
+          "portfolio_value": 0.834688
+        },
+        {
+          "date": "2009-05-25",
+          "portfolio_value": 0.834688
+        },
+        {
+          "date": "2009-05-26",
+          "portfolio_value": 0.834397
+        },
+        {
+          "date": "2009-05-27",
+          "portfolio_value": 0.823526
+        },
+        {
+          "date": "2009-05-28",
+          "portfolio_value": 0.830873
+        },
+        {
+          "date": "2009-05-29",
+          "portfolio_value": 0.846328
+        },
+        {
+          "date": "2009-06-01",
+          "portfolio_value": 0.838872
+        },
+        {
+          "date": "2009-06-02",
+          "portfolio_value": 0.841968
+        },
+        {
+          "date": "2009-06-03",
+          "portfolio_value": 0.842371
+        },
+        {
+          "date": "2009-06-04",
+          "portfolio_value": 0.836806
+        },
+        {
+          "date": "2009-06-05",
+          "portfolio_value": 0.831506
+        },
+        {
+          "date": "2009-06-08",
+          "portfolio_value": 0.828804
+        },
+        {
+          "date": "2009-06-09",
+          "portfolio_value": 0.830826
+        },
+        {
+          "date": "2009-06-10",
+          "portfolio_value": 0.824327
+        },
+        {
+          "date": "2009-06-11",
+          "portfolio_value": 0.828752
+        },
+        {
+          "date": "2009-06-12",
+          "portfolio_value": 0.83337
+        },
+        {
+          "date": "2009-06-15",
+          "portfolio_value": 0.831085
+        },
+        {
+          "date": "2009-06-16",
+          "portfolio_value": 0.835263
+        },
+        {
+          "date": "2009-06-17",
+          "portfolio_value": 0.832869
+        },
+        {
+          "date": "2009-06-18",
+          "portfolio_value": 0.827108
+        },
+        {
+          "date": "2009-06-19",
+          "portfolio_value": 0.834031
+        },
+        {
+          "date": "2009-06-22",
+          "portfolio_value": 0.830953
+        },
+        {
+          "date": "2009-06-23",
+          "portfolio_value": 0.836703
+        },
+        {
+          "date": "2009-06-24",
+          "portfolio_value": 0.8346
+        },
+        {
+          "date": "2009-06-25",
+          "portfolio_value": 0.845374
+        },
+        {
+          "date": "2009-06-26",
+          "portfolio_value": 0.846492
+        },
+        {
+          "date": "2009-06-29",
+          "portfolio_value": 0.847883
+        }
+      ],
+      "rebalance_log": [
+        {
+          "date": "2008-01-02",
+          "weights": {
+            "AGGH.MI": 0.090909,
+            "CSPX.L": 0.090909,
+            "EFA": 0.090909,
+            "GLD": 0.090909,
+            "TIP": 0.090909,
+            "TLT": 0.090909,
+            "VNQ": 0.090909,
+            "XEON.MI": 0.090909,
+            "SPY": 0.090909,
+            "AGG": 0.090909,
+            "BIL": 0.090909
+          },
+          "turnover": 0.0,
+          "transaction_cost": 0.0
+        },
+        {
+          "date": "2008-01-31",
+          "weights": {
+            "AGGH.MI": 0.05,
+            "CSPX.L": 0.05,
+            "EFA": 0.05,
+            "GLD": 0.38309,
+            "TIP": 0.16691,
+            "TLT": 0.05,
+            "VNQ": 0.05,
+            "XEON.MI": 0.05,
+            "SPY": 0.05,
+            "AGG": 0.05,
+            "BIL": 0.05
+          },
+          "turnover": 0.736364,
+          "transaction_cost": 0.000736
+        },
+        {
+          "date": "2008-02-29",
+          "weights": {
+            "AGGH.MI": 0.05,
+            "CSPX.L": 0.05,
+            "EFA": 0.05,
+            "GLD": 0.4,
+            "TIP": 0.15,
+            "TLT": 0.05,
+            "VNQ": 0.05,
+            "XEON.MI": 0.05,
+            "SPY": 0.05,
+            "AGG": 0.05,
+            "BIL": 0.05
+          },
+          "turnover": 0.03382,
+          "transaction_cost": 3.4e-05
+        },
+        {
+          "date": "2008-03-31",
+          "weights": {
+            "AGGH.MI": 0.05,
+            "CSPX.L": 0.05,
+            "EFA": 0.05,
+            "GLD": 0.29339,
+            "TIP": 0.25661,
+            "TLT": 0.05,
+            "VNQ": 0.05,
+            "XEON.MI": 0.05,
+            "SPY": 0.05,
+            "AGG": 0.05,
+            "BIL": 0.05
+          },
+          "turnover": 0.21322,
+          "transaction_cost": 0.000213
+        },
+        {
+          "date": "2008-04-30",
+          "weights": {
+            "AGGH.MI": 0.05,
+            "CSPX.L": 0.05,
+            "EFA": 0.05,
+            "GLD": 0.23592,
+            "TIP": 0.31408,
+            "TLT": 0.05,
+            "VNQ": 0.05,
+            "XEON.MI": 0.05,
+            "SPY": 0.05,
+            "AGG": 0.05,
+            "BIL": 0.05
+          },
+          "turnover": 0.11494,
+          "transaction_cost": 0.000115
+        },
+        {
+          "date": "2008-06-30",
+          "weights": {
+            "AGGH.MI": 0.05,
+            "CSPX.L": 0.05,
+            "EFA": 0.05,
+            "GLD": 0.24486,
+            "TIP": 0.30514,
+            "TLT": 0.05,
+            "VNQ": 0.05,
+            "XEON.MI": 0.05,
+            "SPY": 0.05,
+            "AGG": 0.05,
+            "BIL": 0.05
+          },
+          "turnover": 0.01788,
+          "transaction_cost": 1.8e-05
+        },
+        {
+          "date": "2008-07-31",
+          "weights": {
+            "AGGH.MI": 0.05,
+            "CSPX.L": 0.05,
+            "EFA": 0.05,
+            "GLD": 0.29354,
+            "TIP": 0.25646,
+            "TLT": 0.05,
+            "VNQ": 0.05,
+            "XEON.MI": 0.05,
+            "SPY": 0.05,
+            "AGG": 0.05,
+            "BIL": 0.05
+          },
+          "turnover": 0.09736,
+          "transaction_cost": 9.7e-05
+        },
+        {
+          "date": "2008-09-30",
+          "weights": {
+            "AGGH.MI": 0.05,
+            "CSPX.L": 0.05,
+            "EFA": 0.05,
+            "GLD": 0.4,
+            "TIP": 0.05,
+            "TLT": 0.15,
+            "VNQ": 0.05,
+            "XEON.MI": 0.05,
+            "SPY": 0.05,
+            "AGG": 0.05,
+            "BIL": 0.05
+          },
+          "turnover": 0.41292,
+          "transaction_cost": 0.000413
+        },
+        {
+          "date": "2008-10-31",
+          "weights": {
+            "AGGH.MI": 0.05,
+            "CSPX.L": 0.05,
+            "EFA": 0.05,
+            "GLD": 0.05,
+            "TIP": 0.05,
+            "TLT": 0.18854,
+            "VNQ": 0.05,
+            "XEON.MI": 0.20573,
+            "SPY": 0.05,
+            "AGG": 0.05,
+            "BIL": 0.20573
+          },
+          "turnover": 0.7,
+          "transaction_cost": 0.0007
+        },
+        {
+          "date": "2008-12-31",
+          "weights": {
+            "AGGH.MI": 0.1,
+            "CSPX.L": 0.05,
+            "EFA": 0.05,
+            "GLD": 0.05,
+            "TIP": 0.05,
+            "TLT": 0.4,
+            "VNQ": 0.05,
+            "XEON.MI": 0.05,
+            "SPY": 0.05,
+            "AGG": 0.1,
+            "BIL": 0.05
+          },
+          "turnover": 0.62292,
+          "transaction_cost": 0.000623
+        },
+        {
+          "date": "2009-03-31",
+          "weights": {
+            "AGGH.MI": 0.1,
+            "CSPX.L": 0.05,
+            "EFA": 0.05,
+            "GLD": 0.05,
+            "TIP": 0.05,
+            "TLT": 0.4,
+            "VNQ": 0.05,
+            "XEON.MI": 0.05,
+            "SPY": 0.05,
+            "AGG": 0.1,
+            "BIL": 0.05
+          },
+          "turnover": 0.0,
+          "transaction_cost": 0.0
+        },
+        {
+          "date": "2009-04-30",
+          "weights": {
+            "AGGH.MI": 0.1,
+            "CSPX.L": 0.05,
+            "EFA": 0.05,
+            "GLD": 0.05,
+            "TIP": 0.05,
+            "TLT": 0.4,
+            "VNQ": 0.05,
+            "XEON.MI": 0.05,
+            "SPY": 0.05,
+            "AGG": 0.1,
+            "BIL": 0.05
+          },
+          "turnover": 0.0,
+          "transaction_cost": 0.0
+        }
+      ]
+    },
+    "1/N": {
+      "strategy": "1/N",
+      "cagr": -0.048814,
+      "annualised_volatility": 0.165589,
+      "sharpe_ratio": -0.294791,
+      "max_drawdown": -0.232254,
+      "calmar_ratio": -0.210176,
+      "total_transaction_cost": 0.0,
+      "n_rebalances": 12,
+      "equity_curve": [
+        {
+          "date": "2008-01-02",
+          "portfolio_value": 1.0
+        },
+        {
+          "date": "2008-01-03",
+          "portfolio_value": 0.998536
+        },
+        {
+          "date": "2008-01-04",
+          "portfolio_value": 0.9882
+        },
+        {
+          "date": "2008-01-07",
+          "portfolio_value": 0.989357
+        },
+        {
+          "date": "2008-01-08",
+          "portfolio_value": 0.985269
+        },
+        {
+          "date": "2008-01-09",
+          "portfolio_value": 0.988709
+        },
+        {
+          "date": "2008-01-10",
+          "portfolio_value": 0.991036
+        },
+        {
+          "date": "2008-01-11",
+          "portfolio_value": 0.990365
+        },
+        {
+          "date": "2008-01-14",
+          "portfolio_value": 0.994863
+        },
+        {
+          "date": "2008-01-15",
+          "portfolio_value": 0.98663
+        },
+        {
+          "date": "2008-01-16",
+          "portfolio_value": 0.981269
+        },
+        {
+          "date": "2008-01-17",
+          "portfolio_value": 0.976685
+        },
+        {
+          "date": "2008-01-18",
+          "portfolio_value": 0.974694
+        },
+        {
+          "date": "2008-01-21",
+          "portfolio_value": 0.974694
+        },
+        {
+          "date": "2008-01-22",
+          "portfolio_value": 0.975276
+        },
+        {
+          "date": "2008-01-23",
+          "portfolio_value": 0.986392
+        },
+        {
+          "date": "2008-01-24",
+          "portfolio_value": 0.988399
+        },
+        {
+          "date": "2008-01-25",
+          "portfolio_value": 0.986561
+        },
+        {
+          "date": "2008-01-28",
+          "portfolio_value": 0.99499
+        },
+        {
+          "date": "2008-01-29",
+          "portfolio_value": 0.99397
+        },
+        {
+          "date": "2008-01-30",
+          "portfolio_value": 0.990501
+        },
+        {
+          "date": "2008-01-31",
+          "portfolio_value": 0.997767
+        },
+        {
+          "date": "2008-02-01",
+          "portfolio_value": 1.004352
+        },
+        {
+          "date": "2008-02-04",
+          "portfolio_value": 0.998381
+        },
+        {
+          "date": "2008-02-05",
+          "portfolio_value": 0.98628
+        },
+        {
+          "date": "2008-02-06",
+          "portfolio_value": 0.98423
+        },
+        {
+          "date": "2008-02-07",
+          "portfolio_value": 0.983369
+        },
+        {
+          "date": "2008-02-08",
+          "portfolio_value": 0.982368
+        },
+        {
+          "date": "2008-02-11",
+          "portfolio_value": 0.983286
+        },
+        {
+          "date": "2008-02-12",
+          "portfolio_value": 0.986654
+        },
+        {
+          "date": "2008-02-13",
+          "portfolio_value": 0.987129
+        },
+        {
+          "date": "2008-02-14",
+          "portfolio_value": 0.981299
+        },
+        {
+          "date": "2008-02-15",
+          "portfolio_value": 0.982807
+        },
+        {
+          "date": "2008-02-18",
+          "portfolio_value": 0.982807
+        },
+        {
+          "date": "2008-02-19",
+          "portfolio_value": 0.984114
+        },
+        {
+          "date": "2008-02-20",
+          "portfolio_value": 0.986919
+        },
+        {
+          "date": "2008-02-21",
+          "portfolio_value": 0.985972
+        },
+        {
+          "date": "2008-02-22",
+          "portfolio_value": 0.989174
+        },
+        {
+          "date": "2008-02-25",
+          "portfolio_value": 0.992905
+        },
+        {
+          "date": "2008-02-26",
+          "portfolio_value": 0.998146
+        },
+        {
+          "date": "2008-02-27",
+          "portfolio_value": 0.999511
+        },
+        {
+          "date": "2008-02-28",
+          "portfolio_value": 1.000059
+        },
+        {
+          "date": "2008-02-29",
+          "portfolio_value": 0.995681
+        },
+        {
+          "date": "2008-03-03",
+          "portfolio_value": 0.996908
+        },
+        {
+          "date": "2008-03-04",
+          "portfolio_value": 0.990201
+        },
+        {
+          "date": "2008-03-05",
+          "portfolio_value": 0.993741
+        },
+        {
+          "date": "2008-03-06",
+          "portfolio_value": 0.98425
+        },
+        {
+          "date": "2008-03-07",
+          "portfolio_value": 0.983431
+        },
+        {
+          "date": "2008-03-10",
+          "portfolio_value": 0.982094
+        },
+        {
+          "date": "2008-03-11",
+          "portfolio_value": 0.994531
+        },
+        {
+          "date": "2008-03-12",
+          "portfolio_value": 0.996402
+        },
+        {
+          "date": "2008-03-13",
+          "portfolio_value": 0.99715
+        },
+        {
+          "date": "2008-03-14",
+          "portfolio_value": 0.992983
+        },
+        {
+          "date": "2008-03-17",
+          "portfolio_value": 0.991224
+        },
+        {
+          "date": "2008-03-18",
+          "portfolio_value": 1.002336
+        },
+        {
+          "date": "2008-03-19",
+          "portfolio_value": 0.993046
+        },
+        {
+          "date": "2008-03-20",
+          "portfolio_value": 0.998733
+        },
+        {
+          "date": "2008-03-24",
+          "portfolio_value": 1.001406
+        },
+        {
+          "date": "2008-03-25",
+          "portfolio_value": 1.006247
+        },
+        {
+          "date": "2008-03-26",
+          "portfolio_value": 1.002783
+        },
+        {
+          "date": "2008-03-27",
+          "portfolio_value": 1.000708
+        },
+        {
+          "date": "2008-03-28",
+          "portfolio_value": 0.99813
+        },
+        {
+          "date": "2008-03-31",
+          "portfolio_value": 0.998446
+        },
+        {
+          "date": "2008-04-01",
+          "portfolio_value": 1.005678
+        },
+        {
+          "date": "2008-04-02",
+          "portfolio_value": 1.008373
+        },
+        {
+          "date": "2008-04-03",
+          "portfolio_value": 1.012636
+        },
+        {
+          "date": "2008-04-04",
+          "portfolio_value": 1.01453
+        },
+        {
+          "date": "2008-04-07",
+          "portfolio_value": 1.014485
+        },
+        {
+          "date": "2008-04-08",
+          "portfolio_value": 1.011992
+        },
+        {
+          "date": "2008-04-09",
+          "portfolio_value": 1.011948
+        },
+        {
+          "date": "2008-04-10",
+          "portfolio_value": 1.011019
+        },
+        {
+          "date": "2008-04-11",
+          "portfolio_value": 1.006314
+        },
+        {
+          "date": "2008-04-14",
+          "portfolio_value": 1.004222
+        },
+        {
+          "date": "2008-04-15",
+          "portfolio_value": 1.004318
+        },
+        {
+          "date": "2008-04-16",
+          "portfolio_value": 1.015214
+        },
+        {
+          "date": "2008-04-17",
+          "portfolio_value": 1.01351
+        },
+        {
+          "date": "2008-04-18",
+          "portfolio_value": 1.013834
+        },
+        {
+          "date": "2008-04-21",
+          "portfolio_value": 1.014091
+        },
+        {
+          "date": "2008-04-22",
+          "portfolio_value": 1.012975
+        },
+        {
+          "date": "2008-04-23",
+          "portfolio_value": 1.012472
+        },
+        {
+          "date": "2008-04-24",
+          "portfolio_value": 1.010186
+        },
+        {
+          "date": "2008-04-25",
+          "portfolio_value": 1.012365
+        },
+        {
+          "date": "2008-04-28",
+          "portfolio_value": 1.014031
+        },
+        {
+          "date": "2008-04-29",
+          "portfolio_value": 1.010345
+        },
+        {
+          "date": "2008-04-30",
+          "portfolio_value": 1.011381
+        },
+        {
+          "date": "2008-05-01",
+          "portfolio_value": 1.014666
+        },
+        {
+          "date": "2008-05-02",
+          "portfolio_value": 1.014171
+        },
+        {
+          "date": "2008-05-05",
+          "portfolio_value": 1.015355
+        },
+        {
+          "date": "2008-05-06",
+          "portfolio_value": 1.017256
+        },
+        {
+          "date": "2008-05-07",
+          "portfolio_value": 1.010235
+        },
+        {
+          "date": "2008-05-08",
+          "portfolio_value": 1.013418
+        },
+        {
+          "date": "2008-05-09",
+          "portfolio_value": 1.012766
+        },
+        {
+          "date": "2008-05-12",
+          "portfolio_value": 1.016904
+        },
+        {
+          "date": "2008-05-13",
+          "portfolio_value": 1.012451
+        },
+        {
+          "date": "2008-05-14",
+          "portfolio_value": 1.0136
+        },
+        {
+          "date": "2008-05-15",
+          "portfolio_value": 1.023015
+        },
+        {
+          "date": "2008-05-16",
+          "portfolio_value": 1.025149
+        },
+        {
+          "date": "2008-05-19",
+          "portfolio_value": 1.026459
+        },
+        {
+          "date": "2008-05-20",
+          "portfolio_value": 1.025774
+        },
+        {
+          "date": "2008-05-21",
+          "portfolio_value": 1.020271
+        },
+        {
+          "date": "2008-05-22",
+          "portfolio_value": 1.016869
+        },
+        {
+          "date": "2008-05-23",
+          "portfolio_value": 1.014629
+        },
+        {
+          "date": "2008-05-26",
+          "portfolio_value": 1.014629
+        },
+        {
+          "date": "2008-05-27",
+          "portfolio_value": 1.012899
+        },
+        {
+          "date": "2008-05-28",
+          "portfolio_value": 1.011244
+        },
+        {
+          "date": "2008-05-29",
+          "portfolio_value": 1.008637
+        },
+        {
+          "date": "2008-05-30",
+          "portfolio_value": 1.011883
+        },
+        {
+          "date": "2008-06-02",
+          "portfolio_value": 1.009515
+        },
+        {
+          "date": "2008-06-03",
+          "portfolio_value": 1.008736
+        },
+        {
+          "date": "2008-06-04",
+          "portfolio_value": 1.00636
+        },
+        {
+          "date": "2008-06-05",
+          "portfolio_value": 1.011798
+        },
+        {
+          "date": "2008-06-06",
+          "portfolio_value": 1.005598
+        },
+        {
+          "date": "2008-06-09",
+          "portfolio_value": 1.001684
+        },
+        {
+          "date": "2008-06-10",
+          "portfolio_value": 0.994828
+        },
+        {
+          "date": "2008-06-11",
+          "portfolio_value": 0.991512
+        },
+        {
+          "date": "2008-06-12",
+          "portfolio_value": 0.98836
+        },
+        {
+          "date": "2008-06-13",
+          "portfolio_value": 0.992662
+        },
+        {
+          "date": "2008-06-16",
+          "portfolio_value": 0.996111
+        },
+        {
+          "date": "2008-06-17",
+          "portfolio_value": 0.994212
+        },
+        {
+          "date": "2008-06-18",
+          "portfolio_value": 0.993535
+        },
+        {
+          "date": "2008-06-19",
+          "portfolio_value": 0.99377
+        },
+        {
+          "date": "2008-06-20",
+          "portfolio_value": 0.988815
+        },
+        {
+          "date": "2008-06-23",
+          "portfolio_value": 0.984473
+        },
+        {
+          "date": "2008-06-24",
+          "portfolio_value": 0.98566
+        },
+        {
+          "date": "2008-06-25",
+          "portfolio_value": 0.989115
+        },
+        {
+          "date": "2008-06-26",
+          "portfolio_value": 0.98385
+        },
+        {
+          "date": "2008-06-27",
+          "portfolio_value": 0.98524
+        },
+        {
+          "date": "2008-06-30",
+          "portfolio_value": 0.986539
+        },
+        {
+          "date": "2008-07-01",
+          "portfolio_value": 0.986545
+        },
+        {
+          "date": "2008-07-02",
+          "portfolio_value": 0.982246
+        },
+        {
+          "date": "2008-07-03",
+          "portfolio_value": 0.981119
+        },
+        {
+          "date": "2008-07-04",
+          "portfolio_value": 0.981119
+        },
+        {
+          "date": "2008-07-07",
+          "portfolio_value": 0.976677
+        },
+        {
+          "date": "2008-07-08",
+          "portfolio_value": 0.987684
+        },
+        {
+          "date": "2008-07-09",
+          "portfolio_value": 0.979223
+        },
+        {
+          "date": "2008-07-10",
+          "portfolio_value": 0.984711
+        },
+        {
+          "date": "2008-07-11",
+          "portfolio_value": 0.97936
+        },
+        {
+          "date": "2008-07-14",
+          "portfolio_value": 0.976876
+        },
+        {
+          "date": "2008-07-15",
+          "portfolio_value": 0.972973
+        },
+        {
+          "date": "2008-07-16",
+          "portfolio_value": 0.980447
+        },
+        {
+          "date": "2008-07-17",
+          "portfolio_value": 0.982359
+        },
+        {
+          "date": "2008-07-18",
+          "portfolio_value": 0.982602
+        },
+        {
+          "date": "2008-07-21",
+          "portfolio_value": 0.985934
+        },
+        {
+          "date": "2008-07-22",
+          "portfolio_value": 0.987326
+        },
+        {
+          "date": "2008-07-23",
+          "portfolio_value": 0.988269
+        },
+        {
+          "date": "2008-07-24",
+          "portfolio_value": 0.980429
+        },
+        {
+          "date": "2008-07-25",
+          "portfolio_value": 0.980014
+        },
+        {
+          "date": "2008-07-28",
+          "portfolio_value": 0.976961
+        },
+        {
+          "date": "2008-07-29",
+          "portfolio_value": 0.983482
+        },
+        {
+          "date": "2008-07-30",
+          "portfolio_value": 0.986837
+        },
+        {
+          "date": "2008-07-31",
+          "portfolio_value": 0.985202
+        },
+        {
+          "date": "2008-08-01",
+          "portfolio_value": 0.982771
+        },
+        {
+          "date": "2008-08-04",
+          "portfolio_value": 0.976599
+        },
+        {
+          "date": "2008-08-05",
+          "portfolio_value": 0.984145
+        },
+        {
+          "date": "2008-08-06",
+          "portfolio_value": 0.984245
+        },
+        {
+          "date": "2008-08-07",
+          "portfolio_value": 0.980293
+        },
+        {
+          "date": "2008-08-08",
+          "portfolio_value": 0.984667
+        },
+        {
+          "date": "2008-08-11",
+          "portfolio_value": 0.983762
+        },
+        {
+          "date": "2008-08-12",
+          "portfolio_value": 0.980475
+        },
+        {
+          "date": "2008-08-13",
+          "portfolio_value": 0.977384
+        },
+        {
+          "date": "2008-08-14",
+          "portfolio_value": 0.978815
+        },
+        {
+          "date": "2008-08-15",
+          "portfolio_value": 0.978581
+        },
+        {
+          "date": "2008-08-18",
+          "portfolio_value": 0.976437
+        },
+        {
+          "date": "2008-08-19",
+          "portfolio_value": 0.972723
+        },
+        {
+          "date": "2008-08-20",
+          "portfolio_value": 0.974693
+        },
+        {
+          "date": "2008-08-21",
+          "portfolio_value": 0.976319
+        },
+        {
+          "date": "2008-08-22",
+          "portfolio_value": 0.980448
+        },
+        {
+          "date": "2008-08-25",
+          "portfolio_value": 0.974306
+        },
+        {
+          "date": "2008-08-26",
+          "portfolio_value": 0.976575
+        },
+        {
+          "date": "2008-08-27",
+          "portfolio_value": 0.98077
+        },
+        {
+          "date": "2008-08-28",
+          "portfolio_value": 0.98714
+        },
+        {
+          "date": "2008-08-29",
+          "portfolio_value": 0.983015
+        },
+        {
+          "date": "2008-09-01",
+          "portfolio_value": 0.983015
+        },
+        {
+          "date": "2008-09-02",
+          "portfolio_value": 0.97987
+        },
+        {
+          "date": "2008-09-03",
+          "portfolio_value": 0.980595
+        },
+        {
+          "date": "2008-09-04",
+          "portfolio_value": 0.969576
+        },
+        {
+          "date": "2008-09-05",
+          "portfolio_value": 0.969977
+        },
+        {
+          "date": "2008-09-08",
+          "portfolio_value": 0.981088
+        },
+        {
+          "date": "2008-09-09",
+          "portfolio_value": 0.968675
+        },
+        {
+          "date": "2008-09-10",
+          "portfolio_value": 0.967156
+        },
+        {
+          "date": "2008-09-11",
+          "portfolio_value": 0.969256
+        },
+        {
+          "date": "2008-09-12",
+          "portfolio_value": 0.972097
+        },
+        {
+          "date": "2008-09-15",
+          "portfolio_value": 0.961459
+        },
+        {
+          "date": "2008-09-16",
+          "portfolio_value": 0.964596
+        },
+        {
+          "date": "2008-09-17",
+          "portfolio_value": 0.960175
+        },
+        {
+          "date": "2008-09-18",
+          "portfolio_value": 0.970614
+        },
+        {
+          "date": "2008-09-19",
+          "portfolio_value": 0.987721
+        },
+        {
+          "date": "2008-09-22",
+          "portfolio_value": 0.973955
+        },
+        {
+          "date": "2008-09-23",
+          "portfolio_value": 0.967488
+        },
+        {
+          "date": "2008-09-24",
+          "portfolio_value": 0.965725
+        },
+        {
+          "date": "2008-09-25",
+          "portfolio_value": 0.970983
+        },
+        {
+          "date": "2008-09-26",
+          "portfolio_value": 0.97293
+        },
+        {
+          "date": "2008-09-29",
+          "portfolio_value": 0.948466
+        },
+        {
+          "date": "2008-09-30",
+          "portfolio_value": 0.959068
+        },
+        {
+          "date": "2008-10-01",
+          "portfolio_value": 0.958318
+        },
+        {
+          "date": "2008-10-02",
+          "portfolio_value": 0.940005
+        },
+        {
+          "date": "2008-10-03",
+          "portfolio_value": 0.936183
+        },
+        {
+          "date": "2008-10-06",
+          "portfolio_value": 0.923388
+        },
+        {
+          "date": "2008-10-07",
+          "portfolio_value": 0.903236
+        },
+        {
+          "date": "2008-10-08",
+          "portfolio_value": 0.891108
+        },
+        {
+          "date": "2008-10-09",
+          "portfolio_value": 0.868415
+        },
+        {
+          "date": "2008-10-10",
+          "portfolio_value": 0.850521
+        },
+        {
+          "date": "2008-10-13",
+          "portfolio_value": 0.892302
+        },
+        {
+          "date": "2008-10-14",
+          "portfolio_value": 0.887947
+        },
+        {
+          "date": "2008-10-15",
+          "portfolio_value": 0.857838
+        },
+        {
+          "date": "2008-10-16",
+          "portfolio_value": 0.866266
+        },
+        {
+          "date": "2008-10-17",
+          "portfolio_value": 0.860101
+        },
+        {
+          "date": "2008-10-20",
+          "portfolio_value": 0.881229
+        },
+        {
+          "date": "2008-10-21",
+          "portfolio_value": 0.86862
+        },
+        {
+          "date": "2008-10-22",
+          "portfolio_value": 0.84801
+        },
+        {
+          "date": "2008-10-23",
+          "portfolio_value": 0.845616
+        },
+        {
+          "date": "2008-10-24",
+          "portfolio_value": 0.826053
+        },
+        {
+          "date": "2008-10-27",
+          "portfolio_value": 0.810465
+        },
+        {
+          "date": "2008-10-28",
+          "portfolio_value": 0.849973
+        },
+        {
+          "date": "2008-10-29",
+          "portfolio_value": 0.849407
+        },
+        {
+          "date": "2008-10-30",
+          "portfolio_value": 0.859121
+        },
+        {
+          "date": "2008-10-31",
+          "portfolio_value": 0.861949
+        },
+        {
+          "date": "2008-11-03",
+          "portfolio_value": 0.858224
+        },
+        {
+          "date": "2008-11-04",
+          "portfolio_value": 0.883301
+        },
+        {
+          "date": "2008-11-05",
+          "portfolio_value": 0.865465
+        },
+        {
+          "date": "2008-11-06",
+          "portfolio_value": 0.846048
+        },
+        {
+          "date": "2008-11-07",
+          "portfolio_value": 0.860591
+        },
+        {
+          "date": "2008-11-10",
+          "portfolio_value": 0.85115
+        },
+        {
+          "date": "2008-11-11",
+          "portfolio_value": 0.842719
+        },
+        {
+          "date": "2008-11-12",
+          "portfolio_value": 0.823514
+        },
+        {
+          "date": "2008-11-13",
+          "portfolio_value": 0.848007
+        },
+        {
+          "date": "2008-11-14",
+          "portfolio_value": 0.831199
+        },
+        {
+          "date": "2008-11-17",
+          "portfolio_value": 0.825291
+        },
+        {
+          "date": "2008-11-18",
+          "portfolio_value": 0.827218
+        },
+        {
+          "date": "2008-11-19",
+          "portfolio_value": 0.8045
+        },
+        {
+          "date": "2008-11-20",
+          "portfolio_value": 0.78806
+        },
+        {
+          "date": "2008-11-21",
+          "portfolio_value": 0.808474
+        },
+        {
+          "date": "2008-11-24",
+          "portfolio_value": 0.834914
+        },
+        {
+          "date": "2008-11-25",
+          "portfolio_value": 0.846025
+        },
+        {
+          "date": "2008-11-26",
+          "portfolio_value": 0.856495
+        },
+        {
+          "date": "2008-11-27",
+          "portfolio_value": 0.856495
+        },
+        {
+          "date": "2008-11-28",
+          "portfolio_value": 0.857633
+        },
+        {
+          "date": "2008-12-01",
+          "portfolio_value": 0.82489
+        },
+        {
+          "date": "2008-12-02",
+          "portfolio_value": 0.847215
+        },
+        {
+          "date": "2008-12-03",
+          "portfolio_value": 0.856514
+        },
+        {
+          "date": "2008-12-04",
+          "portfolio_value": 0.850277
+        },
+        {
+          "date": "2008-12-05",
+          "portfolio_value": 0.860556
+        },
+        {
+          "date": "2008-12-08",
+          "portfolio_value": 0.877456
+        },
+        {
+          "date": "2008-12-09",
+          "portfolio_value": 0.870782
+        },
+        {
+          "date": "2008-12-10",
+          "portfolio_value": 0.88341
+        },
+        {
+          "date": "2008-12-11",
+          "portfolio_value": 0.870338
+        },
+        {
+          "date": "2008-12-12",
+          "portfolio_value": 0.881238
+        },
+        {
+          "date": "2008-12-15",
+          "portfolio_value": 0.87911
+        },
+        {
+          "date": "2008-12-16",
+          "portfolio_value": 0.908093
+        },
+        {
+          "date": "2008-12-17",
+          "portfolio_value": 0.913138
+        },
+        {
+          "date": "2008-12-18",
+          "portfolio_value": 0.902211
+        },
+        {
+          "date": "2008-12-19",
+          "portfolio_value": 0.903116
+        },
+        {
+          "date": "2008-12-22",
+          "portfolio_value": 0.899238
+        },
+        {
+          "date": "2008-12-23",
+          "portfolio_value": 0.896768
+        },
+        {
+          "date": "2008-12-24",
+          "portfolio_value": 0.901365
+        },
+        {
+          "date": "2008-12-26",
+          "portfolio_value": 0.905879
+        },
+        {
+          "date": "2008-12-29",
+          "portfolio_value": 0.901731
+        },
+        {
+          "date": "2008-12-30",
+          "portfolio_value": 0.911153
+        },
+        {
+          "date": "2008-12-31",
+          "portfolio_value": 0.917936
+        },
+        {
+          "date": "2009-01-02",
+          "portfolio_value": 0.916444
+        },
+        {
+          "date": "2009-01-05",
+          "portfolio_value": 0.911882
+        },
+        {
+          "date": "2009-01-06",
+          "portfolio_value": 0.917545
+        },
+        {
+          "date": "2009-01-07",
+          "portfolio_value": 0.905132
+        },
+        {
+          "date": "2009-01-08",
+          "portfolio_value": 0.907274
+        },
+        {
+          "date": "2009-01-09",
+          "portfolio_value": 0.896526
+        },
+        {
+          "date": "2009-01-12",
+          "portfolio_value": 0.88484
+        },
+        {
+          "date": "2009-01-13",
+          "portfolio_value": 0.88675
+        },
+        {
+          "date": "2009-01-14",
+          "portfolio_value": 0.874308
+        },
+        {
+          "date": "2009-01-15",
+          "portfolio_value": 0.87844
+        },
+        {
+          "date": "2009-01-16",
+          "portfolio_value": 0.884652
+        },
+        {
+          "date": "2009-01-19",
+          "portfolio_value": 0.884652
+        },
+        {
+          "date": "2009-01-20",
+          "portfolio_value": 0.861851
+        },
+        {
+          "date": "2009-01-21",
+          "portfolio_value": 0.876091
+        },
+        {
+          "date": "2009-01-22",
+          "portfolio_value": 0.865775
+        },
+        {
+          "date": "2009-01-23",
+          "portfolio_value": 0.87137
+        },
+        {
+          "date": "2009-01-26",
+          "portfolio_value": 0.872781
+        },
+        {
+          "date": "2009-01-27",
+          "portfolio_value": 0.879851
+        },
+        {
+          "date": "2009-01-28",
+          "portfolio_value": 0.891746
+        },
+        {
+          "date": "2009-01-29",
+          "portfolio_value": 0.874392
+        },
+        {
+          "date": "2009-01-30",
+          "portfolio_value": 0.870001
+        },
+        {
+          "date": "2009-02-02",
+          "portfolio_value": 0.870112
+        },
+        {
+          "date": "2009-02-03",
+          "portfolio_value": 0.870471
+        },
+        {
+          "date": "2009-02-04",
+          "portfolio_value": 0.867457
+        },
+        {
+          "date": "2009-02-05",
+          "portfolio_value": 0.869503
+        },
+        {
+          "date": "2009-02-06",
+          "portfolio_value": 0.881249
+        },
+        {
+          "date": "2009-02-09",
+          "portfolio_value": 0.88282
+        },
+        {
+          "date": "2009-02-10",
+          "portfolio_value": 0.869123
+        },
+        {
+          "date": "2009-02-11",
+          "portfolio_value": 0.874993
+        },
+        {
+          "date": "2009-02-12",
+          "portfolio_value": 0.874078
+        },
+        {
+          "date": "2009-02-13",
+          "portfolio_value": 0.863313
+        },
+        {
+          "date": "2009-02-16",
+          "portfolio_value": 0.863313
+        },
+        {
+          "date": "2009-02-17",
+          "portfolio_value": 0.852364
+        },
+        {
+          "date": "2009-02-18",
+          "portfolio_value": 0.852791
+        },
+        {
+          "date": "2009-02-19",
+          "portfolio_value": 0.844982
+        },
+        {
+          "date": "2009-02-20",
+          "portfolio_value": 0.849076
+        },
+        {
+          "date": "2009-02-23",
+          "portfolio_value": 0.836146
+        },
+        {
+          "date": "2009-02-24",
+          "portfolio_value": 0.848045
+        },
+        {
+          "date": "2009-02-25",
+          "portfolio_value": 0.840387
+        },
+        {
+          "date": "2009-02-26",
+          "portfolio_value": 0.831089
+        },
+        {
+          "date": "2009-02-27",
+          "portfolio_value": 0.825579
+        },
+        {
+          "date": "2009-03-02",
+          "portfolio_value": 0.81076
+        },
+        {
+          "date": "2009-03-03",
+          "portfolio_value": 0.808054
+        },
+        {
+          "date": "2009-03-04",
+          "portfolio_value": 0.813959
+        },
+        {
+          "date": "2009-03-05",
+          "portfolio_value": 0.806124
+        },
+        {
+          "date": "2009-03-06",
+          "portfolio_value": 0.804881
+        },
+        {
+          "date": "2009-03-09",
+          "portfolio_value": 0.799738
+        },
+        {
+          "date": "2009-03-10",
+          "portfolio_value": 0.819937
+        },
+        {
+          "date": "2009-03-11",
+          "portfolio_value": 0.822563
+        },
+        {
+          "date": "2009-03-12",
+          "portfolio_value": 0.83939
+        },
+        {
+          "date": "2009-03-13",
+          "portfolio_value": 0.839335
+        },
+        {
+          "date": "2009-03-16",
+          "portfolio_value": 0.83149
+        },
+        {
+          "date": "2009-03-17",
+          "portfolio_value": 0.842352
+        },
+        {
+          "date": "2009-03-18",
+          "portfolio_value": 0.862953
+        },
+        {
+          "date": "2009-03-19",
+          "portfolio_value": 0.857974
+        },
+        {
+          "date": "2009-03-20",
+          "portfolio_value": 0.844587
+        },
+        {
+          "date": "2009-03-23",
+          "portfolio_value": 0.871675
+        },
+        {
+          "date": "2009-03-24",
+          "portfolio_value": 0.859073
+        },
+        {
+          "date": "2009-03-25",
+          "portfolio_value": 0.862314
+        },
+        {
+          "date": "2009-03-26",
+          "portfolio_value": 0.870333
+        },
+        {
+          "date": "2009-03-27",
+          "portfolio_value": 0.860899
+        },
+        {
+          "date": "2009-03-30",
+          "portfolio_value": 0.84877
+        },
+        {
+          "date": "2009-03-31",
+          "portfolio_value": 0.858719
+        },
+        {
+          "date": "2009-04-01",
+          "portfolio_value": 0.86495
+        },
+        {
+          "date": "2009-04-02",
+          "portfolio_value": 0.874823
+        },
+        {
+          "date": "2009-04-03",
+          "portfolio_value": 0.880056
+        },
+        {
+          "date": "2009-04-06",
+          "portfolio_value": 0.873644
+        },
+        {
+          "date": "2009-04-07",
+          "portfolio_value": 0.863546
+        },
+        {
+          "date": "2009-04-08",
+          "portfolio_value": 0.868736
+        },
+        {
+          "date": "2009-04-09",
+          "portfolio_value": 0.885868
+        },
+        {
+          "date": "2009-04-13",
+          "portfolio_value": 0.890796
+        },
+        {
+          "date": "2009-04-14",
+          "portfolio_value": 0.880247
+        },
+        {
+          "date": "2009-04-15",
+          "portfolio_value": 0.890426
+        },
+        {
+          "date": "2009-04-16",
+          "portfolio_value": 0.893341
+        },
+        {
+          "date": "2009-04-17",
+          "portfolio_value": 0.892289
+        },
+        {
+          "date": "2009-04-20",
+          "portfolio_value": 0.877764
+        },
+        {
+          "date": "2009-04-21",
+          "portfolio_value": 0.888127
+        },
+        {
+          "date": "2009-04-22",
+          "portfolio_value": 0.884382
+        },
+        {
+          "date": "2009-04-23",
+          "portfolio_value": 0.8936
+        },
+        {
+          "date": "2009-04-24",
+          "portfolio_value": 0.901535
+        },
+        {
+          "date": "2009-04-27",
+          "portfolio_value": 0.894113
+        },
+        {
+          "date": "2009-04-28",
+          "portfolio_value": 0.891417
+        },
+        {
+          "date": "2009-04-29",
+          "portfolio_value": 0.899244
+        },
+        {
+          "date": "2009-04-30",
+          "portfolio_value": 0.898542
+        },
+        {
+          "date": "2009-05-01",
+          "portfolio_value": 0.895468
+        },
+        {
+          "date": "2009-05-04",
+          "portfolio_value": 0.91301
+        },
+        {
+          "date": "2009-05-05",
+          "portfolio_value": 0.908458
+        },
+        {
+          "date": "2009-05-06",
+          "portfolio_value": 0.918159
+        },
+        {
+          "date": "2009-05-07",
+          "portfolio_value": 0.906878
+        },
+        {
+          "date": "2009-05-08",
+          "portfolio_value": 0.920883
+        },
+        {
+          "date": "2009-05-11",
+          "portfolio_value": 0.913854
+        },
+        {
+          "date": "2009-05-12",
+          "portfolio_value": 0.916579
+        },
+        {
+          "date": "2009-05-13",
+          "portfolio_value": 0.90537
+        },
+        {
+          "date": "2009-05-14",
+          "portfolio_value": 0.910401
+        },
+        {
+          "date": "2009-05-15",
+          "portfolio_value": 0.906511
+        },
+        {
+          "date": "2009-05-18",
+          "portfolio_value": 0.918214
+        },
+        {
+          "date": "2009-05-19",
+          "portfolio_value": 0.917564
+        },
+        {
+          "date": "2009-05-20",
+          "portfolio_value": 0.919195
+        },
+        {
+          "date": "2009-05-21",
+          "portfolio_value": 0.914516
+        },
+        {
+          "date": "2009-05-22",
+          "portfolio_value": 0.911671
+        },
+        {
+          "date": "2009-05-25",
+          "portfolio_value": 0.911671
+        },
+        {
+          "date": "2009-05-26",
+          "portfolio_value": 0.920215
+        },
+        {
+          "date": "2009-05-27",
+          "portfolio_value": 0.909701
+        },
+        {
+          "date": "2009-05-28",
+          "portfolio_value": 0.916011
+        },
+        {
+          "date": "2009-05-29",
+          "portfolio_value": 0.930158
+        },
+        {
+          "date": "2009-06-01",
+          "portfolio_value": 0.934856
+        },
+        {
+          "date": "2009-06-02",
+          "portfolio_value": 0.936763
+        },
+        {
+          "date": "2009-06-03",
+          "portfolio_value": 0.931509
+        },
+        {
+          "date": "2009-06-04",
+          "portfolio_value": 0.93397
+        },
+        {
+          "date": "2009-06-05",
+          "portfolio_value": 0.928622
+        },
+        {
+          "date": "2009-06-08",
+          "portfolio_value": 0.925104
+        },
+        {
+          "date": "2009-06-09",
+          "portfolio_value": 0.928516
+        },
+        {
+          "date": "2009-06-10",
+          "portfolio_value": 0.92508
+        },
+        {
+          "date": "2009-06-11",
+          "portfolio_value": 0.926977
+        },
+        {
+          "date": "2009-06-12",
+          "portfolio_value": 0.930253
+        },
+        {
+          "date": "2009-06-15",
+          "portfolio_value": 0.919649
+        },
+        {
+          "date": "2009-06-16",
+          "portfolio_value": 0.917638
+        },
+        {
+          "date": "2009-06-17",
+          "portfolio_value": 0.915815
+        },
+        {
+          "date": "2009-06-18",
+          "portfolio_value": 0.9142
+        },
+        {
+          "date": "2009-06-19",
+          "portfolio_value": 0.919528
+        },
+        {
+          "date": "2009-06-22",
+          "portfolio_value": 0.907429
+        },
+        {
+          "date": "2009-06-23",
+          "portfolio_value": 0.91151
+        },
+        {
+          "date": "2009-06-24",
+          "portfolio_value": 0.913605
+        },
+        {
+          "date": "2009-06-25",
+          "portfolio_value": 0.923621
+        },
+        {
+          "date": "2009-06-26",
+          "portfolio_value": 0.924351
+        },
+        {
+          "date": "2009-06-29",
+          "portfolio_value": 0.926391
+        }
+      ],
+      "rebalance_log": [
+        {
+          "date": "2008-01-02",
+          "weights": {
+            "AGGH.MI": 0.090909,
+            "CSPX.L": 0.090909,
+            "EFA": 0.090909,
+            "GLD": 0.090909,
+            "TIP": 0.090909,
+            "TLT": 0.090909,
+            "VNQ": 0.090909,
+            "XEON.MI": 0.090909,
+            "SPY": 0.090909,
+            "AGG": 0.090909,
+            "BIL": 0.090909
+          },
+          "turnover": 0.0,
+          "transaction_cost": 0.0
+        },
+        {
+          "date": "2008-01-31",
+          "weights": {
+            "AGGH.MI": 0.090909,
+            "CSPX.L": 0.090909,
+            "EFA": 0.090909,
+            "GLD": 0.090909,
+            "TIP": 0.090909,
+            "TLT": 0.090909,
+            "VNQ": 0.090909,
+            "XEON.MI": 0.090909,
+            "SPY": 0.090909,
+            "AGG": 0.090909,
+            "BIL": 0.090909
+          },
+          "turnover": 0.0,
+          "transaction_cost": 0.0
+        },
+        {
+          "date": "2008-02-29",
+          "weights": {
+            "AGGH.MI": 0.090909,
+            "CSPX.L": 0.090909,
+            "EFA": 0.090909,
+            "GLD": 0.090909,
+            "TIP": 0.090909,
+            "TLT": 0.090909,
+            "VNQ": 0.090909,
+            "XEON.MI": 0.090909,
+            "SPY": 0.090909,
+            "AGG": 0.090909,
+            "BIL": 0.090909
+          },
+          "turnover": 0.0,
+          "transaction_cost": 0.0
+        },
+        {
+          "date": "2008-03-31",
+          "weights": {
+            "AGGH.MI": 0.090909,
+            "CSPX.L": 0.090909,
+            "EFA": 0.090909,
+            "GLD": 0.090909,
+            "TIP": 0.090909,
+            "TLT": 0.090909,
+            "VNQ": 0.090909,
+            "XEON.MI": 0.090909,
+            "SPY": 0.090909,
+            "AGG": 0.090909,
+            "BIL": 0.090909
+          },
+          "turnover": 0.0,
+          "transaction_cost": 0.0
+        },
+        {
+          "date": "2008-04-30",
+          "weights": {
+            "AGGH.MI": 0.090909,
+            "CSPX.L": 0.090909,
+            "EFA": 0.090909,
+            "GLD": 0.090909,
+            "TIP": 0.090909,
+            "TLT": 0.090909,
+            "VNQ": 0.090909,
+            "XEON.MI": 0.090909,
+            "SPY": 0.090909,
+            "AGG": 0.090909,
+            "BIL": 0.090909
+          },
+          "turnover": 0.0,
+          "transaction_cost": 0.0
+        },
+        {
+          "date": "2008-06-30",
+          "weights": {
+            "AGGH.MI": 0.090909,
+            "CSPX.L": 0.090909,
+            "EFA": 0.090909,
+            "GLD": 0.090909,
+            "TIP": 0.090909,
+            "TLT": 0.090909,
+            "VNQ": 0.090909,
+            "XEON.MI": 0.090909,
+            "SPY": 0.090909,
+            "AGG": 0.090909,
+            "BIL": 0.090909
+          },
+          "turnover": 0.0,
+          "transaction_cost": 0.0
+        },
+        {
+          "date": "2008-07-31",
+          "weights": {
+            "AGGH.MI": 0.090909,
+            "CSPX.L": 0.090909,
+            "EFA": 0.090909,
+            "GLD": 0.090909,
+            "TIP": 0.090909,
+            "TLT": 0.090909,
+            "VNQ": 0.090909,
+            "XEON.MI": 0.090909,
+            "SPY": 0.090909,
+            "AGG": 0.090909,
+            "BIL": 0.090909
+          },
+          "turnover": 0.0,
+          "transaction_cost": 0.0
+        },
+        {
+          "date": "2008-09-30",
+          "weights": {
+            "AGGH.MI": 0.090909,
+            "CSPX.L": 0.090909,
+            "EFA": 0.090909,
+            "GLD": 0.090909,
+            "TIP": 0.090909,
+            "TLT": 0.090909,
+            "VNQ": 0.090909,
+            "XEON.MI": 0.090909,
+            "SPY": 0.090909,
+            "AGG": 0.090909,
+            "BIL": 0.090909
+          },
+          "turnover": 0.0,
+          "transaction_cost": 0.0
+        },
+        {
+          "date": "2008-10-31",
+          "weights": {
+            "AGGH.MI": 0.090909,
+            "CSPX.L": 0.090909,
+            "EFA": 0.090909,
+            "GLD": 0.090909,
+            "TIP": 0.090909,
+            "TLT": 0.090909,
+            "VNQ": 0.090909,
+            "XEON.MI": 0.090909,
+            "SPY": 0.090909,
+            "AGG": 0.090909,
+            "BIL": 0.090909
+          },
+          "turnover": 0.0,
+          "transaction_cost": 0.0
+        },
+        {
+          "date": "2008-12-31",
+          "weights": {
+            "AGGH.MI": 0.090909,
+            "CSPX.L": 0.090909,
+            "EFA": 0.090909,
+            "GLD": 0.090909,
+            "TIP": 0.090909,
+            "TLT": 0.090909,
+            "VNQ": 0.090909,
+            "XEON.MI": 0.090909,
+            "SPY": 0.090909,
+            "AGG": 0.090909,
+            "BIL": 0.090909
+          },
+          "turnover": 0.0,
+          "transaction_cost": 0.0
+        },
+        {
+          "date": "2009-03-31",
+          "weights": {
+            "AGGH.MI": 0.090909,
+            "CSPX.L": 0.090909,
+            "EFA": 0.090909,
+            "GLD": 0.090909,
+            "TIP": 0.090909,
+            "TLT": 0.090909,
+            "VNQ": 0.090909,
+            "XEON.MI": 0.090909,
+            "SPY": 0.090909,
+            "AGG": 0.090909,
+            "BIL": 0.090909
+          },
+          "turnover": 0.0,
+          "transaction_cost": 0.0
+        },
+        {
+          "date": "2009-04-30",
+          "weights": {
+            "AGGH.MI": 0.090909,
+            "CSPX.L": 0.090909,
+            "EFA": 0.090909,
+            "GLD": 0.090909,
+            "TIP": 0.090909,
+            "TLT": 0.090909,
+            "VNQ": 0.090909,
+            "XEON.MI": 0.090909,
+            "SPY": 0.090909,
+            "AGG": 0.090909,
+            "BIL": 0.090909
+          },
+          "turnover": 0.0,
+          "transaction_cost": 0.0
+        }
+      ]
+    }
+  }
+}

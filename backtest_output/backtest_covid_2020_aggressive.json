@@ -1,0 +1,3590 @@
+{
+  "scenario_key": "covid_2020",
+  "scenario_label": "COVID-19 Crash (2020)",
+  "test_start": "2020-01-02",
+  "test_end": "2020-12-31",
+  "profile": "AGGRESSIVE",
+  "tickers_used": [
+    "AGGH.MI",
+    "CSPX.L",
+    "EFA",
+    "GLD",
+    "TIP",
+    "TLT",
+    "VNQ",
+    "XEON.MI",
+    "AGG"
+  ],
+  "strategies": {
+    "HRP": {
+      "strategy": "HRP",
+      "cagr": 0.058668,
+      "annualised_volatility": 0.063532,
+      "sharpe_ratio": 0.923436,
+      "max_drawdown": -0.091308,
+      "calmar_ratio": 0.642528,
+      "total_transaction_cost": 0.000775,
+      "n_rebalances": 9,
+      "equity_curve": [
+        {
+          "date": "2020-01-02",
+          "portfolio_value": 0.999422
+        },
+        {
+          "date": "2020-01-03",
+          "portfolio_value": 1.001853
+        },
+        {
+          "date": "2020-01-06",
+          "portfolio_value": 1.001922
+        },
+        {
+          "date": "2020-01-07",
+          "portfolio_value": 1.000666
+        },
+        {
+          "date": "2020-01-08",
+          "portfolio_value": 0.999961
+        },
+        {
+          "date": "2020-01-09",
+          "portfolio_value": 1.000615
+        },
+        {
+          "date": "2020-01-10",
+          "portfolio_value": 1.002436
+        },
+        {
+          "date": "2020-01-13",
+          "portfolio_value": 1.002754
+        },
+        {
+          "date": "2020-01-14",
+          "portfolio_value": 1.003304
+        },
+        {
+          "date": "2020-01-15",
+          "portfolio_value": 1.005156
+        },
+        {
+          "date": "2020-01-16",
+          "portfolio_value": 1.005609
+        },
+        {
+          "date": "2020-01-17",
+          "portfolio_value": 1.005367
+        },
+        {
+          "date": "2020-01-20",
+          "portfolio_value": 1.005332
+        },
+        {
+          "date": "2020-01-21",
+          "portfolio_value": 1.00697
+        },
+        {
+          "date": "2020-01-22",
+          "portfolio_value": 1.007033
+        },
+        {
+          "date": "2020-01-23",
+          "portfolio_value": 1.008075
+        },
+        {
+          "date": "2020-01-24",
+          "portfolio_value": 1.009231
+        },
+        {
+          "date": "2020-01-27",
+          "portfolio_value": 1.008683
+        },
+        {
+          "date": "2020-01-28",
+          "portfolio_value": 1.008637
+        },
+        {
+          "date": "2020-01-29",
+          "portfolio_value": 1.010273
+        },
+        {
+          "date": "2020-01-30",
+          "portfolio_value": 1.00988
+        },
+        {
+          "date": "2020-01-31",
+          "portfolio_value": 1.009731
+        },
+        {
+          "date": "2020-02-03",
+          "portfolio_value": 1.009538
+        },
+        {
+          "date": "2020-02-04",
+          "portfolio_value": 1.009463
+        },
+        {
+          "date": "2020-02-05",
+          "portfolio_value": 1.009239
+        },
+        {
+          "date": "2020-02-06",
+          "portfolio_value": 1.010999
+        },
+        {
+          "date": "2020-02-07",
+          "portfolio_value": 1.012216
+        },
+        {
+          "date": "2020-02-10",
+          "portfolio_value": 1.013724
+        },
+        {
+          "date": "2020-02-11",
+          "portfolio_value": 1.014025
+        },
+        {
+          "date": "2020-02-12",
+          "portfolio_value": 1.014166
+        },
+        {
+          "date": "2020-02-13",
+          "portfolio_value": 1.014941
+        },
+        {
+          "date": "2020-02-14",
+          "portfolio_value": 1.016285
+        },
+        {
+          "date": "2020-02-17",
+          "portfolio_value": 1.016479
+        },
+        {
+          "date": "2020-02-18",
+          "portfolio_value": 1.017175
+        },
+        {
+          "date": "2020-02-19",
+          "portfolio_value": 1.017342
+        },
+        {
+          "date": "2020-02-20",
+          "portfolio_value": 1.018314
+        },
+        {
+          "date": "2020-02-21",
+          "portfolio_value": 1.020252
+        },
+        {
+          "date": "2020-02-24",
+          "portfolio_value": 1.017662
+        },
+        {
+          "date": "2020-02-25",
+          "portfolio_value": 1.013461
+        },
+        {
+          "date": "2020-02-26",
+          "portfolio_value": 1.012267
+        },
+        {
+          "date": "2020-02-27",
+          "portfolio_value": 1.005922
+        },
+        {
+          "date": "2020-02-28",
+          "portfolio_value": 1.002274
+        },
+        {
+          "date": "2020-03-02",
+          "portfolio_value": 1.007609
+        },
+        {
+          "date": "2020-03-03",
+          "portfolio_value": 1.012974
+        },
+        {
+          "date": "2020-03-04",
+          "portfolio_value": 1.016357
+        },
+        {
+          "date": "2020-03-05",
+          "portfolio_value": 1.017439
+        },
+        {
+          "date": "2020-03-06",
+          "portfolio_value": 1.018501
+        },
+        {
+          "date": "2020-03-09",
+          "portfolio_value": 1.005807
+        },
+        {
+          "date": "2020-03-10",
+          "portfolio_value": 1.000179
+        },
+        {
+          "date": "2020-03-11",
+          "portfolio_value": 0.986131
+        },
+        {
+          "date": "2020-03-12",
+          "portfolio_value": 0.957844
+        },
+        {
+          "date": "2020-03-13",
+          "portfolio_value": 0.966958
+        },
+        {
+          "date": "2020-03-16",
+          "portfolio_value": 0.956749
+        },
+        {
+          "date": "2020-03-17",
+          "portfolio_value": 0.951249
+        },
+        {
+          "date": "2020-03-18",
+          "portfolio_value": 0.927095
+        },
+        {
+          "date": "2020-03-19",
+          "portfolio_value": 0.934281
+        },
+        {
+          "date": "2020-03-20",
+          "portfolio_value": 0.942006
+        },
+        {
+          "date": "2020-03-23",
+          "portfolio_value": 0.94887
+        },
+        {
+          "date": "2020-03-24",
+          "portfolio_value": 0.964893
+        },
+        {
+          "date": "2020-03-25",
+          "portfolio_value": 0.973199
+        },
+        {
+          "date": "2020-03-26",
+          "portfolio_value": 0.984106
+        },
+        {
+          "date": "2020-03-27",
+          "portfolio_value": 0.983839
+        },
+        {
+          "date": "2020-03-30",
+          "portfolio_value": 0.985936
+        },
+        {
+          "date": "2020-03-31",
+          "portfolio_value": 0.981305
+        },
+        {
+          "date": "2020-04-01",
+          "portfolio_value": 0.974961
+        },
+        {
+          "date": "2020-04-02",
+          "portfolio_value": 0.979002
+        },
+        {
+          "date": "2020-04-03",
+          "portfolio_value": 0.978182
+        },
+        {
+          "date": "2020-04-06",
+          "portfolio_value": 0.989606
+        },
+        {
+          "date": "2020-04-07",
+          "portfolio_value": 0.99167
+        },
+        {
+          "date": "2020-04-08",
+          "portfolio_value": 0.994124
+        },
+        {
+          "date": "2020-04-09",
+          "portfolio_value": 1.005381
+        },
+        {
+          "date": "2020-04-13",
+          "portfolio_value": 1.002482
+        },
+        {
+          "date": "2020-04-14",
+          "portfolio_value": 1.006243
+        },
+        {
+          "date": "2020-04-15",
+          "portfolio_value": 1.00406
+        },
+        {
+          "date": "2020-04-16",
+          "portfolio_value": 1.003903
+        },
+        {
+          "date": "2020-04-17",
+          "portfolio_value": 1.00481
+        },
+        {
+          "date": "2020-04-20",
+          "portfolio_value": 1.002749
+        },
+        {
+          "date": "2020-04-21",
+          "portfolio_value": 0.999438
+        },
+        {
+          "date": "2020-04-22",
+          "portfolio_value": 1.003691
+        },
+        {
+          "date": "2020-04-23",
+          "portfolio_value": 1.005141
+        },
+        {
+          "date": "2020-04-24",
+          "portfolio_value": 1.005618
+        },
+        {
+          "date": "2020-04-27",
+          "portfolio_value": 1.006459
+        },
+        {
+          "date": "2020-04-28",
+          "portfolio_value": 1.009198
+        },
+        {
+          "date": "2020-04-29",
+          "portfolio_value": 1.011977
+        },
+        {
+          "date": "2020-04-30",
+          "portfolio_value": 1.005897
+        },
+        {
+          "date": "2020-05-01",
+          "portfolio_value": 1.002651
+        },
+        {
+          "date": "2020-05-04",
+          "portfolio_value": 1.003778
+        },
+        {
+          "date": "2020-05-05",
+          "portfolio_value": 1.005216
+        },
+        {
+          "date": "2020-05-06",
+          "portfolio_value": 1.000445
+        },
+        {
+          "date": "2020-05-07",
+          "portfolio_value": 1.005381
+        },
+        {
+          "date": "2020-05-08",
+          "portfolio_value": 1.00581
+        },
+        {
+          "date": "2020-05-11",
+          "portfolio_value": 1.003568
+        },
+        {
+          "date": "2020-05-12",
+          "portfolio_value": 1.002227
+        },
+        {
+          "date": "2020-05-13",
+          "portfolio_value": 1.000564
+        },
+        {
+          "date": "2020-05-14",
+          "portfolio_value": 1.001533
+        },
+        {
+          "date": "2020-05-15",
+          "portfolio_value": 1.002422
+        },
+        {
+          "date": "2020-05-18",
+          "portfolio_value": 1.007683
+        },
+        {
+          "date": "2020-05-19",
+          "portfolio_value": 1.007351
+        },
+        {
+          "date": "2020-05-20",
+          "portfolio_value": 1.01044
+        },
+        {
+          "date": "2020-05-21",
+          "portfolio_value": 1.008668
+        },
+        {
+          "date": "2020-05-22",
+          "portfolio_value": 1.009983
+        },
+        {
+          "date": "2020-05-25",
+          "portfolio_value": 1.009857
+        },
+        {
+          "date": "2020-05-26",
+          "portfolio_value": 1.012101
+        },
+        {
+          "date": "2020-05-27",
+          "portfolio_value": 1.01406
+        },
+        {
+          "date": "2020-05-28",
+          "portfolio_value": 1.015741
+        },
+        {
+          "date": "2020-05-29",
+          "portfolio_value": 1.015927
+        },
+        {
+          "date": "2020-06-01",
+          "portfolio_value": 1.018085
+        },
+        {
+          "date": "2020-06-02",
+          "portfolio_value": 1.019277
+        },
+        {
+          "date": "2020-06-03",
+          "portfolio_value": 1.020341
+        },
+        {
+          "date": "2020-06-04",
+          "portfolio_value": 1.018313
+        },
+        {
+          "date": "2020-06-05",
+          "portfolio_value": 1.021155
+        },
+        {
+          "date": "2020-06-08",
+          "portfolio_value": 1.024204
+        },
+        {
+          "date": "2020-06-09",
+          "portfolio_value": 1.024577
+        },
+        {
+          "date": "2020-06-10",
+          "portfolio_value": 1.026243
+        },
+        {
+          "date": "2020-06-11",
+          "portfolio_value": 1.01851
+        },
+        {
+          "date": "2020-06-12",
+          "portfolio_value": 1.019981
+        },
+        {
+          "date": "2020-06-15",
+          "portfolio_value": 1.021427
+        },
+        {
+          "date": "2020-06-16",
+          "portfolio_value": 1.025509
+        },
+        {
+          "date": "2020-06-17",
+          "portfolio_value": 1.022993
+        },
+        {
+          "date": "2020-06-18",
+          "portfolio_value": 1.022834
+        },
+        {
+          "date": "2020-06-19",
+          "portfolio_value": 1.023734
+        },
+        {
+          "date": "2020-06-22",
+          "portfolio_value": 1.024182
+        },
+        {
+          "date": "2020-06-23",
+          "portfolio_value": 1.025431
+        },
+        {
+          "date": "2020-06-24",
+          "portfolio_value": 1.021167
+        },
+        {
+          "date": "2020-06-25",
+          "portfolio_value": 1.022681
+        },
+        {
+          "date": "2020-06-26",
+          "portfolio_value": 1.022095
+        },
+        {
+          "date": "2020-06-29",
+          "portfolio_value": 1.023827
+        },
+        {
+          "date": "2020-06-30",
+          "portfolio_value": 1.025138
+        },
+        {
+          "date": "2020-07-01",
+          "portfolio_value": 1.02621
+        },
+        {
+          "date": "2020-07-02",
+          "portfolio_value": 1.028655
+        },
+        {
+          "date": "2020-07-03",
+          "portfolio_value": 1.028249
+        },
+        {
+          "date": "2020-07-06",
+          "portfolio_value": 1.030244
+        },
+        {
+          "date": "2020-07-07",
+          "portfolio_value": 1.029939
+        },
+        {
+          "date": "2020-07-08",
+          "portfolio_value": 1.029679
+        },
+        {
+          "date": "2020-07-09",
+          "portfolio_value": 1.030075
+        },
+        {
+          "date": "2020-07-10",
+          "portfolio_value": 1.030696
+        },
+        {
+          "date": "2020-07-13",
+          "portfolio_value": 1.031085
+        },
+        {
+          "date": "2020-07-14",
+          "portfolio_value": 1.032084
+        },
+        {
+          "date": "2020-07-15",
+          "portfolio_value": 1.03381
+        },
+        {
+          "date": "2020-07-16",
+          "portfolio_value": 1.032553
+        },
+        {
+          "date": "2020-07-17",
+          "portfolio_value": 1.034645
+        },
+        {
+          "date": "2020-07-20",
+          "portfolio_value": 1.03536
+        },
+        {
+          "date": "2020-07-21",
+          "portfolio_value": 1.03752
+        },
+        {
+          "date": "2020-07-22",
+          "portfolio_value": 1.039343
+        },
+        {
+          "date": "2020-07-23",
+          "portfolio_value": 1.040451
+        },
+        {
+          "date": "2020-07-24",
+          "portfolio_value": 1.039401
+        },
+        {
+          "date": "2020-07-27",
+          "portfolio_value": 1.041418
+        },
+        {
+          "date": "2020-07-28",
+          "portfolio_value": 1.043542
+        },
+        {
+          "date": "2020-07-29",
+          "portfolio_value": 1.046125
+        },
+        {
+          "date": "2020-07-30",
+          "portfolio_value": 1.045123
+        },
+        {
+          "date": "2020-07-31",
+          "portfolio_value": 1.04482
+        },
+        {
+          "date": "2020-08-03",
+          "portfolio_value": 1.045998
+        },
+        {
+          "date": "2020-08-04",
+          "portfolio_value": 1.04966
+        },
+        {
+          "date": "2020-08-05",
+          "portfolio_value": 1.049622
+        },
+        {
+          "date": "2020-08-06",
+          "portfolio_value": 1.051272
+        },
+        {
+          "date": "2020-08-07",
+          "portfolio_value": 1.050323
+        },
+        {
+          "date": "2020-08-10",
+          "portfolio_value": 1.049806
+        },
+        {
+          "date": "2020-08-11",
+          "portfolio_value": 1.04473
+        },
+        {
+          "date": "2020-08-12",
+          "portfolio_value": 1.045107
+        },
+        {
+          "date": "2020-08-13",
+          "portfolio_value": 1.044051
+        },
+        {
+          "date": "2020-08-14",
+          "portfolio_value": 1.042801
+        },
+        {
+          "date": "2020-08-17",
+          "portfolio_value": 1.045643
+        },
+        {
+          "date": "2020-08-18",
+          "portfolio_value": 1.047261
+        },
+        {
+          "date": "2020-08-19",
+          "portfolio_value": 1.043316
+        },
+        {
+          "date": "2020-08-20",
+          "portfolio_value": 1.044596
+        },
+        {
+          "date": "2020-08-21",
+          "portfolio_value": 1.044993
+        },
+        {
+          "date": "2020-08-24",
+          "portfolio_value": 1.046128
+        },
+        {
+          "date": "2020-08-25",
+          "portfolio_value": 1.045552
+        },
+        {
+          "date": "2020-08-26",
+          "portfolio_value": 1.046372
+        },
+        {
+          "date": "2020-08-27",
+          "portfolio_value": 1.044234
+        },
+        {
+          "date": "2020-08-28",
+          "portfolio_value": 1.046719
+        },
+        {
+          "date": "2020-08-31",
+          "portfolio_value": 1.04727
+        },
+        {
+          "date": "2020-09-01",
+          "portfolio_value": 1.048902
+        },
+        {
+          "date": "2020-09-02",
+          "portfolio_value": 1.051476
+        },
+        {
+          "date": "2020-09-03",
+          "portfolio_value": 1.047816
+        },
+        {
+          "date": "2020-09-04",
+          "portfolio_value": 1.043668
+        },
+        {
+          "date": "2020-09-07",
+          "portfolio_value": 1.044715
+        },
+        {
+          "date": "2020-09-08",
+          "portfolio_value": 1.042828
+        },
+        {
+          "date": "2020-09-09",
+          "portfolio_value": 1.045434
+        },
+        {
+          "date": "2020-09-10",
+          "portfolio_value": 1.044392
+        },
+        {
+          "date": "2020-09-11",
+          "portfolio_value": 1.044162
+        },
+        {
+          "date": "2020-09-14",
+          "portfolio_value": 1.046976
+        },
+        {
+          "date": "2020-09-15",
+          "portfolio_value": 1.047946
+        },
+        {
+          "date": "2020-09-16",
+          "portfolio_value": 1.048184
+        },
+        {
+          "date": "2020-09-17",
+          "portfolio_value": 1.046258
+        },
+        {
+          "date": "2020-09-18",
+          "portfolio_value": 1.043746
+        },
+        {
+          "date": "2020-09-21",
+          "portfolio_value": 1.038261
+        },
+        {
+          "date": "2020-09-22",
+          "portfolio_value": 1.039468
+        },
+        {
+          "date": "2020-09-23",
+          "portfolio_value": 1.036011
+        },
+        {
+          "date": "2020-09-24",
+          "portfolio_value": 1.035885
+        },
+        {
+          "date": "2020-09-25",
+          "portfolio_value": 1.037533
+        },
+        {
+          "date": "2020-09-28",
+          "portfolio_value": 1.041616
+        },
+        {
+          "date": "2020-09-29",
+          "portfolio_value": 1.041633
+        },
+        {
+          "date": "2020-09-30",
+          "portfolio_value": 1.040618
+        },
+        {
+          "date": "2020-10-01",
+          "portfolio_value": 1.043001
+        },
+        {
+          "date": "2020-10-02",
+          "portfolio_value": 1.042784
+        },
+        {
+          "date": "2020-10-05",
+          "portfolio_value": 1.042687
+        },
+        {
+          "date": "2020-10-06",
+          "portfolio_value": 1.041728
+        },
+        {
+          "date": "2020-10-07",
+          "portfolio_value": 1.041664
+        },
+        {
+          "date": "2020-10-08",
+          "portfolio_value": 1.044464
+        },
+        {
+          "date": "2020-10-09",
+          "portfolio_value": 1.046287
+        },
+        {
+          "date": "2020-10-12",
+          "portfolio_value": 1.048493
+        },
+        {
+          "date": "2020-10-13",
+          "portfolio_value": 1.046348
+        },
+        {
+          "date": "2020-10-14",
+          "portfolio_value": 1.045809
+        },
+        {
+          "date": "2020-10-15",
+          "portfolio_value": 1.044649
+        },
+        {
+          "date": "2020-10-16",
+          "portfolio_value": 1.044643
+        },
+        {
+          "date": "2020-10-19",
+          "portfolio_value": 1.042635
+        },
+        {
+          "date": "2020-10-20",
+          "portfolio_value": 1.042285
+        },
+        {
+          "date": "2020-10-21",
+          "portfolio_value": 1.041696
+        },
+        {
+          "date": "2020-10-22",
+          "portfolio_value": 1.039846
+        },
+        {
+          "date": "2020-10-23",
+          "portfolio_value": 1.041429
+        },
+        {
+          "date": "2020-10-26",
+          "portfolio_value": 1.039825
+        },
+        {
+          "date": "2020-10-27",
+          "portfolio_value": 1.039948
+        },
+        {
+          "date": "2020-10-28",
+          "portfolio_value": 1.034333
+        },
+        {
+          "date": "2020-10-29",
+          "portfolio_value": 1.033714
+        },
+        {
+          "date": "2020-10-30",
+          "portfolio_value": 1.031279
+        },
+        {
+          "date": "2020-11-02",
+          "portfolio_value": 1.03564
+        },
+        {
+          "date": "2020-11-03",
+          "portfolio_value": 1.038975
+        },
+        {
+          "date": "2020-11-04",
+          "portfolio_value": 1.043847
+        },
+        {
+          "date": "2020-11-05",
+          "portfolio_value": 1.047882
+        },
+        {
+          "date": "2020-11-06",
+          "portfolio_value": 1.045874
+        },
+        {
+          "date": "2020-11-09",
+          "portfolio_value": 1.045583
+        },
+        {
+          "date": "2020-11-10",
+          "portfolio_value": 1.045289
+        },
+        {
+          "date": "2020-11-11",
+          "portfolio_value": 1.04683
+        },
+        {
+          "date": "2020-11-12",
+          "portfolio_value": 1.047801
+        },
+        {
+          "date": "2020-11-13",
+          "portfolio_value": 1.050372
+        },
+        {
+          "date": "2020-11-16",
+          "portfolio_value": 1.052139
+        },
+        {
+          "date": "2020-11-17",
+          "portfolio_value": 1.052845
+        },
+        {
+          "date": "2020-11-18",
+          "portfolio_value": 1.05163
+        },
+        {
+          "date": "2020-11-19",
+          "portfolio_value": 1.052132
+        },
+        {
+          "date": "2020-11-20",
+          "portfolio_value": 1.053402
+        },
+        {
+          "date": "2020-11-23",
+          "portfolio_value": 1.051707
+        },
+        {
+          "date": "2020-11-24",
+          "portfolio_value": 1.052022
+        },
+        {
+          "date": "2020-11-25",
+          "portfolio_value": 1.051818
+        },
+        {
+          "date": "2020-11-26",
+          "portfolio_value": 1.051867
+        },
+        {
+          "date": "2020-11-27",
+          "portfolio_value": 1.052777
+        },
+        {
+          "date": "2020-11-30",
+          "portfolio_value": 1.050547
+        },
+        {
+          "date": "2020-12-01",
+          "portfolio_value": 1.052705
+        },
+        {
+          "date": "2020-12-02",
+          "portfolio_value": 1.05187
+        },
+        {
+          "date": "2020-12-03",
+          "portfolio_value": 1.054279
+        },
+        {
+          "date": "2020-12-04",
+          "portfolio_value": 1.053845
+        },
+        {
+          "date": "2020-12-07",
+          "portfolio_value": 1.055061
+        },
+        {
+          "date": "2020-12-08",
+          "portfolio_value": 1.055591
+        },
+        {
+          "date": "2020-12-09",
+          "portfolio_value": 1.053669
+        },
+        {
+          "date": "2020-12-10",
+          "portfolio_value": 1.054431
+        },
+        {
+          "date": "2020-12-11",
+          "portfolio_value": 1.054473
+        },
+        {
+          "date": "2020-12-14",
+          "portfolio_value": 1.054178
+        },
+        {
+          "date": "2020-12-15",
+          "portfolio_value": 1.056457
+        },
+        {
+          "date": "2020-12-16",
+          "portfolio_value": 1.05728
+        },
+        {
+          "date": "2020-12-17",
+          "portfolio_value": 1.058801
+        },
+        {
+          "date": "2020-12-18",
+          "portfolio_value": 1.056791
+        },
+        {
+          "date": "2020-12-21",
+          "portfolio_value": 1.055312
+        },
+        {
+          "date": "2020-12-22",
+          "portfolio_value": 1.05634
+        },
+        {
+          "date": "2020-12-23",
+          "portfolio_value": 1.05655
+        },
+        {
+          "date": "2020-12-24",
+          "portfolio_value": 1.057672
+        },
+        {
+          "date": "2020-12-28",
+          "portfolio_value": 1.058329
+        },
+        {
+          "date": "2020-12-29",
+          "portfolio_value": 1.058991
+        },
+        {
+          "date": "2020-12-30",
+          "portfolio_value": 1.060106
+        }
+      ],
+      "rebalance_log": [
+        {
+          "date": "2020-01-02",
+          "weights": {
+            "GLD": 0.059801,
+            "TIP": 0.0938,
+            "AGG": 0.103592,
+            "AGGH.MI": 0.103592,
+            "TLT": 0.059801,
+            "XEON.MI": 0.400012,
+            "VNQ": 0.059801,
+            "CSPX.L": 0.059801,
+            "EFA": 0.059801
+          },
+          "turnover": 0.577802,
+          "transaction_cost": 0.000578
+        },
+        {
+          "date": "2020-01-31",
+          "weights": {
+            "GLD": 0.060034,
+            "TIP": 0.09349,
+            "AGG": 0.103164,
+            "AGGH.MI": 0.103164,
+            "TLT": 0.060034,
+            "XEON.MI": 0.400013,
+            "VNQ": 0.060034,
+            "CSPX.L": 0.060034,
+            "EFA": 0.060034
+          },
+          "turnover": 0.002329,
+          "transaction_cost": 2e-06
+        },
+        {
+          "date": "2020-03-31",
+          "weights": {
+            "CSPX.L": 0.05,
+            "EFA": 0.05,
+            "VNQ": 0.05,
+            "XEON.MI": 0.377232,
+            "GLD": 0.069109,
+            "AGGH.MI": 0.135678,
+            "AGG": 0.12145,
+            "TIP": 0.096531,
+            "TLT": 0.05
+          },
+          "turnover": 0.125831,
+          "transaction_cost": 0.000126
+        },
+        {
+          "date": "2020-04-30",
+          "weights": {
+            "CSPX.L": 0.05,
+            "EFA": 0.05,
+            "VNQ": 0.05,
+            "XEON.MI": 0.391081,
+            "GLD": 0.061153,
+            "AGGH.MI": 0.1344,
+            "AGG": 0.11976,
+            "TIP": 0.093606,
+            "TLT": 0.05
+          },
+          "turnover": 0.027698,
+          "transaction_cost": 2.8e-05
+        },
+        {
+          "date": "2020-06-30",
+          "weights": {
+            "CSPX.L": 0.05,
+            "EFA": 0.05,
+            "VNQ": 0.05,
+            "XEON.MI": 0.398923,
+            "GLD": 0.057995,
+            "AGGH.MI": 0.132793,
+            "AGG": 0.118043,
+            "TIP": 0.092246,
+            "TLT": 0.05
+          },
+          "turnover": 0.015685,
+          "transaction_cost": 1.6e-05
+        },
+        {
+          "date": "2020-07-31",
+          "weights": {
+            "CSPX.L": 0.05,
+            "EFA": 0.05,
+            "VNQ": 0.05,
+            "XEON.MI": 0.397305,
+            "GLD": 0.059337,
+            "AGGH.MI": 0.133394,
+            "AGG": 0.118065,
+            "TIP": 0.091899,
+            "TLT": 0.05
+          },
+          "turnover": 0.00393,
+          "transaction_cost": 4e-06
+        },
+        {
+          "date": "2020-08-31",
+          "weights": {
+            "CSPX.L": 0.05,
+            "EFA": 0.05,
+            "VNQ": 0.05,
+            "XEON.MI": 0.395839,
+            "GLD": 0.054532,
+            "AGGH.MI": 0.136701,
+            "AGG": 0.119626,
+            "TIP": 0.093302,
+            "TLT": 0.05
+          },
+          "turnover": 0.012543,
+          "transaction_cost": 1.3e-05
+        },
+        {
+          "date": "2020-09-30",
+          "weights": {
+            "CSPX.L": 0.05,
+            "EFA": 0.05,
+            "VNQ": 0.05,
+            "XEON.MI": 0.396355,
+            "GLD": 0.053637,
+            "AGGH.MI": 0.137013,
+            "AGG": 0.119368,
+            "TIP": 0.093627,
+            "TLT": 0.05
+          },
+          "turnover": 0.002305,
+          "transaction_cost": 2e-06
+        },
+        {
+          "date": "2020-11-30",
+          "weights": {
+            "CSPX.L": 0.05,
+            "EFA": 0.05,
+            "VNQ": 0.05,
+            "XEON.MI": 0.397885,
+            "GLD": 0.050135,
+            "AGGH.MI": 0.138248,
+            "AGG": 0.119394,
+            "TIP": 0.094339,
+            "TLT": 0.05
+          },
+          "turnover": 0.007005,
+          "transaction_cost": 7e-06
+        }
+      ]
+    },
+    "MV": {
+      "strategy": "MV",
+      "cagr": 0.060726,
+      "annualised_volatility": 0.117374,
+      "sharpe_ratio": 0.517372,
+      "max_drawdown": -0.15088,
+      "calmar_ratio": 0.402479,
+      "total_transaction_cost": 0.002538,
+      "n_rebalances": 9,
+      "equity_curve": [
+        {
+          "date": "2020-01-02",
+          "portfolio_value": 0.999345
+        },
+        {
+          "date": "2020-01-03",
+          "portfolio_value": 1.002597
+        },
+        {
+          "date": "2020-01-06",
+          "portfolio_value": 1.002544
+        },
+        {
+          "date": "2020-01-07",
+          "portfolio_value": 1.001696
+        },
+        {
+          "date": "2020-01-08",
+          "portfolio_value": 1.001033
+        },
+        {
+          "date": "2020-01-09",
+          "portfolio_value": 1.00314
+        },
+        {
+          "date": "2020-01-10",
+          "portfolio_value": 1.005468
+        },
+        {
+          "date": "2020-01-13",
+          "portfolio_value": 1.005741
+        },
+        {
+          "date": "2020-01-14",
+          "portfolio_value": 1.006769
+        },
+        {
+          "date": "2020-01-15",
+          "portfolio_value": 1.00951
+        },
+        {
+          "date": "2020-01-16",
+          "portfolio_value": 1.010506
+        },
+        {
+          "date": "2020-01-17",
+          "portfolio_value": 1.011111
+        },
+        {
+          "date": "2020-01-20",
+          "portfolio_value": 1.011274
+        },
+        {
+          "date": "2020-01-21",
+          "portfolio_value": 1.013577
+        },
+        {
+          "date": "2020-01-22",
+          "portfolio_value": 1.013936
+        },
+        {
+          "date": "2020-01-23",
+          "portfolio_value": 1.013974
+        },
+        {
+          "date": "2020-01-24",
+          "portfolio_value": 1.015735
+        },
+        {
+          "date": "2020-01-27",
+          "portfolio_value": 1.012319
+        },
+        {
+          "date": "2020-01-28",
+          "portfolio_value": 1.013799
+        },
+        {
+          "date": "2020-01-29",
+          "portfolio_value": 1.016084
+        },
+        {
+          "date": "2020-01-30",
+          "portfolio_value": 1.014136
+        },
+        {
+          "date": "2020-01-31",
+          "portfolio_value": 1.014007
+        },
+        {
+          "date": "2020-02-03",
+          "portfolio_value": 1.014487
+        },
+        {
+          "date": "2020-02-04",
+          "portfolio_value": 1.015841
+        },
+        {
+          "date": "2020-02-05",
+          "portfolio_value": 1.015927
+        },
+        {
+          "date": "2020-02-06",
+          "portfolio_value": 1.019401
+        },
+        {
+          "date": "2020-02-07",
+          "portfolio_value": 1.021402
+        },
+        {
+          "date": "2020-02-10",
+          "portfolio_value": 1.023099
+        },
+        {
+          "date": "2020-02-11",
+          "portfolio_value": 1.024404
+        },
+        {
+          "date": "2020-02-12",
+          "portfolio_value": 1.024824
+        },
+        {
+          "date": "2020-02-13",
+          "portfolio_value": 1.026227
+        },
+        {
+          "date": "2020-02-14",
+          "portfolio_value": 1.027988
+        },
+        {
+          "date": "2020-02-17",
+          "portfolio_value": 1.028819
+        },
+        {
+          "date": "2020-02-18",
+          "portfolio_value": 1.028725
+        },
+        {
+          "date": "2020-02-19",
+          "portfolio_value": 1.030856
+        },
+        {
+          "date": "2020-02-20",
+          "portfolio_value": 1.030163
+        },
+        {
+          "date": "2020-02-21",
+          "portfolio_value": 1.033167
+        },
+        {
+          "date": "2020-02-24",
+          "portfolio_value": 1.026304
+        },
+        {
+          "date": "2020-02-25",
+          "portfolio_value": 1.019413
+        },
+        {
+          "date": "2020-02-26",
+          "portfolio_value": 1.01681
+        },
+        {
+          "date": "2020-02-27",
+          "portfolio_value": 1.004338
+        },
+        {
+          "date": "2020-02-28",
+          "portfolio_value": 0.993935
+        },
+        {
+          "date": "2020-03-02",
+          "portfolio_value": 1.004442
+        },
+        {
+          "date": "2020-03-03",
+          "portfolio_value": 1.014527
+        },
+        {
+          "date": "2020-03-04",
+          "portfolio_value": 1.017418
+        },
+        {
+          "date": "2020-03-05",
+          "portfolio_value": 1.021989
+        },
+        {
+          "date": "2020-03-06",
+          "portfolio_value": 1.019486
+        },
+        {
+          "date": "2020-03-09",
+          "portfolio_value": 1.000255
+        },
+        {
+          "date": "2020-03-10",
+          "portfolio_value": 0.986946
+        },
+        {
+          "date": "2020-03-11",
+          "portfolio_value": 0.97296
+        },
+        {
+          "date": "2020-03-12",
+          "portfolio_value": 0.923443
+        },
+        {
+          "date": "2020-03-13",
+          "portfolio_value": 0.931874
+        },
+        {
+          "date": "2020-03-16",
+          "portfolio_value": 0.928722
+        },
+        {
+          "date": "2020-03-17",
+          "portfolio_value": 0.916173
+        },
+        {
+          "date": "2020-03-18",
+          "portfolio_value": 0.877283
+        },
+        {
+          "date": "2020-03-19",
+          "portfolio_value": 0.888741
+        },
+        {
+          "date": "2020-03-20",
+          "portfolio_value": 0.898745
+        },
+        {
+          "date": "2020-03-23",
+          "portfolio_value": 0.898732
+        },
+        {
+          "date": "2020-03-24",
+          "portfolio_value": 0.930782
+        },
+        {
+          "date": "2020-03-25",
+          "portfolio_value": 0.944485
+        },
+        {
+          "date": "2020-03-26",
+          "portfolio_value": 0.961358
+        },
+        {
+          "date": "2020-03-27",
+          "portfolio_value": 0.959964
+        },
+        {
+          "date": "2020-03-30",
+          "portfolio_value": 0.965572
+        },
+        {
+          "date": "2020-03-31",
+          "portfolio_value": 0.952552
+        },
+        {
+          "date": "2020-04-01",
+          "portfolio_value": 0.952519
+        },
+        {
+          "date": "2020-04-02",
+          "portfolio_value": 0.960762
+        },
+        {
+          "date": "2020-04-03",
+          "portfolio_value": 0.961301
+        },
+        {
+          "date": "2020-04-06",
+          "portfolio_value": 0.975718
+        },
+        {
+          "date": "2020-04-07",
+          "portfolio_value": 0.973253
+        },
+        {
+          "date": "2020-04-08",
+          "portfolio_value": 0.971644
+        },
+        {
+          "date": "2020-04-09",
+          "portfolio_value": 0.985511
+        },
+        {
+          "date": "2020-04-13",
+          "portfolio_value": 0.983219
+        },
+        {
+          "date": "2020-04-14",
+          "portfolio_value": 0.988046
+        },
+        {
+          "date": "2020-04-15",
+          "portfolio_value": 0.99346
+        },
+        {
+          "date": "2020-04-16",
+          "portfolio_value": 0.997285
+        },
+        {
+          "date": "2020-04-17",
+          "portfolio_value": 0.990439
+        },
+        {
+          "date": "2020-04-20",
+          "portfolio_value": 0.992851
+        },
+        {
+          "date": "2020-04-21",
+          "portfolio_value": 0.992425
+        },
+        {
+          "date": "2020-04-22",
+          "portfolio_value": 0.996177
+        },
+        {
+          "date": "2020-04-23",
+          "portfolio_value": 1.001105
+        },
+        {
+          "date": "2020-04-24",
+          "portfolio_value": 1.001431
+        },
+        {
+          "date": "2020-04-27",
+          "portfolio_value": 0.995458
+        },
+        {
+          "date": "2020-04-28",
+          "portfolio_value": 1.000445
+        },
+        {
+          "date": "2020-04-29",
+          "portfolio_value": 1.002612
+        },
+        {
+          "date": "2020-04-30",
+          "portfolio_value": 0.990073
+        },
+        {
+          "date": "2020-05-01",
+          "portfolio_value": 0.99081
+        },
+        {
+          "date": "2020-05-04",
+          "portfolio_value": 0.990112
+        },
+        {
+          "date": "2020-05-05",
+          "portfolio_value": 0.991035
+        },
+        {
+          "date": "2020-05-06",
+          "portfolio_value": 0.979438
+        },
+        {
+          "date": "2020-05-07",
+          "portfolio_value": 0.992068
+        },
+        {
+          "date": "2020-05-08",
+          "portfolio_value": 0.987706
+        },
+        {
+          "date": "2020-05-11",
+          "portfolio_value": 0.982503
+        },
+        {
+          "date": "2020-05-12",
+          "portfolio_value": 0.984536
+        },
+        {
+          "date": "2020-05-13",
+          "portfolio_value": 0.98702
+        },
+        {
+          "date": "2020-05-14",
+          "portfolio_value": 0.992434
+        },
+        {
+          "date": "2020-05-15",
+          "portfolio_value": 0.993944
+        },
+        {
+          "date": "2020-05-18",
+          "portfolio_value": 0.991405
+        },
+        {
+          "date": "2020-05-19",
+          "portfolio_value": 0.994501
+        },
+        {
+          "date": "2020-05-20",
+          "portfolio_value": 0.998469
+        },
+        {
+          "date": "2020-05-21",
+          "portfolio_value": 0.993456
+        },
+        {
+          "date": "2020-05-22",
+          "portfolio_value": 0.997796
+        },
+        {
+          "date": "2020-05-25",
+          "portfolio_value": 0.99778
+        },
+        {
+          "date": "2020-05-26",
+          "portfolio_value": 0.992961
+        },
+        {
+          "date": "2020-05-27",
+          "portfolio_value": 0.994483
+        },
+        {
+          "date": "2020-05-28",
+          "portfolio_value": 0.996125
+        },
+        {
+          "date": "2020-05-29",
+          "portfolio_value": 0.999826
+        },
+        {
+          "date": "2020-06-01",
+          "portfolio_value": 1.001931
+        },
+        {
+          "date": "2020-06-02",
+          "portfolio_value": 0.999787
+        },
+        {
+          "date": "2020-06-03",
+          "portfolio_value": 0.992821
+        },
+        {
+          "date": "2020-06-04",
+          "portfolio_value": 0.990323
+        },
+        {
+          "date": "2020-06-05",
+          "portfolio_value": 0.98573
+        },
+        {
+          "date": "2020-06-08",
+          "portfolio_value": 0.992375
+        },
+        {
+          "date": "2020-06-09",
+          "portfolio_value": 0.99804
+        },
+        {
+          "date": "2020-06-10",
+          "portfolio_value": 1.006564
+        },
+        {
+          "date": "2020-06-11",
+          "portfolio_value": 1.002571
+        },
+        {
+          "date": "2020-06-12",
+          "portfolio_value": 1.001767
+        },
+        {
+          "date": "2020-06-15",
+          "portfolio_value": 1.002293
+        },
+        {
+          "date": "2020-06-16",
+          "portfolio_value": 1.000703
+        },
+        {
+          "date": "2020-06-17",
+          "portfolio_value": 1.001697
+        },
+        {
+          "date": "2020-06-18",
+          "portfolio_value": 1.003788
+        },
+        {
+          "date": "2020-06-19",
+          "portfolio_value": 1.007209
+        },
+        {
+          "date": "2020-06-22",
+          "portfolio_value": 1.009497
+        },
+        {
+          "date": "2020-06-23",
+          "portfolio_value": 1.010959
+        },
+        {
+          "date": "2020-06-24",
+          "portfolio_value": 1.008936
+        },
+        {
+          "date": "2020-06-25",
+          "portfolio_value": 1.01093
+        },
+        {
+          "date": "2020-06-26",
+          "portfolio_value": 1.014255
+        },
+        {
+          "date": "2020-06-29",
+          "portfolio_value": 1.015112
+        },
+        {
+          "date": "2020-06-30",
+          "portfolio_value": 1.016565
+        },
+        {
+          "date": "2020-07-01",
+          "portfolio_value": 1.016166
+        },
+        {
+          "date": "2020-07-02",
+          "portfolio_value": 1.018643
+        },
+        {
+          "date": "2020-07-03",
+          "portfolio_value": 1.018336
+        },
+        {
+          "date": "2020-07-06",
+          "portfolio_value": 1.021375
+        },
+        {
+          "date": "2020-07-07",
+          "portfolio_value": 1.026026
+        },
+        {
+          "date": "2020-07-08",
+          "portfolio_value": 1.027106
+        },
+        {
+          "date": "2020-07-09",
+          "portfolio_value": 1.0296
+        },
+        {
+          "date": "2020-07-10",
+          "portfolio_value": 1.02829
+        },
+        {
+          "date": "2020-07-13",
+          "portfolio_value": 1.029949
+        },
+        {
+          "date": "2020-07-14",
+          "portfolio_value": 1.032574
+        },
+        {
+          "date": "2020-07-15",
+          "portfolio_value": 1.033601
+        },
+        {
+          "date": "2020-07-16",
+          "portfolio_value": 1.030076
+        },
+        {
+          "date": "2020-07-17",
+          "portfolio_value": 1.034163
+        },
+        {
+          "date": "2020-07-20",
+          "portfolio_value": 1.036839
+        },
+        {
+          "date": "2020-07-21",
+          "portfolio_value": 1.042855
+        },
+        {
+          "date": "2020-07-22",
+          "portfolio_value": 1.050602
+        },
+        {
+          "date": "2020-07-23",
+          "portfolio_value": 1.057161
+        },
+        {
+          "date": "2020-07-24",
+          "portfolio_value": 1.059052
+        },
+        {
+          "date": "2020-07-27",
+          "portfolio_value": 1.067234
+        },
+        {
+          "date": "2020-07-28",
+          "portfolio_value": 1.073723
+        },
+        {
+          "date": "2020-07-29",
+          "portfolio_value": 1.078307
+        },
+        {
+          "date": "2020-07-30",
+          "portfolio_value": 1.075945
+        },
+        {
+          "date": "2020-07-31",
+          "portfolio_value": 1.078781
+        },
+        {
+          "date": "2020-08-03",
+          "portfolio_value": 1.079211
+        },
+        {
+          "date": "2020-08-04",
+          "portfolio_value": 1.092485
+        },
+        {
+          "date": "2020-08-05",
+          "portfolio_value": 1.09432
+        },
+        {
+          "date": "2020-08-06",
+          "portfolio_value": 1.10193
+        },
+        {
+          "date": "2020-08-07",
+          "portfolio_value": 1.093799
+        },
+        {
+          "date": "2020-08-10",
+          "portfolio_value": 1.09122
+        },
+        {
+          "date": "2020-08-11",
+          "portfolio_value": 1.063949
+        },
+        {
+          "date": "2020-08-12",
+          "portfolio_value": 1.061099
+        },
+        {
+          "date": "2020-08-13",
+          "portfolio_value": 1.066932
+        },
+        {
+          "date": "2020-08-14",
+          "portfolio_value": 1.063478
+        },
+        {
+          "date": "2020-08-17",
+          "portfolio_value": 1.074544
+        },
+        {
+          "date": "2020-08-18",
+          "portfolio_value": 1.08054
+        },
+        {
+          "date": "2020-08-19",
+          "portfolio_value": 1.063884
+        },
+        {
+          "date": "2020-08-20",
+          "portfolio_value": 1.069348
+        },
+        {
+          "date": "2020-08-21",
+          "portfolio_value": 1.0678
+        },
+        {
+          "date": "2020-08-24",
+          "portfolio_value": 1.066587
+        },
+        {
+          "date": "2020-08-25",
+          "portfolio_value": 1.065178
+        },
+        {
+          "date": "2020-08-26",
+          "portfolio_value": 1.06947
+        },
+        {
+          "date": "2020-08-27",
+          "portfolio_value": 1.060208
+        },
+        {
+          "date": "2020-08-28",
+          "portfolio_value": 1.068428
+        },
+        {
+          "date": "2020-08-31",
+          "portfolio_value": 1.070054
+        },
+        {
+          "date": "2020-09-01",
+          "portfolio_value": 1.072944
+        },
+        {
+          "date": "2020-09-02",
+          "portfolio_value": 1.071525
+        },
+        {
+          "date": "2020-09-03",
+          "portfolio_value": 1.064203
+        },
+        {
+          "date": "2020-09-04",
+          "portfolio_value": 1.059225
+        },
+        {
+          "date": "2020-09-07",
+          "portfolio_value": 1.060799
+        },
+        {
+          "date": "2020-09-08",
+          "portfolio_value": 1.057818
+        },
+        {
+          "date": "2020-09-09",
+          "portfolio_value": 1.06426
+        },
+        {
+          "date": "2020-09-10",
+          "portfolio_value": 1.062479
+        },
+        {
+          "date": "2020-09-11",
+          "portfolio_value": 1.061676
+        },
+        {
+          "date": "2020-09-14",
+          "portfolio_value": 1.067807
+        },
+        {
+          "date": "2020-09-15",
+          "portfolio_value": 1.067992
+        },
+        {
+          "date": "2020-09-16",
+          "portfolio_value": 1.069184
+        },
+        {
+          "date": "2020-09-17",
+          "portfolio_value": 1.064944
+        },
+        {
+          "date": "2020-09-18",
+          "portfolio_value": 1.06242
+        },
+        {
+          "date": "2020-09-21",
+          "portfolio_value": 1.048783
+        },
+        {
+          "date": "2020-09-22",
+          "portfolio_value": 1.048505
+        },
+        {
+          "date": "2020-09-23",
+          "portfolio_value": 1.037721
+        },
+        {
+          "date": "2020-09-24",
+          "portfolio_value": 1.038872
+        },
+        {
+          "date": "2020-09-25",
+          "portfolio_value": 1.039739
+        },
+        {
+          "date": "2020-09-28",
+          "portfolio_value": 1.047904
+        },
+        {
+          "date": "2020-09-29",
+          "portfolio_value": 1.051196
+        },
+        {
+          "date": "2020-09-30",
+          "portfolio_value": 1.046636
+        },
+        {
+          "date": "2020-10-01",
+          "portfolio_value": 1.052305
+        },
+        {
+          "date": "2020-10-02",
+          "portfolio_value": 1.05141
+        },
+        {
+          "date": "2020-10-05",
+          "portfolio_value": 1.050726
+        },
+        {
+          "date": "2020-10-06",
+          "portfolio_value": 1.046188
+        },
+        {
+          "date": "2020-10-07",
+          "portfolio_value": 1.045047
+        },
+        {
+          "date": "2020-10-08",
+          "portfolio_value": 1.049795
+        },
+        {
+          "date": "2020-10-09",
+          "portfolio_value": 1.05826
+        },
+        {
+          "date": "2020-10-12",
+          "portfolio_value": 1.059436
+        },
+        {
+          "date": "2020-10-13",
+          "portfolio_value": 1.052644
+        },
+        {
+          "date": "2020-10-14",
+          "portfolio_value": 1.053462
+        },
+        {
+          "date": "2020-10-15",
+          "portfolio_value": 1.053519
+        },
+        {
+          "date": "2020-10-16",
+          "portfolio_value": 1.05193
+        },
+        {
+          "date": "2020-10-19",
+          "portfolio_value": 1.049556
+        },
+        {
+          "date": "2020-10-20",
+          "portfolio_value": 1.049745
+        },
+        {
+          "date": "2020-10-21",
+          "portfolio_value": 1.051683
+        },
+        {
+          "date": "2020-10-22",
+          "portfolio_value": 1.045049
+        },
+        {
+          "date": "2020-10-23",
+          "portfolio_value": 1.046995
+        },
+        {
+          "date": "2020-10-26",
+          "portfolio_value": 1.046137
+        },
+        {
+          "date": "2020-10-27",
+          "portfolio_value": 1.047934
+        },
+        {
+          "date": "2020-10-28",
+          "portfolio_value": 1.036756
+        },
+        {
+          "date": "2020-10-29",
+          "portfolio_value": 1.033511
+        },
+        {
+          "date": "2020-10-30",
+          "portfolio_value": 1.031718
+        },
+        {
+          "date": "2020-11-02",
+          "portfolio_value": 1.040385
+        },
+        {
+          "date": "2020-11-03",
+          "portfolio_value": 1.045052
+        },
+        {
+          "date": "2020-11-04",
+          "portfolio_value": 1.051821
+        },
+        {
+          "date": "2020-11-05",
+          "portfolio_value": 1.064296
+        },
+        {
+          "date": "2020-11-06",
+          "portfolio_value": 1.061333
+        },
+        {
+          "date": "2020-11-09",
+          "portfolio_value": 1.042561
+        },
+        {
+          "date": "2020-11-10",
+          "portfolio_value": 1.042943
+        },
+        {
+          "date": "2020-11-11",
+          "portfolio_value": 1.043287
+        },
+        {
+          "date": "2020-11-12",
+          "portfolio_value": 1.048229
+        },
+        {
+          "date": "2020-11-13",
+          "portfolio_value": 1.053068
+        },
+        {
+          "date": "2020-11-16",
+          "portfolio_value": 1.054473
+        },
+        {
+          "date": "2020-11-17",
+          "portfolio_value": 1.054464
+        },
+        {
+          "date": "2020-11-18",
+          "portfolio_value": 1.051475
+        },
+        {
+          "date": "2020-11-19",
+          "portfolio_value": 1.051754
+        },
+        {
+          "date": "2020-11-20",
+          "portfolio_value": 1.055266
+        },
+        {
+          "date": "2020-11-23",
+          "portfolio_value": 1.045656
+        },
+        {
+          "date": "2020-11-24",
+          "portfolio_value": 1.039348
+        },
+        {
+          "date": "2020-11-25",
+          "portfolio_value": 1.038653
+        },
+        {
+          "date": "2020-11-26",
+          "portfolio_value": 1.038702
+        },
+        {
+          "date": "2020-11-27",
+          "portfolio_value": 1.037104
+        },
+        {
+          "date": "2020-11-30",
+          "portfolio_value": 1.03174
+        },
+        {
+          "date": "2020-12-01",
+          "portfolio_value": 1.039366
+        },
+        {
+          "date": "2020-12-02",
+          "portfolio_value": 1.039886
+        },
+        {
+          "date": "2020-12-03",
+          "portfolio_value": 1.046313
+        },
+        {
+          "date": "2020-12-04",
+          "portfolio_value": 1.042477
+        },
+        {
+          "date": "2020-12-07",
+          "portfolio_value": 1.050464
+        },
+        {
+          "date": "2020-12-08",
+          "portfolio_value": 1.053248
+        },
+        {
+          "date": "2020-12-09",
+          "portfolio_value": 1.044658
+        },
+        {
+          "date": "2020-12-10",
+          "portfolio_value": 1.046018
+        },
+        {
+          "date": "2020-12-11",
+          "portfolio_value": 1.047137
+        },
+        {
+          "date": "2020-12-14",
+          "portfolio_value": 1.044353
+        },
+        {
+          "date": "2020-12-15",
+          "portfolio_value": 1.050974
+        },
+        {
+          "date": "2020-12-16",
+          "portfolio_value": 1.053425
+        },
+        {
+          "date": "2020-12-17",
+          "portfolio_value": 1.058318
+        },
+        {
+          "date": "2020-12-18",
+          "portfolio_value": 1.055139
+        },
+        {
+          "date": "2020-12-21",
+          "portfolio_value": 1.053213
+        },
+        {
+          "date": "2020-12-22",
+          "portfolio_value": 1.052066
+        },
+        {
+          "date": "2020-12-23",
+          "portfolio_value": 1.05354
+        },
+        {
+          "date": "2020-12-24",
+          "portfolio_value": 1.056742
+        },
+        {
+          "date": "2020-12-28",
+          "portfolio_value": 1.056118
+        },
+        {
+          "date": "2020-12-29",
+          "portfolio_value": 1.057967
+        },
+        {
+          "date": "2020-12-30",
+          "portfolio_value": 1.062216
+        }
+      ],
+      "rebalance_log": [
+        {
+          "date": "2020-01-02",
+          "weights": {
+            "AGGH.MI": 0.21314,
+            "CSPX.L": 0.23465,
+            "EFA": 0.05,
+            "GLD": 0.07502,
+            "TIP": 0.05,
+            "TLT": 0.05,
+            "VNQ": 0.06405,
+            "XEON.MI": 0.05,
+            "AGG": 0.21314
+          },
+          "turnover": 0.655193,
+          "transaction_cost": 0.000655
+        },
+        {
+          "date": "2020-01-31",
+          "weights": {
+            "AGGH.MI": 0.17245,
+            "CSPX.L": 0.25425,
+            "EFA": 0.05,
+            "GLD": 0.0848,
+            "TIP": 0.05,
+            "TLT": 0.11605,
+            "VNQ": 0.05,
+            "XEON.MI": 0.05,
+            "AGG": 0.17245
+          },
+          "turnover": 0.19086,
+          "transaction_cost": 0.000191
+        },
+        {
+          "date": "2020-03-31",
+          "weights": {
+            "AGGH.MI": 0.05,
+            "CSPX.L": 0.05,
+            "EFA": 0.05,
+            "GLD": 0.25,
+            "TIP": 0.05,
+            "TLT": 0.4,
+            "VNQ": 0.05,
+            "XEON.MI": 0.05,
+            "AGG": 0.05
+          },
+          "turnover": 0.8983,
+          "transaction_cost": 0.000898
+        },
+        {
+          "date": "2020-04-30",
+          "weights": {
+            "AGGH.MI": 0.05,
+            "CSPX.L": 0.05,
+            "EFA": 0.05,
+            "GLD": 0.32661,
+            "TIP": 0.05,
+            "TLT": 0.32339,
+            "VNQ": 0.05,
+            "XEON.MI": 0.05,
+            "AGG": 0.05
+          },
+          "turnover": 0.15322,
+          "transaction_cost": 0.000153
+        },
+        {
+          "date": "2020-06-30",
+          "weights": {
+            "AGGH.MI": 0.05,
+            "CSPX.L": 0.05,
+            "EFA": 0.05,
+            "GLD": 0.38479,
+            "TIP": 0.05,
+            "TLT": 0.26521,
+            "VNQ": 0.05,
+            "XEON.MI": 0.05,
+            "AGG": 0.05
+          },
+          "turnover": 0.11636,
+          "transaction_cost": 0.000116
+        },
+        {
+          "date": "2020-07-31",
+          "weights": {
+            "AGGH.MI": 0.05,
+            "CSPX.L": 0.05,
+            "EFA": 0.05,
+            "GLD": 0.4,
+            "TIP": 0.05,
+            "TLT": 0.25,
+            "VNQ": 0.05,
+            "XEON.MI": 0.05,
+            "AGG": 0.05
+          },
+          "turnover": 0.03042,
+          "transaction_cost": 3e-05
+        },
+        {
+          "date": "2020-08-31",
+          "weights": {
+            "AGGH.MI": 0.05,
+            "CSPX.L": 0.08019,
+            "EFA": 0.05,
+            "GLD": 0.4,
+            "TIP": 0.14322,
+            "TLT": 0.12659,
+            "VNQ": 0.05,
+            "XEON.MI": 0.05,
+            "AGG": 0.05
+          },
+          "turnover": 0.24682,
+          "transaction_cost": 0.000247
+        },
+        {
+          "date": "2020-09-30",
+          "weights": {
+            "AGGH.MI": 0.05,
+            "CSPX.L": 0.05,
+            "EFA": 0.05,
+            "GLD": 0.4,
+            "TIP": 0.11581,
+            "TLT": 0.18419,
+            "VNQ": 0.05,
+            "XEON.MI": 0.05,
+            "AGG": 0.05
+          },
+          "turnover": 0.1152,
+          "transaction_cost": 0.000115
+        },
+        {
+          "date": "2020-11-30",
+          "weights": {
+            "AGGH.MI": 0.05,
+            "CSPX.L": 0.05806,
+            "EFA": 0.05,
+            "GLD": 0.4,
+            "TIP": 0.05,
+            "TLT": 0.24194,
+            "VNQ": 0.05,
+            "XEON.MI": 0.05,
+            "AGG": 0.05
+          },
+          "turnover": 0.13162,
+          "transaction_cost": 0.000132
+        }
+      ]
+    },
+    "1/N": {
+      "strategy": "1/N",
+      "cagr": 0.10882,
+      "annualised_volatility": 0.111936,
+      "sharpe_ratio": 0.972157,
+      "max_drawdown": -0.149505,
+      "calmar_ratio": 0.727864,
+      "total_transaction_cost": 0.0,
+      "n_rebalances": 9,
+      "equity_curve": [
+        {
+          "date": "2020-01-02",
+          "portfolio_value": 1.0
+        },
+        {
+          "date": "2020-01-03",
+          "portfolio_value": 1.003768
+        },
+        {
+          "date": "2020-01-06",
+          "portfolio_value": 1.004233
+        },
+        {
+          "date": "2020-01-07",
+          "portfolio_value": 1.002263
+        },
+        {
+          "date": "2020-01-08",
+          "portfolio_value": 1.001196
+        },
+        {
+          "date": "2020-01-09",
+          "portfolio_value": 1.002245
+        },
+        {
+          "date": "2020-01-10",
+          "portfolio_value": 1.005171
+        },
+        {
+          "date": "2020-01-13",
+          "portfolio_value": 1.005874
+        },
+        {
+          "date": "2020-01-14",
+          "portfolio_value": 1.006668
+        },
+        {
+          "date": "2020-01-15",
+          "portfolio_value": 1.009826
+        },
+        {
+          "date": "2020-01-16",
+          "portfolio_value": 1.010774
+        },
+        {
+          "date": "2020-01-17",
+          "portfolio_value": 1.010621
+        },
+        {
+          "date": "2020-01-20",
+          "portfolio_value": 1.010681
+        },
+        {
+          "date": "2020-01-21",
+          "portfolio_value": 1.013184
+        },
+        {
+          "date": "2020-01-22",
+          "portfolio_value": 1.01327
+        },
+        {
+          "date": "2020-01-23",
+          "portfolio_value": 1.014776
+        },
+        {
+          "date": "2020-01-24",
+          "portfolio_value": 1.016365
+        },
+        {
+          "date": "2020-01-27",
+          "portfolio_value": 1.014683
+        },
+        {
+          "date": "2020-01-28",
+          "portfolio_value": 1.014994
+        },
+        {
+          "date": "2020-01-29",
+          "portfolio_value": 1.017443
+        },
+        {
+          "date": "2020-01-30",
+          "portfolio_value": 1.01662
+        },
+        {
+          "date": "2020-01-31",
+          "portfolio_value": 1.015608
+        },
+        {
+          "date": "2020-02-03",
+          "portfolio_value": 1.015542
+        },
+        {
+          "date": "2020-02-04",
+          "portfolio_value": 1.016155
+        },
+        {
+          "date": "2020-02-05",
+          "portfolio_value": 1.016164
+        },
+        {
+          "date": "2020-02-06",
+          "portfolio_value": 1.019144
+        },
+        {
+          "date": "2020-02-07",
+          "portfolio_value": 1.020686
+        },
+        {
+          "date": "2020-02-10",
+          "portfolio_value": 1.023218
+        },
+        {
+          "date": "2020-02-11",
+          "portfolio_value": 1.024169
+        },
+        {
+          "date": "2020-02-12",
+          "portfolio_value": 1.024668
+        },
+        {
+          "date": "2020-02-13",
+          "portfolio_value": 1.026074
+        },
+        {
+          "date": "2020-02-14",
+          "portfolio_value": 1.028369
+        },
+        {
+          "date": "2020-02-17",
+          "portfolio_value": 1.028732
+        },
+        {
+          "date": "2020-02-18",
+          "portfolio_value": 1.029702
+        },
+        {
+          "date": "2020-02-19",
+          "portfolio_value": 1.030086
+        },
+        {
+          "date": "2020-02-20",
+          "portfolio_value": 1.031469
+        },
+        {
+          "date": "2020-02-21",
+          "portfolio_value": 1.034669
+        },
+        {
+          "date": "2020-02-24",
+          "portfolio_value": 1.028994
+        },
+        {
+          "date": "2020-02-25",
+          "portfolio_value": 1.020921
+        },
+        {
+          "date": "2020-02-26",
+          "portfolio_value": 1.018807
+        },
+        {
+          "date": "2020-02-27",
+          "portfolio_value": 1.006776
+        },
+        {
+          "date": "2020-02-28",
+          "portfolio_value": 0.998818
+        },
+        {
+          "date": "2020-03-02",
+          "portfolio_value": 1.008538
+        },
+        {
+          "date": "2020-03-03",
+          "portfolio_value": 1.016728
+        },
+        {
+          "date": "2020-03-04",
+          "portfolio_value": 1.0234
+        },
+        {
+          "date": "2020-03-05",
+          "portfolio_value": 1.024714
+        },
+        {
+          "date": "2020-03-06",
+          "portfolio_value": 1.025066
+        },
+        {
+          "date": "2020-03-09",
+          "portfolio_value": 1.002373
+        },
+        {
+          "date": "2020-03-10",
+          "portfolio_value": 0.995579
+        },
+        {
+          "date": "2020-03-11",
+          "portfolio_value": 0.973958
+        },
+        {
+          "date": "2020-03-12",
+          "portfolio_value": 0.928453
+        },
+        {
+          "date": "2020-03-13",
+          "portfolio_value": 0.942392
+        },
+        {
+          "date": "2020-03-16",
+          "portfolio_value": 0.920966
+        },
+        {
+          "date": "2020-03-17",
+          "portfolio_value": 0.917379
+        },
+        {
+          "date": "2020-03-18",
+          "portfolio_value": 0.87998
+        },
+        {
+          "date": "2020-03-19",
+          "portfolio_value": 0.889491
+        },
+        {
+          "date": "2020-03-20",
+          "portfolio_value": 0.89826
+        },
+        {
+          "date": "2020-03-23",
+          "portfolio_value": 0.902315
+        },
+        {
+          "date": "2020-03-24",
+          "portfolio_value": 0.932764
+        },
+        {
+          "date": "2020-03-25",
+          "portfolio_value": 0.946264
+        },
+        {
+          "date": "2020-03-26",
+          "portfolio_value": 0.965196
+        },
+        {
+          "date": "2020-03-27",
+          "portfolio_value": 0.963882
+        },
+        {
+          "date": "2020-03-30",
+          "portfolio_value": 0.968496
+        },
+        {
+          "date": "2020-03-31",
+          "portfolio_value": 0.961231
+        },
+        {
+          "date": "2020-04-01",
+          "portfolio_value": 0.946643
+        },
+        {
+          "date": "2020-04-02",
+          "portfolio_value": 0.953277
+        },
+        {
+          "date": "2020-04-03",
+          "portfolio_value": 0.95061
+        },
+        {
+          "date": "2020-04-06",
+          "portfolio_value": 0.972515
+        },
+        {
+          "date": "2020-04-07",
+          "portfolio_value": 0.97729
+        },
+        {
+          "date": "2020-04-08",
+          "portfolio_value": 0.9831
+        },
+        {
+          "date": "2020-04-09",
+          "portfolio_value": 1.001475
+        },
+        {
+          "date": "2020-04-13",
+          "portfolio_value": 0.995781
+        },
+        {
+          "date": "2020-04-14",
+          "portfolio_value": 1.003353
+        },
+        {
+          "date": "2020-04-15",
+          "portfolio_value": 0.997174
+        },
+        {
+          "date": "2020-04-16",
+          "portfolio_value": 0.997279
+        },
+        {
+          "date": "2020-04-17",
+          "portfolio_value": 1.00107
+        },
+        {
+          "date": "2020-04-20",
+          "portfolio_value": 0.997054
+        },
+        {
+          "date": "2020-04-21",
+          "portfolio_value": 0.989363
+        },
+        {
+          "date": "2020-04-22",
+          "portfolio_value": 0.996888
+        },
+        {
+          "date": "2020-04-23",
+          "portfolio_value": 0.999319
+        },
+        {
+          "date": "2020-04-24",
+          "portfolio_value": 1.000122
+        },
+        {
+          "date": "2020-04-27",
+          "portfolio_value": 1.004297
+        },
+        {
+          "date": "2020-04-28",
+          "portfolio_value": 1.008476
+        },
+        {
+          "date": "2020-04-29",
+          "portfolio_value": 1.014919
+        },
+        {
+          "date": "2020-04-30",
+          "portfolio_value": 1.005559
+        },
+        {
+          "date": "2020-05-01",
+          "portfolio_value": 0.998179
+        },
+        {
+          "date": "2020-05-04",
+          "portfolio_value": 0.997318
+        },
+        {
+          "date": "2020-05-05",
+          "portfolio_value": 1.000662
+        },
+        {
+          "date": "2020-05-06",
+          "portfolio_value": 0.992358
+        },
+        {
+          "date": "2020-05-07",
+          "portfolio_value": 1.001358
+        },
+        {
+          "date": "2020-05-08",
+          "portfolio_value": 1.003182
+        },
+        {
+          "date": "2020-05-11",
+          "portfolio_value": 1.00004
+        },
+        {
+          "date": "2020-05-12",
+          "portfolio_value": 0.996012
+        },
+        {
+          "date": "2020-05-13",
+          "portfolio_value": 0.991471
+        },
+        {
+          "date": "2020-05-14",
+          "portfolio_value": 0.992268
+        },
+        {
+          "date": "2020-05-15",
+          "portfolio_value": 0.993733
+        },
+        {
+          "date": "2020-05-18",
+          "portfolio_value": 1.005964
+        },
+        {
+          "date": "2020-05-19",
+          "portfolio_value": 1.004694
+        },
+        {
+          "date": "2020-05-20",
+          "portfolio_value": 1.010306
+        },
+        {
+          "date": "2020-05-21",
+          "portfolio_value": 1.006554
+        },
+        {
+          "date": "2020-05-22",
+          "portfolio_value": 1.008987
+        },
+        {
+          "date": "2020-05-25",
+          "portfolio_value": 1.008951
+        },
+        {
+          "date": "2020-05-26",
+          "portfolio_value": 1.015157
+        },
+        {
+          "date": "2020-05-27",
+          "portfolio_value": 1.018624
+        },
+        {
+          "date": "2020-05-28",
+          "portfolio_value": 1.022539
+        },
+        {
+          "date": "2020-05-29",
+          "portfolio_value": 1.021922
+        },
+        {
+          "date": "2020-06-01",
+          "portfolio_value": 1.02799
+        },
+        {
+          "date": "2020-06-02",
+          "portfolio_value": 1.029465
+        },
+        {
+          "date": "2020-06-03",
+          "portfolio_value": 1.033518
+        },
+        {
+          "date": "2020-06-04",
+          "portfolio_value": 1.030143
+        },
+        {
+          "date": "2020-06-05",
+          "portfolio_value": 1.036822
+        },
+        {
+          "date": "2020-06-08",
+          "portfolio_value": 1.043036
+        },
+        {
+          "date": "2020-06-09",
+          "portfolio_value": 1.042889
+        },
+        {
+          "date": "2020-06-10",
+          "portfolio_value": 1.044104
+        },
+        {
+          "date": "2020-06-11",
+          "portfolio_value": 1.027542
+        },
+        {
+          "date": "2020-06-12",
+          "portfolio_value": 1.030834
+        },
+        {
+          "date": "2020-06-15",
+          "portfolio_value": 1.032819
+        },
+        {
+          "date": "2020-06-16",
+          "portfolio_value": 1.039112
+        },
+        {
+          "date": "2020-06-17",
+          "portfolio_value": 1.03758
+        },
+        {
+          "date": "2020-06-18",
+          "portfolio_value": 1.036976
+        },
+        {
+          "date": "2020-06-19",
+          "portfolio_value": 1.037291
+        },
+        {
+          "date": "2020-06-22",
+          "portfolio_value": 1.038329
+        },
+        {
+          "date": "2020-06-23",
+          "portfolio_value": 1.040609
+        },
+        {
+          "date": "2020-06-24",
+          "portfolio_value": 1.03143
+        },
+        {
+          "date": "2020-06-25",
+          "portfolio_value": 1.034534
+        },
+        {
+          "date": "2020-06-26",
+          "portfolio_value": 1.032531
+        },
+        {
+          "date": "2020-06-29",
+          "portfolio_value": 1.036101
+        },
+        {
+          "date": "2020-06-30",
+          "portfolio_value": 1.038648
+        },
+        {
+          "date": "2020-07-01",
+          "portfolio_value": 1.042168
+        },
+        {
+          "date": "2020-07-02",
+          "portfolio_value": 1.045621
+        },
+        {
+          "date": "2020-07-03",
+          "portfolio_value": 1.044919
+        },
+        {
+          "date": "2020-07-06",
+          "portfolio_value": 1.049241
+        },
+        {
+          "date": "2020-07-07",
+          "portfolio_value": 1.047879
+        },
+        {
+          "date": "2020-07-08",
+          "portfolio_value": 1.04749
+        },
+        {
+          "date": "2020-07-09",
+          "portfolio_value": 1.047273
+        },
+        {
+          "date": "2020-07-10",
+          "portfolio_value": 1.048849
+        },
+        {
+          "date": "2020-07-13",
+          "portfolio_value": 1.049983
+        },
+        {
+          "date": "2020-07-14",
+          "portfolio_value": 1.051563
+        },
+        {
+          "date": "2020-07-15",
+          "portfolio_value": 1.055545
+        },
+        {
+          "date": "2020-07-16",
+          "portfolio_value": 1.052571
+        },
+        {
+          "date": "2020-07-17",
+          "portfolio_value": 1.056456
+        },
+        {
+          "date": "2020-07-20",
+          "portfolio_value": 1.0575
+        },
+        {
+          "date": "2020-07-21",
+          "portfolio_value": 1.061351
+        },
+        {
+          "date": "2020-07-22",
+          "portfolio_value": 1.065351
+        },
+        {
+          "date": "2020-07-23",
+          "portfolio_value": 1.067185
+        },
+        {
+          "date": "2020-07-24",
+          "portfolio_value": 1.064646
+        },
+        {
+          "date": "2020-07-27",
+          "portfolio_value": 1.069168
+        },
+        {
+          "date": "2020-07-28",
+          "portfolio_value": 1.073441
+        },
+        {
+          "date": "2020-07-29",
+          "portfolio_value": 1.078501
+        },
+        {
+          "date": "2020-07-30",
+          "portfolio_value": 1.07579
+        },
+        {
+          "date": "2020-07-31",
+          "portfolio_value": 1.074867
+        },
+        {
+          "date": "2020-08-03",
+          "portfolio_value": 1.077279
+        },
+        {
+          "date": "2020-08-04",
+          "portfolio_value": 1.08433
+        },
+        {
+          "date": "2020-08-05",
+          "portfolio_value": 1.084763
+        },
+        {
+          "date": "2020-08-06",
+          "portfolio_value": 1.087635
+        },
+        {
+          "date": "2020-08-07",
+          "portfolio_value": 1.08646
+        },
+        {
+          "date": "2020-08-10",
+          "portfolio_value": 1.085849
+        },
+        {
+          "date": "2020-08-11",
+          "portfolio_value": 1.076629
+        },
+        {
+          "date": "2020-08-12",
+          "portfolio_value": 1.078483
+        },
+        {
+          "date": "2020-08-13",
+          "portfolio_value": 1.076968
+        },
+        {
+          "date": "2020-08-14",
+          "portfolio_value": 1.074699
+        },
+        {
+          "date": "2020-08-17",
+          "portfolio_value": 1.080217
+        },
+        {
+          "date": "2020-08-18",
+          "portfolio_value": 1.08261
+        },
+        {
+          "date": "2020-08-19",
+          "portfolio_value": 1.075114
+        },
+        {
+          "date": "2020-08-20",
+          "portfolio_value": 1.077283
+        },
+        {
+          "date": "2020-08-21",
+          "portfolio_value": 1.077661
+        },
+        {
+          "date": "2020-08-24",
+          "portfolio_value": 1.080462
+        },
+        {
+          "date": "2020-08-25",
+          "portfolio_value": 1.079943
+        },
+        {
+          "date": "2020-08-26",
+          "portfolio_value": 1.08153
+        },
+        {
+          "date": "2020-08-27",
+          "portfolio_value": 1.078618
+        },
+        {
+          "date": "2020-08-28",
+          "portfolio_value": 1.082978
+        },
+        {
+          "date": "2020-08-31",
+          "portfolio_value": 1.082989
+        },
+        {
+          "date": "2020-09-01",
+          "portfolio_value": 1.085892
+        },
+        {
+          "date": "2020-09-02",
+          "portfolio_value": 1.091154
+        },
+        {
+          "date": "2020-09-03",
+          "portfolio_value": 1.083304
+        },
+        {
+          "date": "2020-09-04",
+          "portfolio_value": 1.075946
+        },
+        {
+          "date": "2020-09-07",
+          "portfolio_value": 1.078171
+        },
+        {
+          "date": "2020-09-08",
+          "portfolio_value": 1.073374
+        },
+        {
+          "date": "2020-09-09",
+          "portfolio_value": 1.07922
+        },
+        {
+          "date": "2020-09-10",
+          "portfolio_value": 1.076751
+        },
+        {
+          "date": "2020-09-11",
+          "portfolio_value": 1.075858
+        },
+        {
+          "date": "2020-09-14",
+          "portfolio_value": 1.082123
+        },
+        {
+          "date": "2020-09-15",
+          "portfolio_value": 1.084466
+        },
+        {
+          "date": "2020-09-16",
+          "portfolio_value": 1.085183
+        },
+        {
+          "date": "2020-09-17",
+          "portfolio_value": 1.080789
+        },
+        {
+          "date": "2020-09-18",
+          "portfolio_value": 1.075423
+        },
+        {
+          "date": "2020-09-21",
+          "portfolio_value": 1.063212
+        },
+        {
+          "date": "2020-09-22",
+          "portfolio_value": 1.065715
+        },
+        {
+          "date": "2020-09-23",
+          "portfolio_value": 1.058837
+        },
+        {
+          "date": "2020-09-24",
+          "portfolio_value": 1.058587
+        },
+        {
+          "date": "2020-09-25",
+          "portfolio_value": 1.062113
+        },
+        {
+          "date": "2020-09-28",
+          "portfolio_value": 1.070601
+        },
+        {
+          "date": "2020-09-29",
+          "portfolio_value": 1.070652
+        },
+        {
+          "date": "2020-09-30",
+          "portfolio_value": 1.069136
+        },
+        {
+          "date": "2020-10-01",
+          "portfolio_value": 1.074088
+        },
+        {
+          "date": "2020-10-02",
+          "portfolio_value": 1.073978
+        },
+        {
+          "date": "2020-10-05",
+          "portfolio_value": 1.075087
+        },
+        {
+          "date": "2020-10-06",
+          "portfolio_value": 1.072849
+        },
+        {
+          "date": "2020-10-07",
+          "portfolio_value": 1.072971
+        },
+        {
+          "date": "2020-10-08",
+          "portfolio_value": 1.078487
+        },
+        {
+          "date": "2020-10-09",
+          "portfolio_value": 1.082587
+        },
+        {
+          "date": "2020-10-12",
+          "portfolio_value": 1.086551
+        },
+        {
+          "date": "2020-10-13",
+          "portfolio_value": 1.082042
+        },
+        {
+          "date": "2020-10-14",
+          "portfolio_value": 1.080568
+        },
+        {
+          "date": "2020-10-15",
+          "portfolio_value": 1.07824
+        },
+        {
+          "date": "2020-10-16",
+          "portfolio_value": 1.078364
+        },
+        {
+          "date": "2020-10-19",
+          "portfolio_value": 1.074124
+        },
+        {
+          "date": "2020-10-20",
+          "portfolio_value": 1.07371
+        },
+        {
+          "date": "2020-10-21",
+          "portfolio_value": 1.072982
+        },
+        {
+          "date": "2020-10-22",
+          "portfolio_value": 1.069684
+        },
+        {
+          "date": "2020-10-23",
+          "portfolio_value": 1.072857
+        },
+        {
+          "date": "2020-10-26",
+          "portfolio_value": 1.068222
+        },
+        {
+          "date": "2020-10-27",
+          "portfolio_value": 1.067665
+        },
+        {
+          "date": "2020-10-28",
+          "portfolio_value": 1.055664
+        },
+        {
+          "date": "2020-10-29",
+          "portfolio_value": 1.055307
+        },
+        {
+          "date": "2020-10-30",
+          "portfolio_value": 1.051067
+        },
+        {
+          "date": "2020-11-02",
+          "portfolio_value": 1.059842
+        },
+        {
+          "date": "2020-11-03",
+          "portfolio_value": 1.067685
+        },
+        {
+          "date": "2020-11-04",
+          "portfolio_value": 1.076349
+        },
+        {
+          "date": "2020-11-05",
+          "portfolio_value": 1.084794
+        },
+        {
+          "date": "2020-11-06",
+          "portfolio_value": 1.081513
+        },
+        {
+          "date": "2020-11-09",
+          "portfolio_value": 1.083476
+        },
+        {
+          "date": "2020-11-10",
+          "portfolio_value": 1.083278
+        },
+        {
+          "date": "2020-11-11",
+          "portfolio_value": 1.086272
+        },
+        {
+          "date": "2020-11-12",
+          "portfolio_value": 1.086629
+        },
+        {
+          "date": "2020-11-13",
+          "portfolio_value": 1.092454
+        },
+        {
+          "date": "2020-11-16",
+          "portfolio_value": 1.09674
+        },
+        {
+          "date": "2020-11-17",
+          "portfolio_value": 1.097445
+        },
+        {
+          "date": "2020-11-18",
+          "portfolio_value": 1.094417
+        },
+        {
+          "date": "2020-11-19",
+          "portfolio_value": 1.094818
+        },
+        {
+          "date": "2020-11-20",
+          "portfolio_value": 1.097113
+        },
+        {
+          "date": "2020-11-23",
+          "portfolio_value": 1.093342
+        },
+        {
+          "date": "2020-11-24",
+          "portfolio_value": 1.094914
+        },
+        {
+          "date": "2020-11-25",
+          "portfolio_value": 1.094426
+        },
+        {
+          "date": "2020-11-26",
+          "portfolio_value": 1.09454
+        },
+        {
+          "date": "2020-11-27",
+          "portfolio_value": 1.095874
+        },
+        {
+          "date": "2020-11-30",
+          "portfolio_value": 1.090092
+        },
+        {
+          "date": "2020-12-01",
+          "portfolio_value": 1.096611
+        },
+        {
+          "date": "2020-12-02",
+          "portfolio_value": 1.095165
+        },
+        {
+          "date": "2020-12-03",
+          "portfolio_value": 1.099646
+        },
+        {
+          "date": "2020-12-04",
+          "portfolio_value": 1.09992
+        },
+        {
+          "date": "2020-12-07",
+          "portfolio_value": 1.101638
+        },
+        {
+          "date": "2020-12-08",
+          "portfolio_value": 1.102904
+        },
+        {
+          "date": "2020-12-09",
+          "portfolio_value": 1.099158
+        },
+        {
+          "date": "2020-12-10",
+          "portfolio_value": 1.099912
+        },
+        {
+          "date": "2020-12-11",
+          "portfolio_value": 1.099428
+        },
+        {
+          "date": "2020-12-14",
+          "portfolio_value": 1.098788
+        },
+        {
+          "date": "2020-12-15",
+          "portfolio_value": 1.103918
+        },
+        {
+          "date": "2020-12-16",
+          "portfolio_value": 1.105963
+        },
+        {
+          "date": "2020-12-17",
+          "portfolio_value": 1.109502
+        },
+        {
+          "date": "2020-12-18",
+          "portfolio_value": 1.105068
+        },
+        {
+          "date": "2020-12-21",
+          "portfolio_value": 1.101644
+        },
+        {
+          "date": "2020-12-22",
+          "portfolio_value": 1.10319
+        },
+        {
+          "date": "2020-12-23",
+          "portfolio_value": 1.104085
+        },
+        {
+          "date": "2020-12-24",
+          "portfolio_value": 1.106284
+        },
+        {
+          "date": "2020-12-28",
+          "portfolio_value": 1.107745
+        },
+        {
+          "date": "2020-12-29",
+          "portfolio_value": 1.109274
+        },
+        {
+          "date": "2020-12-30",
+          "portfolio_value": 1.11155
+        }
+      ],
+      "rebalance_log": [
+        {
+          "date": "2020-01-02",
+          "weights": {
+            "AGGH.MI": 0.111111,
+            "CSPX.L": 0.111111,
+            "EFA": 0.111111,
+            "GLD": 0.111111,
+            "TIP": 0.111111,
+            "TLT": 0.111111,
+            "VNQ": 0.111111,
+            "XEON.MI": 0.111111,
+            "AGG": 0.111111
+          },
+          "turnover": 0.0,
+          "transaction_cost": 0.0
+        },
+        {
+          "date": "2020-01-31",
+          "weights": {
+            "AGGH.MI": 0.111111,
+            "CSPX.L": 0.111111,
+            "EFA": 0.111111,
+            "GLD": 0.111111,
+            "TIP": 0.111111,
+            "TLT": 0.111111,
+            "VNQ": 0.111111,
+            "XEON.MI": 0.111111,
+            "AGG": 0.111111
+          },
+          "turnover": 0.0,
+          "transaction_cost": 0.0
+        },
+        {
+          "date": "2020-03-31",
+          "weights": {
+            "AGGH.MI": 0.111111,
+            "CSPX.L": 0.111111,
+            "EFA": 0.111111,
+            "GLD": 0.111111,
+            "TIP": 0.111111,
+            "TLT": 0.111111,
+            "VNQ": 0.111111,
+            "XEON.MI": 0.111111,
+            "AGG": 0.111111
+          },
+          "turnover": 0.0,
+          "transaction_cost": 0.0
+        },
+        {
+          "date": "2020-04-30",
+          "weights": {
+            "AGGH.MI": 0.111111,
+            "CSPX.L": 0.111111,
+            "EFA": 0.111111,
+            "GLD": 0.111111,
+            "TIP": 0.111111,
+            "TLT": 0.111111,
+            "VNQ": 0.111111,
+            "XEON.MI": 0.111111,
+            "AGG": 0.111111
+          },
+          "turnover": 0.0,
+          "transaction_cost": 0.0
+        },
+        {
+          "date": "2020-06-30",
+          "weights": {
+            "AGGH.MI": 0.111111,
+            "CSPX.L": 0.111111,
+            "EFA": 0.111111,
+            "GLD": 0.111111,
+            "TIP": 0.111111,
+            "TLT": 0.111111,
+            "VNQ": 0.111111,
+            "XEON.MI": 0.111111,
+            "AGG": 0.111111
+          },
+          "turnover": 0.0,
+          "transaction_cost": 0.0
+        },
+        {
+          "date": "2020-07-31",
+          "weights": {
+            "AGGH.MI": 0.111111,
+            "CSPX.L": 0.111111,
+            "EFA": 0.111111,
+            "GLD": 0.111111,
+            "TIP": 0.111111,
+            "TLT": 0.111111,
+            "VNQ": 0.111111,
+            "XEON.MI": 0.111111,
+            "AGG": 0.111111
+          },
+          "turnover": 0.0,
+          "transaction_cost": 0.0
+        },
+        {
+          "date": "2020-08-31",
+          "weights": {
+            "AGGH.MI": 0.111111,
+            "CSPX.L": 0.111111,
+            "EFA": 0.111111,
+            "GLD": 0.111111,
+            "TIP": 0.111111,
+            "TLT": 0.111111,
+            "VNQ": 0.111111,
+            "XEON.MI": 0.111111,
+            "AGG": 0.111111
+          },
+          "turnover": 0.0,
+          "transaction_cost": 0.0
+        },
+        {
+          "date": "2020-09-30",
+          "weights": {
+            "AGGH.MI": 0.111111,
+            "CSPX.L": 0.111111,
+            "EFA": 0.111111,
+            "GLD": 0.111111,
+            "TIP": 0.111111,
+            "TLT": 0.111111,
+            "VNQ": 0.111111,
+            "XEON.MI": 0.111111,
+            "AGG": 0.111111
+          },
+          "turnover": 0.0,
+          "transaction_cost": 0.0
+        },
+        {
+          "date": "2020-11-30",
+          "weights": {
+            "AGGH.MI": 0.111111,
+            "CSPX.L": 0.111111,
+            "EFA": 0.111111,
+            "GLD": 0.111111,
+            "TIP": 0.111111,
+            "TLT": 0.111111,
+            "VNQ": 0.111111,
+            "XEON.MI": 0.111111,
+            "AGG": 0.111111
+          },
+          "turnover": 0.0,
+          "transaction_cost": 0.0
+        }
+      ]
+    }
+  }
+}
