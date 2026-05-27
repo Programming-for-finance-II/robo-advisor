@@ -50,13 +50,20 @@ def _business_days_before(date_str: str, n: int) -> str:
 
 def _download_prices(tickers: list[str], start: str, end: str) -> pd.DataFrame:
     logger.info("Downloading %d tickers %s → %s", len(tickers), start, end)
-    raw = yf.download(tickers, start=start, end=end, auto_adjust=True, progress=False, threads=True)
-    prices = raw["Close"] if isinstance(raw.columns, pd.MultiIndex) else raw[["Close"]].rename(columns={"Close": tickers[0]})
+    raw = yf.download(
+        tickers, start=start, end=end, auto_adjust=True, progress=False, threads=True
+    )
+    if isinstance(raw.columns, pd.MultiIndex):
+        prices = raw["Close"]
+    else:
+        prices = raw[["Close"]].rename(columns={"Close": tickers[0]})
     prices.index = pd.to_datetime(prices.index)
     return prices
 
 
-def _apply_fallback(prices: pd.DataFrame, fallback_map: dict[str, str], start: str, end: str) -> pd.DataFrame:
+def _apply_fallback(
+    prices: pd.DataFrame, fallback_map: dict[str, str], start: str, end: str
+) -> pd.DataFrame:
     for primary, fallback in fallback_map.items():
         if primary == fallback:
             continue
