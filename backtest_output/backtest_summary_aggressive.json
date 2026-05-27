@@ -1,0 +1,107 @@
+{
+  "gfc_2008": {
+    "scenario_label": "Global Financial Crisis (2008)",
+    "test_start": "2008-01-02",
+    "test_end": "2009-06-30",
+    "profile": "AGGRESSIVE",
+    "strategies": {
+      "HRP": {
+        "cagr": -0.017974,
+        "annualised_volatility": 0.091688,
+        "sharpe_ratio": -0.196038,
+        "max_drawdown": -0.130283,
+        "calmar_ratio": -0.137965,
+        "total_transaction_cost": 0.001108,
+        "n_rebalances": 12
+      },
+      "MV": {
+        "cagr": -0.10238,
+        "annualised_volatility": 0.121292,
+        "sharpe_ratio": -0.844078,
+        "max_drawdown": -0.214971,
+        "calmar_ratio": -0.476249,
+        "total_transaction_cost": 0.002949,
+        "n_rebalances": 12
+      },
+      "1/N": {
+        "cagr": -0.048814,
+        "annualised_volatility": 0.165589,
+        "sharpe_ratio": -0.294791,
+        "max_drawdown": -0.232254,
+        "calmar_ratio": -0.210176,
+        "total_transaction_cost": 0.0,
+        "n_rebalances": 12
+      }
+    }
+  },
+  "covid_2020": {
+    "scenario_label": "COVID-19 Crash (2020)",
+    "test_start": "2020-01-02",
+    "test_end": "2020-12-31",
+    "profile": "AGGRESSIVE",
+    "strategies": {
+      "HRP": {
+        "cagr": 0.058668,
+        "annualised_volatility": 0.063532,
+        "sharpe_ratio": 0.923436,
+        "max_drawdown": -0.091308,
+        "calmar_ratio": 0.642528,
+        "total_transaction_cost": 0.000775,
+        "n_rebalances": 9
+      },
+      "MV": {
+        "cagr": 0.060726,
+        "annualised_volatility": 0.117374,
+        "sharpe_ratio": 0.517372,
+        "max_drawdown": -0.15088,
+        "calmar_ratio": 0.402479,
+        "total_transaction_cost": 0.002538,
+        "n_rebalances": 9
+      },
+      "1/N": {
+        "cagr": 0.10882,
+        "annualised_volatility": 0.111936,
+        "sharpe_ratio": 0.972157,
+        "max_drawdown": -0.149505,
+        "calmar_ratio": 0.727864,
+        "total_transaction_cost": 0.0,
+        "n_rebalances": 9
+      }
+    }
+  },
+  "rate_hike_2022": {
+    "scenario_label": "Rate Hike Cycle (2022)",
+    "test_start": "2022-01-03",
+    "test_end": "2022-12-30",
+    "profile": "AGGRESSIVE",
+    "strategies": {
+      "HRP": {
+        "cagr": -0.088356,
+        "annualised_volatility": 0.068849,
+        "sharpe_ratio": -1.28332,
+        "max_drawdown": -0.126908,
+        "calmar_ratio": -0.696217,
+        "total_transaction_cost": 0.000974,
+        "n_rebalances": 10
+      },
+      "MV": {
+        "cagr": -0.120099,
+        "annualised_volatility": 0.103709,
+        "sharpe_ratio": -1.158045,
+        "max_drawdown": -0.152093,
+        "calmar_ratio": -0.789644,
+        "total_transaction_cost": 0.00267,
+        "n_rebalances": 10
+      },
+      "1/N": {
+        "cagr": -0.137494,
+        "annualised_volatility": 0.119492,
+        "sharpe_ratio": -1.150655,
+        "max_drawdown": -0.195792,
+        "calmar_ratio": -0.702245,
+        "total_transaction_cost": 0.0,
+        "n_rebalances": 10
+      }
+    }
+  }
+}
