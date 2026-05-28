@@ -1513,29 +1513,6 @@ def _render_hrp_tab(portfolio: dict) -> None:
             )
             st.plotly_chart(fig_dend, use_container_width=True)
 
-            _cluster_color: dict[str, str] = {
-                t: cl["color"]
-                for cl in _DEND_CLUSTERS
-                for t in cl["tickers"]
-            }
-            _map_items = "".join(
-                f'<span style="display:inline-flex;align-items:center;gap:0.3rem;'
-                f'margin:0.18rem 0.3rem 0.18rem 0;">'
-                f'<span style="width:6px;height:6px;border-radius:50%;'
-                f'background:{_cluster_color.get(t, "#64748b")};flex-shrink:0;'
-                f'display:inline-block;"></span>'
-                f'<span style="font-size:0.68rem;color:#94a3b8;">{t}</span>'
-                f'</span>'
-                for t in tickers_list
-            )
-            st.markdown(
-                '<div style="display:flex;flex-wrap:wrap;align-items:center;'
-                'margin-top:0.15rem;">'
-                f'{_map_items}'
-                '</div>',
-                unsafe_allow_html=True,
-            )
-
         except Exception as exc:
             st.caption(f"Dendrogram unavailable: {exc}")
 
@@ -1545,6 +1522,11 @@ def _render_hrp_tab(portfolio: dict) -> None:
             ("Early linkage", "Assets merged near the bottom share similar return patterns."),
             ("Cluster balance", "HRP divides risk equally within each subtree before scaling up."),
             ("No forecasts", "Uses only historical correlations — no return predictions."),
+            (
+                "Line colour",
+                "All branches share a single colour — the dendrogram encodes distance "
+                "through height, not colour. The chips above label economic asset groups.",
+            ),
         ]
         _pts_html = "".join(
             f'<div style="display:flex;gap:0.55rem;margin-bottom:0.6rem;">'
@@ -1677,21 +1659,34 @@ def _render_mv_tab(portfolio: dict, profile_key: str) -> None:
     for ticker in tickers_sorted:
         h = hrp_weights.get(ticker, 0.0)
         m = mv_weights.get(ticker, 0.0)
+        delta_pp = (h - m) * 100
         comparison_rows.append({
             "Ticker": ticker,
-            "HRP": f"{h:.1%}",
-            "Markowitz": f"{m:.1%}",
-            "Difference": f"{abs(h - m):.1%}",
-            "UCITS": "EU" if ticker in _UCITS_TICKERS else "—",
+            "Asset Class": _HRP_TICKER_CLUSTER.get(ticker, "Other"),
+            "HRP (%)": round(h * 100, 2),
+            "Markowitz (%)": round(m * 100, 2),
+            "Δ (HRP − MV, pp)": f"{delta_pp:+.1f} pp",
+            "UCITS": "EU ✓" if ticker in _UCITS_TICKERS else "—",
         })
 
     st.dataframe(
         pd.DataFrame(comparison_rows),
         hide_index=True,
         use_container_width=True,
+        column_config={
+            "HRP (%)": st.column_config.ProgressColumn(
+                "HRP (%)", format="%.1f%%", min_value=0, max_value=100,
+            ),
+            "Markowitz (%)": st.column_config.ProgressColumn(
+                "Markowitz (%)", format="%.1f%%", min_value=0, max_value=100,
+            ),
+        },
     )
     st.caption(
-        "Markowitz typically produces more concentrated portfolios. "
+        "Δ (HRP − MV) is in percentage points. "
+        "Positive values mean HRP allocates more to that asset than Markowitz; "
+        "negative values mean Markowitz allocates more. "
+        "Markowitz typically produces more concentrated portfolios; "
         "HRP avoids corner solutions by construction."
     )
 
@@ -1716,6 +1711,7 @@ def _render_mv_tab(portfolio: dict, profile_key: str) -> None:
             mv_vol=mv_vol or 0.08,
             mv_ret=mv_ret,
         )
+        fig_frontier = apply_plotly_dark_theme(fig_frontier)
         st.plotly_chart(fig_frontier, use_container_width=True)
         if portfolio.get("source") != "live":
             st.caption("Frontier shown is illustrative (Phase A mock)."

@@ -263,7 +263,7 @@ def plot_efficient_frontier(
         y=[r * 100 for r in frontier_rets],
         mode="lines",
         name="Efficient Frontier",
-        line=dict(color="gray", width=1.5, dash="dot"),
+        line=dict(color="#475569", width=1.5, dash="dash"),
     ))
 
     # MV portfolio marker
@@ -273,9 +273,11 @@ def plot_efficient_frontier(
             y=[mv_ret * 100],
             mode="markers+text",
             name="Markowitz",
-            marker=dict(color="tomato", size=12, symbol="diamond"),
-            text=["MV"],
+            marker=dict(color="#f59e0b", size=13, symbol="diamond",
+                        line=dict(color="#fcd34d", width=1)),
+            text=["Markowitz"],
             textposition="top center",
+            textfont=dict(color="#fcd34d", size=11),
         ))
 
     # HRP portfolio marker
@@ -285,18 +287,20 @@ def plot_efficient_frontier(
         y=y_hrp,
         mode="markers+text",
         name="HRP",
-        marker=dict(color="steelblue", size=12, symbol="circle"),
+        marker=dict(color="#7c5cfc", size=13, symbol="circle",
+                    line=dict(color="#a78bfa", width=1)),
         text=["HRP"],
         textposition="top center",
+        textfont=dict(color="#a78bfa", size=11),
     ))
 
     fig.update_layout(
         title="Efficient Frontier — HRP vs Markowitz",
         xaxis_title="Annualised Volatility (%)",
         yaxis_title="Expected Return (%)",
-        height=450,
+        height=420,
         margin=dict(l=20, r=20, t=50, b=40),
-        legend=dict(orientation="h", yanchor="bottom", y=1.02),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0),
     )
 
     return fig
