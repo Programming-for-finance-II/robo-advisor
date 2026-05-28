@@ -34,6 +34,16 @@ SAFE_FALLBACK_MESSAGE: str = (
     + MANDATORY_DISCLAIMER
 )
 
+# Rule 9 (EU Awareness) note. When the profiler is US-centric and the narrator
+# omits the required US/EU caveat, the validator appends this note instead of
+# discarding an otherwise-valid answer (corrective, not blocking). The text
+# itself satisfies _check_eu_awareness_missing (Group A + Group B keywords).
+EU_AWARENESS_NOTE: str = (
+    "Note: the risk profile was determined using a model trained on US household "
+    "data (Federal Reserve Survey of Consumer Finances 2022). European investors "
+    "may exhibit systematically different risk preferences."
+)
+
 _INJECTION_PATTERNS_SEMANTIC: tuple[str, ...] = (
     "ignore previous",
     "ignore above",
@@ -79,11 +89,14 @@ class ValidationResult:
         - If passed=False: SAFE_FALLBACK_MESSAGE.
     disclaimer_appended : bool
         True if the disclaimer was missing and was auto-appended (Step 3).
+    eu_note_appended : bool
+        True if the EU awareness note was missing and was auto-appended (Step 5).
     """
     passed: bool
     flags: list[ValidationFlag] = field(default_factory=list)
     safe_text: str = ""
     disclaimer_appended: bool = False
+    eu_note_appended: bool = False
 
 
 # ---------------------------------------------------------------------------
@@ -99,8 +112,9 @@ def validate(
     """
     Run the 5-step validator on a raw LLM response.
 
-    Steps are run in order. Steps 1, 2, 4 and 5 are blocking (return fallback).
-    Step 3 is corrective (auto-appends disclaimer, does not block).
+    Steps are run in order. Steps 1, 2 and 4 are blocking (return fallback).
+    Steps 3 and 5 are corrective (auto-append the disclaimer / EU note, do not
+    block).
 
     Args:
         response_text:    Raw text from NarratorClient.narrate().
@@ -133,20 +147,30 @@ def validate(
         flags.append(ValidationFlag.INJECTION_DETECTED)
         return ValidationResult(passed=False, flags=flags, safe_text=SAFE_FALLBACK_MESSAGE)
 
-    # Step 5 — EU Awareness Rule 9 (blocking)
+    # Step 5 — EU Awareness Rule 9 (corrective, not blocking)
     # Required when profiler was trained on US data (SCF 2022).
-    # The narrator must acknowledge the US/EU geographic gap explicitly.
-    if eu_awareness_required and _check_eu_awareness_missing(response_text):
+    # If the narrator omits the US/EU caveat we append the standard note rather
+    # than discarding an otherwise-valid answer — the note is inserted just
+    # before the mandatory disclaimer so it reads naturally.
+    eu_note_appended = False
+    if eu_awareness_required and _check_eu_awareness_missing(text):
         flags.append(ValidationFlag.EU_AWARENESS_MISSING)
-        return ValidationResult(
-            passed=False, flags=flags, safe_text=SAFE_FALLBACK_MESSAGE
-        )
+        if MANDATORY_DISCLAIMER in text:
+            text = text.replace(
+                MANDATORY_DISCLAIMER,
+                EU_AWARENESS_NOTE + "\n\n" + MANDATORY_DISCLAIMER,
+                1,
+            )
+        else:
+            text = text + "\n\n" + EU_AWARENESS_NOTE
+        eu_note_appended = True
 
     return ValidationResult(
         passed=True,
         flags=flags,
         safe_text=text,
         disclaimer_appended=appended,
+        eu_note_appended=eu_note_appended,
     )
 
 

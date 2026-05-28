@@ -14,6 +14,7 @@ Ground Truth Payload and be validated before reaching the user.
 
 from __future__ import annotations
 
+import re
 from typing import Literal, Optional
 
 from pydantic import BaseModel, Field, model_validator
@@ -291,19 +292,38 @@ class GroundTruthPayload(BaseModel):
 # Helper: extract all numeric values from a payload -> allowed_numbers
 # ---------------------------------------------------------------------------
 
+_STRING_NUMBER_RE = re.compile(r"-?\d+(?:[.,]\d+)?")
+
+
 def _extract_floats(obj: object) -> list[float]:
     """
     Recursively extract every float and int from a nested object.
 
     Booleans are excluded because they are subclasses of int in Python.
     Values are rounded to 6 decimals to make validator comparisons stable.
+
+    Numbers embedded in string fields (e.g. the "40–55%" range inside a
+    profiler note) are also harvested: they are part of the ground truth shown
+    to the narrator, so citing them is not hallucination. Each string number is
+    whitelisted in both its raw and percent (value / 100) form so the validator
+    matches regardless of whether the narrator renders it as "40" or "40%".
     """
     result: list[float] = []
 
+    if isinstance(obj, bool):
+        return result
     if isinstance(obj, float):
         result.append(round(obj, 6))
-    elif isinstance(obj, int) and not isinstance(obj, bool):
+    elif isinstance(obj, int):
         result.append(float(obj))
+    elif isinstance(obj, str):
+        for token in _STRING_NUMBER_RE.findall(obj):
+            try:
+                val = float(token.replace(",", "."))
+            except ValueError:
+                continue
+            result.append(round(val, 6))
+            result.append(round(val / 100.0, 6))
     elif isinstance(obj, dict):
         for value in obj.values():
             result.extend(_extract_floats(value))

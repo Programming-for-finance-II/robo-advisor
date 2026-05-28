@@ -238,13 +238,17 @@ class TestEUAwarenessRule9:
         text = "The portfolio has 35% equity allocation." + MANDATORY_DISCLAIMER
         assert _check_eu_awareness_missing(text) is True
 
-    def test_rule9_blocks_validate_when_required(self) -> None:
-        # eu_awareness_required=True + no EU awareness → fallback returned
+    def test_rule9_appends_note_when_required(self) -> None:
+        # eu_awareness_required=True + no EU awareness → note auto-appended,
+        # response still passes (corrective, not blocking).
         text = "The portfolio has 35% in equity and 22% in bonds." + MANDATORY_DISCLAIMER
         result = validate(text, ALLOWED, FORBIDDEN, eu_awareness_required=True)
-        assert result.passed is False
+        assert result.passed is True
+        assert result.eu_note_appended is True
         assert ValidationFlag.EU_AWARENESS_MISSING in result.flags
-        assert result.safe_text == SAFE_FALLBACK_MESSAGE
+        # The corrected text now satisfies Rule 9.
+        assert _check_eu_awareness_missing(result.safe_text) is False
+        assert result.safe_text != SAFE_FALLBACK_MESSAGE
 
     def test_rule9_skipped_when_not_required(self) -> None:
         # eu_awareness_required=False (default) → same text passes
