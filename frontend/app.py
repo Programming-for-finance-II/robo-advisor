@@ -1821,12 +1821,30 @@ _CHAT_CSS = """
     border-radius: 50%;
     flex-shrink: 0;
 }
-.ca-pill--profile { color: #a78bfa; border-color: rgba(124,92,252,0.32); background: rgba(124,92,252,0.1); }
-.ca-pill--profile .ca-dot { background: #7c5cfc; box-shadow: 0 0 0 3px rgba(124,92,252,0.18); }
-.ca-pill--model   { color: #93c5fd; border-color: rgba(59,130,246,0.30); background: rgba(59,130,246,0.08); }
+.ca-pill--profile {
+    color: #a78bfa;
+    border-color: rgba(124,92,252,0.32);
+    background: rgba(124,92,252,0.1);
+}
+.ca-pill--profile .ca-dot {
+    background: #7c5cfc;
+    box-shadow: 0 0 0 3px rgba(124,92,252,0.18);
+}
+.ca-pill--model {
+    color: #93c5fd;
+    border-color: rgba(59,130,246,0.30);
+    background: rgba(59,130,246,0.08);
+}
 .ca-pill--model .ca-dot   { background: #3b82f6; }
-.ca-pill--guard   { color: #5eead4; border-color: rgba(13,207,176,0.30); background: rgba(13,207,176,0.08); }
-.ca-pill--guard .ca-dot   { background: #0dcfb0; box-shadow: 0 0 0 3px rgba(13,207,176,0.15); }
+.ca-pill--guard {
+    color: #5eead4;
+    border-color: rgba(13,207,176,0.30);
+    background: rgba(13,207,176,0.08);
+}
+.ca-pill--guard .ca-dot {
+    background: #0dcfb0;
+    box-shadow: 0 0 0 3px rgba(13,207,176,0.15);
+}
 
 /* ── Chat shell ──────────────────────────────────────────────────────────── */
 .ca-shell {
@@ -1878,7 +1896,12 @@ _CHAT_CSS = """
     width: 64px;
     height: 64px;
     border-radius: 50%;
-    background: radial-gradient(circle at 35% 30%, rgba(167,139,250,0.55) 0%, rgba(124,92,252,0.15) 60%, transparent 100%);
+    background: radial-gradient(
+        circle at 35% 30%,
+        rgba(167,139,250,0.55) 0%,
+        rgba(124,92,252,0.15) 60%,
+        transparent 100%
+    );
     border: 1px solid rgba(124,92,252,0.4);
     display: inline-flex;
     align-items: center;
