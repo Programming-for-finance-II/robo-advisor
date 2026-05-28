@@ -2489,44 +2489,29 @@ _CHAT_CSS = """
     from { opacity: 0; transform: translateY(4px); }
     to   { opacity: 1; transform: translateY(0); }
 }
-/* Avatar bubbles */
-[data-testid="stChatMessage"] [data-testid="stChatMessageAvatarUser"],
-[data-testid="stChatMessage"] [data-testid="stChatMessageAvatarAssistant"],
-[data-testid="stChatMessage"] [data-testid="stChatMessageAvatarCustom"] {
-    border-radius: 50% !important;
-    width: 2.05rem !important;
-    height: 2.05rem !important;
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    flex-shrink: 0 !important;
-}
-[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"])
-[data-testid="stChatMessageAvatarUser"] {
-    background: rgba(124,92,252,0.18) !important;
-    border: 1px solid rgba(124,92,252,0.35) !important;
-}
-[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarAssistant"])
-[data-testid="stChatMessageAvatarAssistant"] {
-    background: rgba(13,207,176,0.15) !important;
-    border: 1px solid rgba(13,207,176,0.3) !important;
+/* Hide avatar column entirely — distinction is colour-only */
+[data-testid="stChatMessageAvatarUser"],
+[data-testid="stChatMessageAvatarAssistant"],
+[data-testid="stChatMessageAvatarCustom"] {
+    display: none !important;
 }
 
-/* Message bubble = the rendered markdown container next to the avatar */
-[data-testid="stChatMessage"] [data-testid="stChatMessageContent"],
-[data-testid="stChatMessage"] > div > div:not([data-testid*="Avatar"]) {
+/* Message bubbles — full width, no avatar gap */
+[data-testid="stChatMessage"] [data-testid="stChatMessageContent"] {
     background: #131c30 !important;
     border: 1px solid #1e2640 !important;
-    border-radius: 12px !important;
-    padding: 0.7rem 1rem !important;
+    border-left: 3px solid #1e2640 !important;
+    border-radius: 10px !important;
+    padding: 0.75rem 1.05rem !important;
     box-shadow: 0 1px 0 rgba(0,0,0,0.15);
+    width: 100% !important;
 }
+/* User message: purple left-border accent (same pattern as selected options) */
 [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"])
-[data-testid="stChatMessageContent"],
-[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"])
-> div > div:not([data-testid*="Avatar"]) {
-    background: rgba(124,92,252,0.09) !important;
-    border-color: rgba(124,92,252,0.28) !important;
+[data-testid="stChatMessageContent"] {
+    background: rgba(124,92,252,0.08) !important;
+    border-color: rgba(124,92,252,0.22) !important;
+    border-left-color: #7c5cfc !important;
 }
 [data-testid="stChatMessage"] p {
     font-family: 'DM Sans', sans-serif !important;
@@ -2719,10 +2704,8 @@ _CHAT_CSS = """
 </style>
 """
 
-# Avatars for the two chat roles. st.chat_message only accepts a real emoji,
-# an image URL, or None — arbitrary unicode glyphs (e.g. "✦") are rejected on
-# Streamlit Cloud because they fall through to the image loader and crash.
-_CHAT_AVATARS: dict[str, str] = {"assistant": "✨", "user": "🧑"}
+# No custom avatars — user vs assistant distinction is conveyed by CSS color.
+_CHAT_AVATARS: dict[str, None] = {"assistant": None, "user": None}
 
 # Example prompts shown in the empty state.
 _CHAT_SUGGESTIONS: list[str] = [
