@@ -123,24 +123,110 @@ are available at:
 % ─────────────────────────────────────────────────────────────
 \section{ML Risk Profiler}
 \label{sec:ml}
-% Owner: P3 (draft) — P4 integrates
-% TODO W4: GBM on SCF 2022, SHAP, clustering, feature importance
 % ─────────────────────────────────────────────────────────────
 
-\subsection{Data: Federal Reserve SCF 2022}
-% TODO P3: dataset description, variables used, preprocessing
+\subsection{Architecture}
+
+The risk profiler operates in two phases. \textbf{Phase A} is a rule-based
+fallback based on the Grable--Lytton (1999) instrument \parencite{grable1999}:
+ten questionnaire items scored on a $[0, 30]$ scale are mapped to three
+profiles (\texttt{CONSERVATIVE}, \texttt{MODERATE}, \texttt{AGGRESSIVE}).
+An investment-objective override caps the profile at \texttt{CONSERVATIVE}
+if the respondent selects capital preservation as their primary objective,
+regardless of total score; borderline scores also reduce prediction confidence.
+Phase A requires no trained model, ensuring graceful degradation if the ML
+pipeline is unavailable.
+
+\textbf{Phase B} grounds classification in empirically observed household
+portfolio behaviour rather than expert-calibrated scoring weights. Training
+labels are derived from the Federal Reserve Survey of Consumer Finances
+(SCF~2022) \parencite{FedSCF2022}, a stratified probability sample of
+4{,}595 U.S.\ households (implicate~1). Both phases return a uniform
+\texttt{ProfilerOutput} typed dictionary --- containing profile label,
+confidence score, \texttt{low\_confidence\_flag}, SHAP \texttt{top\_drivers},
+and \texttt{model\_version} --- so downstream components (portfolio optimiser,
+LLM narrator) are agnostic to which phase produced the classification.
 
 \subsection{Label Construction via Behavioural Clustering}
-% TODO P3: k-means / hierarchical clustering on financial behaviour,
-%          why not Grable-Lytton (circular), silhouette score
+\label{sec:clustering}
+
+To avoid a circularity common in supervised risk profiling --- using
+rule-based labels to train a supervised model simply re-learns the rule
+--- synthetic ground-truth labels are constructed from observed portfolio
+allocation data. Four allocation variables (\texttt{EQUITY}, \texttt{BOND},
+\texttt{CASHLI}, \texttt{STOCKS}) are extracted from the SCF~2022 summary
+extract, normalised to sum to 1.0 per household, and standardised.
+Sample weights (\texttt{WGT}) are preserved throughout: the SCF oversamples
+high-net-worth households, and ignoring weights would bias the model toward
+wealthy-household behaviour \parencite{guiso2018}.
+
+K-Means ($K=3$) is applied to the normalised allocation ratios. The
+silhouette score ($s = 0.84$) confirms well-separated behavioural groups.
+Clusters are labelled deterministically by mean equity share: highest
+$\to$ \texttt{AGGRESSIVE}, lowest $\to$ \texttt{CONSERVATIVE}, intermediate
+$\to$ \texttt{MODERATE}. The resulting distribution ---
+\texttt{AGGRESSIVE}~59.2\%, \texttt{CONSERVATIVE}~34.3\%,
+\texttt{MODERATE}~6.5\% --- is consistent with the heterogeneity in risk
+aversion documented by \textcite{guiso2018}.
 
 \subsection{GBM Classifier}
-% TODO P3: model architecture, hyperparameters, train/test split,
-%          accuracy / F1
+\label{sec:gbm}
+
+A \texttt{HistGradientBoostingClassifier} (scikit-learn) is trained on
+nine features available from questionnaire responses at inference time:
+\texttt{AGE}, \texttt{EDUC}, \texttt{INCOME}, \texttt{NETWORTH},
+\texttt{YESFINRISK}, \texttt{NOFINRISK}, \texttt{KIDS}, \texttt{MARRIED},
+and \texttt{WSAVED}. The allocation ratios used for label construction are
+not required at prediction time. Sample weights (\texttt{WGT}) are passed
+to \texttt{fit()} to preserve population representativeness.
+A logistic regression baseline is trained on identical features to
+quantify the contribution of non-linearity.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lcc}
+\hline
+\textbf{Metric} & \textbf{HistGBM} & \textbf{LR Baseline} \\
+\hline
+Training accuracy    & 97.7\% & 79.9\% \\
+CV accuracy (3-fold) & 94.0\% $\pm$ 0.15\% & 63.3\% $\pm$ 2.9\% \\
+\hline
+\end{tabular}
+\caption{Classifier performance on SCF~2022 ($n = 4{,}595$, implicate~1).}
+\label{tab:classifier}
+\end{table}
+
+The 30.7 percentage-point gap in cross-validation accuracy demonstrates that
+demographic and behavioural features interact non-linearly in determining
+risk profile; relevant interactions include age $\times$ net worth and
+income $\times$ financial risk attitude. The low CV variance
+($\pm 0.15\%$) confirms generalisation rather than memorisation.
 
 \subsection{SHAP Explainability}
-% TODO P3: top drivers, waterfall plots, how SHAP values feed into
-%          the Ground Truth JSON
+\label{sec:shap}
+
+SHAP values are computed via \texttt{shap.TreeExplainer} and normalised
+by absolute magnitude:
+\[
+  \hat{\phi}_i = \frac{|\phi_i|}{\sum_j |\phi_j|}, \qquad
+  i \in \text{top-}N \text{ features}
+\]
+The top-$N$ normalised importances (\texttt{top\_drivers}) are injected
+into the Ground Truth JSON payload. The LLM narrator is constrained to
+reference only features present in \texttt{top\_drivers}
+(Rule~7 of the system prompt, Section~\ref{sec:llm}), preventing the
+model from fabricating correlations unsupported by the classifier output.
+
+\subsection{Profiler Limitations}
+
+The pipeline uses only implicate~1 of the five SCF multiple imputations
+as a deliberate scope simplification: the allocation variables exhibit
+minimal missingness, and 4{,}595 observations are sufficient for a robust
+gradient boosting model. A production system should pool all five implicates
+using Rubin's Rules. The trained model (\texttt{gbm\_model.pkl}) is static
+and not retrained at runtime; updating it requires manual re-execution of
+the SCF pipeline. The US-centrism of the SCF training data relative to
+European investors is addressed in Section~\ref{sec:limitations}.
 
 % ─────────────────────────────────────────────────────────────
 \section{Portfolio Optimisation}
