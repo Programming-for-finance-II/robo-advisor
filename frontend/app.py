@@ -31,6 +31,7 @@ from frontend.style import (
     inject_css,
     page_header,
     render_disclaimer,
+    render_eu_note,
 )
 
 # ---------------------------------------------------------------------------
@@ -919,37 +920,68 @@ def render_portfolio() -> None:
 
     # ── Profile hero strip ───────────────────────────────────────────────────
     _PROFILE_META = {
-        "CONSERVATIVE": {"icon": "🛡️", "color": "#0dcfb0", "label": "Conservative"},
-        "MODERATE":     {"icon": "⚖️",  "color": "#7c5cfc", "label": "Moderate"},
-        "AGGRESSIVE":   {"icon": "🚀", "color": "#f87171", "label": "Aggressive"},
+        "CONSERVATIVE": {
+            "icon": "🛡️", "color": "#0dcfb0", "label": "Conservative",
+            "desc": (
+                "Capital-preservation focus with low-volatility, income-oriented "
+                "exposure across bonds, cash, and select alternatives."
+            ),
+        },
+        "MODERATE": {
+            "icon": "⚖️", "color": "#7c5cfc", "label": "Moderate",
+            "desc": (
+                "Balanced HRP allocation with diversified exposure across "
+                "equity, bonds, alternatives, and cash."
+            ),
+        },
+        "AGGRESSIVE": {
+            "icon": "🚀", "color": "#f87171", "label": "Aggressive",
+            "desc": (
+                "Growth-oriented HRP allocation with higher equity exposure, "
+                "accepting greater volatility for long-term return potential."
+            ),
+        },
     }
     pm = _PROFILE_META.get(profile_label, _PROFILE_META["MODERATE"])
-    conf_html = (
-        f'<div style="font-size:0.8rem;color:#94a3b8;margin-top:2px;">'
-        f'Confidence&nbsp;<span style="color:{pm["color"]};font-weight:600;">'
-        f'{confidence:.0%}</span></div>'
+    color = pm["color"]
+
+    # Pre-compute optional confidence inline text
+    conf_inline = (
+        f'&nbsp;&middot;&nbsp;'
+        f'<span style="color:{color};font-weight:600;">'
+        f'Confidence {confidence:.0%}</span>'
         if confidence is not None else ""
     )
+
+    # Small badges row
+    _badge_style = (
+        f'font-size:0.68rem;font-weight:600;letter-spacing:0.06em;'
+        f'text-transform:uppercase;color:{color}90;'
+        f'background:{color}15;border:1px solid {color}30;'
+        f'border-radius:6px;padding:0.2rem 0.55rem;'
+    )
+    badges_html = "".join(
+        f'<span style="{_badge_style}">{b}</span>'
+        for b in ["HRP", pm["label"], "Educational prototype"]
+    )
+
+    # Single self-contained block — no leading indentation that would
+    # trigger Markdown's 4-space code-block rule
     st.markdown(
-        f"""
-        <div style="
-            display:flex;align-items:center;gap:1rem;
-            background:linear-gradient(135deg,{pm['color']}12,{pm['color']}06);
-            border:1px solid {pm['color']}35;
-            border-radius:12px;padding:0.85rem 1.25rem;
-            margin-bottom:1.25rem;">
-            <div style="font-size:1.6rem;flex-shrink:0;">{pm['icon']}</div>
-            <div>
-                <div style="
-                    font-family:'Space Grotesk',sans-serif;
-                    font-size:1.05rem;font-weight:700;
-                    color:{pm['color']};letter-spacing:0.03em;">
-                    {pm['label']} Investor
-                </div>
-                {conf_html}
-            </div>
-        </div>
-        """,
+        f'<div style="display:flex;align-items:flex-start;gap:1rem;'
+        f'background:linear-gradient(135deg,{color}12,{color}06);'
+        f'border:1px solid {color}35;border-radius:12px;'
+        f'padding:0.85rem 1.25rem;margin-bottom:1.25rem;">'
+        f'<div style="font-size:1.6rem;flex-shrink:0;margin-top:0.1rem;">{pm["icon"]}</div>'
+        f'<div style="min-width:0;">'
+        f'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:1.05rem;'
+        f'font-weight:700;color:{color};letter-spacing:0.03em;margin-bottom:0.25rem;">'
+        f'{pm["label"]} Investor</div>'
+        f'<div style="font-size:0.82rem;color:#94a3b8;margin-bottom:0.5rem;line-height:1.5;">'
+        f'{pm["desc"]}{conf_inline}</div>'
+        f'<div style="display:flex;flex-wrap:wrap;gap:0.35rem;">{badges_html}</div>'
+        f'</div>'
+        f'</div>',
         unsafe_allow_html=True,
     )
 
@@ -960,11 +992,12 @@ def render_portfolio() -> None:
 
     # Toggle between mock data (Phase A) and live optimizer (Phase B)
     use_live = st.toggle(
-        "Load live market data",
+        "Use live market data",
         value=default_live,
         help=(
-            "Downloads real prices from yfinance and runs the HRP optimizer. "
-            "Takes about 10 seconds on first load."
+            "When disabled, the dashboard uses stable mock data for demonstration. "
+            "When enabled, it attempts to load current market prices via yfinance "
+            "and runs the HRP optimizer. Takes about 10 seconds on first load."
         ),
     )
 
@@ -1023,14 +1056,7 @@ def render_portfolio() -> None:
 
     # EU Investor Note -- mandatory on every portfolio page (EU Awareness Rule 9)
     st.markdown("---")
-    st.info(
-        "EU Investor Note -- The risk profile model is trained on "
-        "US Federal Reserve SCF data (2022). Results may not fully reflect "
-        "the behaviour of European retail investors. "
-        "The ECB Household Finance and Consumption Survey (HFCS) would be a "
-        "more geographically appropriate training source. "
-        "(EU Awareness Rule 9 -- Design v3.1)"
-    )
+    render_eu_note()
 
 
 def _build_perf_chart(exp_ret: float, vol: float, n_days: int, seed: int = 42):
@@ -1055,23 +1081,31 @@ def _build_perf_chart(exp_ret: float, vol: float, n_days: int, seed: int = 42):
     end = date.today()
     dates = [end - timedelta(days=n_days - i) for i in range(n_days)]
 
+    all_vals = np.concatenate([hrp_cum, bm_cum])
+    y_min = float(all_vals.min())
+    y_max = float(all_vals.max())
+    y_pad = (y_max - y_min) * 0.05
+
     fig = go.Figure()
     fig.add_trace(go.Scatter(
         x=dates, y=hrp_cum.tolist(),
         mode="lines", name="HRP Portfolio",
         line=dict(color="#7c5cfc", width=2),
         fill="tozeroy",
-        fillcolor="rgba(124,92,252,0.04)",
+        fillcolor="rgba(124,92,252,0.08)",
     ))
     fig.add_trace(go.Scatter(
         x=dates, y=bm_cum.tolist(),
         mode="lines", name="60/40 Benchmark",
-        line=dict(color="#475569", width=1.5, dash="dot"),
+        line=dict(color="#94a3b8", width=2, dash="dot"),
     ))
     fig.update_layout(
         height=420,
         legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0),
-        yaxis_title="Portfolio value (base 100)",
+        yaxis=dict(
+            title="Portfolio value (base 100)",
+            range=[y_min - y_pad, y_max + y_pad],
+        ),
         hovermode="x unified",
     )
     return fig
@@ -1115,18 +1149,10 @@ _PROFILE_COLOR: dict[str, str] = {
 
 def _section_header(number: str, title: str) -> None:
     st.markdown(
-        f"""
-        <div style="
-            border-left:3px solid #7c5cfc;
-            padding-left:0.875rem;
-            margin-bottom:0.75rem;
-        ">
-            <div style="
-                font-family:'Space Grotesk',sans-serif;
-                font-size:1.05rem;font-weight:600;color:#f1f5f9;
-            ">{number}. {title}</div>
-        </div>
-        """,
+        f'<div style="border-left:3px solid #7c5cfc;padding-left:0.875rem;margin-bottom:0.75rem;">'
+        f'<div style="font-family:\'Space Grotesk\',sans-serif;'
+        f'font-size:1.05rem;font-weight:600;color:#f1f5f9;">{number}. {title}</div>'
+        f'</div>',
         unsafe_allow_html=True,
     )
 
@@ -1134,7 +1160,7 @@ def _section_header(number: str, title: str) -> None:
 def _section_desc(text: str) -> None:
     st.markdown(
         f'<div style="font-size:0.82rem;color:#64748b;line-height:1.65;'
-        f'max-width:740px;margin-bottom:1.25rem;">{text}</div>',
+        f'margin-bottom:1.25rem;">{text}</div>',
         unsafe_allow_html=True,
     )
 
@@ -1183,6 +1209,7 @@ def _render_hrp_tab(portfolio: dict) -> None:
     _section_desc(
         "The chart tracks the growth of a $100,000 notional investment in the HRP portfolio "
         "over the selected time window, compared to a 60/40 equity-bond benchmark. "
+        "Values are indexed to 100 at the start of the selected period. "
         "Use the period selector to zoom in on shorter or longer horizons. "
         "Past performance is simulated and does not guarantee future results."
     )
@@ -1212,12 +1239,27 @@ def _render_hrp_tab(portfolio: dict) -> None:
 
     _v_spacer(2.5)
 
-    # ── Cluster breakdown pills ─────────────────────────────────────────────
+    # ── Section 2: Portfolio Allocation ────────────────────────────────────
+    _section_header("2", "Portfolio Allocation")
+    _section_desc(
+        "The chart below shows how capital is distributed across the portfolio's assets. "
+        "HRP balances risk — not capital — so assets with higher historical volatility "
+        "receive a proportionally smaller weight. This spreads risk contributions evenly "
+        "across equities, fixed income, commodities, and cash-equivalent positions."
+    )
+
+    # Cluster allocation pills — asset-class breakdown of the current portfolio
     cluster_totals: dict[str, float] = {}
     for ticker, w in weights.items():
         cl = _HRP_TICKER_CLUSTER.get(ticker, "Other")
         cluster_totals[cl] = cluster_totals.get(cl, 0.0) + w
 
+    st.markdown(
+        '<div style="font-size:0.72rem;font-weight:600;letter-spacing:0.1em;'
+        'text-transform:uppercase;color:#64748b;margin-bottom:0.5rem;">'
+        'Current allocation by asset class</div>',
+        unsafe_allow_html=True,
+    )
     pills_html = '<div style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-bottom:1.25rem;">'
     for cl in ["Equity", "Bonds", "Alternatives", "Cash"]:
         pct = cluster_totals.get(cl, 0.0)
@@ -1239,17 +1281,6 @@ def _render_hrp_tab(portfolio: dict) -> None:
     pills_html += "</div>"
     st.markdown(pills_html, unsafe_allow_html=True)
 
-    _v_spacer(2.5)
-
-    # ── Section 2: Portfolio Allocation ────────────────────────────────────
-    _section_header("2", "Portfolio Allocation")
-    _section_desc(
-        "The chart below shows how capital is distributed across the portfolio's assets. "
-        "HRP balances risk — not capital — so assets with higher historical volatility "
-        "receive a proportionally smaller weight. This spreads risk contributions evenly "
-        "across equities, fixed income, commodities, and cash-equivalent positions."
-    )
-
     try:
         from backend.optimizer.charts import plot_weights_donut
         fig_donut = plot_weights_donut(weights)
@@ -1265,7 +1296,8 @@ def _render_hrp_tab(portfolio: dict) -> None:
     for ticker, w in sorted(weights.items(), key=lambda kv: -kv[1]):
         rows.append({
             "Ticker": ticker,
-            "Weight": w,
+            "Cluster": _HRP_TICKER_CLUSTER.get(ticker, "Other"),
+            "Weight (%)": round(w * 100, 2),
             "UCITS": "EU ✓" if ticker in ucits_set else "—",
             "Risk Contribution": f"{risk_contributions.get(ticker, 0.0):.1%}",
         })
@@ -1275,11 +1307,76 @@ def _render_hrp_tab(portfolio: dict) -> None:
         hide_index=True,
         use_container_width=True,
         column_config={
-            "Weight": st.column_config.ProgressColumn(
-                "Weight", format="%.1f%%", min_value=0, max_value=1,
+            "Weight (%)": st.column_config.ProgressColumn(
+                "Weight (%)", format="%.1f%%", min_value=0, max_value=100,
             ),
         },
     )
+
+    _TICKER_GLOSSARY = [
+        {
+            "Ticker": "CSPX.L",
+            "Name": "S&P 500 UCITS ETF",
+            "Asset Class": "Equity",
+            "Role": "US large-cap equity exposure",
+            "UCITS / EU Note": "UCITS-eligible",
+        },
+        {
+            "Ticker": "EFA",
+            "Name": "International developed markets equity ETF",
+            "Asset Class": "Equity",
+            "Role": "Non-US developed equity exposure",
+            "UCITS / EU Note": "US-listed / non-UCITS in this prototype",
+        },
+        {
+            "Ticker": "GLD",
+            "Name": "Gold ETF",
+            "Asset Class": "Alternatives",
+            "Role": "Gold exposure / real asset diversifier",
+            "UCITS / EU Note": "US-listed / non-UCITS in this prototype",
+        },
+        {
+            "Ticker": "VNQ",
+            "Name": "US real estate ETF",
+            "Asset Class": "Alternatives",
+            "Role": "US REIT / real estate exposure",
+            "UCITS / EU Note": "US-listed / non-UCITS in this prototype",
+        },
+        {
+            "Ticker": "AGGH.MI",
+            "Name": "Euro Aggregate Bond ETF",
+            "Asset Class": "Bonds",
+            "Role": "Broad EUR bond exposure",
+            "UCITS / EU Note": "UCITS-eligible",
+        },
+        {
+            "Ticker": "TLT",
+            "Name": "Long-term US Treasury ETF",
+            "Asset Class": "Bonds",
+            "Role": "Long-duration government bond exposure",
+            "UCITS / EU Note": "US-listed / non-UCITS in this prototype",
+        },
+        {
+            "Ticker": "TIP",
+            "Name": "US inflation-linked bond ETF",
+            "Asset Class": "Bonds",
+            "Role": "Inflation-linked Treasury exposure",
+            "UCITS / EU Note": "US-listed / non-UCITS in this prototype",
+        },
+        {
+            "Ticker": "XEON.MI",
+            "Name": "EUR overnight rate ETF",
+            "Asset Class": "Cash",
+            "Role": "Cash-like EUR exposure",
+            "UCITS / EU Note": "UCITS-eligible",
+        },
+    ]
+    with st.expander("What do these tickers mean?"):
+        st.dataframe(
+            pd.DataFrame(_TICKER_GLOSSARY),
+            hide_index=True,
+            use_container_width=True,
+        )
 
     _v_spacer(2.5)
 
@@ -1307,48 +1404,153 @@ def _render_hrp_tab(portfolio: dict) -> None:
     # ── Section 4: Cluster Structure ───────────────────────────────────────
     _section_header("4", "Cluster Structure")
     _section_desc(
-        "The dendrogram shows how HRP groups assets into clusters before allocating weights. "
-        "Assets with similar return behaviour are linked early (low on the chart); "
-        "dissimilar groups are joined higher up. Risk is balanced first within each cluster, "
-        "then across clusters."
+        "HRP groups assets by return-correlation before allocating weights. "
+        "Assets that move together are linked early (bottom of the chart); "
+        "distinct groups join higher up. Risk is balanced first within each cluster, "
+        "then across clusters — reducing concentration without requiring return forecasts."
     )
 
-    try:
-        import numpy as np
-        from scipy.cluster.hierarchy import linkage
-        from scipy.spatial.distance import squareform
+    _DEND_CLUSTERS = [
+        {
+            "name": "Risk Assets",
+            "color": "#7c5cfc",
+            "bg": "rgba(124,92,252,0.15)",
+            "tickers": ["CSPX.L", "EFA"],
+            "group": 0,
+        },
+        {
+            "name": "Real Assets",
+            "color": "#0dcfb0",
+            "bg": "rgba(13,207,176,0.15)",
+            "tickers": ["GLD", "VNQ"],
+            "group": 1,
+        },
+        {
+            "name": "Safe Haven",
+            "color": "#f59e0b",
+            "bg": "rgba(245,158,11,0.15)",
+            "tickers": ["AGGH.MI", "TLT", "TIP"],
+            "group": 2,
+        },
+        {
+            "name": "Cash",
+            "color": "#3b82f6",
+            "bg": "rgba(59,130,246,0.15)",
+            "tickers": ["XEON.MI"],
+            "group": 3,
+        },
+    ]
 
-        from backend.optimizer.charts import plot_dendrogram
+    _chips_items = "".join(
+        f'<span style="display:inline-flex;align-items:center;gap:0.35rem;'
+        f'background:{cl["bg"]};border:1px solid {cl["color"]}50;'
+        f'border-radius:20px;padding:0.25rem 0.65rem;">'
+        f'<span style="width:7px;height:7px;border-radius:50%;background:{cl["color"]};'
+        f'flex-shrink:0;display:inline-block;"></span>'
+        f'<span style="font-size:0.7rem;color:{cl["color"]};font-weight:600;">'
+        f'{cl["name"]}</span>'
+        f'</span>'
+        for cl in _DEND_CLUSTERS
+    )
+    st.markdown(
+        '<div style="display:flex;align-items:center;gap:0.45rem;'
+        'flex-wrap:wrap;margin-bottom:0.85rem;">'
+        '<span style="font-size:0.65rem;font-weight:700;letter-spacing:0.1em;'
+        'text-transform:uppercase;color:#475569;margin-right:0.25rem;">Clusters</span>'
+        f'{_chips_items}'
+        '</div>',
+        unsafe_allow_html=True,
+    )
 
-        tickers_list = list(weights.keys())
-        n = len(tickers_list)
+    _dend_col, _info_col = st.columns([3, 1.2])
 
-        _CLUSTER_GROUPS: dict[str, int] = {
-            "CSPX.L": 0, "EFA": 0,
-            "GLD": 1, "VNQ": 1,
-            "AGGH.MI": 2, "TLT": 2, "TIP": 2,
-            "XEON.MI": 3,
-        }
-        corr = np.eye(n)
-        for i in range(n):
-            for j in range(n):
-                if i != j:
-                    ci = _CLUSTER_GROUPS.get(tickers_list[i], -1)
-                    cj = _CLUSTER_GROUPS.get(tickers_list[j], -1)
-                    corr[i, j] = 0.70 if ci == cj else 0.10
+    with _dend_col:
+        try:
+            import numpy as np
+            from scipy.cluster.hierarchy import linkage
+            from scipy.spatial.distance import squareform
 
-        dist = np.sqrt(0.5 * (1 - corr))
-        np.fill_diagonal(dist, 0.0)
-        condensed = squareform(dist, checks=False)
-        link = linkage(condensed, method="ward")
+            from backend.optimizer.charts import plot_dendrogram
 
-        fig_dend = plot_dendrogram(link, tickers_list)
-        fig_dend = apply_plotly_dark_theme(fig_dend)
-        fig_dend.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
-        st.plotly_chart(fig_dend, use_container_width=True)
+            tickers_list = list(weights.keys())
+            n = len(tickers_list)
 
-    except Exception as exc:
-        st.caption(f"Dendrogram unavailable: {exc}")
+            _ticker_group: dict[str, int] = {
+                t: cl["group"]
+                for cl in _DEND_CLUSTERS
+                for t in cl["tickers"]
+            }
+            corr = np.eye(n)
+            for i in range(n):
+                for j in range(n):
+                    if i != j:
+                        ci = _ticker_group.get(tickers_list[i], -1)
+                        cj = _ticker_group.get(tickers_list[j], -1)
+                        corr[i, j] = 0.70 if ci == cj else 0.10
+
+            dist = np.sqrt(0.5 * (1 - corr))
+            np.fill_diagonal(dist, 0.0)
+            condensed = squareform(dist, checks=False)
+            link = linkage(condensed, method="ward")
+
+            fig_dend = plot_dendrogram(link, tickers_list)
+            fig_dend = apply_plotly_dark_theme(fig_dend)
+            fig_dend.update_traces(line=dict(color="#a78bfa", width=2))
+            fig_dend.update_layout(
+                paper_bgcolor="rgba(0,0,0,0)",
+                plot_bgcolor="rgba(0,0,0,0)",
+                margin=dict(l=50, r=20, t=50, b=90),
+                height=350,
+                xaxis=dict(
+                    tickangle=-35,
+                    tickfont=dict(color="#94a3b8", size=11),
+                    showgrid=False,
+                ),
+                yaxis=dict(
+                    title=dict(text="Distance", font=dict(color="#64748b", size=11)),
+                    tickfont=dict(color="#64748b", size=10),
+                ),
+            )
+            st.plotly_chart(fig_dend, use_container_width=True)
+
+        except Exception as exc:
+            st.caption(f"Dendrogram unavailable: {exc}")
+
+    with _info_col:
+        _HOW_TO_POINTS = [
+            ("Branch height", "The higher two assets join, the less correlated they are."),
+            ("Early linkage", "Assets merged near the bottom share similar return patterns."),
+            ("Cluster balance", "HRP divides risk equally within each subtree before scaling up."),
+            ("No forecasts", "Uses only historical correlations — no return predictions."),
+            (
+                "Line colour",
+                "All branches share a single colour — the dendrogram encodes distance "
+                "through height, not colour. The chips above label economic asset groups.",
+            ),
+        ]
+        _pts_html = "".join(
+            f'<div style="display:flex;gap:0.55rem;margin-bottom:0.6rem;">'
+            f'<span style="color:#7c5cfc;font-size:0.75rem;margin-top:0.1rem;'
+            f'flex-shrink:0;">▸</span>'
+            f'<div>'
+            f'<div style="font-size:0.75rem;font-weight:600;color:#c4b5fd;'
+            f'margin-bottom:0.1rem;">{title}</div>'
+            f'<div style="font-size:0.72rem;color:#64748b;line-height:1.55;">{body}</div>'
+            f'</div>'
+            f'</div>'
+            for title, body in _HOW_TO_POINTS
+        )
+        st.markdown(
+            '<div style="background:rgba(124,92,252,0.06);'
+            'border:1px solid rgba(124,92,252,0.18);border-radius:10px;'
+            'padding:1rem 1rem 0.5rem;">'
+            '<div style="font-family:\'Space Grotesk\',sans-serif;font-size:0.8rem;'
+            'font-weight:700;color:#a78bfa;letter-spacing:0.04em;'
+            'text-transform:uppercase;margin-bottom:0.75rem;">How to read this</div>'
+            f'{_pts_html}'
+            '</div>',
+            unsafe_allow_html=True,
+        )
 
 
 def _render_mv_tab(portfolio: dict, profile_key: str) -> None:
@@ -1457,21 +1659,34 @@ def _render_mv_tab(portfolio: dict, profile_key: str) -> None:
     for ticker in tickers_sorted:
         h = hrp_weights.get(ticker, 0.0)
         m = mv_weights.get(ticker, 0.0)
+        delta_pp = (h - m) * 100
         comparison_rows.append({
             "Ticker": ticker,
-            "HRP": f"{h:.1%}",
-            "Markowitz": f"{m:.1%}",
-            "Difference": f"{abs(h - m):.1%}",
-            "UCITS": "EU" if ticker in _UCITS_TICKERS else "—",
+            "Asset Class": _HRP_TICKER_CLUSTER.get(ticker, "Other"),
+            "HRP (%)": round(h * 100, 2),
+            "Markowitz (%)": round(m * 100, 2),
+            "Δ (HRP − MV, pp)": f"{delta_pp:+.1f} pp",
+            "UCITS": "EU ✓" if ticker in _UCITS_TICKERS else "—",
         })
 
     st.dataframe(
         pd.DataFrame(comparison_rows),
         hide_index=True,
         use_container_width=True,
+        column_config={
+            "HRP (%)": st.column_config.ProgressColumn(
+                "HRP (%)", format="%.1f%%", min_value=0, max_value=100,
+            ),
+            "Markowitz (%)": st.column_config.ProgressColumn(
+                "Markowitz (%)", format="%.1f%%", min_value=0, max_value=100,
+            ),
+        },
     )
     st.caption(
-        "Markowitz typically produces more concentrated portfolios. "
+        "Δ (HRP − MV) is in percentage points. "
+        "Positive values mean HRP allocates more to that asset than Markowitz; "
+        "negative values mean Markowitz allocates more. "
+        "Markowitz typically produces more concentrated portfolios; "
         "HRP avoids corner solutions by construction."
     )
 
@@ -1496,6 +1711,7 @@ def _render_mv_tab(portfolio: dict, profile_key: str) -> None:
             mv_vol=mv_vol or 0.08,
             mv_ret=mv_ret,
         )
+        fig_frontier = apply_plotly_dark_theme(fig_frontier)
         st.plotly_chart(fig_frontier, use_container_width=True)
         if portfolio.get("source") != "live":
             st.caption("Frontier shown is illustrative (Phase A mock)."
@@ -1716,31 +1932,32 @@ def render_chat() -> None:
 
         # ── Empty state ────────────────────────────────────────────────
         if is_empty:
-            st.markdown('<div class="ca-card" style="padding:24px 20px 16px;">',
-                        unsafe_allow_html=True)
             st.markdown("""
-<div style="text-align:center;padding:20px 0 12px;">
-  <div style="width:46px;height:46px;background:#131c30;border-radius:50%;
-              display:inline-flex;align-items:center;justify-content:center;
-              margin-bottom:10px;">
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6a8aaa"
-         stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-      <rect x="3" y="8" width="18" height="12" rx="2"/>
-      <path d="M12 8V5"/><circle cx="12" cy="4" r="1"/>
-      <rect x="7" y="12" width="2" height="2"/>
-      <rect x="15" y="12" width="2" height="2"/>
-      <path d="M9 17h6"/>
-    </svg>
+<div style="background:#0f1628;border:.5px solid #1e2d4a;border-radius:12px;
+            overflow:hidden;padding:24px 20px 16px;">
+  <div style="text-align:center;padding:20px 0 12px;">
+    <div style="width:46px;height:46px;background:#131c30;border-radius:50%;
+                display:inline-flex;align-items:center;justify-content:center;
+                margin-bottom:10px;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6a8aaa"
+           stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="8" width="18" height="12" rx="2"/>
+        <path d="M12 8V5"/><circle cx="12" cy="4" r="1"/>
+        <rect x="7" y="12" width="2" height="2"/>
+        <rect x="15" y="12" width="2" height="2"/>
+        <path d="M9 17h6"/>
+      </svg>
+    </div>
+    <div style="font-size:13px;color:#c0d0f0;font-weight:600;margin-bottom:6px;">
+      Hi! I'm your AI Finance Assistant.
+    </div>
+    <div style="font-size:11px;color:#3a4a6a;max-width:300px;margin:0 auto;line-height:1.5;">
+      Ask a question about your portfolio, market trends, or investment strategy.
+    </div>
   </div>
-  <div style="font-size:13px;color:#c0d0f0;font-weight:600;margin-bottom:6px;">
-    Hi! I'm your AI Finance Assistant.
+  <div style="font-size:10px;color:#3a4a6a;text-align:center;margin-bottom:10px;">
+    Try asking...
   </div>
-  <div style="font-size:11px;color:#3a4a6a;max-width:300px;margin:0 auto;line-height:1.5;">
-    Ask a question about your portfolio, market trends, or investment strategy.
-  </div>
-</div>
-<div style="font-size:10px;color:#3a4a6a;text-align:center;margin-bottom:10px;">
-  Try asking...
 </div>
 """, unsafe_allow_html=True)
 
@@ -1752,8 +1969,7 @@ def render_chat() -> None:
             chip_cols = st.columns(len(_CHIPS))
             for _i, (_cc, _ctxt) in enumerate(zip(chip_cols, _CHIPS)):
                 with _cc:
-                    st.markdown('<div class="ca-chip">', unsafe_allow_html=True)
-                    if st.button(_ctxt, key=f"chip_{_i}"):
+                    if st.button(_ctxt, key=f"chip_{_i}", use_container_width=True):
                         _ts = datetime.now().strftime("%H:%M")
                         st.session_state["chat_history"].append(
                             {"role": "user", "content": _ctxt, "timestamp": _ts}
@@ -1765,9 +1981,6 @@ def render_chat() -> None:
                             {"role": "assistant", "content": _reply, "timestamp": _ts2}
                         )
                         st.rerun()
-                    st.markdown("</div>", unsafe_allow_html=True)
-
-            st.markdown("</div>", unsafe_allow_html=True)
 
         # ── Active chat state ──────────────────────────────────────────
         else:
