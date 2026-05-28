@@ -2208,8 +2208,10 @@ _CHAT_CSS = """
 </style>
 """
 
-# Avatars for the two chat roles (emoji — st.chat_message accepts a string).
-_CHAT_AVATARS: dict[str, str] = {"assistant": "✦", "user": "›"}
+# Avatars for the two chat roles. st.chat_message only accepts a real emoji,
+# an image URL, or None — arbitrary unicode glyphs (e.g. "✦") are rejected on
+# Streamlit Cloud because they fall through to the image loader and crash.
+_CHAT_AVATARS: dict[str, str] = {"assistant": "✨", "user": "🧑"}
 
 # Example prompts shown in the empty state.
 _CHAT_SUGGESTIONS: list[str] = [
