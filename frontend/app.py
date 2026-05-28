@@ -1049,6 +1049,11 @@ def _build_perf_chart(exp_ret: float, vol: float, n_days: int, seed: int = 42):
     end = date.today()
     dates = [end - timedelta(days=n_days - i) for i in range(n_days)]
 
+    all_vals = np.concatenate([hrp_cum, bm_cum])
+    y_min = float(all_vals.min())
+    y_max = float(all_vals.max())
+    y_pad = (y_max - y_min) * 0.05
+
     fig = go.Figure()
     fig.add_trace(go.Scatter(
         x=dates, y=hrp_cum.tolist(),
@@ -1065,7 +1070,10 @@ def _build_perf_chart(exp_ret: float, vol: float, n_days: int, seed: int = 42):
     fig.update_layout(
         height=420,
         legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0),
-        yaxis_title="Portfolio value (base 100)",
+        yaxis=dict(
+            title="Portfolio value (base 100)",
+            range=[y_min - y_pad, y_max + y_pad],
+        ),
         hovermode="x unified",
     )
     return fig
@@ -1177,6 +1185,7 @@ def _render_hrp_tab(portfolio: dict) -> None:
     _section_desc(
         "The chart tracks the growth of a $100,000 notional investment in the HRP portfolio "
         "over the selected time window, compared to a 60/40 equity-bond benchmark. "
+        "Values are indexed to 100 at the start of the selected period. "
         "Use the period selector to zoom in on shorter or longer horizons. "
         "Past performance is simulated and does not guarantee future results."
     )
@@ -1206,12 +1215,27 @@ def _render_hrp_tab(portfolio: dict) -> None:
 
     _v_spacer(2.5)
 
-    # ── Cluster breakdown pills ─────────────────────────────────────────────
+    # ── Section 2: Portfolio Allocation ────────────────────────────────────
+    _section_header("2", "Portfolio Allocation")
+    _section_desc(
+        "The chart below shows how capital is distributed across the portfolio's assets. "
+        "HRP balances risk — not capital — so assets with higher historical volatility "
+        "receive a proportionally smaller weight. This spreads risk contributions evenly "
+        "across equities, fixed income, commodities, and cash-equivalent positions."
+    )
+
+    # Cluster allocation pills — asset-class breakdown of the current portfolio
     cluster_totals: dict[str, float] = {}
     for ticker, w in weights.items():
         cl = _HRP_TICKER_CLUSTER.get(ticker, "Other")
         cluster_totals[cl] = cluster_totals.get(cl, 0.0) + w
 
+    st.markdown(
+        '<div style="font-size:0.72rem;font-weight:600;letter-spacing:0.1em;'
+        'text-transform:uppercase;color:#64748b;margin-bottom:0.5rem;">'
+        'Current allocation by asset class</div>',
+        unsafe_allow_html=True,
+    )
     pills_html = '<div style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-bottom:1.25rem;">'
     for cl in ["Equity", "Bonds", "Alternatives", "Cash"]:
         pct = cluster_totals.get(cl, 0.0)
@@ -1232,17 +1256,6 @@ def _render_hrp_tab(portfolio: dict) -> None:
         )
     pills_html += "</div>"
     st.markdown(pills_html, unsafe_allow_html=True)
-
-    _v_spacer(2.5)
-
-    # ── Section 2: Portfolio Allocation ────────────────────────────────────
-    _section_header("2", "Portfolio Allocation")
-    _section_desc(
-        "The chart below shows how capital is distributed across the portfolio's assets. "
-        "HRP balances risk — not capital — so assets with higher historical volatility "
-        "receive a proportionally smaller weight. This spreads risk contributions evenly "
-        "across equities, fixed income, commodities, and cash-equivalent positions."
-    )
 
     try:
         from backend.optimizer.charts import plot_weights_donut
