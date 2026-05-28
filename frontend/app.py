@@ -31,6 +31,7 @@ from frontend.style import (
     inject_css,
     page_header,
     render_disclaimer,
+    render_eu_note,
 )
 
 # ---------------------------------------------------------------------------
@@ -1023,14 +1024,7 @@ def render_portfolio() -> None:
 
     # EU Investor Note -- mandatory on every portfolio page (EU Awareness Rule 9)
     st.markdown("---")
-    st.info(
-        "EU Investor Note -- The risk profile model is trained on "
-        "US Federal Reserve SCF data (2022). Results may not fully reflect "
-        "the behaviour of European retail investors. "
-        "The ECB Household Finance and Consumption Survey (HFCS) would be a "
-        "more geographically appropriate training source. "
-        "(EU Awareness Rule 9 -- Design v3.1)"
-    )
+    render_eu_note()
 
 
 def _build_perf_chart(exp_ret: float, vol: float, n_days: int, seed: int = 42):
@@ -1061,12 +1055,12 @@ def _build_perf_chart(exp_ret: float, vol: float, n_days: int, seed: int = 42):
         mode="lines", name="HRP Portfolio",
         line=dict(color="#7c5cfc", width=2),
         fill="tozeroy",
-        fillcolor="rgba(124,92,252,0.04)",
+        fillcolor="rgba(124,92,252,0.08)",
     ))
     fig.add_trace(go.Scatter(
         x=dates, y=bm_cum.tolist(),
         mode="lines", name="60/40 Benchmark",
-        line=dict(color="#475569", width=1.5, dash="dot"),
+        line=dict(color="#94a3b8", width=2, dash="dot"),
     ))
     fig.update_layout(
         height=420,
@@ -1265,7 +1259,8 @@ def _render_hrp_tab(portfolio: dict) -> None:
     for ticker, w in sorted(weights.items(), key=lambda kv: -kv[1]):
         rows.append({
             "Ticker": ticker,
-            "Weight": w,
+            "Cluster": _HRP_TICKER_CLUSTER.get(ticker, "Other"),
+            "Weight (%)": round(w * 100, 2),
             "UCITS": "EU ✓" if ticker in ucits_set else "—",
             "Risk Contribution": f"{risk_contributions.get(ticker, 0.0):.1%}",
         })
@@ -1275,8 +1270,8 @@ def _render_hrp_tab(portfolio: dict) -> None:
         hide_index=True,
         use_container_width=True,
         column_config={
-            "Weight": st.column_config.ProgressColumn(
-                "Weight", format="%.1f%%", min_value=0, max_value=1,
+            "Weight (%)": st.column_config.ProgressColumn(
+                "Weight (%)", format="%.1f%%", min_value=0, max_value=100,
             ),
         },
     )
@@ -1716,31 +1711,32 @@ def render_chat() -> None:
 
         # ── Empty state ────────────────────────────────────────────────
         if is_empty:
-            st.markdown('<div class="ca-card" style="padding:24px 20px 16px;">',
-                        unsafe_allow_html=True)
             st.markdown("""
-<div style="text-align:center;padding:20px 0 12px;">
-  <div style="width:46px;height:46px;background:#131c30;border-radius:50%;
-              display:inline-flex;align-items:center;justify-content:center;
-              margin-bottom:10px;">
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6a8aaa"
-         stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-      <rect x="3" y="8" width="18" height="12" rx="2"/>
-      <path d="M12 8V5"/><circle cx="12" cy="4" r="1"/>
-      <rect x="7" y="12" width="2" height="2"/>
-      <rect x="15" y="12" width="2" height="2"/>
-      <path d="M9 17h6"/>
-    </svg>
+<div style="background:#0f1628;border:.5px solid #1e2d4a;border-radius:12px;
+            overflow:hidden;padding:24px 20px 16px;">
+  <div style="text-align:center;padding:20px 0 12px;">
+    <div style="width:46px;height:46px;background:#131c30;border-radius:50%;
+                display:inline-flex;align-items:center;justify-content:center;
+                margin-bottom:10px;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6a8aaa"
+           stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="8" width="18" height="12" rx="2"/>
+        <path d="M12 8V5"/><circle cx="12" cy="4" r="1"/>
+        <rect x="7" y="12" width="2" height="2"/>
+        <rect x="15" y="12" width="2" height="2"/>
+        <path d="M9 17h6"/>
+      </svg>
+    </div>
+    <div style="font-size:13px;color:#c0d0f0;font-weight:600;margin-bottom:6px;">
+      Hi! I'm your AI Finance Assistant.
+    </div>
+    <div style="font-size:11px;color:#3a4a6a;max-width:300px;margin:0 auto;line-height:1.5;">
+      Ask a question about your portfolio, market trends, or investment strategy.
+    </div>
   </div>
-  <div style="font-size:13px;color:#c0d0f0;font-weight:600;margin-bottom:6px;">
-    Hi! I'm your AI Finance Assistant.
+  <div style="font-size:10px;color:#3a4a6a;text-align:center;margin-bottom:10px;">
+    Try asking...
   </div>
-  <div style="font-size:11px;color:#3a4a6a;max-width:300px;margin:0 auto;line-height:1.5;">
-    Ask a question about your portfolio, market trends, or investment strategy.
-  </div>
-</div>
-<div style="font-size:10px;color:#3a4a6a;text-align:center;margin-bottom:10px;">
-  Try asking...
 </div>
 """, unsafe_allow_html=True)
 
@@ -1752,8 +1748,7 @@ def render_chat() -> None:
             chip_cols = st.columns(len(_CHIPS))
             for _i, (_cc, _ctxt) in enumerate(zip(chip_cols, _CHIPS)):
                 with _cc:
-                    st.markdown('<div class="ca-chip">', unsafe_allow_html=True)
-                    if st.button(_ctxt, key=f"chip_{_i}"):
+                    if st.button(_ctxt, key=f"chip_{_i}", use_container_width=True):
                         _ts = datetime.now().strftime("%H:%M")
                         st.session_state["chat_history"].append(
                             {"role": "user", "content": _ctxt, "timestamp": _ts}
@@ -1765,9 +1760,6 @@ def render_chat() -> None:
                             {"role": "assistant", "content": _reply, "timestamp": _ts2}
                         )
                         st.rerun()
-                    st.markdown("</div>", unsafe_allow_html=True)
-
-            st.markdown("</div>", unsafe_allow_html=True)
 
         # ── Active chat state ──────────────────────────────────────────
         else:
