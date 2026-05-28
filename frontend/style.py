@@ -626,15 +626,7 @@ font-size:0.9rem;color:#d97706;display:flex;align-items:flex-start;gap:10px;">
 </div>
 """
 
-EU_NOTE_HTML = """
-<div style="background:rgba(124,92,252,0.08);border:1px solid rgba(124,92,252,0.25);
-border-radius:8px;padding:8px 12px;margin-bottom:1rem;
-font-size:0.72rem;color:#a78bfa;display:flex;align-items:flex-start;gap:8px;">
-  <span style="flex-shrink:0;">ℹ</span>
-  EU investor note: model trained on US SCF 2022 data.
-  Portfolio includes UCITS ETFs (CSPX.L, AGGH.MI, XEON.MI). EUR/USD exposure ~72%.
-</div>
-"""
+EU_NOTE_HTML = ""
 
 STRESS_BANNER_HTML = """
 <div style="background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.3);
@@ -658,8 +650,40 @@ def render_disclaimer() -> None:
 
 
 def render_eu_note() -> None:
-    """Render the EU investor note (SCF US-centrism + UCITS + FX exposure)."""
-    st.markdown(EU_NOTE_HTML, unsafe_allow_html=True)
+    """Render the EU investor note as a polished info card with expandable detail."""
+    st.markdown(
+        '<div style="background:rgba(124,92,252,0.06);border:1px solid rgba(124,92,252,0.2);'
+        'border-left:3px solid #7c5cfc;border-radius:0 8px 8px 0;'
+        'padding:0.9rem 1.1rem 0.75rem;margin-bottom:0.5rem;">'
+        '<div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.45rem;">'
+        '<span style="font-size:1rem;flex-shrink:0;">ℹ️</span>'
+        '<span style="font-family:\'Space Grotesk\',sans-serif;font-size:0.85rem;'
+        'font-weight:600;color:#a78bfa;">EU Investor Note</span>'
+        '</div>'
+        '<div style="font-size:0.8rem;color:#94a3b8;line-height:1.6;">'
+        'The risk-profile model is trained on US Federal Reserve SCF data (2022). '
+        'Results may not fully reflect the behaviour of European retail investors. '
+        'The portfolio includes UCITS-eligible ETFs (CSPX.L, AGGH.MI, XEON.MI) '
+        'with EUR/USD exposure ~72%.'
+        '</div>'
+        '</div>',
+        unsafe_allow_html=True,
+    )
+    with st.expander("Learn more — EU data limitations"):
+        st.markdown(
+            "**Why does this matter?**  \n"
+            "The SCF samples US households, whose savings behaviour, risk tolerance, "
+            "and asset mix differ meaningfully from European retail investors "
+            "surveyed by the ECB HFCS.\n\n"
+            "**What it means in practice:**  \n"
+            "Profile boundaries (Conservative / Moderate / Aggressive) are calibrated "
+            "on US income and wealth distributions. A European investor near the "
+            "Conservative–Moderate boundary may be mis-classified by ±1 band.\n\n"
+            "**Academic reference:**  \n"
+            "Grable & Lytton (1999) — *Financial risk tolerance revisited*; "
+            "ECB Household Finance and Consumption Survey, Wave 4 (2021).\n\n"
+            "*EU Awareness Rule 9 · Design v3.1*"
+        )
 
 
 def render_stress_banner() -> None:

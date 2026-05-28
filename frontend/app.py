@@ -1313,6 +1313,71 @@ def _render_hrp_tab(portfolio: dict) -> None:
         },
     )
 
+    _TICKER_GLOSSARY = [
+        {
+            "Ticker": "CSPX.L",
+            "Name": "S&P 500 UCITS ETF",
+            "Asset Class": "Equity",
+            "Role": "US large-cap equity exposure",
+            "UCITS / EU Note": "UCITS-eligible",
+        },
+        {
+            "Ticker": "EFA",
+            "Name": "International developed markets equity ETF",
+            "Asset Class": "Equity",
+            "Role": "Non-US developed equity exposure",
+            "UCITS / EU Note": "US-listed / non-UCITS in this prototype",
+        },
+        {
+            "Ticker": "GLD",
+            "Name": "Gold ETF",
+            "Asset Class": "Alternatives",
+            "Role": "Gold exposure / real asset diversifier",
+            "UCITS / EU Note": "US-listed / non-UCITS in this prototype",
+        },
+        {
+            "Ticker": "VNQ",
+            "Name": "US real estate ETF",
+            "Asset Class": "Alternatives",
+            "Role": "US REIT / real estate exposure",
+            "UCITS / EU Note": "US-listed / non-UCITS in this prototype",
+        },
+        {
+            "Ticker": "AGGH.MI",
+            "Name": "Euro Aggregate Bond ETF",
+            "Asset Class": "Bonds",
+            "Role": "Broad EUR bond exposure",
+            "UCITS / EU Note": "UCITS-eligible",
+        },
+        {
+            "Ticker": "TLT",
+            "Name": "Long-term US Treasury ETF",
+            "Asset Class": "Bonds",
+            "Role": "Long-duration government bond exposure",
+            "UCITS / EU Note": "US-listed / non-UCITS in this prototype",
+        },
+        {
+            "Ticker": "TIP",
+            "Name": "US inflation-linked bond ETF",
+            "Asset Class": "Bonds",
+            "Role": "Inflation-linked Treasury exposure",
+            "UCITS / EU Note": "US-listed / non-UCITS in this prototype",
+        },
+        {
+            "Ticker": "XEON.MI",
+            "Name": "EUR overnight rate ETF",
+            "Asset Class": "Cash",
+            "Role": "Cash-like EUR exposure",
+            "UCITS / EU Note": "UCITS-eligible",
+        },
+    ]
+    with st.expander("What do these tickers mean?"):
+        st.dataframe(
+            pd.DataFrame(_TICKER_GLOSSARY),
+            hide_index=True,
+            use_container_width=True,
+        )
+
     _v_spacer(2.5)
 
     # ── Section 3: Risk Contributions ──────────────────────────────────────

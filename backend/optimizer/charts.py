@@ -147,7 +147,7 @@ def plot_dendrogram(
             x=x,
             y=y,
             mode="lines",
-            line=dict(color="steelblue", width=1.5),
+            line=dict(color="#7c5cfc", width=2),
             showlegend=False,
         ))
 
