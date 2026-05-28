@@ -1783,52 +1783,410 @@ def _render_mv_tab(portfolio: dict, profile_key: str) -> None:
 # Chat Advisor helpers
 # ---------------------------------------------------------------------------
 
-# Scoped CSS for the native chat (st.chat_message / st.chat_input) so the
-# bubbles match the app's dark theme instead of Streamlit's defaults.
+# Scoped CSS for the native chat (st.chat_message / st.chat_input).
+# Aligned with the app-wide design tokens defined in frontend/style.py.
 _CHAT_CSS = """
 <style>
-[data-testid="stChatMessage"] {
-    background: #0f1628 !important;
+/* ── Chat container ──────────────────────────────────────────────────────── */
+.ca-page {
+    margin-top: -0.3rem;
+}
+
+/* ── Status strip: model + validator + active profile ───────────────────── */
+.ca-status {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+.ca-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    background: rgba(10,15,30,0.7);
+    border: 1px solid #1e2640;
+    border-radius: 999px;
+    padding: 0.32rem 0.85rem;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.74rem;
+    font-weight: 500;
+    color: #94a3b8;
+    letter-spacing: 0.02em;
+}
+.ca-pill .ca-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+.ca-pill--profile { color: #a78bfa; border-color: rgba(124,92,252,0.32); background: rgba(124,92,252,0.1); }
+.ca-pill--profile .ca-dot { background: #7c5cfc; box-shadow: 0 0 0 3px rgba(124,92,252,0.18); }
+.ca-pill--model   { color: #93c5fd; border-color: rgba(59,130,246,0.30); background: rgba(59,130,246,0.08); }
+.ca-pill--model .ca-dot   { background: #3b82f6; }
+.ca-pill--guard   { color: #5eead4; border-color: rgba(13,207,176,0.30); background: rgba(13,207,176,0.08); }
+.ca-pill--guard .ca-dot   { background: #0dcfb0; box-shadow: 0 0 0 3px rgba(13,207,176,0.15); }
+
+/* ── Chat shell ──────────────────────────────────────────────────────────── */
+.ca-shell {
+    background: #0f1628;
+    border: 1px solid #1e2640;
+    border-radius: 14px;
+    overflow: hidden;
+}
+.ca-shell-head {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.85rem 1.1rem;
+    background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 55%, #0d1220 100%);
+    border-bottom: 1px solid #1e2640;
+}
+.ca-shell-head-icon {
+    width: 2rem;
+    height: 2rem;
+    background: rgba(124,92,252,0.15);
+    border: 1px solid rgba(124,92,252,0.3);
+    border-radius: 9px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.95rem;
+    flex-shrink: 0;
+}
+.ca-shell-head-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #f1f5f9;
+    line-height: 1.2;
+}
+.ca-shell-head-sub {
+    font-size: 0.72rem;
+    color: #64748b;
+    letter-spacing: 0.02em;
+    margin-top: 0.1rem;
+}
+
+/* ── Empty state hero ────────────────────────────────────────────────────── */
+.ca-hero {
+    text-align: center;
+    padding: 2.25rem 1.5rem 1rem;
+}
+.ca-hero-orb {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, rgba(167,139,250,0.55) 0%, rgba(124,92,252,0.15) 60%, transparent 100%);
+    border: 1px solid rgba(124,92,252,0.4);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 0.85rem;
+    font-size: 1.55rem;
+    box-shadow: 0 0 32px rgba(124,92,252,0.18);
+}
+.ca-hero-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #f1f5f9;
+    letter-spacing: -0.01em;
+    margin-bottom: 0.4rem;
+}
+.ca-hero-sub {
+    font-size: 0.87rem;
+    color: #64748b;
+    max-width: 420px;
+    margin: 0 auto;
+    line-height: 1.6;
+}
+.ca-hero-eyebrow {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.62rem;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #475569;
+    margin: 1.5rem 0 0.6rem;
+}
+
+/* ── Suggestion chips (st.button cards) ─────────────────────────────────── */
+.ca-suggest {
+    padding: 0 1.1rem 1.4rem;
+}
+.ca-suggest .stButton > button {
+    background: rgba(15,22,40,0.7) !important;
     border: 1px solid #1e2640 !important;
-    border-radius: 12px !important;
-    padding: 0.6rem 0.9rem !important;
-    margin-bottom: 0.6rem !important;
-}
-/* user turn: subtle purple tint to distinguish from the assistant */
-[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) {
-    background: rgba(124,92,252,0.07) !important;
-    border-color: rgba(124,92,252,0.25) !important;
-}
-[data-testid="stChatMessage"] p {
-    font-size: 0.9rem !important;
-    line-height: 1.6 !important;
+    border-left: 3px solid rgba(124,92,252,0.3) !important;
+    border-radius: 10px !important;
     color: #cbd5e1 !important;
-}
-[data-testid="stChatInput"] textarea {
-    font-size: 0.9rem !important;
-}
-.ca-suggest button {
-    background: rgba(10,15,30,0.7) !important;
-    border: 1px solid #1e2640 !important;
-    border-radius: 9px !important;
-    color: #94a3b8 !important;
-    font-size: 0.82rem !important;
+    font-family: 'DM Sans', sans-serif !important;
+    font-size: 0.85rem !important;
     font-weight: 500 !important;
     text-align: left !important;
     white-space: normal !important;
     line-height: 1.4 !important;
-    transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease !important;
+    min-height: 3.5rem !important;
+    padding: 0.85rem 1rem !important;
+    transition: border-color 0.18s ease, background 0.18s ease,
+                color 0.18s ease, transform 0.18s ease !important;
 }
-.ca-suggest button:hover {
-    border-color: rgba(124,92,252,0.5) !important;
+.ca-suggest .stButton > button:hover {
+    border-color: rgba(124,92,252,0.55) !important;
+    border-left-color: #7c5cfc !important;
+    background: rgba(124,92,252,0.1) !important;
+    color: #e9d5ff !important;
+    transform: translateY(-1px) !important;
+}
+.ca-suggest .stButton > button p { text-align: left !important; }
+
+/* ── Conversation thread ─────────────────────────────────────────────────── */
+.ca-thread { padding: 1.1rem 1.1rem 0.35rem; }
+
+[data-testid="stChatMessage"] {
+    background: transparent !important;
+    border: none !important;
+    padding: 0.35rem 0 !important;
+    margin-bottom: 0.85rem !important;
+    animation: ca-fade 0.28s ease-out;
+}
+@keyframes ca-fade {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+/* Avatar bubbles */
+[data-testid="stChatMessage"] [data-testid="stChatMessageAvatarUser"],
+[data-testid="stChatMessage"] [data-testid="stChatMessageAvatarAssistant"],
+[data-testid="stChatMessage"] [data-testid="stChatMessageAvatarCustom"] {
+    border-radius: 50% !important;
+    width: 2.05rem !important;
+    height: 2.05rem !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+}
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"])
+[data-testid="stChatMessageAvatarUser"] {
+    background: rgba(124,92,252,0.18) !important;
+    border: 1px solid rgba(124,92,252,0.35) !important;
+}
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarAssistant"])
+[data-testid="stChatMessageAvatarAssistant"] {
+    background: rgba(13,207,176,0.15) !important;
+    border: 1px solid rgba(13,207,176,0.3) !important;
+}
+
+/* Message bubble = the rendered markdown container next to the avatar */
+[data-testid="stChatMessage"] [data-testid="stChatMessageContent"],
+[data-testid="stChatMessage"] > div > div:not([data-testid*="Avatar"]) {
+    background: #131c30 !important;
+    border: 1px solid #1e2640 !important;
+    border-radius: 12px !important;
+    padding: 0.7rem 1rem !important;
+    box-shadow: 0 1px 0 rgba(0,0,0,0.15);
+}
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"])
+[data-testid="stChatMessageContent"],
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"])
+> div > div:not([data-testid*="Avatar"]) {
     background: rgba(124,92,252,0.09) !important;
+    border-color: rgba(124,92,252,0.28) !important;
+}
+[data-testid="stChatMessage"] p {
+    font-family: 'DM Sans', sans-serif !important;
+    font-size: 0.9rem !important;
+    line-height: 1.65 !important;
+    color: #cbd5e1 !important;
+    margin-bottom: 0.5rem !important;
+}
+[data-testid="stChatMessage"] p:last-child { margin-bottom: 0 !important; }
+[data-testid="stChatMessage"] h1,
+[data-testid="stChatMessage"] h2,
+[data-testid="stChatMessage"] h3 {
+    font-family: 'Space Grotesk', sans-serif !important;
+    color: #e2e8f0 !important;
+    font-size: 0.95rem !important;
+    margin: 0.4rem 0 0.3rem !important;
+}
+[data-testid="stChatMessage"] strong { color: #e9d5ff !important; }
+[data-testid="stChatMessage"] code {
+    background: rgba(124,92,252,0.12) !important;
+    color: #c4b5fd !important;
+    padding: 0.05rem 0.35rem !important;
+    border-radius: 4px !important;
+    font-size: 0.84rem !important;
+}
+[data-testid="stChatMessage"] table {
+    border-collapse: collapse !important;
+    margin: 0.3rem 0 !important;
+}
+[data-testid="stChatMessage"] th,
+[data-testid="stChatMessage"] td {
+    border: 1px solid #1e2640 !important;
+    padding: 0.35rem 0.7rem !important;
+    font-size: 0.83rem !important;
+    color: #94a3b8 !important;
+}
+[data-testid="stChatMessage"] th {
+    background: rgba(124,92,252,0.08) !important;
+    color: #a78bfa !important;
+    font-family: 'Space Grotesk', sans-serif !important;
+    font-weight: 600 !important;
+}
+
+/* ── Chat input ──────────────────────────────────────────────────────────── */
+[data-testid="stChatInput"] {
+    background: transparent !important;
+    border-top: 1px solid #1e2640 !important;
+    padding-top: 0.6rem !important;
+}
+[data-testid="stChatInput"] > div {
+    background: #0d1220 !important;
+    border: 1px solid #1e2640 !important;
+    border-radius: 12px !important;
+    transition: border-color 0.15s ease !important;
+}
+[data-testid="stChatInput"] > div:focus-within {
+    border-color: rgba(124,92,252,0.55) !important;
+    box-shadow: 0 0 0 3px rgba(124,92,252,0.12) !important;
+}
+[data-testid="stChatInput"] textarea {
+    background: transparent !important;
+    color: #e2e8f0 !important;
+    font-family: 'DM Sans', sans-serif !important;
+    font-size: 0.9rem !important;
+    line-height: 1.55 !important;
+}
+[data-testid="stChatInput"] textarea::placeholder { color: #64748b !important; }
+[data-testid="stChatInput"] button {
+    background: rgba(124,92,252,0.18) !important;
+    border: 1px solid rgba(124,92,252,0.35) !important;
+    border-radius: 9px !important;
     color: #c4b5fd !important;
 }
+[data-testid="stChatInput"] button:hover {
+    background: rgba(124,92,252,0.3) !important;
+    border-color: #7c5cfc !important;
+}
+
+/* ── Clear chat link button (small, ghost) ──────────────────────────────── */
+.ca-clear .stButton > button {
+    background: transparent !important;
+    border: 1px solid #1e2640 !important;
+    color: #64748b !important;
+    font-family: 'DM Sans', sans-serif !important;
+    font-size: 0.74rem !important;
+    font-weight: 500 !important;
+    padding: 0.3rem 0.75rem !important;
+    border-radius: 7px !important;
+    min-height: 1.9rem !important;
+    height: 1.9rem !important;
+    transition: color 0.15s ease, border-color 0.15s ease !important;
+}
+.ca-clear .stButton > button:hover {
+    border-color: rgba(248,113,113,0.45) !important;
+    color: #fca5a5 !important;
+}
+
+/* ── Info side card ──────────────────────────────────────────────────────── */
+.ca-info {
+    background: #0f1628;
+    border: 1px solid #1e2640;
+    border-radius: 14px;
+    overflow: hidden;
+}
+.ca-info-head {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.85rem 1.05rem;
+    background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 55%, #0d1220 100%);
+    border-bottom: 1px solid #1e2640;
+}
+.ca-info-head-num {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #a78bfa;
+    background: rgba(124,92,252,0.18);
+    border: 1px solid rgba(124,92,252,0.3);
+    border-radius: 6px;
+    min-width: 1.85rem;
+    height: 1.85rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.ca-info-head-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: #f1f5f9;
+}
+.ca-info-body { padding: 1rem 1.1rem 1.1rem; }
+.ca-info-section-label {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.62rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #475569;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+.ca-info-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.45rem 0;
+}
+.ca-info-row + .ca-info-row { border-top: 1px dashed #1a2236; }
+.ca-info-row span.label {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.82rem;
+    color: #cbd5e1;
+}
+.ca-info-divider { margin: 0.9rem 0 0.6rem; border-top: 1px solid #1a2236; }
+
+.ca-info-footer {
+    margin-top: 0.85rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid #1a2236;
+    font-size: 0.72rem;
+    color: #64748b;
+    line-height: 1.55;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.55rem;
+}
+.ca-info-footer svg { flex-shrink: 0; margin-top: 0.12rem; }
+
+/* ── Pipeline strip inside info card ─────────────────────────────────────── */
+.ca-pipeline {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+    margin-top: 0.4rem;
+}
+.ca-pipeline-step {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.67rem;
+    letter-spacing: 0.03em;
+    color: #94a3b8;
+    background: rgba(15,22,40,0.7);
+    border: 1px solid #1e2640;
+    border-radius: 6px;
+    padding: 0.22rem 0.5rem;
+}
+.ca-pipeline-arrow { color: #475569; font-size: 0.75rem; }
 </style>
 """
 
 # Avatars for the two chat roles (emoji — st.chat_message accepts a string).
-_CHAT_AVATARS: dict[str, str] = {"assistant": "🤖", "user": "🧑"}
+_CHAT_AVATARS: dict[str, str] = {"assistant": "✦", "user": "›"}
 
 # Example prompts shown in the empty state.
 _CHAT_SUGGESTIONS: list[str] = [
@@ -1885,48 +2243,76 @@ def _chat_get_reply(text: str, raw_label: str, profile_key: str) -> str:
 
 
 def _render_chat_info_panel() -> None:
-    """Right-hand panel: what the advisor can and cannot do."""
-    _chk = (
-        '<svg width="12" height="12" viewBox="0 0 24 24" fill="none"'
-        ' stroke="#0dcfb0" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>'
+    """Right-hand panel: scope of the advisor + safety pipeline."""
+    chk = (
+        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" '
+        'stroke="#0dcfb0" stroke-width="2.5" stroke-linecap="round" '
+        'stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>'
     )
-    _xmk = (
-        '<svg width="12" height="12" viewBox="0 0 24 24" fill="none"'
-        ' stroke="#f87171" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/>'
+    xmk = (
+        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" '
+        'stroke="#f87171" stroke-width="2.5" stroke-linecap="round" '
+        'stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/>'
         '<line x1="6" y1="6" x2="18" y2="18"/></svg>'
     )
-    can = "".join(
-        f'<div style="display:flex;align-items:center;gap:8px;padding:6px 0;'
-        f'border-bottom:1px solid #141e30;">{_chk}'
-        f'<span style="font-size:0.8rem;color:#94a3b8;">{it}</span></div>'
-        for it in [
-            "Portfolio weights",
-            "Risk clusters",
-            "Historical drawdowns",
-            "EU / UCITS caveats",
-        ]
+    shield = (
+        '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" '
+        'stroke="#7c5cfc" stroke-width="2" stroke-linecap="round" '
+        'stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>'
+        '<polyline points="9 12 11 14 15 10"/></svg>'
     )
-    cant = "".join(
-        f'<div style="display:flex;align-items:center;gap:8px;padding:6px 0;'
-        f'border-bottom:1px solid #141e30;">{_xmk}'
-        f'<span style="font-size:0.8rem;color:#94a3b8;">{it}</span></div>'
-        for it in ["Buy / sell recommendations", "Future return predictions"]
+
+    can_items = [
+        "Portfolio weights",
+        "Risk clusters",
+        "Historical drawdowns",
+        "EU / UCITS caveats",
+    ]
+    cant_items = [
+        "Buy / sell recommendations",
+        "Future return predictions",
+    ]
+    can_rows = "".join(
+        f'<div class="ca-info-row">{chk}<span class="label">{x}</span></div>'
+        for x in can_items
     )
+    cant_rows = "".join(
+        f'<div class="ca-info-row">{xmk}<span class="label">{x}</span></div>'
+        for x in cant_items
+    )
+
+    pipeline = (
+        '<div class="ca-pipeline">'
+        '<span class="ca-pipeline-step">Sanitise</span>'
+        '<span class="ca-pipeline-arrow">›</span>'
+        '<span class="ca-pipeline-step">Narrate</span>'
+        '<span class="ca-pipeline-arrow">›</span>'
+        '<span class="ca-pipeline-step">Validate</span>'
+        '</div>'
+    )
+
     st.markdown(
-        f'<div style="background:#0f1628;border:1px solid #1e2640;border-radius:12px;'
-        f'padding:1rem 1.1rem;">'
-        f'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:0.9rem;'
-        f'font-weight:600;color:#a78bfa;margin-bottom:0.75rem;">'
-        f'What this advisor can explain</div>'
-        f'<div style="font-size:0.65rem;letter-spacing:0.06em;text-transform:uppercase;'
-        f'color:#475569;margin-bottom:0.25rem;">Can explain</div>{can}'
-        f'<div style="font-size:0.65rem;letter-spacing:0.06em;text-transform:uppercase;'
-        f'color:#475569;margin:0.85rem 0 0.25rem;">Cannot do</div>{cant}'
-        f'<div style="margin-top:0.85rem;padding-top:0.75rem;border-top:1px solid #141e30;'
-        f'font-size:0.72rem;color:#475569;line-height:1.5;">'
-        f'All responses are grounded in approved data and pass a 5-step safety '
-        f'validator before display.</div>'
-        f'</div>',
+        '<div class="ca-info">'
+        '<div class="ca-info-head">'
+        '<span class="ca-info-head-num">i</span>'
+        '<span class="ca-info-head-title">Advisor scope</span>'
+        '</div>'
+        '<div class="ca-info-body">'
+        '<div class="ca-info-section-label">Can explain</div>'
+        f'{can_rows}'
+        '<div class="ca-info-divider"></div>'
+        '<div class="ca-info-section-label">Cannot do</div>'
+        f'{cant_rows}'
+        '<div class="ca-info-divider"></div>'
+        '<div class="ca-info-section-label">Safety pipeline</div>'
+        f'{pipeline}'
+        '<div class="ca-info-footer">'
+        f'{shield}'
+        '<span>All responses are grounded in approved data and pass a '
+        '5-step safety validator before display.</span>'
+        '</div>'
+        '</div>'
+        '</div>',
         unsafe_allow_html=True,
     )
 
@@ -1943,9 +2329,14 @@ def render_chat() -> None:
     The advisor only explains the current Ground Truth payload; it never gives
     buy/sell advice and cannot invent numbers.
     """
-    page_header("Chat Advisor", "LLM Narrator · Validated responses")
+    page_header(
+        "Chat Advisor",
+        "LLM Narrator · Validated responses",
+        icon="💬",
+    )
     render_disclaimer()
     st.markdown(_CHAT_CSS, unsafe_allow_html=True)
+    st.markdown('<div class="ca-page">', unsafe_allow_html=True)
 
     profile_data = st.session_state.get("profile", {})
     raw_label = profile_data.get("profile_label", "MODERATE")
@@ -1971,44 +2362,52 @@ def render_chat() -> None:
             reply = _chat_get_reply(pending, raw_label, profile_key)
         history.append({"role": "assistant", "content": reply})
 
+    # Status strip: profile + model + validator
+    st.markdown(
+        f'<div class="ca-status">'
+        f'<span class="ca-pill ca-pill--profile"><span class="ca-dot"></span>'
+        f'Active profile · {raw_label}</span>'
+        f'<span class="ca-pill ca-pill--model"><span class="ca-dot"></span>'
+        f'Claude Sonnet 4</span>'
+        f'<span class="ca-pill ca-pill--guard"><span class="ca-dot"></span>'
+        f'Validator · 5 checks</span>'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
+
     col_chat, col_info = st.columns([5, 2], gap="large")
 
     with col_info:
         _render_chat_info_panel()
 
     with col_chat:
-        head_l, head_r = st.columns([3, 1])
-        with head_l:
-            st.markdown(
-                f'<div style="display:inline-flex;align-items:center;gap:0.5rem;'
-                f'background:rgba(124,92,252,0.1);border:1px solid rgba(124,92,252,0.3);'
-                f'border-radius:20px;padding:0.3rem 0.85rem;margin-bottom:0.5rem;">'
-                f'<span style="width:8px;height:8px;border-radius:50%;background:#7c5cfc;">'
-                f'</span><span style="font-size:0.78rem;color:#a78bfa;font-weight:600;'
-                f'font-family:\'Space Grotesk\',sans-serif;">Active profile · '
-                f'{raw_label}</span></div>',
-                unsafe_allow_html=True,
-            )
-        with head_r:
-            if history and st.button("Clear chat", use_container_width=True):
-                st.session_state["chat_history"] = []
-                st.rerun()
+        # Chat shell: gradient header + body
+        st.markdown(
+            '<div class="ca-shell">'
+            '<div class="ca-shell-head">'
+            '<span class="ca-shell-head-icon">✦</span>'
+            '<div>'
+            '<div class="ca-shell-head-title">Conversation</div>'
+            '<div class="ca-shell-head-sub">'
+            'Ask anything about your portfolio · responses validated</div>'
+            '</div>'
+            '</div>',
+            unsafe_allow_html=True,
+        )
 
         if not history:
-            # Empty state: greeting + clickable suggestion chips.
             st.markdown(
-                '<div style="background:#0f1628;border:1px solid #1e2640;'
-                'border-radius:12px;padding:1.75rem 1.25rem;text-align:center;'
-                'margin-bottom:0.85rem;">'
-                '<div style="width:48px;height:48px;background:#131c30;border-radius:50%;'
-                'display:inline-flex;align-items:center;justify-content:center;'
-                'margin-bottom:0.6rem;font-size:1.3rem;">🤖</div>'
-                '<div style="font-family:\'Space Grotesk\',sans-serif;font-size:0.95rem;'
-                'font-weight:600;color:#e2e8f0;margin-bottom:0.35rem;">'
-                "Hi! I'm your AI Finance Assistant.</div>"
-                '<div style="font-size:0.82rem;color:#64748b;max-width:340px;margin:0 auto;'
-                'line-height:1.55;">Ask a question about your portfolio allocation, '
-                'risk clusters, or the EU investor caveat.</div>'
+                '<div class="ca-hero">'
+                '<div class="ca-hero-orb">✦</div>'
+                '<div class="ca-hero-title">'
+                "Hi — I'm your AI Finance Assistant."
+                '</div>'
+                '<div class="ca-hero-sub">'
+                'Ask a question about your portfolio allocation, risk clusters, '
+                'or the EU investor caveat. Every answer is grounded in the '
+                'ground-truth data computed by the backend.'
+                '</div>'
+                '<div class="ca-hero-eyebrow">Try one of these</div>'
                 '</div>',
                 unsafe_allow_html=True,
             )
@@ -2021,11 +2420,28 @@ def render_chat() -> None:
                         st.rerun()
             st.markdown("</div>", unsafe_allow_html=True)
         else:
+            st.markdown('<div class="ca-thread">', unsafe_allow_html=True)
             for msg in history:
                 with st.chat_message(
                     msg["role"], avatar=_CHAT_AVATARS.get(msg["role"])
                 ):
                     st.markdown(msg["content"])
+            st.markdown('</div>', unsafe_allow_html=True)
+
+            # Ghost "Clear chat" button below the thread
+            st.markdown('<div class="ca-clear">', unsafe_allow_html=True)
+            _, clr = st.columns([5, 1])
+            with clr:
+                if st.button("Clear", key="ca_clear_btn", use_container_width=True):
+                    st.session_state["chat_history"] = []
+                    st.rerun()
+            st.markdown('</div>', unsafe_allow_html=True)
+
+        # Close .ca-shell
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    # Close .ca-page
+    st.markdown('</div>', unsafe_allow_html=True)
 
 
 # ---------------------------------------------------------------------------
