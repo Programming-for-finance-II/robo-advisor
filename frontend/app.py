@@ -1149,18 +1149,10 @@ _PROFILE_COLOR: dict[str, str] = {
 
 def _section_header(number: str, title: str) -> None:
     st.markdown(
-        f"""
-        <div style="
-            border-left:3px solid #7c5cfc;
-            padding-left:0.875rem;
-            margin-bottom:0.75rem;
-        ">
-            <div style="
-                font-family:'Space Grotesk',sans-serif;
-                font-size:1.05rem;font-weight:600;color:#f1f5f9;
-            ">{number}. {title}</div>
-        </div>
-        """,
+        f'<div style="border-left:3px solid #7c5cfc;padding-left:0.875rem;margin-bottom:0.75rem;">'
+        f'<div style="font-family:\'Space Grotesk\',sans-serif;'
+        f'font-size:1.05rem;font-weight:600;color:#f1f5f9;">{number}. {title}</div>'
+        f'</div>',
         unsafe_allow_html=True,
     )
 
@@ -1168,7 +1160,7 @@ def _section_header(number: str, title: str) -> None:
 def _section_desc(text: str) -> None:
     st.markdown(
         f'<div style="font-size:0.82rem;color:#64748b;line-height:1.65;'
-        f'max-width:740px;margin-bottom:1.25rem;">{text}</div>',
+        f'margin-bottom:1.25rem;">{text}</div>',
         unsafe_allow_html=True,
     )
 
