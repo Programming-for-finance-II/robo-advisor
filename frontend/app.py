@@ -920,37 +920,68 @@ def render_portfolio() -> None:
 
     # ── Profile hero strip ───────────────────────────────────────────────────
     _PROFILE_META = {
-        "CONSERVATIVE": {"icon": "🛡️", "color": "#0dcfb0", "label": "Conservative"},
-        "MODERATE":     {"icon": "⚖️",  "color": "#7c5cfc", "label": "Moderate"},
-        "AGGRESSIVE":   {"icon": "🚀", "color": "#f87171", "label": "Aggressive"},
+        "CONSERVATIVE": {
+            "icon": "🛡️", "color": "#0dcfb0", "label": "Conservative",
+            "desc": (
+                "Capital-preservation focus with low-volatility, income-oriented "
+                "exposure across bonds, cash, and select alternatives."
+            ),
+        },
+        "MODERATE": {
+            "icon": "⚖️", "color": "#7c5cfc", "label": "Moderate",
+            "desc": (
+                "Balanced HRP allocation with diversified exposure across "
+                "equity, bonds, alternatives, and cash."
+            ),
+        },
+        "AGGRESSIVE": {
+            "icon": "🚀", "color": "#f87171", "label": "Aggressive",
+            "desc": (
+                "Growth-oriented HRP allocation with higher equity exposure, "
+                "accepting greater volatility for long-term return potential."
+            ),
+        },
     }
     pm = _PROFILE_META.get(profile_label, _PROFILE_META["MODERATE"])
-    conf_html = (
-        f'<div style="font-size:0.8rem;color:#94a3b8;margin-top:2px;">'
-        f'Confidence&nbsp;<span style="color:{pm["color"]};font-weight:600;">'
-        f'{confidence:.0%}</span></div>'
+    color = pm["color"]
+
+    # Pre-compute optional confidence inline text
+    conf_inline = (
+        f'&nbsp;&middot;&nbsp;'
+        f'<span style="color:{color};font-weight:600;">'
+        f'Confidence {confidence:.0%}</span>'
         if confidence is not None else ""
     )
+
+    # Small badges row
+    _badge_style = (
+        f'font-size:0.68rem;font-weight:600;letter-spacing:0.06em;'
+        f'text-transform:uppercase;color:{color}90;'
+        f'background:{color}15;border:1px solid {color}30;'
+        f'border-radius:6px;padding:0.2rem 0.55rem;'
+    )
+    badges_html = "".join(
+        f'<span style="{_badge_style}">{b}</span>'
+        for b in ["HRP", pm["label"], "Educational prototype"]
+    )
+
+    # Single self-contained block — no leading indentation that would
+    # trigger Markdown's 4-space code-block rule
     st.markdown(
-        f"""
-        <div style="
-            display:flex;align-items:center;gap:1rem;
-            background:linear-gradient(135deg,{pm['color']}12,{pm['color']}06);
-            border:1px solid {pm['color']}35;
-            border-radius:12px;padding:0.85rem 1.25rem;
-            margin-bottom:1.25rem;">
-            <div style="font-size:1.6rem;flex-shrink:0;">{pm['icon']}</div>
-            <div>
-                <div style="
-                    font-family:'Space Grotesk',sans-serif;
-                    font-size:1.05rem;font-weight:700;
-                    color:{pm['color']};letter-spacing:0.03em;">
-                    {pm['label']} Investor
-                </div>
-                {conf_html}
-            </div>
-        </div>
-        """,
+        f'<div style="display:flex;align-items:flex-start;gap:1rem;'
+        f'background:linear-gradient(135deg,{color}12,{color}06);'
+        f'border:1px solid {color}35;border-radius:12px;'
+        f'padding:0.85rem 1.25rem;margin-bottom:1.25rem;">'
+        f'<div style="font-size:1.6rem;flex-shrink:0;margin-top:0.1rem;">{pm["icon"]}</div>'
+        f'<div style="min-width:0;">'
+        f'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:1.05rem;'
+        f'font-weight:700;color:{color};letter-spacing:0.03em;margin-bottom:0.25rem;">'
+        f'{pm["label"]} Investor</div>'
+        f'<div style="font-size:0.82rem;color:#94a3b8;margin-bottom:0.5rem;line-height:1.5;">'
+        f'{pm["desc"]}{conf_inline}</div>'
+        f'<div style="display:flex;flex-wrap:wrap;gap:0.35rem;">{badges_html}</div>'
+        f'</div>'
+        f'</div>',
         unsafe_allow_html=True,
     )
 
@@ -961,11 +992,12 @@ def render_portfolio() -> None:
 
     # Toggle between mock data (Phase A) and live optimizer (Phase B)
     use_live = st.toggle(
-        "Load live market data",
+        "Use live market data",
         value=default_live,
         help=(
-            "Downloads real prices from yfinance and runs the HRP optimizer. "
-            "Takes about 10 seconds on first load."
+            "When disabled, the dashboard uses stable mock data for demonstration. "
+            "When enabled, it attempts to load current market prices via yfinance "
+            "and runs the HRP optimizer. Takes about 10 seconds on first load."
         ),
     )
 
