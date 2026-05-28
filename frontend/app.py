@@ -1339,48 +1339,171 @@ def _render_hrp_tab(portfolio: dict) -> None:
     # ── Section 4: Cluster Structure ───────────────────────────────────────
     _section_header("4", "Cluster Structure")
     _section_desc(
-        "The dendrogram shows how HRP groups assets into clusters before allocating weights. "
-        "Assets with similar return behaviour are linked early (low on the chart); "
-        "dissimilar groups are joined higher up. Risk is balanced first within each cluster, "
-        "then across clusters."
+        "HRP groups assets by return-correlation before allocating weights. "
+        "Assets that move together are linked early (bottom of the chart); "
+        "distinct groups join higher up. Risk is balanced first within each cluster, "
+        "then across clusters — reducing concentration without requiring return forecasts."
     )
 
-    try:
-        import numpy as np
-        from scipy.cluster.hierarchy import linkage
-        from scipy.spatial.distance import squareform
+    _DEND_CLUSTERS = [
+        {
+            "name": "Risk Assets",
+            "color": "#7c5cfc",
+            "bg": "rgba(124,92,252,0.15)",
+            "tickers": ["CSPX.L", "EFA"],
+            "group": 0,
+        },
+        {
+            "name": "Real Assets",
+            "color": "#0dcfb0",
+            "bg": "rgba(13,207,176,0.15)",
+            "tickers": ["GLD", "VNQ"],
+            "group": 1,
+        },
+        {
+            "name": "Safe Haven",
+            "color": "#f59e0b",
+            "bg": "rgba(245,158,11,0.15)",
+            "tickers": ["AGGH.MI", "TLT", "TIP"],
+            "group": 2,
+        },
+        {
+            "name": "Cash",
+            "color": "#3b82f6",
+            "bg": "rgba(59,130,246,0.15)",
+            "tickers": ["XEON.MI"],
+            "group": 3,
+        },
+    ]
 
-        from backend.optimizer.charts import plot_dendrogram
+    _chips_items = "".join(
+        f'<span style="display:inline-flex;align-items:center;gap:0.35rem;'
+        f'background:{cl["bg"]};border:1px solid {cl["color"]}50;'
+        f'border-radius:20px;padding:0.25rem 0.65rem;">'
+        f'<span style="width:7px;height:7px;border-radius:50%;background:{cl["color"]};'
+        f'flex-shrink:0;display:inline-block;"></span>'
+        f'<span style="font-size:0.7rem;color:{cl["color"]};font-weight:600;">'
+        f'{cl["name"]}</span>'
+        f'</span>'
+        for cl in _DEND_CLUSTERS
+    )
+    st.markdown(
+        '<div style="display:flex;align-items:center;gap:0.45rem;'
+        'flex-wrap:wrap;margin-bottom:0.85rem;">'
+        '<span style="font-size:0.65rem;font-weight:700;letter-spacing:0.1em;'
+        'text-transform:uppercase;color:#475569;margin-right:0.25rem;">Clusters</span>'
+        f'{_chips_items}'
+        '</div>',
+        unsafe_allow_html=True,
+    )
 
-        tickers_list = list(weights.keys())
-        n = len(tickers_list)
+    _dend_col, _info_col = st.columns([3, 1.2])
 
-        _CLUSTER_GROUPS: dict[str, int] = {
-            "CSPX.L": 0, "EFA": 0,
-            "GLD": 1, "VNQ": 1,
-            "AGGH.MI": 2, "TLT": 2, "TIP": 2,
-            "XEON.MI": 3,
-        }
-        corr = np.eye(n)
-        for i in range(n):
-            for j in range(n):
-                if i != j:
-                    ci = _CLUSTER_GROUPS.get(tickers_list[i], -1)
-                    cj = _CLUSTER_GROUPS.get(tickers_list[j], -1)
-                    corr[i, j] = 0.70 if ci == cj else 0.10
+    with _dend_col:
+        try:
+            import numpy as np
+            from scipy.cluster.hierarchy import linkage
+            from scipy.spatial.distance import squareform
 
-        dist = np.sqrt(0.5 * (1 - corr))
-        np.fill_diagonal(dist, 0.0)
-        condensed = squareform(dist, checks=False)
-        link = linkage(condensed, method="ward")
+            from backend.optimizer.charts import plot_dendrogram
 
-        fig_dend = plot_dendrogram(link, tickers_list)
-        fig_dend = apply_plotly_dark_theme(fig_dend)
-        fig_dend.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
-        st.plotly_chart(fig_dend, use_container_width=True)
+            tickers_list = list(weights.keys())
+            n = len(tickers_list)
 
-    except Exception as exc:
-        st.caption(f"Dendrogram unavailable: {exc}")
+            _ticker_group: dict[str, int] = {
+                t: cl["group"]
+                for cl in _DEND_CLUSTERS
+                for t in cl["tickers"]
+            }
+            corr = np.eye(n)
+            for i in range(n):
+                for j in range(n):
+                    if i != j:
+                        ci = _ticker_group.get(tickers_list[i], -1)
+                        cj = _ticker_group.get(tickers_list[j], -1)
+                        corr[i, j] = 0.70 if ci == cj else 0.10
+
+            dist = np.sqrt(0.5 * (1 - corr))
+            np.fill_diagonal(dist, 0.0)
+            condensed = squareform(dist, checks=False)
+            link = linkage(condensed, method="ward")
+
+            fig_dend = plot_dendrogram(link, tickers_list)
+            fig_dend = apply_plotly_dark_theme(fig_dend)
+            fig_dend.update_traces(line=dict(color="#a78bfa", width=2))
+            fig_dend.update_layout(
+                paper_bgcolor="rgba(0,0,0,0)",
+                plot_bgcolor="rgba(0,0,0,0)",
+                margin=dict(l=50, r=20, t=50, b=90),
+                height=350,
+                xaxis=dict(
+                    tickangle=-35,
+                    tickfont=dict(color="#94a3b8", size=11),
+                    showgrid=False,
+                ),
+                yaxis=dict(
+                    title=dict(text="Distance", font=dict(color="#64748b", size=11)),
+                    tickfont=dict(color="#64748b", size=10),
+                ),
+            )
+            st.plotly_chart(fig_dend, use_container_width=True)
+
+            _cluster_color: dict[str, str] = {
+                t: cl["color"]
+                for cl in _DEND_CLUSTERS
+                for t in cl["tickers"]
+            }
+            _map_items = "".join(
+                f'<span style="display:inline-flex;align-items:center;gap:0.3rem;'
+                f'margin:0.18rem 0.3rem 0.18rem 0;">'
+                f'<span style="width:6px;height:6px;border-radius:50%;'
+                f'background:{_cluster_color.get(t, "#64748b")};flex-shrink:0;'
+                f'display:inline-block;"></span>'
+                f'<span style="font-size:0.68rem;color:#94a3b8;">{t}</span>'
+                f'</span>'
+                for t in tickers_list
+            )
+            st.markdown(
+                '<div style="display:flex;flex-wrap:wrap;align-items:center;'
+                'margin-top:0.15rem;">'
+                f'{_map_items}'
+                '</div>',
+                unsafe_allow_html=True,
+            )
+
+        except Exception as exc:
+            st.caption(f"Dendrogram unavailable: {exc}")
+
+    with _info_col:
+        _HOW_TO_POINTS = [
+            ("Branch height", "The higher two assets join, the less correlated they are."),
+            ("Early linkage", "Assets merged near the bottom share similar return patterns."),
+            ("Cluster balance", "HRP divides risk equally within each subtree before scaling up."),
+            ("No forecasts", "Uses only historical correlations — no return predictions."),
+        ]
+        _pts_html = "".join(
+            f'<div style="display:flex;gap:0.55rem;margin-bottom:0.6rem;">'
+            f'<span style="color:#7c5cfc;font-size:0.75rem;margin-top:0.1rem;'
+            f'flex-shrink:0;">▸</span>'
+            f'<div>'
+            f'<div style="font-size:0.75rem;font-weight:600;color:#c4b5fd;'
+            f'margin-bottom:0.1rem;">{title}</div>'
+            f'<div style="font-size:0.72rem;color:#64748b;line-height:1.55;">{body}</div>'
+            f'</div>'
+            f'</div>'
+            for title, body in _HOW_TO_POINTS
+        )
+        st.markdown(
+            '<div style="background:rgba(124,92,252,0.06);'
+            'border:1px solid rgba(124,92,252,0.18);border-radius:10px;'
+            'padding:1rem 1rem 0.5rem;">'
+            '<div style="font-family:\'Space Grotesk\',sans-serif;font-size:0.8rem;'
+            'font-weight:700;color:#a78bfa;letter-spacing:0.04em;'
+            'text-transform:uppercase;margin-bottom:0.75rem;">How to read this</div>'
+            f'{_pts_html}'
+            '</div>',
+            unsafe_allow_html=True,
+        )
 
 
 def _render_mv_tab(portfolio: dict, profile_key: str) -> None:
