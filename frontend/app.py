@@ -23,6 +23,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
+import yfinance as yf
 
 from backend.llm.narrator import NarratorClient
 from backend.llm.validator import validate
@@ -1228,6 +1229,291 @@ _PROFILE_COLOR: dict[str, str] = {
     "AGGRESSIVE":   "#f87171",
 }
 
+# ---------------------------------------------------------------------------
+# ETF explorer ("What do these tickers mean?" section)
+# Static per-ticker reference data. Live prices come from yfinance; everything
+# below is curated metadata used by _render_etf_explorer().
+# ---------------------------------------------------------------------------
+
+# Cluster -> dot colour for the ticker selector pills
+CLUSTER_COLORS: dict[str, str] = {
+    "risk_assets": "#185FA5",
+    "safe_haven":  "#0F6E56",
+    "real_assets": "#BA7517",
+    "cash":        "#888780",
+}
+
+ETF_METADATA: dict[str, dict] = {
+    "CSPX.L": {
+        "full_name": "iShares Core S&P 500 UCITS ETF",
+        "issuer": "iShares (BlackRock)",
+        "category": "Large Cap US Equity",
+        "inception": "2010",
+        "distribution": "Accumulating",
+        "ter": "0.07%",
+        "aum": "$52.1B",
+        "description": (
+            "Tracks the S&P 500 Index — 500 of the largest US companies across "
+            "all major sectors. Physically replicated, UCITS-compliant, domiciled "
+            "in Ireland. Same economic exposure as SPY but wrapped for European "
+            "regulatory compliance. Primary equity position in the HRP portfolio."
+        ),
+        "key_stats": {
+            "P/E ratio (underlying)": "22.4x",
+            "P/B ratio": "4.1x",
+            "Dividend yield": "1.31%",
+            "Number of holdings": "503",
+            "Weight in HRP portfolio": "18.2%",
+        },
+        "morningstar": 4,
+        "esg": {"environmental": 6, "social": 5, "governance": 7, "total": 18, "risk": 4},
+        "analyst": {"buy": 72, "hold": 20, "sell": 8},
+        "financials": [
+            {"label": "AUM", "value": "$52.1B",
+             "trend": [3, 4, 4, 5, 5, 5, 5]},
+            {"label": "Avg daily volume", "value": "$320M",
+             "trend": [2, 3, 3, 4, 4, 5, 5]},
+            {"label": "TER (expense ratio)", "value": "0.07%",
+             "trend": [5, 5, 5, 5, 5, 5, 5]},
+            {"label": "12m return (NAV)", "value": "+23.1%",
+             "trend": [2, 3, 3, 4, 5, 5, 5]},
+            {"label": "Tracking error (ann.)", "value": "0.03%",
+             "trend": [5, 5, 5, 5, 5, 5, 5]},
+        ],
+    },
+    "EFA": {
+        "full_name": "iShares MSCI EAFE ETF",
+        "issuer": "iShares (BlackRock)",
+        "category": "Developed Markets Ex-US",
+        "inception": "2001",
+        "distribution": "Distributing",
+        "ter": "0.32%",
+        "aum": "$48.3B",
+        "description": (
+            "Tracks the MSCI EAFE Index (Europe, Australasia, Far East) — ~900 "
+            "stocks across 21 developed markets outside the US and Canada. Major "
+            "exposures: Japan, UK, France, Switzerland, Germany. No UCITS equivalent "
+            "with equivalent yfinance coverage; retained as-is in the v3.1 universe."
+        ),
+        "key_stats": {
+            "P/E ratio (underlying)": "14.8x",
+            "P/B ratio": "1.7x",
+            "Dividend yield": "3.12%",
+            "Number of holdings": "~900",
+            "Weight in HRP portfolio": "14.8%",
+        },
+        "morningstar": 3,
+        "esg": {"environmental": 5, "social": 6, "governance": 6, "total": 17, "risk": 3},
+        "analyst": {"buy": 61, "hold": 28, "sell": 11},
+        "financials": [
+            {"label": "AUM", "value": "$48.3B", "trend": [4, 4, 4, 4, 4, 4, 4]},
+            {"label": "Avg daily volume", "value": "$890M", "trend": [4, 4, 5, 5, 5, 5, 5]},
+            {"label": "TER (expense ratio)", "value": "0.32%", "trend": [4, 4, 4, 4, 4, 4, 4]},
+            {"label": "12m return (NAV)", "value": "+9.8%", "trend": [2, 2, 3, 3, 3, 4, 4]},
+            {"label": "Tracking error (ann.)", "value": "0.18%", "trend": [4, 4, 4, 4, 4, 4, 4]},
+        ],
+    },
+    "AGGH.MI": {
+        "full_name": "iShares Core € Aggregate Bond UCITS ETF",
+        "issuer": "iShares (BlackRock)",
+        "category": "EUR Aggregate Bond",
+        "inception": "2017",
+        "distribution": "Accumulating",
+        "ter": "0.10%",
+        "aum": "€9.8B",
+        "description": (
+            "Tracks the Bloomberg Euro Aggregate Bond Index — EUR-denominated "
+            "investment-grade bonds (government, corporate, securitised). The main "
+            "fixed income position for EU investors: reduces FX risk vs USD-denominated "
+            "bonds while maintaining broad duration exposure across the eurozone."
+        ),
+        "key_stats": {
+            "Yield to maturity": "3.42%",
+            "Modified duration": "6.8 yrs",
+            "Credit quality (avg)": "AA-",
+            "Number of holdings": "~2,400",
+            "Weight in HRP portfolio": "12.1%",
+        },
+        "morningstar": 4,
+        "esg": {"environmental": 7, "social": 6, "governance": 8, "total": 21, "risk": 5},
+        "analyst": {"buy": 55, "hold": 35, "sell": 10},
+        "financials": [
+            {"label": "AUM", "value": "€9.8B", "trend": [3, 3, 4, 4, 4, 4, 5]},
+            {"label": "Avg daily volume", "value": "€42M", "trend": [2, 3, 3, 3, 4, 4, 4]},
+            {"label": "TER (expense ratio)", "value": "0.10%", "trend": [5, 5, 5, 5, 5, 5, 5]},
+            {"label": "12m return (NAV)", "value": "+2.1%", "trend": [1, 1, 2, 2, 3, 3, 4]},
+            {"label": "Modified duration", "value": "6.8 yrs", "trend": [3, 3, 3, 3, 3, 3, 3]},
+        ],
+    },
+    "TLT": {
+        "full_name": "iShares 20+ Year Treasury Bond ETF",
+        "issuer": "iShares (BlackRock)",
+        "category": "US Long-Duration Treasuries",
+        "inception": "2002",
+        "distribution": "Distributing",
+        "ter": "0.15%",
+        "aum": "$58.2B",
+        "description": (
+            "US Treasury bonds with 20+ year maturities. The quintessential "
+            "long-duration flight-to-quality instrument: prices rise when yields "
+            "fall, especially in risk-off environments. Kept as USD-priced duration "
+            "anchor for stress scenarios in the HRP portfolio."
+        ),
+        "key_stats": {
+            "Yield to maturity": "4.81%",
+            "Modified duration": "17.1 yrs",
+            "SEC 30-day yield": "4.76%",
+            "Number of holdings": "~40",
+            "Weight in HRP portfolio": "10.4%",
+        },
+        "morningstar": 2,
+        "esg": {"environmental": 9, "social": 8, "governance": 9, "total": 26, "risk": 5},
+        "analyst": {"buy": 38, "hold": 40, "sell": 22},
+        "financials": [
+            {"label": "AUM", "value": "$58.2B", "trend": [5, 5, 5, 5, 5, 4, 3]},
+            {"label": "Avg daily volume", "value": "$1.8B", "trend": [4, 5, 5, 5, 5, 5, 5]},
+            {"label": "TER (expense ratio)", "value": "0.15%", "trend": [5, 5, 5, 5, 5, 5, 5]},
+            {"label": "12m return (NAV)", "value": "-4.2%", "trend": [4, 3, 3, 2, 2, 1, 2]},
+            {"label": "Modified duration", "value": "17.1 yrs", "trend": [3, 3, 3, 3, 3, 3, 3]},
+        ],
+    },
+    "GLD": {
+        "full_name": "SPDR Gold Shares",
+        "issuer": "State Street (SPDR)",
+        "category": "Physical Gold",
+        "inception": "2004",
+        "distribution": "Non-distributing",
+        "ter": "0.40%",
+        "aum": "$62.4B",
+        "description": (
+            "Physically-backed gold ETF — each share ≈ 1/10 troy oz held in HSBC "
+            "vaults in London. Gold is USD-priced globally; no UCITS equivalent changes "
+            "the economic exposure. Acts as inflation hedge, tail-risk hedge, and "
+            "currency diversifier in the HRP portfolio."
+        ),
+        "key_stats": {
+            "Gold spot price": "$3,368/oz",
+            "Physical gold held": "876 tonnes",
+            "Custody bank": "HSBC London",
+            "Correlation vs S&P500": "+0.04",
+            "Weight in HRP portfolio": "13.7%",
+        },
+        "morningstar": 3,
+        "esg": {"environmental": 4, "social": 5, "governance": 6, "total": 15, "risk": 3},
+        "analyst": {"buy": 65, "hold": 27, "sell": 8},
+        "financials": [
+            {"label": "AUM", "value": "$62.4B", "trend": [3, 3, 4, 4, 5, 5, 5]},
+            {"label": "Avg daily volume", "value": "$1.2B", "trend": [3, 3, 4, 4, 5, 5, 5]},
+            {"label": "TER (expense ratio)", "value": "0.40%", "trend": [3, 3, 3, 3, 3, 3, 3]},
+            {"label": "12m return (NAV)", "value": "+28.4%", "trend": [2, 2, 3, 4, 5, 5, 5]},
+            {"label": "Gold held per share", "value": "0.0929 oz", "trend": [3, 3, 3, 3, 3, 3, 3]},
+        ],
+    },
+    "VNQ": {
+        "full_name": "Vanguard Real Estate ETF",
+        "issuer": "Vanguard",
+        "category": "US Real Estate / REITs",
+        "inception": "2004",
+        "distribution": "Distributing",
+        "ter": "0.13%",
+        "aum": "$35.1B",
+        "description": (
+            "Tracks the MSCI US Investable Market Real Estate 25/50 Index — US REITs "
+            "across residential, commercial, industrial, and specialty segments. Provides "
+            "inflation linkage via real asset rents and mandated 90%+ dividend distribution. "
+            "Intentionally US-focused; EU REIT markets have lower liquidity and shorter histories."
+        ),
+        "key_stats": {
+            "P/FFO ratio": "18.2x",
+            "Dividend yield": "4.12%",
+            "Largest holding": "Prologis 7.1%",
+            "Number of holdings": "162",
+            "Weight in HRP portfolio": "9.8%",
+        },
+        "morningstar": 3,
+        "esg": {"environmental": 5, "social": 4, "governance": 6, "total": 15, "risk": 3},
+        "analyst": {"buy": 52, "hold": 33, "sell": 15},
+        "financials": [
+            {"label": "AUM", "value": "$35.1B", "trend": [4, 4, 4, 4, 4, 3, 3]},
+            {"label": "Avg daily volume", "value": "$420M", "trend": [3, 4, 4, 4, 4, 4, 4]},
+            {"label": "TER (expense ratio)", "value": "0.13%", "trend": [5, 5, 5, 5, 5, 5, 5]},
+            {"label": "12m return (NAV)", "value": "+4.8%", "trend": [3, 2, 2, 3, 3, 3, 4]},
+            {"label": "Distribution yield", "value": "4.12%", "trend": [4, 4, 4, 4, 4, 4, 4]},
+        ],
+    },
+    "TIP": {
+        "full_name": "iShares TIPS Bond ETF",
+        "issuer": "iShares (BlackRock)",
+        "category": "US Inflation-Linked Bonds",
+        "inception": "2003",
+        "distribution": "Distributing",
+        "ter": "0.19%",
+        "aum": "$18.6B",
+        "description": (
+            "US Treasury Inflation-Protected Securities (TIPS) across the full maturity "
+            "range. Principal and interest adjust with CPI, providing direct inflation "
+            "breakeven exposure. Retained alongside AGGH.MI to capture the US inflation "
+            "breakeven spread — a distinct risk factor from EUR aggregate duration."
+        ),
+        "key_stats": {
+            "Real yield (10y TIPS)": "1.82%",
+            "Modified duration": "6.2 yrs",
+            "CPI linkage": "US CPI-U",
+            "Number of holdings": "49",
+            "Weight in HRP portfolio": "10.1%",
+        },
+        "morningstar": 3,
+        "esg": {"environmental": 9, "social": 8, "governance": 9, "total": 26, "risk": 5},
+        "analyst": {"buy": 48, "hold": 42, "sell": 10},
+        "financials": [
+            {"label": "AUM", "value": "$18.6B", "trend": [3, 3, 4, 4, 4, 3, 3]},
+            {"label": "Avg daily volume", "value": "$195M", "trend": [3, 3, 3, 3, 3, 3, 3]},
+            {"label": "TER (expense ratio)", "value": "0.19%", "trend": [5, 5, 5, 5, 5, 5, 5]},
+            {"label": "12m return (NAV)", "value": "+3.8%", "trend": [2, 2, 3, 3, 4, 4, 4]},
+            {"label": "Inflation breakeven (5y)", "value": "2.34%", "trend": [3, 3, 3, 4, 4, 4, 4]},
+        ],
+    },
+    "XEON.MI": {
+        "full_name": "Xtrackers EUR Overnight Rate Swap UCITS ETF",
+        "issuer": "Xtrackers (DWS)",
+        "category": "EUR Money Market / Overnight",
+        "inception": "2007",
+        "distribution": "Accumulating",
+        "ter": "0.10%",
+        "aum": "€6.2B",
+        "description": (
+            "Tracks the ESTER overnight rate via total return swap — EUR equivalent of "
+            "a T-Bill money market fund in ETF form. Replaces USD BIL in the v3.1 universe "
+            "to avoid EUR/USD FX risk for EU investors. Minimal duration, minimal credit risk, "
+            "daily compounding of the ECB overnight rate."
+        ),
+        "key_stats": {
+            "Effective duration": "< 1 day",
+            "Credit risk": "Minimal (swap)",
+            "ESTER reference rate": "2.15%",
+            "Replication method": "Synthetic (swap)",
+            "Weight in HRP portfolio": "10.9%",
+        },
+        "morningstar": 5,
+        "esg": {"environmental": 8, "social": 7, "governance": 9, "total": 24, "risk": 5},
+        "analyst": {"buy": 80, "hold": 18, "sell": 2},
+        "financials": [
+            {"label": "AUM", "value": "€6.2B", "trend": [2, 2, 3, 4, 5, 5, 5]},
+            {"label": "Avg daily volume", "value": "€18M", "trend": [2, 3, 3, 4, 4, 5, 5]},
+            {"label": "TER (expense ratio)", "value": "0.10%", "trend": [5, 5, 5, 5, 5, 5, 5]},
+            {"label": "12m return (NAV)", "value": "+3.9%", "trend": [3, 3, 4, 4, 4, 5, 5]},
+            {"label": "ESTER rate (current)", "value": "2.15%", "trend": [5, 5, 5, 5, 5, 4, 3]},
+        ],
+    },
+}
+
+
+def _sparkline(trend: list[int]) -> str:
+    """Convert a list of 1–7 integers into a Unicode bar sparkline."""
+    bars = "▁▂▃▄▅▆▇"
+    mx = max(trend) or 1
+    return "".join(bars[round((v / mx) * 6)] for v in trend)
+
 
 def _section_header(number: str, title: str) -> None:
     st.markdown(
@@ -1249,6 +1535,323 @@ def _section_desc(text: str) -> None:
 
 def _v_spacer(rem: float = 2.0) -> None:
     st.markdown(f'<div style="height:{rem}rem"></div>', unsafe_allow_html=True)
+
+
+@st.cache_data(ttl=3600, show_spinner=False)
+def _fetch_price_history(ticker: str) -> pd.DataFrame:
+    """
+    Download 2 years of daily prices for a single ticker via yfinance.
+    Cached for 1 hour (keyed on the ticker symbol) so flipping between
+    pills or reruns does not re-hit the network.
+    """
+    df = yf.download(
+        ticker,
+        period="2y",
+        interval="1d",
+        progress=False,
+        auto_adjust=True,
+    )
+    return df
+
+
+def _close_series(df: pd.DataFrame) -> "pd.Series":
+    """Extract a flat Close price Series from a yfinance download frame."""
+    close = df["Close"]
+    # Single-ticker downloads can return a MultiIndex column frame
+    if isinstance(close, pd.DataFrame):
+        close = close.iloc[:, 0]
+    return close.dropna()
+
+
+def _slice_price_range(close: "pd.Series", rng: str) -> "pd.Series":
+    """Slice the 2y Close series to the selected time-range option."""
+    if close.empty:
+        return close
+    if rng == "YTD":
+        from datetime import date
+        start = pd.Timestamp(date.today().year, 1, 1)
+        idx_tz = getattr(close.index, "tz", None)
+        if idx_tz is not None:
+            start = start.tz_localize(idx_tz)
+        return close[close.index >= start]
+    # Approximate trading-day windows; "2y"/"5y" use the full download
+    rows: dict[str, int] = {
+        "2h": 16, "1d": 1, "1w": 5, "1m": 21,
+        "3m": 63, "6m": 126, "1y": 252,
+    }
+    n = rows.get(rng)
+    if n is None:  # "2y", "5y"
+        return close
+    return close.iloc[-n:]
+
+
+def _render_etf_explorer() -> None:
+    """
+    Three-panel ETF explorer rendered inside the "What do these tickers mean?"
+    expander: ticker selector pills, a live yfinance price chart, a description
+    card, and a static financial-data block (Morningstar/ESG, analyst
+    consensus, key financials).
+    """
+    from backend.data.universe_config import ETF_UNIVERSE
+
+    tickers = [e.primary_ticker for e in ETF_UNIVERSE]
+    cluster_by_ticker = {e.primary_ticker: e.cluster for e in ETF_UNIVERSE}
+    etf_by_ticker = {e.primary_ticker: e for e in ETF_UNIVERSE}
+
+    if "selected_ticker" not in st.session_state:
+        st.session_state["selected_ticker"] = tickers[0]
+
+    selected = st.session_state["selected_ticker"]
+    if selected not in tickers:
+        selected = tickers[0]
+        st.session_state["selected_ticker"] = selected
+
+    # ── Panel 1: ticker selector pills ───────────────────────────────────
+    # Per-pill CSS: cluster-coloured dot + active (navy) / inactive (grey).
+    # Streamlit tags each keyed widget's container with `st-key-<key>`.
+    css_rules = [
+        'div[class*="st-key-pill_"] button {'
+        ' background: rgba(255,255,255,0.05) !important;'
+        ' border: 1px solid rgba(255,255,255,0.10) !important;'
+        ' color: #94a3b8 !important; border-radius: 18px !important;'
+        " font-family: 'Space Grotesk', sans-serif !important;"
+        ' font-size: 0.8rem !important; font-weight: 600 !important;'
+        ' padding: 0.3rem 0.4rem !important; box-shadow: none !important; }',
+        'div[class*="st-key-pill_"] button::before {'
+        ' content: ""; display: inline-block; width: 8px; height: 8px;'
+        ' border-radius: 50%; margin-right: 7px; vertical-align: middle; }',
+    ]
+    for t in tickers:
+        safe = t.replace(".", "_")
+        dot = CLUSTER_COLORS.get(cluster_by_ticker[t], "#888780")
+        css_rules.append(
+            f".st-key-pill_{safe} button::before {{ background: {dot} !important; }}"
+        )
+    active_safe = selected.replace(".", "_")
+    css_rules.append(
+        f".st-key-pill_{active_safe} button {{ background: #042C53 !important;"
+        f" color: #ffffff !important; border-color: #042C53 !important; }}"
+    )
+    st.markdown("<style>" + "\n".join(css_rules) + "</style>", unsafe_allow_html=True)
+
+    pill_cols = st.columns(len(tickers))
+    for col, t in zip(pill_cols, tickers):
+        with col:
+            safe = t.replace(".", "_")
+            if st.button(t, key=f"pill_{safe}", use_container_width=True):
+                st.session_state["selected_ticker"] = t
+                st.rerun()
+
+    selected = st.session_state["selected_ticker"]
+    meta = ETF_METADATA[selected]
+    etf = etf_by_ticker[selected]
+
+    # ── Panel 2 (Section 1): live price chart ────────────────────────────
+    _section_header("1", "Price chart")
+    rng = st.radio(
+        "range",
+        ["2h", "1d", "1w", "1m", "3m", "6m", "1y", "2y", "5y", "YTD"],
+        index=7,
+        horizontal=True,
+        label_visibility="collapsed",
+        key=f"etf_range_{selected}",
+    )
+
+    period_return: float | None = None
+    try:
+        raw = _fetch_price_history(selected)
+        close = _close_series(raw)
+        sliced = _slice_price_range(close, rng)
+        if len(sliced) >= 1:
+            up = float(sliced.iloc[-1]) >= float(sliced.iloc[0])
+            line_color = "#185FA5" if up else "#E24B4A"
+            fill_color = (
+                "rgba(24,95,165,0.07)" if up else "rgba(226,75,74,0.07)"
+            )
+            if len(sliced) >= 2:
+                period_return = (
+                    float(sliced.iloc[-1]) / float(sliced.iloc[0]) - 1.0
+                ) * 100.0
+
+            fig = go.Figure()
+            fig.add_trace(go.Scatter(
+                x=sliced.index, y=sliced.values,
+                mode="lines",
+                line=dict(color=line_color, width=2),
+                fill="tozeroy", fillcolor=fill_color,
+                name=selected,
+            ))
+            fig.update_layout(
+                margin=dict(l=0, r=0, t=8, b=0),
+                height=220,
+                plot_bgcolor="rgba(0,0,0,0)",
+                paper_bgcolor="rgba(0,0,0,0)",
+                showlegend=False,
+                hovermode="x",
+                xaxis=dict(showgrid=False, color="#64748b"),
+                yaxis=dict(
+                    side="right", showgrid=True,
+                    gridcolor="rgba(255,255,255,0.05)", color="#64748b",
+                ),
+            )
+            chart_config = {
+                "modeBarButtonsToRemove": [
+                    "select2d", "lasso2d", "autoScale2d",
+                    "hoverClosestCartesian", "hoverCompareCartesian",
+                    "toggleSpikelines",
+                ],
+                "modeBarButtonsToAdd": [
+                    "zoomIn2d", "zoomOut2d", "pan2d", "resetScale2d", "toImage",
+                ],
+                "displaylogo": False,
+            }
+            st.plotly_chart(
+                fig, use_container_width=True, config=chart_config,
+                key=f"etf_price_{selected}",
+            )
+        else:
+            st.caption(f"No price data available for {selected}.")
+    except Exception as exc:
+        st.caption(f"Price chart unavailable: {exc}")
+
+    pr_str = f"{period_return:+.2f}%" if period_return is not None else "—"
+    st.markdown(
+        f'<div style="font-size:0.8rem;color:#94a3b8;margin:0.25rem 0 0.5rem 0;">'
+        f'Period return: <span style="color:#f1f5f9;font-weight:600;">{pr_str}</span>'
+        f' &nbsp;|&nbsp; TER: <span style="color:#f1f5f9;font-weight:600;">'
+        f'{meta["ter"]}</span>'
+        f' &nbsp;|&nbsp; AUM: <span style="color:#f1f5f9;font-weight:600;">'
+        f'{meta["aum"]}</span></div>',
+        unsafe_allow_html=True,
+    )
+
+    _v_spacer(1.5)
+
+    # ── Panel 3 (Section 2): description card ────────────────────────────
+    _section_header("2", "What this ETF holds")
+    stats_rows = "".join(
+        f'<div style="display:flex;justify-content:space-between;gap:1rem;'
+        f'padding:0.4rem 0;border-bottom:1px solid rgba(255,255,255,0.05);">'
+        f'<span style="font-size:0.78rem;color:#64748b;">{k}</span>'
+        f'<span style="font-size:0.78rem;color:#e2e8f0;font-weight:600;">{v}</span>'
+        f'</div>'
+        for k, v in meta["key_stats"].items()
+    )
+    ucits_tag = "UCITS-eligible" if etf.is_ucits else "US-listed (non-UCITS)"
+    st.markdown(
+        f'<div style="background:rgba(124,92,252,0.05);'
+        f'border:1px solid rgba(124,92,252,0.18);border-radius:12px;'
+        f'padding:1.1rem 1.25rem;">'
+        f'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:1.05rem;'
+        f'font-weight:700;color:#f1f5f9;">{meta["full_name"]}</div>'
+        f'<div style="font-size:0.74rem;color:#64748b;margin:0.3rem 0 0.85rem 0;">'
+        f'{meta["issuer"]} &middot; {meta["category"]} &middot; '
+        f'Inception {meta["inception"]} &middot; {meta["distribution"]} &middot; '
+        f'{etf.currency} &middot; {ucits_tag}</div>'
+        f'<div style="font-size:0.84rem;color:#cbd5e1;line-height:1.6;'
+        f'margin-bottom:0.6rem;">{meta["description"]}</div>'
+        f'<div style="font-size:0.76rem;color:#7c8aa0;font-style:italic;'
+        f'line-height:1.55;margin-bottom:1rem;">Universe rationale: '
+        f'{etf.rationale}</div>'
+        f'<div style="display:grid;grid-template-columns:1fr 1fr;'
+        f'gap:0 1.5rem;">{stats_rows}</div>'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
+
+    _v_spacer(1.5)
+
+    # ── Panel 4 (Section 3): financial data ──────────────────────────────
+    _section_header("3", "Financial data")
+
+    # (a) Morningstar & ESG ----------------------------------------------
+    st.markdown(
+        '<div style="font-size:0.8rem;font-weight:700;letter-spacing:0.06em;'
+        'text-transform:uppercase;color:#a78bfa;margin-bottom:0.5rem;">'
+        'Morningstar &amp; ESG</div>',
+        unsafe_allow_html=True,
+    )
+    ms = meta["morningstar"]
+    esg = meta["esg"]
+    esg_rating = esg["risk"]
+    ms_html = (
+        f'<span style="color:#BA7517;">{"★" * ms}</span>'
+        f'<span style="color:#475569;">{"☆" * (5 - ms)}</span>'
+    )
+    esg_html = (
+        f'<span style="color:#0F6E56;">{"●" * esg_rating}</span>'
+        f'<span style="color:#475569;">{"○" * (5 - esg_rating)}</span>'
+    )
+    rc1, rc2 = st.columns(2)
+    with rc1:
+        st.markdown(
+            f'<div style="font-size:0.72rem;color:#64748b;'
+            f'margin-bottom:0.2rem;">Morningstar rating</div>'
+            f'<div style="font-size:1.3rem;letter-spacing:2px;">{ms_html}</div>',
+            unsafe_allow_html=True,
+        )
+    with rc2:
+        st.markdown(
+            f'<div style="font-size:0.72rem;color:#64748b;'
+            f'margin-bottom:0.2rem;">ESG globe rating</div>'
+            f'<div style="font-size:1.3rem;letter-spacing:2px;">{esg_html}</div>',
+            unsafe_allow_html=True,
+        )
+    eg1, eg2, eg3 = st.columns(3)
+    eg1.metric("Environmental", f'{esg["environmental"]}/10')
+    eg2.metric("Social", f'{esg["social"]}/10')
+    eg3.metric("Governance", f'{esg["governance"]}/10')
+
+    st.divider()
+
+    # (b) Analyst consensus ----------------------------------------------
+    st.markdown(
+        '<div style="font-size:0.8rem;font-weight:700;letter-spacing:0.06em;'
+        'text-transform:uppercase;color:#a78bfa;margin-bottom:0.5rem;">'
+        'Analyst consensus</div>',
+        unsafe_allow_html=True,
+    )
+    an = meta["analyst"]
+    ac1, ac2, ac3 = st.columns(3)
+    ac1.metric("Buy", f'{an["buy"]}%')
+    ac2.metric("Hold", f'{an["hold"]}%')
+    ac3.metric("Sell", f'{an["sell"]}%')
+    st.markdown(
+        f'<div style="width:100%;border-radius:5px;overflow:hidden;'
+        f'margin:0.4rem 0 0.3rem 0;font-size:0;">'
+        f'<span style="display:inline-block;height:8px;width:{an["buy"]}%;'
+        f'background:#0F6E56;"></span>'
+        f'<span style="display:inline-block;height:8px;width:{an["hold"]}%;'
+        f'background:#BA7517;"></span>'
+        f'<span style="display:inline-block;height:8px;width:{an["sell"]}%;'
+        f'background:#E24B4A;"></span>'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
+    st.caption("Based on underlying holdings consensus estimates.")
+
+    st.divider()
+
+    # (c) Key financials table -------------------------------------------
+    st.markdown(
+        '<div style="font-size:0.8rem;font-weight:700;letter-spacing:0.06em;'
+        'text-transform:uppercase;color:#a78bfa;margin-bottom:0.5rem;">'
+        'Key financials</div>',
+        unsafe_allow_html=True,
+    )
+    fin_rows = [
+        {
+            "Metric": f["label"],
+            "Value": f["value"],
+            "Trend": _sparkline(f["trend"]),
+        }
+        for f in meta["financials"]
+    ]
+    st.dataframe(
+        pd.DataFrame(fin_rows),
+        hide_index=True,
+        use_container_width=True,
+    )
 
 
 def _render_hrp_tab(portfolio: dict) -> None:
@@ -1395,70 +1998,8 @@ def _render_hrp_tab(portfolio: dict) -> None:
         },
     )
 
-    _TICKER_GLOSSARY = [
-        {
-            "Ticker": "CSPX.L",
-            "Name": "S&P 500 UCITS ETF",
-            "Asset Class": "Equity",
-            "Role": "US large-cap equity exposure",
-            "UCITS / EU Note": "UCITS-eligible",
-        },
-        {
-            "Ticker": "EFA",
-            "Name": "International developed markets equity ETF",
-            "Asset Class": "Equity",
-            "Role": "Non-US developed equity exposure",
-            "UCITS / EU Note": "US-listed / non-UCITS in this prototype",
-        },
-        {
-            "Ticker": "GLD",
-            "Name": "Gold ETF",
-            "Asset Class": "Alternatives",
-            "Role": "Gold exposure / real asset diversifier",
-            "UCITS / EU Note": "US-listed / non-UCITS in this prototype",
-        },
-        {
-            "Ticker": "VNQ",
-            "Name": "US real estate ETF",
-            "Asset Class": "Alternatives",
-            "Role": "US REIT / real estate exposure",
-            "UCITS / EU Note": "US-listed / non-UCITS in this prototype",
-        },
-        {
-            "Ticker": "AGGH.MI",
-            "Name": "Euro Aggregate Bond ETF",
-            "Asset Class": "Bonds",
-            "Role": "Broad EUR bond exposure",
-            "UCITS / EU Note": "UCITS-eligible",
-        },
-        {
-            "Ticker": "TLT",
-            "Name": "Long-term US Treasury ETF",
-            "Asset Class": "Bonds",
-            "Role": "Long-duration government bond exposure",
-            "UCITS / EU Note": "US-listed / non-UCITS in this prototype",
-        },
-        {
-            "Ticker": "TIP",
-            "Name": "US inflation-linked bond ETF",
-            "Asset Class": "Bonds",
-            "Role": "Inflation-linked Treasury exposure",
-            "UCITS / EU Note": "US-listed / non-UCITS in this prototype",
-        },
-        {
-            "Ticker": "XEON.MI",
-            "Name": "EUR overnight rate ETF",
-            "Asset Class": "Cash",
-            "Role": "Cash-like EUR exposure",
-            "UCITS / EU Note": "UCITS-eligible",
-        },
-    ]
     with st.expander("What do these tickers mean?"):
-        st.dataframe(
-            pd.DataFrame(_TICKER_GLOSSARY),
-            hide_index=True,
-            use_container_width=True,
-        )
+        _render_etf_explorer()
 
     _v_spacer(2.5)
 
