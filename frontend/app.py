@@ -41,7 +41,7 @@ st.set_page_config(
     page_title="RoboAdvisor · USI 2026",
     page_icon="📊",
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="collapsed",
 )
 inject_css()
 
@@ -289,83 +289,130 @@ def main() -> None:
     if "active_page" not in st.session_state:
         st.session_state.active_page = PAGES[0]
 
-    # ── Sidebar ──────────────────────────────────────────────────────
-    with st.sidebar:
-        if LOGO_PATH.exists():
-            st.image(str(LOGO_PATH), use_container_width=True)
-        else:
-            st.markdown("### RoboAdvisor")
+    # TOP NAV BAR — replaces sidebar navigation. Only this block was modified.
 
-        st.markdown(
-            """
-            <div style="
-                text-align: center;
-                margin-top: -0.5rem;
-                margin-bottom: 1rem;
-                font-size: 0.65rem;
-                letter-spacing: 0.1em;
-                color: #475569;
-                text-transform: uppercase;
-            ">
-                USI · Programming in Finance II · 2026
+    # Embed logo as base64 so it works inside a fixed-position HTML element
+    if LOGO_PATH.exists():
+        import base64 as _b64
+        _logo_b64 = _b64.b64encode(LOGO_PATH.read_bytes()).decode()
+        _logo_tag = (
+            f'<img src="data:image/png;base64,{_logo_b64}"'
+            ' style="height:30px;width:auto;" alt="RoboAdvisor">'
+        )
+    else:
+        _logo_tag = (
+            '<span style="font-size:1.05rem;font-weight:700;color:#f1f5f9;'
+            "font-family:'Space Grotesk',sans-serif;\">RoboAdvisor</span>"
+        )
+
+    st.markdown(
+        f"""<style>
+.top-nav {{
+    position: fixed; top: 0; left: 0;
+    width: 100%; z-index: 999; height: 56px;
+    background: #0a0f1e; border-bottom: 1px solid #1e2640;
+    display: flex; align-items: center;
+    padding: 0 1.5rem; box-sizing: border-box;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.35);
+}}
+.top-nav-brand {{ display: flex; align-items: center; gap: 0.65rem; }}
+.top-nav-title {{
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.95rem; font-weight: 700;
+    color: #f1f5f9; letter-spacing: -0.01em; line-height: 1.1;
+}}
+.top-nav-sub {{
+    font-size: 0.55rem; letter-spacing: 0.1em;
+    color: #475569; text-transform: uppercase; margin-top: 0.1rem;
+}}
+section[data-testid="stMain"] > div:first-child {{
+    padding-top: 112px !important;
+}}
+header[data-testid="stHeader"] {{ display: none !important; }}
+[data-testid="stSidebarCollapsedControl"] {{ display: none !important; }}
+.nav-btn-row {{
+    position: sticky; top: 56px; z-index: 998;
+    background: #0a0f1e; border-bottom: 1px solid #1e2640;
+    padding: 0.35rem 0.5rem;
+}}
+.nav-btn-row .stButton > button {{
+    background: transparent !important;
+    border: 1px solid transparent !important;
+    color: #94a3b8 !important;
+    font-size: 0.78rem !important; font-weight: 500 !important;
+    padding: 0.3rem 0.5rem !important;
+    min-height: 2rem !important; border-radius: 8px !important;
+    transition: all 0.15s ease !important;
+}}
+.nav-btn-row .stButton > button:hover {{
+    background: rgba(124,92,252,0.12) !important;
+    border-color: rgba(124,92,252,0.3) !important;
+    color: #c4b5fd !important;
+}}
+.nav-btn-row [data-testid="baseButton-primary"] {{
+    background: rgba(124,92,252,0.2) !important;
+    border-color: rgba(124,92,252,0.5) !important;
+    color: #a78bfa !important; font-weight: 600 !important;
+}}
+@media (max-width: 768px) {{
+    .top-nav {{ height: 52px; padding: 0 0.75rem; }}
+    section[data-testid="stMain"] > div:first-child {{
+        padding-top: 104px !important;
+    }}
+    .nav-btn-row {{
+        top: 52px; overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }}
+}}
+</style>
+<div class="top-nav">
+    <div class="top-nav-brand">
+        {_logo_tag}
+        <div>
+            <div class="top-nav-title">RoboAdvisor</div>
+            <div class="top-nav-sub">
+                USI &middot; Programming in Finance II &middot; 2026
             </div>
-            """,
-            unsafe_allow_html=True,
-        )
-        st.markdown(
-            "<hr style='border-color:#1e2640; margin: 0.5rem 0 0.6rem 0;'>",
-            unsafe_allow_html=True,
-        )
-        st.markdown(
-            "<div style='font-size:0.58rem;letter-spacing:0.12em;color:#475569;"
-            "text-transform:uppercase;padding:0 0.85rem 0.5rem;font-weight:600;'>"
-            "NAVIGATION</div>",
-            unsafe_allow_html=True,
-        )
+        </div>
+    </div>
+</div>""",
+        unsafe_allow_html=True,
+    )
 
-        active = st.session_state.active_page
-        for page_name in PAGES:
-            btn_type = "primary" if page_name == active else "secondary"
-            wrap_cls = "nav-svg-wrap active" if page_name == active else "nav-svg-wrap"
-            col_icon, col_btn = st.columns([0.15, 0.85])
-            with col_icon:
-                st.markdown(
-                    f'<div class="{wrap_cls}">{_NAV_SVGS[page_name]}</div>',
-                    unsafe_allow_html=True,
-                )
-            with col_btn:
-                if st.button(
-                    page_name,
-                    key=f"nav_{page_name}",
-                    use_container_width=True,
-                    type=btn_type,
-                ):
-                    st.session_state.active_page = page_name
-                    st.rerun()
+    # Horizontal nav buttons — Streamlit-native; sticky class applied by JS below
+    active = st.session_state.active_page
+    _nav_cols = st.columns(len(PAGES))
+    for _nc, _page in zip(_nav_cols, PAGES):
+        with _nc:
+            _btn_type = "primary" if _page == active else "secondary"
+            if st.button(
+                _page,
+                key=f"nav_{_page}",
+                use_container_width=True,
+                type=_btn_type,
+            ):
+                st.session_state.active_page = _page
+                st.rerun()
 
-        st.markdown(
-            f"""
-            <div style="
-                background: rgba(124,92,252,0.08);
-                border: 1px solid rgba(124,92,252,0.2);
-                border-radius: 10px;
-                padding: 0.75rem 0.875rem;
-                margin: 1.5rem 0 0 0;
-            ">
-                <div style="
-                    display:flex;align-items:center;gap:0.4rem;
-                    font-size:0.7rem;font-weight:600;color:#a78bfa;margin-bottom:0.3rem;
-                ">{_SHIELD_SVG} Educational Prototype</div>
-                <div style="font-size:0.67rem;color:#64748b;line-height:1.5;">
-                    This is an educational prototype and not financial advice.
-                </div>
-                <div style="font-size:0.63rem;color:#475569;margin-top:0.3rem;">
-                    Market data may be delayed or inaccurate.
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
+    # Inject JS (via zero-height iframe) to add .nav-btn-row to the first
+    # stHorizontalBlock on every render, enabling the sticky CSS above.
+    import streamlit.components.v1 as _stc
+    _stc.html(
+        """<script>
+(function () {
+    function applyNavClass() {
+        var doc = window.parent.document;
+        var blocks = doc.querySelectorAll('[data-testid="stHorizontalBlock"]');
+        if (blocks.length > 0) { blocks[0].classList.add('nav-btn-row'); }
+    }
+    applyNavClass();
+    new MutationObserver(applyNavClass).observe(
+        window.parent.document.body, {childList: true, subtree: true}
+    );
+}());
+</script>""",
+        height=0,
+    )
 
     # ── Pages ────────────────────────────────────────────────────────
     active = st.session_state.active_page
