@@ -330,7 +330,7 @@ section[data-testid="stMain"] > div:first-child {{
     padding: 0 40px; box-sizing: border-box;
     border-bottom: 1px solid rgba(255,255,255,0.08);
     flex-wrap: nowrap;
-    overflow: hidden;
+    overflow: visible;
 }}
 .top-navbar .brand {{
     display: flex; align-items: center; gap: 10px;
@@ -352,13 +352,13 @@ section[data-testid="stMain"] > div:first-child {{
     flex: 1 1 auto !important; justify-content: flex-end !important;
     gap: 4px !important; background: transparent !important;
     padding: 0 !important; margin: 0 !important;
-    overflow: hidden !important; min-width: 0 !important;
-    flex-wrap: nowrap !important; max-height: 60px !important;
+    flex-wrap: nowrap !important; min-width: 0 !important;
+    overflow: visible !important; max-height: 60px !important;
 }}
 .top-navbar [data-testid="stHorizontalBlock"] > div {{
     flex: 0 0 auto !important; width: auto !important;
     min-width: unset !important; padding: 0 !important;
-    overflow: hidden !important; max-height: 60px !important;
+    max-height: 60px !important;
 }}
 .top-navbar .stButton > button {{
     background: transparent !important;
@@ -380,8 +380,18 @@ section[data-testid="stMain"] > div:first-child {{
     color: #f5f5f7 !important; font-weight: 500 !important;
     background: rgba(255,255,255,0.10) !important;
 }}
-/* ── Small-screen content padding ───────────────────────────────────── */
-@media (max-width: 600px) {{
+/* ── Responsive nav + content padding ───────────────────────────────── */
+@media (max-width: 1080px) {{
+    .top-navbar [data-testid="stHorizontalBlock"] {{
+        display: none !important;
+    }}
+}}
+@media (min-width: 1081px) {{
+    .top-navbar [data-testid="stHorizontalBlock"] {{
+        display: flex !important;
+    }}
+}}
+@media (max-width: 1080px) {{
     section[data-testid="stMain"] > div:first-child {{
         padding-top: 64px !important;
     }}
