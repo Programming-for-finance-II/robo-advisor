@@ -317,7 +317,7 @@ def main() -> None:
     background: rgba(29,29,31,0.92);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    display: flex; align-items: center;
+    display: flex; align-items: center; justify-content: space-between;
     padding: 0 40px; box-sizing: border-box;
     border-bottom: 1px solid rgba(255,255,255,0.08);
 }}
@@ -325,11 +325,12 @@ def main() -> None:
     display: flex; align-items: center; gap: 10px;
     font-size: 18px; font-weight: 600;
     color: #f5f5f7; letter-spacing: -0.3px; white-space: nowrap;
+    min-width: 200px; flex-shrink: 0;
 }}
 .top-navbar .brand-sub {{
-    font-size: 0.52rem; letter-spacing: 0.12em;
+    font-size: 9px; letter-spacing: 0.12em;
     color: rgba(255,255,255,0.32); text-transform: uppercase;
-    margin-top: 2px;
+    margin-top: 2px; opacity: 0.5;
 }}
 /* Nav button row — JS positions it fixed on the right of the navbar */
 .nav-row-fixed {{
@@ -343,8 +344,8 @@ def main() -> None:
     background: transparent !important;
     border: none !important; box-shadow: none !important;
     color: rgba(245,245,247,0.72) !important;
-    font-size: 14px !important; font-weight: 400 !important;
-    letter-spacing: 0.1px !important;
+    font-size: 13px !important; font-weight: 400 !important;
+    letter-spacing: -0.1px !important;
     padding: 6px 10px !important;
     min-height: unset !important; height: auto !important;
     border-radius: 4px !important;
