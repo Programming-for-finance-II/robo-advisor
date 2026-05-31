@@ -16,7 +16,7 @@ import os
 import sys
 import uuid
 from pathlib import Path
-from urllib.parse import quote_plus, unquote_plus
+from urllib.parse import unquote_plus
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -309,15 +309,15 @@ def main() -> None:
             "font-family:'Space Grotesk',sans-serif;\">RoboAdvisor</span>"
         )
 
-    # Step 3: build nav links HTML — one <a> per page, href sets ?page=
+    # Step 3: build nav buttons HTML — onclick calls goToPage() in parent window
     _nav_html = ""
     for _p in PAGES:
         _cls = "active" if _p == active else ""
-        _href = f"?page={quote_plus(_p)}"
         _svg = _NAV_SVGS.get(_p, "")
         _nav_html += (
-            f'<li><a href="{_href}" class="{_cls}">'
-            f'{_svg}<span>{_p}</span></a></li>\n    '
+            f'<li><button class="{_cls}"'
+            f" onclick=\"window.parent.goToPage('{_p}')\">"
+            f'{_svg}<span>{_p}</span></button></li>\n    '
         )
 
     # Step 4: render the entire navbar as one st.markdown block (no widgets)
@@ -359,38 +359,32 @@ section[data-testid="stMain"] > div:first-child {{
     display: flex; align-items: center; gap: 4px;
     list-style: none; margin: 0; padding: 0;
 }}
-.top-navbar .nav-links a {{
+.top-navbar .nav-links button {{
+    background: transparent; border: none; cursor: pointer;
     display: inline-flex; align-items: center; gap: 5px;
-    color: rgba(245,245,247,0.68); text-decoration: none;
+    color: rgba(245,245,247,0.68);
     font-size: 13px; font-weight: 400; letter-spacing: -0.1px;
     padding: 5px 11px; border-radius: 6px;
     transition: color 0.18s ease, background 0.18s ease;
     white-space: nowrap;
+    font-family: -apple-system, 'Space Grotesk', sans-serif;
 }}
-.top-navbar .nav-links a svg {{ opacity: 0.6; flex-shrink: 0; }}
-.top-navbar .nav-links a:hover {{
+.top-navbar .nav-links button svg {{ opacity: 0.6; flex-shrink: 0; }}
+.top-navbar .nav-links button:hover {{
     color: #f5f5f7; background: rgba(255,255,255,0.07);
 }}
-.top-navbar .nav-links a:hover svg {{ opacity: 0.9; }}
-.top-navbar .nav-links a.active {{
+.top-navbar .nav-links button:hover svg {{ opacity: 0.9; }}
+.top-navbar .nav-links button.active {{
     color: #f5f5f7; font-weight: 500;
     background: rgba(255,255,255,0.10);
 }}
-.top-navbar .nav-links a.active svg {{ opacity: 1; }}
-/* ── Responsive < 900 px ────────────────────────────────────────────── */
+.top-navbar .nav-links button.active svg {{ opacity: 1; }}
+/* ── Responsive < 900 px — hide nav, brand only ─────────────────────── */
 @media (max-width: 900px) {{
-    .top-navbar {{
-        height: auto; min-height: 52px;
-        flex-wrap: wrap; padding: 8px 16px; gap: 6px;
-    }}
-    .top-navbar .brand {{ min-width: unset; }}
-    .top-navbar .nav-links {{
-        width: 100%; overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-        padding-bottom: 4px; gap: 2px;
-    }}
+    .top-navbar {{ height: 52px; padding: 0 20px; }}
+    .top-navbar .nav-links {{ display: none !important; }}
     section[data-testid="stMain"] > div:first-child {{
-        padding-top: 100px !important;
+        padding-top: 64px !important;
     }}
 }}
 </style>
@@ -408,6 +402,22 @@ section[data-testid="stMain"] > div:first-child {{
     {_nav_html}</ul>
 </nav>""",
         unsafe_allow_html=True,
+    )
+
+    # Step 5: register goToPage() in the parent window (zero-height iframe)
+    import streamlit.components.v1 as _stc
+    _stc.html(
+        """<script>
+(function () {
+    function goToPage(name) {
+        var url = new URL(window.parent.location.href);
+        url.searchParams.set('page', name);
+        window.parent.location.href = url.toString();
+    }
+    window.parent.goToPage = goToPage;
+}());
+</script>""",
+        height=0,
     )
 
     # ── Pages ────────────────────────────────────────────────────────
