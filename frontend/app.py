@@ -290,7 +290,7 @@ def main() -> None:
     # UNIFIED TOP NAVBAR (apple.com style) — replaces separate logo block
     # and nav row. Only this section was modified. Do not edit elsewhere.
 
-    # Step 1: resolve active page from query params (set by <a href> links)
+    # Step 1: resolve active page from query params; st.button sets it directly
     _qp = unquote_plus(st.query_params.get("page", PAGES[0]))
     active = _qp if _qp in PAGES else PAGES[0]
     st.session_state.active_page = active
@@ -309,18 +309,7 @@ def main() -> None:
             "font-family:'Space Grotesk',sans-serif;\">RoboAdvisor</span>"
         )
 
-    # Step 3: build nav buttons HTML — onclick calls goToPage() in parent window
-    _nav_html = ""
-    for _p in PAGES:
-        _cls = "active" if _p == active else ""
-        _svg = _NAV_SVGS.get(_p, "")
-        _nav_html += (
-            f'<li><button class="{_cls}"'
-            f" onclick=\"window.parent.goToPage('{_p}')\">"
-            f'{_svg}<span>{_p}</span></button></li>\n    '
-        )
-
-    # Step 4: render the entire navbar as one st.markdown block (no widgets)
+    # Step 3: render brand HTML + CSS; nav buttons added as st.columns below
     st.markdown(
         f"""<style>
 /* ── Reset Streamlit chrome ─────────────────────────────────────────── */
@@ -340,6 +329,7 @@ section[data-testid="stMain"] > div:first-child {{
     display: flex; align-items: center; justify-content: space-between;
     padding: 0 40px; box-sizing: border-box;
     border-bottom: 1px solid rgba(255,255,255,0.08);
+    overflow: visible;
 }}
 .top-navbar .brand {{
     display: flex; align-items: center; gap: 10px;
@@ -355,34 +345,39 @@ section[data-testid="stMain"] > div:first-child {{
     color: rgba(245,245,247,0.35); text-transform: uppercase;
     line-height: 1.2;
 }}
-.top-navbar .nav-links {{
-    display: flex; align-items: center; gap: 4px;
-    list-style: none; margin: 0; padding: 0;
+/* ── Streamlit button row moved inside navbar by JS ─────────────────── */
+.top-navbar [data-testid="stHorizontalBlock"] {{
+    display: flex !important; align-items: center !important;
+    flex: 1 !important; justify-content: flex-end !important;
+    gap: 4px !important; background: transparent !important;
+    padding: 0 !important; margin: 0 !important;
 }}
-.top-navbar .nav-links button {{
-    background: transparent; border: none; cursor: pointer;
-    display: inline-flex; align-items: center; gap: 5px;
-    color: rgba(245,245,247,0.68);
-    font-size: 13px; font-weight: 400; letter-spacing: -0.1px;
-    padding: 5px 11px; border-radius: 6px;
-    transition: color 0.18s ease, background 0.18s ease;
-    white-space: nowrap;
-    font-family: -apple-system, 'Space Grotesk', sans-serif;
+.top-navbar [data-testid="stHorizontalBlock"] > div {{
+    flex: 0 0 auto !important; width: auto !important;
+    min-width: unset !important; padding: 0 !important;
 }}
-.top-navbar .nav-links button svg {{ opacity: 0.6; flex-shrink: 0; }}
-.top-navbar .nav-links button:hover {{
-    color: #f5f5f7; background: rgba(255,255,255,0.07);
+.top-navbar .stButton > button {{
+    background: transparent !important;
+    border: none !important; box-shadow: none !important;
+    color: rgba(245,245,247,0.68) !important;
+    font-size: 13px !important; font-weight: 400 !important;
+    letter-spacing: -0.1px !important;
+    padding: 5px 11px !important; border-radius: 6px !important;
+    min-height: unset !important; height: 32px !important;
+    white-space: nowrap !important;
+    transition: color 0.18s ease, background 0.18s ease !important;
+    font-family: -apple-system, 'Space Grotesk', sans-serif !important;
 }}
-.top-navbar .nav-links button:hover svg {{ opacity: 0.9; }}
-.top-navbar .nav-links button.active {{
-    color: #f5f5f7; font-weight: 500;
-    background: rgba(255,255,255,0.10);
+.top-navbar .stButton > button:hover {{
+    color: #f5f5f7 !important;
+    background: rgba(255,255,255,0.07) !important;
 }}
-.top-navbar .nav-links button.active svg {{ opacity: 1; }}
-/* ── Responsive < 900 px — hide nav, brand only ─────────────────────── */
-@media (max-width: 900px) {{
-    .top-navbar {{ height: 52px; padding: 0 20px; }}
-    .top-navbar .nav-links {{ display: none !important; }}
+.top-navbar [data-testid="baseButton-primary"] {{
+    color: #f5f5f7 !important; font-weight: 500 !important;
+    background: rgba(255,255,255,0.10) !important;
+}}
+/* ── Mobile padding fallback (JS hides buttons dynamically) ─────────── */
+@media (max-width: 600px) {{
     section[data-testid="stMain"] > div:first-child {{
         padding-top: 64px !important;
     }}
@@ -398,23 +393,65 @@ section[data-testid="stMain"] > div:first-child {{
             </div>
         </div>
     </div>
-    <ul class="nav-links">
-    {_nav_html}</ul>
 </nav>""",
         unsafe_allow_html=True,
     )
 
-    # Step 5: register goToPage() in the parent window (zero-height iframe)
+    # Step 4: native st.button() nav — JS moves this row into .top-navbar
+    _nav_cols = st.columns(len(PAGES))
+    for _nc, _page in zip(_nav_cols, PAGES):
+        with _nc:
+            _btype = "primary" if _page == active else "secondary"
+            if st.button(
+                _page,
+                key=f"nav_{_page}",
+                type=_btype,
+                use_container_width=False,
+            ):
+                st.session_state.active_page = _page
+                st.query_params["page"] = _page
+                st.rerun()
+
+    # Step 5: JS — move stHorizontalBlock into .top-navbar, then watch overflow
     import streamlit.components.v1 as _stc
     _stc.html(
         """<script>
 (function () {
-    function goToPage(name) {
-        var url = new URL(window.parent.location.href);
-        url.searchParams.set('page', name);
-        window.parent.location.href = url.toString();
+    /* ── move nav row into the fixed navbar ── */
+    function move() {
+        var nav = window.parent.document.querySelector('.top-navbar');
+        var block = window.parent.document.querySelector(
+            '[data-testid="stHorizontalBlock"]'
+        );
+        if (nav && block) {
+            if (!nav.contains(block)) { nav.appendChild(block); }
+        } else {
+            setTimeout(move, 50);
+        }
     }
-    window.parent.goToPage = goToPage;
+    move();
+
+    /* ── hide buttons when last one would be clipped ── */
+    function checkNav() {
+        var doc = window.parent.document;
+        var nav = doc.querySelector('.top-navbar');
+        var block = doc.querySelector(
+            '.top-navbar [data-testid="stHorizontalBlock"]'
+        );
+        if (!nav || !block) { setTimeout(checkNav, 100); return; }
+        var navRight = nav.getBoundingClientRect().right;
+        var buttons = block.querySelectorAll('button');
+        var lastBtn = buttons[buttons.length - 1];
+        var clipped = lastBtn
+            ? lastBtn.getBoundingClientRect().right > navRight - 40
+            : block.getBoundingClientRect().right > navRight - 40;
+        block.style.visibility = clipped ? 'hidden' : 'visible';
+    }
+    checkNav();
+    new ResizeObserver(checkNav).observe(
+        window.parent.document.body
+    );
+    window.parent.addEventListener('resize', checkNav);
 }());
 </script>""",
         height=0,
