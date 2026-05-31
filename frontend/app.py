@@ -394,8 +394,8 @@ _QUESTIONS: list[dict] = [
     {
         "id": "Q1", "section": "Who You Are Financially",
         "text": "How old are you?",
-        "options": ["Over 60", "46-60", "30-45", "Under 30"],
-        "scores": [0, 1, 2, 3],
+        "options": ["Under 30", "30-45", "46-60", "Over 60"],
+        "scores": [3, 2, 1, 0],
     },
     {
         "id": "Q2", "section": "Who You Are Financially",
