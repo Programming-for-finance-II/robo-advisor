@@ -329,7 +329,8 @@ section[data-testid="stMain"] > div:first-child {{
     display: flex; align-items: center; justify-content: space-between;
     padding: 0 40px; box-sizing: border-box;
     border-bottom: 1px solid rgba(255,255,255,0.08);
-    overflow: visible;
+    flex-wrap: nowrap;
+    overflow: hidden;
 }}
 .top-navbar .brand {{
     display: flex; align-items: center; gap: 10px;
@@ -348,13 +349,16 @@ section[data-testid="stMain"] > div:first-child {{
 /* ── Streamlit button row moved inside navbar by JS ─────────────────── */
 .top-navbar [data-testid="stHorizontalBlock"] {{
     display: flex !important; align-items: center !important;
-    flex: 1 !important; justify-content: flex-end !important;
+    flex: 1 1 auto !important; justify-content: flex-end !important;
     gap: 4px !important; background: transparent !important;
     padding: 0 !important; margin: 0 !important;
+    overflow: hidden !important; min-width: 0 !important;
+    flex-wrap: nowrap !important; max-height: 60px !important;
 }}
 .top-navbar [data-testid="stHorizontalBlock"] > div {{
     flex: 0 0 auto !important; width: auto !important;
     min-width: unset !important; padding: 0 !important;
+    overflow: hidden !important; max-height: 60px !important;
 }}
 .top-navbar .stButton > button {{
     background: transparent !important;
@@ -376,7 +380,7 @@ section[data-testid="stMain"] > div:first-child {{
     color: #f5f5f7 !important; font-weight: 500 !important;
     background: rgba(255,255,255,0.10) !important;
 }}
-/* ── Mobile padding fallback (JS hides buttons dynamically) ─────────── */
+/* ── Small-screen content padding ───────────────────────────────────── */
 @media (max-width: 600px) {{
     section[data-testid="stMain"] > div:first-child {{
         padding-top: 64px !important;
@@ -417,7 +421,7 @@ section[data-testid="stMain"] > div:first-child {{
     _stc.html(
         """<script>
 (function () {
-    /* ── move nav row into the fixed navbar ── */
+    /* Move the nav button row into the fixed .top-navbar element. */
     function move() {
         var nav = window.parent.document.querySelector('.top-navbar');
         var block = window.parent.document.querySelector(
@@ -430,28 +434,6 @@ section[data-testid="stMain"] > div:first-child {{
         }
     }
     move();
-
-    /* ── hide buttons when last one would be clipped ── */
-    function checkNav() {
-        var doc = window.parent.document;
-        var nav = doc.querySelector('.top-navbar');
-        var block = doc.querySelector(
-            '.top-navbar [data-testid="stHorizontalBlock"]'
-        );
-        if (!nav || !block) { setTimeout(checkNav, 100); return; }
-        var navRight = nav.getBoundingClientRect().right;
-        var buttons = block.querySelectorAll('button');
-        var lastBtn = buttons[buttons.length - 1];
-        var clipped = lastBtn
-            ? lastBtn.getBoundingClientRect().right > navRight - 40
-            : block.getBoundingClientRect().right > navRight - 40;
-        block.style.visibility = clipped ? 'hidden' : 'visible';
-    }
-    checkNav();
-    new ResizeObserver(checkNav).observe(
-        window.parent.document.body
-    );
-    window.parent.addEventListener('resize', checkNav);
 }());
 </script>""",
         height=0,
