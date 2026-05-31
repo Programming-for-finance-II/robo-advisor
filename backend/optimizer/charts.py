@@ -114,6 +114,23 @@ def plot_risk_contributions(
         xaxis=dict(range=[0, max(values) * 1.2]),
         height=400,
         margin=dict(l=20, r=40, t=50, b=40),
+        modebar_remove=[
+            "select",
+            "lasso2d",
+            "autoScale2d",
+            "hoverClosestCartesian",
+            "hoverCompareCartesian",
+            "toggleSpikelines",
+            "zoomIn2d",
+            "zoomOut2d",
+        ],
+        modebar_add=[
+            "zoomIn2d",
+            "zoomOut2d",
+            "pan2d",
+            "resetScale2d",
+            "toImage",
+        ],
     )
 
     return fig
@@ -161,6 +178,23 @@ def plot_dendrogram(
         yaxis_title="Distance",
         height=400,
         margin=dict(l=20, r=20, t=50, b=80),
+        modebar_remove=[
+            "select",
+            "lasso2d",
+            "autoScale2d",
+            "hoverClosestCartesian",
+            "hoverCompareCartesian",
+            "toggleSpikelines",
+            "zoomIn2d",
+            "zoomOut2d",
+        ],
+        modebar_add=[
+            "zoomIn2d",
+            "zoomOut2d",
+            "pan2d",
+            "resetScale2d",
+            "toImage",
+        ],
     )
 
     return fig
@@ -226,6 +260,23 @@ def plot_drawdown(
         height=400,
         margin=dict(l=20, r=20, t=50, b=40),
         legend=dict(orientation="h", yanchor="bottom", y=1.02),
+        modebar_remove=[
+            "select",
+            "lasso2d",
+            "autoScale2d",
+            "hoverClosestCartesian",
+            "hoverCompareCartesian",
+            "toggleSpikelines",
+            "zoomIn2d",
+            "zoomOut2d",
+        ],
+        modebar_add=[
+            "zoomIn2d",
+            "zoomOut2d",
+            "pan2d",
+            "resetScale2d",
+            "toImage",
+        ],
     )
 
     return fig
@@ -301,6 +352,23 @@ def plot_efficient_frontier(
         height=420,
         margin=dict(l=20, r=20, t=50, b=40),
         legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0),
+        modebar_remove=[
+            "select",
+            "lasso2d",
+            "autoScale2d",
+            "hoverClosestCartesian",
+            "hoverCompareCartesian",
+            "toggleSpikelines",
+            "zoomIn2d",
+            "zoomOut2d",
+        ],
+        modebar_add=[
+            "zoomIn2d",
+            "zoomOut2d",
+            "pan2d",
+            "resetScale2d",
+            "toImage",
+        ],
     )
 
     return fig
