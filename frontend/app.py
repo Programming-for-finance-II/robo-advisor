@@ -289,88 +289,109 @@ def main() -> None:
     if "active_page" not in st.session_state:
         st.session_state.active_page = PAGES[0]
 
-    # TOP NAV BAR — replaces sidebar navigation. Only this block was modified.
+    # UNIFIED TOP NAVBAR (apple.com style) — replaces separate logo block
+    # and nav row. Only this section was modified. Do not edit elsewhere.
 
-    # Embed logo as base64 so it works inside a fixed-position HTML element
+    # Embed logo as base64 for the fixed-position HTML element
     if LOGO_PATH.exists():
         import base64 as _b64
         _logo_b64 = _b64.b64encode(LOGO_PATH.read_bytes()).decode()
         _logo_tag = (
             f'<img src="data:image/png;base64,{_logo_b64}"'
-            ' style="height:30px;width:auto;" alt="RoboAdvisor">'
+            ' style="height:28px;width:auto;" alt="RoboAdvisor">'
         )
     else:
         _logo_tag = (
-            '<span style="font-size:1.05rem;font-weight:700;color:#f1f5f9;'
+            '<span style="font-size:1.1rem;font-weight:700;color:#f5f5f7;'
             "font-family:'Space Grotesk',sans-serif;\">RoboAdvisor</span>"
         )
 
+    active = st.session_state.active_page
+
     st.markdown(
         f"""<style>
-.top-nav {{
+/* ── Unified sticky navbar ──────────────────────────────────────────── */
+.top-navbar {{
     position: fixed; top: 0; left: 0;
-    width: 100%; z-index: 999; height: 56px;
-    background: #0a0f1e; border-bottom: 1px solid #1e2640;
+    width: 100%; height: 60px; z-index: 1000;
+    background: rgba(29,29,31,0.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     display: flex; align-items: center;
-    padding: 0 1.5rem; box-sizing: border-box;
-    box-shadow: 0 2px 16px rgba(0,0,0,0.35);
+    padding: 0 40px; box-sizing: border-box;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
 }}
-.top-nav-brand {{ display: flex; align-items: center; gap: 0.65rem; }}
-.top-nav-title {{
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 0.95rem; font-weight: 700;
-    color: #f1f5f9; letter-spacing: -0.01em; line-height: 1.1;
+.top-navbar .brand {{
+    display: flex; align-items: center; gap: 10px;
+    font-size: 18px; font-weight: 600;
+    color: #f5f5f7; letter-spacing: -0.3px; white-space: nowrap;
 }}
-.top-nav-sub {{
-    font-size: 0.55rem; letter-spacing: 0.1em;
-    color: #475569; text-transform: uppercase; margin-top: 0.1rem;
+.top-navbar .brand-sub {{
+    font-size: 0.52rem; letter-spacing: 0.12em;
+    color: rgba(255,255,255,0.32); text-transform: uppercase;
+    margin-top: 2px;
 }}
+/* Nav button row — JS positions it fixed on the right of the navbar */
+.nav-row-fixed {{
+    position: fixed; top: 0; right: 40px;
+    height: 60px; z-index: 1001;
+    display: flex; align-items: center; gap: 2px;
+    background: transparent;
+}}
+/* Buttons rendered as plain text nav links */
+.nav-row-fixed .stButton > button {{
+    background: transparent !important;
+    border: none !important; box-shadow: none !important;
+    color: rgba(245,245,247,0.72) !important;
+    font-size: 14px !important; font-weight: 400 !important;
+    letter-spacing: 0.1px !important;
+    padding: 6px 10px !important;
+    min-height: unset !important; height: auto !important;
+    border-radius: 4px !important;
+    transition: color 0.2s ease, background 0.2s ease !important;
+    white-space: nowrap !important;
+}}
+.nav-row-fixed .stButton > button:hover {{
+    color: #f5f5f7 !important;
+    background: rgba(255,255,255,0.06) !important;
+}}
+.nav-row-fixed .stButton > button:focus {{
+    outline: none !important; box-shadow: none !important;
+}}
+/* Active page: bright white + thin underline accent */
+.nav-row-fixed [data-testid="baseButton-primary"] {{
+    color: #f5f5f7 !important; font-weight: 500 !important;
+    border-bottom: 1px solid rgba(245,245,247,0.55) !important;
+    border-radius: 0 !important;
+}}
+/* Push page content below the fixed bar */
 section[data-testid="stMain"] > div:first-child {{
-    padding-top: 112px !important;
+    padding-top: 72px !important;
 }}
 header[data-testid="stHeader"] {{ display: none !important; }}
 [data-testid="stSidebarCollapsedControl"] {{ display: none !important; }}
-.nav-btn-row {{
-    position: sticky; top: 56px; z-index: 998;
-    background: #0a0f1e; border-bottom: 1px solid #1e2640;
-    padding: 0.35rem 0.5rem;
-}}
-.nav-btn-row .stButton > button {{
-    background: transparent !important;
-    border: 1px solid transparent !important;
-    color: #94a3b8 !important;
-    font-size: 0.78rem !important; font-weight: 500 !important;
-    padding: 0.3rem 0.5rem !important;
-    min-height: 2rem !important; border-radius: 8px !important;
-    transition: all 0.15s ease !important;
-}}
-.nav-btn-row .stButton > button:hover {{
-    background: rgba(124,92,252,0.12) !important;
-    border-color: rgba(124,92,252,0.3) !important;
-    color: #c4b5fd !important;
-}}
-.nav-btn-row [data-testid="baseButton-primary"] {{
-    background: rgba(124,92,252,0.2) !important;
-    border-color: rgba(124,92,252,0.5) !important;
-    color: #a78bfa !important; font-weight: 600 !important;
-}}
-@media (max-width: 768px) {{
-    .top-nav {{ height: 52px; padding: 0 0.75rem; }}
-    section[data-testid="stMain"] > div:first-child {{
-        padding-top: 104px !important;
+#MainMenu {{ visibility: hidden; }}
+/* ── Responsive < 900 px ────────────────────────────────────────────── */
+@media (max-width: 900px) {{
+    .top-navbar {{ height: 52px; padding: 0 16px; }}
+    .nav-row-fixed {{
+        top: 52px; right: 0; left: 0; height: 38px; width: 100%;
+        background: rgba(29,29,31,0.95);
+        overflow-x: auto; -webkit-overflow-scrolling: touch;
+        padding: 0 12px;
+        border-bottom: 1px solid rgba(255,255,255,0.06);
     }}
-    .nav-btn-row {{
-        top: 52px; overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
+    section[data-testid="stMain"] > div:first-child {{
+        padding-top: 98px !important;
     }}
 }}
 </style>
-<div class="top-nav">
-    <div class="top-nav-brand">
+<div class="top-navbar">
+    <div class="brand">
         {_logo_tag}
         <div>
-            <div class="top-nav-title">RoboAdvisor</div>
-            <div class="top-nav-sub">
+            <div>RoboAdvisor</div>
+            <div class="brand-sub">
                 USI &middot; Programming in Finance II &middot; 2026
             </div>
         </div>
@@ -379,8 +400,8 @@ header[data-testid="stHeader"] {{ display: none !important; }}
         unsafe_allow_html=True,
     )
 
-    # Horizontal nav buttons — Streamlit-native; sticky class applied by JS below
-    active = st.session_state.active_page
+    # Nav buttons — st.button() styled as text links by CSS above.
+    # JS below moves this columns row to position: fixed on the right of the bar.
     _nav_cols = st.columns(len(PAGES))
     for _nc, _page in zip(_nav_cols, PAGES):
         with _nc:
@@ -394,16 +415,20 @@ header[data-testid="stHeader"] {{ display: none !important; }}
                 st.session_state.active_page = _page
                 st.rerun()
 
-    # Inject JS (via zero-height iframe) to add .nav-btn-row to the first
-    # stHorizontalBlock on every render, enabling the sticky CSS above.
+    # JS: add .nav-row-fixed to the first stHorizontalBlock so the CSS above
+    # positions it as the right-hand nav links of the unified navbar.
     import streamlit.components.v1 as _stc
     _stc.html(
         """<script>
 (function () {
     function applyNavClass() {
         var doc = window.parent.document;
-        var blocks = doc.querySelectorAll('[data-testid="stHorizontalBlock"]');
-        if (blocks.length > 0) { blocks[0].classList.add('nav-btn-row'); }
+        var blocks = doc.querySelectorAll(
+            '[data-testid="stHorizontalBlock"]'
+        );
+        if (blocks.length > 0) {
+            blocks[0].classList.add('nav-row-fixed');
+        }
     }
     applyNavClass();
     new MutationObserver(applyNavClass).observe(
