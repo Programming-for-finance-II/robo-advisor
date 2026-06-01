@@ -973,6 +973,7 @@ def render_questionnaire() -> None:
             use_container_width=True,
         ):
             st.session_state.active_page = "Portfolio Dashboard"
+            st.query_params["page"] = "Portfolio Dashboard"
             st.rerun()
 
 
