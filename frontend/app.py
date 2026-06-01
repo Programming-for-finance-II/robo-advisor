@@ -205,9 +205,9 @@ def _mock_optimization(profile_key: str) -> dict:
 PAGES = [
     "Questionnaire",
     "Portfolio Dashboard",
+    "Compare (MV)",
     "Chat Advisor",
     "Backtesting",
-    "Compare (MV)",
     "Settings",
 ]
 
@@ -1000,7 +1000,33 @@ def render_portfolio() -> None:
         f"HRP optimization · {profile_label.capitalize()} profile",
     )
     render_disclaimer()
-    # (EU note moved to bottom — avoid duplicate banners at top)
+
+    st.markdown(
+        """
+        <div style="background:rgba(30,38,64,0.5);border:1px solid #1e2640;
+        border-radius:10px;padding:0.9rem 1rem;margin-bottom:1.25rem;
+        display:flex;gap:0.875rem;align-items:flex-start;">
+            <div style="width:2rem;height:2rem;flex-shrink:0;
+            background:rgba(124,92,252,0.12);border:1px solid rgba(124,92,252,0.25);
+            border-radius:7px;display:inline-flex;align-items:center;
+            justify-content:center;font-size:0.95rem;">📐</div>
+            <div>
+                <div style="font-family:'Space Grotesk',sans-serif;font-size:0.9rem;
+                font-weight:600;color:#e2e8f0;margin-bottom:0.25rem;">
+                    Hierarchical Risk Parity (HRP)
+                </div>
+                <div style="font-size:0.79rem;color:#64748b;line-height:1.55;">
+                    HRP (López de Prado, 2016) clusters assets by correlation, then allocates
+                    weights so that each cluster contributes equally to total portfolio risk.
+                    Unlike Markowitz, it requires no expected-return estimates and avoids
+                    corner solutions. Covariance is shrunk via Ledoit-Wolf.
+                    Weights are constrained to 5–40% per asset and 10–60% per cluster.
+                </div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
     # ── Profile hero strip ───────────────────────────────────────────────────
     _PROFILE_META = {
@@ -3037,6 +3063,33 @@ _MOCK_MV_WEIGHTS: dict[str, float] = {
 def render_compare() -> None:
     page_header("Compare (MV)", "Deep-dive analysis · HRP vs Markowitz", icon="⚖")
     render_disclaimer()
+
+    st.markdown(
+        """
+        <div style="background:rgba(30,38,64,0.5);border:1px solid #1e2640;
+        border-radius:10px;padding:0.9rem 1rem;margin-bottom:1.25rem;
+        display:flex;gap:0.875rem;align-items:flex-start;">
+            <div style="width:2rem;height:2rem;flex-shrink:0;
+            background:rgba(248,113,113,0.10);border:1px solid rgba(248,113,113,0.25);
+            border-radius:7px;display:inline-flex;align-items:center;
+            justify-content:center;font-size:0.95rem;">⚖️</div>
+            <div>
+                <div style="font-family:'Space Grotesk',sans-serif;font-size:0.9rem;
+                font-weight:600;color:#e2e8f0;margin-bottom:0.25rem;">
+                    Markowitz Mean-Variance (MV) — benchmark
+                </div>
+                <div style="font-size:0.79rem;color:#64748b;line-height:1.55;">
+                    Markowitz (1952) maximises the Sharpe ratio given expected returns
+                    and a covariance matrix. It typically produces concentrated portfolios
+                    sensitive to estimation error ("corner solutions"). Used here as a
+                    benchmark to highlight the diversification benefits of HRP.
+                    Phase A values are mock; enable live data for real MV weights.
+                </div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
     import numpy as np
 
