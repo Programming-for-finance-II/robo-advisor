@@ -205,7 +205,7 @@ def _mock_optimization(profile_key: str) -> dict:
 PAGES = [
     "Questionnaire",
     "Portfolio Dashboard",
-    "Compare (MV)",
+    "Compare Markowitz",
     "Chat Advisor",
     "Backtesting",
     "Settings",
@@ -249,7 +249,7 @@ _NAV_SVGS: dict[str, str] = {
         '<polyline points="17 6 23 6 23 12"/>'
         "</svg>"
     ),
-    "Compare (MV)": (
+    "Compare Markowitz": (
         '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"'
         ' stroke="currentColor" stroke-width="2"'
         ' stroke-linecap="round" stroke-linejoin="round">'
@@ -460,7 +460,7 @@ section[data-testid="stMain"] > div:first-child {{
         render_chat()
     elif active == "Backtesting":
         render_backtesting()
-    elif active == "Compare (MV)":
+    elif active == "Compare Markowitz":
         render_compare()
     elif active == "Settings":
         render_settings()
@@ -3062,7 +3062,7 @@ _MOCK_MV_WEIGHTS: dict[str, float] = {
 
 
 def render_compare() -> None:
-    page_header("Compare (MV)", "Deep-dive analysis · HRP vs Markowitz", icon="⚖")
+    page_header("Compare Markowitz", "Deep-dive analysis · HRP vs Markowitz", icon="⚖")
     render_disclaimer()
 
     st.markdown(
