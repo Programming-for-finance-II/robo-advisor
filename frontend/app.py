@@ -1548,93 +1548,206 @@ _MOCK_MV_WEIGHTS: dict[str, float] = {
 
 
 def render_compare() -> None:
-    page_header("Compare (MV)", "HRP vs Markowitz mean-variance", icon="⚖")
+    page_header("Compare (MV)", "Deep-dive analysis · HRP vs Markowitz", icon="⚖")
     render_disclaimer()
+
+    import numpy as np
 
     profile_data = st.session_state.get("profile", {})
     profile_label = profile_data.get("profile_label", "MODERATE")
     profile_key = _LABEL_TO_MOCK.get(profile_label, "balanced")
 
     portfolio = st.session_state.get("portfolio_data") or _mock_optimization(profile_key)
-    hrp_weights = portfolio["weights"]
+    hrp_weights: dict[str, float] = portfolio["weights"]
+    hrp_rc: dict[str, float] = portfolio["risk_contributions"]
+    hrp_vol: float = portfolio.get("expected_volatility") or 0.094
+    hrp_ret: float = portfolio.get("expected_return") or 0.068
+    hrp_max_dd: float = portfolio.get("max_drawdown") or -0.187
 
+    mv_weights: dict[str, float] = _MOCK_MV_WEIGHTS
+    mv_vol: float = hrp_vol * 0.92
+    mv_ret: float = hrp_ret * 0.78
+    mv_max_dd: float = hrp_max_dd * 0.85
+
+    _CLUSTER_VOL: dict[str, float] = {
+        "CSPX.L": 0.162, "EFA": 0.162,
+        "GLD": 0.138, "VNQ": 0.138,
+        "AGGH.MI": 0.071, "TLT": 0.071, "TIP": 0.071,
+        "XEON.MI": 0.003,
+    }
+    mv_raw_rc = {t: mv_weights.get(t, 0.0) * _CLUSTER_VOL.get(t, 0.10) for t in mv_weights}
+    mv_total = sum(mv_raw_rc.values()) or 1.0
+    mv_rc: dict[str, float] = {t: v / mv_total for t, v in mv_raw_rc.items()}
+
+    st.markdown(f"**Active profile: {profile_label}**")
     st.markdown("---")
 
-    # ── Side-by-side weights table ───────────────────────────────────────────
-    st.markdown("**Portfolio weights — HRP vs Markowitz (mock)**")
+    # ── 1. Radar chart ────────────────────────────────────────────────────────
+    st.markdown("**Multi-dimensional comparison**")
 
-    tickers = sorted(set(hrp_weights) | set(_MOCK_MV_WEIGHTS))
-    rows = []
-    for t in sorted(tickers, key=lambda x: -hrp_weights.get(x, 0)):
-        hrp_w = hrp_weights.get(t, 0.0)
-        mv_w  = _MOCK_MV_WEIGHTS.get(t, 0.0)
-        diff  = hrp_w - mv_w
-        rows.append({
-            "Ticker": t,
-            "HRP":    f"{hrp_w:.1%}",
-            "MV":     f"{mv_w:.1%}",
-            "HRP − MV": f"+{diff:.1%}" if diff > 0 else f"{diff:.1%}",
-        })
-    st.dataframe(pd.DataFrame(rows), hide_index=True, use_container_width=True)
+    def _hhi(w: dict) -> float:
+        return sum(v ** 2 for v in w.values())
 
-    st.markdown("---")
+    def _ucits_cov(w: dict) -> float:
+        return sum(v for t, v in w.items() if t in _UCITS_TICKERS)
 
-    # ── Bar chart: HRP vs MV weights ─────────────────────────────────────────
-    col_bar, col_frontier = st.columns(2)
+    hrp_scores = [
+        max(0.0, 1.0 - (hrp_vol - 0.03) / 0.17),
+        1.0 - _hhi(hrp_weights),
+        _ucits_cov(hrp_weights),
+        max(0.0, 1.0 + hrp_max_dd),
+        min(1.0, hrp_ret / 0.12),
+    ]
+    mv_scores = [
+        max(0.0, 1.0 - (mv_vol - 0.03) / 0.17),
+        1.0 - _hhi(mv_weights),
+        _ucits_cov(mv_weights),
+        max(0.0, 1.0 + mv_max_dd),
+        min(1.0, mv_ret / 0.12),
+    ]
 
-    with col_bar:
-        st.markdown("**Weight allocation**")
-        fig_bar = go.Figure()
-        ticker_order = [r["Ticker"] for r in rows]
-        fig_bar.add_trace(go.Bar(
-            name="HRP",
-            x=ticker_order,
-            y=[hrp_weights.get(t, 0.0) * 100 for t in ticker_order],
-            marker_color="#7c5cfc",
-        ))
-        fig_bar.add_trace(go.Bar(
-            name="MV",
-            x=ticker_order,
-            y=[_MOCK_MV_WEIGHTS.get(t, 0.0) * 100 for t in ticker_order],
-            marker_color="#f87171",
-        ))
-        fig_bar.update_layout(
-            barmode="group",
-            yaxis_title="Weight (%)",
-            height=340,
-            legend=dict(orientation="h", yanchor="bottom", y=1.02),
-        )
-        fig_bar = apply_plotly_dark_theme(fig_bar)
-        st.plotly_chart(fig_bar, use_container_width=True)
+    categories = [
+        "Low Risk",
+        "Diversification",
+        "UCITS Coverage",
+        "Drawdown Protection",
+        "Return Potential",
+    ]
 
-    with col_frontier:
-        st.markdown("**Efficient frontier (mock)**")
-        import numpy as np
-        # Generate a plausible mock frontier parabola
-        vols_f = np.linspace(0.04, 0.22, 60).tolist()
-        rets_f = [max(0.0, -2.5 * v**2 + 1.1 * v + 0.01) for v in vols_f]
-
-        hrp_vol = portfolio.get("expected_volatility", 0.085)
-        hrp_ret = portfolio.get("expected_return") or 0.062
-        mv_vol  = 0.068   # MV mock: lower vol, lower return
-        mv_ret  = 0.048
-
-        from backend.optimizer.charts import plot_efficient_frontier
-        fig_ef = plot_efficient_frontier(
-            frontier_vols=vols_f,
-            frontier_rets=rets_f,
-            hrp_vol=hrp_vol,
-            hrp_ret=hrp_ret,
-            mv_vol=mv_vol,
-            mv_ret=mv_ret,
-        )
-        fig_ef.update_layout(height=340)
-        fig_ef = apply_plotly_dark_theme(fig_ef)
-        st.plotly_chart(fig_ef, use_container_width=True)
-
+    fig_radar = go.Figure()
+    fig_radar.add_trace(go.Scatterpolar(
+        r=hrp_scores + [hrp_scores[0]],
+        theta=categories + [categories[0]],
+        fill="toself",
+        name="HRP",
+        line=dict(color="#7c5cfc", width=2),
+        fillcolor="rgba(124,92,252,0.15)",
+    ))
+    fig_radar.add_trace(go.Scatterpolar(
+        r=mv_scores + [mv_scores[0]],
+        theta=categories + [categories[0]],
+        fill="toself",
+        name="Markowitz MV",
+        line=dict(color="#f87171", width=2),
+        fillcolor="rgba(248,113,113,0.15)",
+    ))
+    fig_radar.update_layout(
+        polar=dict(
+            bgcolor="rgba(0,0,0,0)",
+            radialaxis=dict(
+                visible=True,
+                range=[0, 1],
+                color="#475569",
+                gridcolor="#1e2640",
+                tickfont=dict(size=9, color="#475569"),
+            ),
+            angularaxis=dict(color="#94a3b8", gridcolor="#1e2640"),
+        ),
+        legend=dict(orientation="h", yanchor="bottom", y=1.06, xanchor="center", x=0.5),
+        height=440,
+        margin=dict(l=40, r=40, t=60, b=40),
+    )
+    fig_radar = apply_plotly_dark_theme(fig_radar)
+    fig_radar.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
+    st.plotly_chart(fig_radar, use_container_width=True)
     st.caption(
-        "MV weights are mock (Phase A). Phase B will run the live Markowitz optimizer "
-        "via the /compare endpoint and compare against the real HRP result."
+        "All axes normalised to [0, 1]. "
+        "Low Risk = 1 − σ (normalised). "
+        "Diversification = 1 − HHI (Herfindahl index). "
+        "Drawdown Protection = 1 − |max DD|. "
+        "Phase A: volatility and return from mock data."
+    )
+
+    # ── 2. Risk contributions ─────────────────────────────────────────────────
+    st.markdown("---")
+    st.markdown("**Risk contributions — who drives portfolio risk?**")
+
+    all_tickers = sorted(
+        set(hrp_rc) | set(mv_rc),
+        key=lambda t: -hrp_rc.get(t, 0.0),
+    )
+    hrp_rc_vals = [hrp_rc.get(t, 0.0) * 100 for t in all_tickers]
+    mv_rc_vals = [mv_rc.get(t, 0.0) * 100 for t in all_tickers]
+
+    fig_rc = go.Figure()
+    fig_rc.add_trace(go.Bar(
+        name="HRP",
+        y=all_tickers,
+        x=hrp_rc_vals,
+        orientation="h",
+        marker_color="#7c5cfc",
+        hovertemplate="%{y}: %{x:.1f}%<extra>HRP</extra>",
+    ))
+    fig_rc.add_trace(go.Bar(
+        name="Markowitz MV",
+        y=all_tickers,
+        x=mv_rc_vals,
+        orientation="h",
+        marker_color="#f87171",
+        hovertemplate="%{y}: %{x:.1f}%<extra>MV</extra>",
+    ))
+    fig_rc.update_layout(
+        barmode="group",
+        xaxis_title="Risk contribution (%)",
+        height=360,
+        margin=dict(l=8, r=24, t=24, b=40),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+    )
+    fig_rc = apply_plotly_dark_theme(fig_rc)
+    fig_rc.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
+    st.plotly_chart(fig_rc, use_container_width=True)
+    st.caption(
+        "HRP targets equal risk contributions across assets. "
+        "MV concentrates risk in low-volatility assets (bonds), "
+        "which can reduce diversification benefits in a stress regime."
+    )
+
+    # ── 3. Correlation heatmap ────────────────────────────────────────────────
+    st.markdown("---")
+    st.markdown("**Asset correlation matrix**")
+
+    _TICKERS_HM = ["CSPX.L", "EFA", "GLD", "VNQ", "AGGH.MI", "TLT", "TIP", "XEON.MI"]
+    _CORR = np.array([
+        [ 1.00,  0.85,  0.05,  0.55, -0.15, -0.20, -0.05,  0.02],
+        [ 0.85,  1.00,  0.08,  0.52, -0.12, -0.18, -0.03,  0.01],
+        [ 0.05,  0.08,  1.00,  0.18,  0.22,  0.28,  0.30,  0.02],
+        [ 0.55,  0.52,  0.18,  1.00, -0.02,  0.05,  0.10,  0.01],
+        [-0.15, -0.12,  0.22, -0.02,  1.00,  0.82,  0.78,  0.05],
+        [-0.20, -0.18,  0.28,  0.05,  0.82,  1.00,  0.75,  0.04],
+        [-0.05, -0.03,  0.30,  0.10,  0.78,  0.75,  1.00,  0.03],
+        [ 0.02,  0.01,  0.02,  0.01,  0.05,  0.04,  0.03,  1.00],
+    ])
+
+    fig_hm = go.Figure(go.Heatmap(
+        z=_CORR.tolist(),
+        x=_TICKERS_HM,
+        y=_TICKERS_HM,
+        colorscale=[
+            [0.00, "#f87171"],
+            [0.50, "#111827"],
+            [1.00, "#7c5cfc"],
+        ],
+        zmin=-1,
+        zmax=1,
+        text=[[f"{v:.2f}" for v in row] for row in _CORR],
+        texttemplate="%{text}",
+        textfont=dict(size=10),
+        hovertemplate="%{y} / %{x}: %{z:.2f}<extra></extra>",
+        colorbar=dict(
+            title="ρ",
+            tickvals=[-1, -0.5, 0, 0.5, 1],
+            thickness=12,
+            len=0.85,
+        ),
+    ))
+    fig_hm.update_layout(height=420, margin=dict(l=8, r=8, t=8, b=8))
+    fig_hm = apply_plotly_dark_theme(fig_hm)
+    fig_hm.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
+    st.plotly_chart(fig_hm, use_container_width=True)
+    st.caption(
+        "Correlation matrix used by HRP to build the hierarchical cluster tree. "
+        "Negative equity–bond correlation (flight-to-quality) is the key diversification driver. "
+        "Phase A: stylised static matrix. Phase B: computed from 2-year rolling prices."
     )
 
 
