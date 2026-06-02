@@ -195,6 +195,7 @@ def _mock_optimization(profile_key: str) -> dict:
         "stress_scenarios": payload.stress_scenarios,
         "backtest": payload.backtest_summary,
         "regulatory_context": payload.regulatory_context,
+        "cluster_structure": payload.cluster_structure,
     }
 
 
@@ -1209,81 +1210,131 @@ def render_portfolio() -> None:
     render_eu_note()
 
 
-def _build_perf_chart(
-    exp_ret: float,
-    vol: float,
-    n_days: int,
-    window_days: int | None = None,
-    seed: int = 42,
-):
+def _render_resilience_strip(profile_label: str) -> None:
     """
-    Build a synthetic cumulative-return line chart (HRP vs 60/40 benchmark).
-    Uses a fixed-seed RNG so the chart is stable across Streamlit reruns.
+    Compact "crisis resilience" strip backed by REAL backtest results.
 
-    The figure always holds the *full* ``n_days`` history. ``window_days``
-    only sets the initial visible window (x/y range); because the data is all
-    present and ``fixedrange=False``, zooming or panning out reveals the real
-    series outside that initial window instead of empty space.
+    Reads backtest_summary_{profile}.json and shows the HRP historical maximum
+    drawdown across three stress scenarios, with the improvement vs the
+    Mean-Variance benchmark. A button links to the full Backtesting page so we
+    do not duplicate its equity-curve charts here.
     """
-    from datetime import date, timedelta
+    summary_file = _BACKTEST_DIR / f"backtest_summary_{profile_label.lower()}.json"
+    if not summary_file.exists():
+        summary_file = _BACKTEST_DIR / "backtest_summary_moderate.json"
+    if not summary_file.exists():
+        st.caption("Backtest data unavailable — run scripts/run_backtest.py.")
+        return
 
-    import numpy as np
-    import plotly.graph_objects as go
+    with open(summary_file) as fh:
+        summary = json.load(fh)
 
-    rng = np.random.default_rng(seed)
-    daily_mean = exp_ret / 252
-    daily_std = vol / np.sqrt(252)
+    _SHORT = {
+        "gfc_2008": "GFC 2008",
+        "covid_2020": "COVID 2020",
+        "rate_hike_2022": "Rate Hike 2022",
+    }
 
-    hrp_cum = 100.0 * np.cumprod(1.0 + rng.normal(daily_mean, daily_std, n_days))
+    cards_html = '<div style="display:flex;gap:0.75rem;margin-bottom:1rem;">'
+    for key, short in _SHORT.items():
+        scen = summary.get(key)
+        if not scen:
+            continue
+        hrp_dd = scen["strategies"]["HRP"]["max_drawdown"]
+        mv_dd = scen["strategies"]["MV"]["max_drawdown"]
+        # Both negative; HRP less negative => shallower drawdown => improvement > 0
+        improvement = (hrp_dd - mv_dd) * 100
+        better = improvement > 0
+        delta_color = "#0dcfb0" if better else "#f87171"
+        delta_sign = "+" if better else ""
+        cards_html += (
+            f'<div style="flex:1;background:#0f1628;border:1px solid #1e2640;'
+            f'border-radius:12px;padding:0.9rem 1rem;">'
+            f'<div style="font-size:0.64rem;font-weight:600;letter-spacing:0.08em;'
+            f'text-transform:uppercase;color:#64748b;margin-bottom:0.5rem;">{short}</div>'
+            f'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:1.5rem;'
+            f'font-weight:700;color:#e2e8f0;line-height:1;">{hrp_dd*100:.1f}%</div>'
+            f'<div style="font-size:0.7rem;color:#475569;margin-top:0.35rem;">'
+            f'HRP max drawdown</div>'
+            f'<div style="font-size:0.72rem;color:{delta_color};font-weight:600;'
+            f'margin-top:0.45rem;">{delta_sign}{improvement:.1f} pp vs MV</div>'
+            f'</div>'
+        )
+    cards_html += "</div>"
+    st.markdown(cards_html, unsafe_allow_html=True)
 
-    rng_bm = np.random.default_rng(seed + 1)
-    bm_cum = 100.0 * np.cumprod(1.0 + rng_bm.normal(0.05 / 252, 0.09 / np.sqrt(252), n_days))
+    if st.button("View full backtesting  →", key="hrp_to_backtest"):
+        st.session_state.active_page = "Backtesting"
+        st.rerun()
 
-    end = date.today()
-    dates = [end - timedelta(days=n_days - i) for i in range(n_days)]
 
-    fig = go.Figure()
-    fig.add_trace(go.Scatter(
-        x=dates, y=hrp_cum.tolist(),
-        mode="lines", name="HRP Portfolio",
-        line=dict(color="#7c5cfc", width=2),
-        fill="tozeroy",
-        fillcolor="rgba(124,92,252,0.08)",
-    ))
-    fig.add_trace(go.Scatter(
-        x=dates, y=bm_cum.tolist(),
-        mode="lines", name="60/40 Benchmark",
-        line=dict(color="#94a3b8", width=2, dash="dot"),
-    ))
+def _render_cluster_view(portfolio: dict, weights: dict[str, float]) -> None:
+    """
+    Honest cluster structure view driven by the Ground Truth payload.
 
-    # Clean look (no in-chart rangeselector/rangeslider). The Streamlit radio
-    # picks the initial window; fixedrange=False keeps zoom-out working so the
-    # rest of the real series is reachable by panning/zooming out.
-    xaxis = dict(fixedrange=False)
-    yaxis = dict(title="Portfolio value (base 100)", fixedrange=False)
-    if window_days and 0 < window_days < n_days:
-        w = window_days
-        xaxis["range"] = [dates[-w], dates[-1]]
-        win_vals = np.concatenate([hrp_cum[-w:], bm_cum[-w:]])
-        y_lo, y_hi = float(win_vals.min()), float(win_vals.max())
-        pad = (y_hi - y_lo) * 0.08 or 1.0
-        yaxis["range"] = [y_lo - pad, y_hi + pad]
+    Replaces the previous dendrogram, whose pairwise correlation matrix was
+    fabricated (0.70 / 0.10). Here every number — weight, intra-cluster
+    correlation, cluster volatility — comes from cluster_structure when present,
+    with a graceful fallback for the live path.
+    """
+    cs = portfolio.get("cluster_structure")
 
-    fig.update_layout(
-        height=420,
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0),
-        xaxis=xaxis,
-        yaxis=yaxis,
-        hovermode="x unified",
-        modebar_remove=[
-            "select2d", "lasso2d", "autoScale2d",
-            "hoverClosestCartesian", "hoverCompareCartesian",
-            "toggleSpikelines", "zoomIn2d", "zoomOut2d",
-        ],
-        modebar_add=["resetScale2d"],
-        dragmode="pan",
-    )
-    return fig
+    # name, attribute on ClusterStructure, colour, member fallback
+    _CLUSTER_DEFS = [
+        ("Risk Assets", "cluster_A_risk_assets", "#7c5cfc", ["CSPX.L", "EFA"]),
+        ("Real Assets", "cluster_B_real_assets", "#0dcfb0", ["GLD", "VNQ"]),
+        ("Safe Haven", "cluster_C_safe_haven", "#f59e0b", ["AGGH.MI", "TLT", "TIP"]),
+        ("Cash", "cluster_D_cash", "#3b82f6", ["XEON.MI"]),
+    ]
+
+    cols = st.columns(4)
+    for col, (name, attr, color, fallback_members) in zip(cols, _CLUSTER_DEFS):
+        cl = getattr(cs, attr, None) if cs is not None else None
+        members = list(cl.members) if cl is not None else fallback_members
+        members = [m for m in members if m in weights] or members
+        weight = (
+            cl.total_weight if cl is not None
+            else sum(weights.get(m, 0.0) for m in members)
+        )
+        corr = cl.intra_cluster_correlation if cl is not None else None
+        vol = cl.cluster_volatility if cl is not None else None
+
+        chips = "".join(
+            f'<span style="display:inline-block;background:rgba(148,163,184,0.08);'
+            f'border:1px solid #1e2640;border-radius:5px;padding:0.1rem 0.4rem;'
+            f'font-size:0.66rem;color:#94a3b8;margin:0 0.25rem 0.25rem 0;">{m}</span>'
+            for m in members
+        )
+        corr_txt = f"{corr:.2f}" if corr is not None else "n/a"
+        vol_txt = f"{vol*100:.1f}%" if vol is not None else "—"
+
+        with col:
+            st.markdown(
+                f'<div style="background:#0f1628;border:1px solid #1e2640;'
+                f'border-top:3px solid {color};border-radius:10px;'
+                f'padding:0.85rem 0.9rem;height:100%;">'
+                f'<div style="display:flex;align-items:center;gap:0.4rem;'
+                f'margin-bottom:0.5rem;">'
+                f'<span style="width:8px;height:8px;border-radius:50%;'
+                f'background:{color};flex-shrink:0;"></span>'
+                f'<span style="font-family:\'Space Grotesk\',sans-serif;'
+                f'font-size:0.82rem;font-weight:600;color:{color};">{name}</span></div>'
+                f'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:1.35rem;'
+                f'font-weight:700;color:#e2e8f0;line-height:1;">{weight*100:.0f}%</div>'
+                f'<div style="font-size:0.64rem;color:#475569;text-transform:uppercase;'
+                f'letter-spacing:0.06em;margin:0.25rem 0 0.7rem;">of portfolio</div>'
+                f'<div style="display:flex;justify-content:space-between;'
+                f'font-size:0.7rem;color:#64748b;margin-bottom:0.2rem;">'
+                f'<span>Intra-ρ</span><span style="color:#94a3b8;font-weight:600;">'
+                f'{corr_txt}</span></div>'
+                f'<div style="display:flex;justify-content:space-between;'
+                f'font-size:0.7rem;color:#64748b;margin-bottom:0.7rem;">'
+                f'<span>Volatility</span><span style="color:#94a3b8;font-weight:600;">'
+                f'{vol_txt}</span></div>'
+                f'<div>{chips}</div>'
+                f'</div>',
+                unsafe_allow_html=True,
+            )
 
 
 # ---------------------------------------------------------------------------
@@ -1313,12 +1364,6 @@ _HRP_CLUSTER_BG: dict[str, str] = {
     "Alternatives": "rgba(245,158,11,0.15)",
     "Bonds":        "rgba(13,207,176,0.15)",
     "Cash":         "rgba(59,130,246,0.15)",
-}
-
-_PROFILE_COLOR: dict[str, str] = {
-    "CONSERVATIVE": "#0dcfb0",
-    "MODERATE":     "#7c5cfc",
-    "AGGRESSIVE":   "#f87171",
 }
 
 # ---------------------------------------------------------------------------
@@ -1963,74 +2008,30 @@ def _render_hrp_tab(portfolio: dict) -> None:
     vol: float = portfolio.get("expected_volatility", 0.0)
     exp_ret = portfolio.get("expected_return")
     max_dd = portfolio.get("max_drawdown")
+    sharpe = portfolio.get("sharpe_ratio")
 
     profile_label: str = (
         st.session_state.get("profile", {}).get("profile_label", "MODERATE").upper()
     )
-    profile_color: str = _PROFILE_COLOR.get(profile_label, "#7c5cfc")
-
-    # ── Profile badge ───────────────────────────────────────────────────────
-    st.markdown(
-        f'<div style="display:inline-flex;align-items:center;gap:0.5rem;'
-        f'background:rgba(124,92,252,0.1);border:1px solid {profile_color}40;'
-        f'border-radius:20px;padding:0.35rem 1rem;margin-bottom:1.25rem;">'
-        f'<span style="width:8px;height:8px;border-radius:50%;'
-        f'background:{profile_color};flex-shrink:0;"></span>'
-        f'<span style="font-size:0.8rem;color:{profile_color};font-weight:600;'
-        f'font-family:\'Space Grotesk\',sans-serif;">{profile_label}</span>'
-        f'</div>',
-        unsafe_allow_html=True,
-    )
 
     # ── KPI Cards ──────────────────────────────────────────────────────────
     c1, c2, c3, c4 = st.columns(4)
-    c1.metric("Portfolio Value", "$100,000")
-    c2.metric("Expected Return (1Y)", f"{exp_ret:.1%}" if exp_ret is not None else "—")
-    c3.metric("Risk Score", f"{vol:.1%}")
-    c4.metric("Historical Max Drawdown", f"{max_dd:.1%}" if max_dd is not None else "—")
+    c1.metric("Exp. Return", f"{exp_ret:.1%}" if exp_ret is not None else "—")
+    c2.metric("Volatility", f"{vol:.1%}")
+    c3.metric("Sharpe", f"{sharpe:.2f}" if sharpe is not None else "—")
+    c4.metric("Max Drawdown", f"{max_dd:.1%}" if max_dd is not None else "—")
 
     _v_spacer(2.5)
 
-    # ── Section 1: Portfolio Performance ───────────────────────────────────
-    _section_header("1", "Portfolio Performance")
+    # ── Section 1: Historical Resilience ───────────────────────────────────
+    _section_header("1", "Historical Resilience")
     _section_desc(
-        "The chart tracks the growth of a $100,000 notional investment in the HRP portfolio "
-        "over the selected time window, compared to a 60/40 equity-bond benchmark. "
-        "Values are indexed to 100 at the start of the full history. "
-        "Use the period selector to set the window; the rest of the history stays available, "
-        "so zooming or panning out reveals what happens outside the initial window. "
-        "Past performance is simulated and does not guarantee future results."
+        "How the HRP strategy weathered three historical stress periods — the maximum "
+        "peak-to-trough loss in each, compared against the Mean-Variance benchmark. "
+        "These are real walk-forward backtest results; the full equity curves and "
+        "strategy comparison live on the Backtesting page."
     )
-
-    _PERIOD_DAYS: dict[str, int] = {
-        "1M": 21, "3M": 63, "6M": 126, "1Y": 252, "3Y": 756, "All": 1764,
-    }
-    period = st.radio(
-        "period",
-        list(_PERIOD_DAYS.keys()),
-        index=3,
-        horizontal=True,
-        label_visibility="collapsed",
-    )
-
-    # The figure always holds the full ~7y history; the radio only sets the
-    # initial visible window. With fixedrange=False, zooming/panning out then
-    # reveals the real series outside that window (the previous version sliced
-    # the data to the window, so zoom-out showed empty space).
-    _FULL_HISTORY_DAYS = _PERIOD_DAYS["All"]
-    window_days = _PERIOD_DAYS[period]
-
-    try:
-        fig_perf = _build_perf_chart(
-            exp_ret=exp_ret if exp_ret is not None else 0.06,
-            vol=vol if vol > 0 else 0.10,
-            n_days=_FULL_HISTORY_DAYS,
-            window_days=window_days,
-        )
-        fig_perf = apply_plotly_dark_theme(fig_perf)
-        st.plotly_chart(fig_perf, use_container_width=True, config={"displaylogo": False})
-    except Exception as exc:
-        st.caption(f"Performance chart unavailable: {exc}")
+    _render_resilience_strip(profile_label)
 
     _v_spacer(2.5)
 
@@ -2076,37 +2077,40 @@ def _render_hrp_tab(portfolio: dict) -> None:
     pills_html += "</div>"
     st.markdown(pills_html, unsafe_allow_html=True)
 
-    try:
-        from backend.optimizer.charts import plot_weights_donut
-        fig_donut = plot_weights_donut(weights)
-        fig_donut = apply_plotly_dark_theme(fig_donut)
-        st.plotly_chart(fig_donut, use_container_width=True, config={"displaylogo": False})
-    except Exception as exc:
-        st.caption(f"Allocation chart unavailable: {exc}")
+    col_donut, col_table = st.columns([1.05, 1], gap="large")
 
-    _v_spacer(1.0)
+    with col_donut:
+        try:
+            from backend.optimizer.charts import plot_weights_donut
+            fig_donut = plot_weights_donut(weights)
+            fig_donut = apply_plotly_dark_theme(fig_donut)
+            fig_donut.update_layout(height=360)
+            st.plotly_chart(fig_donut, use_container_width=True, config={"displaylogo": False})
+        except Exception as exc:
+            st.caption(f"Allocation chart unavailable: {exc}")
 
-    ucits_set = set(ucits_used) | _UCITS_TICKERS
-    rows = []
-    for ticker, w in sorted(weights.items(), key=lambda kv: -kv[1]):
-        rows.append({
-            "Ticker": ticker,
-            "Cluster": _HRP_TICKER_CLUSTER.get(ticker, "Other"),
-            "Weight (%)": round(w * 100, 2),
-            "UCITS": "EU ✓" if ticker in ucits_set else "—",
-            "Risk Contribution": f"{risk_contributions.get(ticker, 0.0):.1%}",
-        })
-    df = pd.DataFrame(rows)
-    st.dataframe(
-        df,
-        hide_index=True,
-        use_container_width=True,
-        column_config={
-            "Weight (%)": st.column_config.ProgressColumn(
-                "Weight (%)", format="%.1f%%", min_value=0, max_value=100,
-            ),
-        },
-    )
+    with col_table:
+        ucits_set = set(ucits_used) | _UCITS_TICKERS
+        rows = []
+        for ticker, w in sorted(weights.items(), key=lambda kv: -kv[1]):
+            rows.append({
+                "Ticker": ticker,
+                "Cluster": _HRP_TICKER_CLUSTER.get(ticker, "Other"),
+                "Weight (%)": round(w * 100, 2),
+                "UCITS": "EU ✓" if ticker in ucits_set else "—",
+                "Risk Contribution": f"{risk_contributions.get(ticker, 0.0):.1%}",
+            })
+        df = pd.DataFrame(rows)
+        st.dataframe(
+            df,
+            hide_index=True,
+            use_container_width=True,
+            column_config={
+                "Weight (%)": st.column_config.ProgressColumn(
+                    "Weight (%)", format="%.1f%%", min_value=0, max_value=100,
+                ),
+            },
+        )
 
     with st.expander("What do these tickers mean?"):
         _render_etf_explorer()
@@ -2140,153 +2144,19 @@ def _render_hrp_tab(portfolio: dict) -> None:
     # ── Section 4: Cluster Structure ───────────────────────────────────────
     _section_header("4", "Cluster Structure")
     _section_desc(
-        "HRP groups assets by return-correlation before allocating weights. "
-        "Assets that move together are linked early (bottom of the chart); "
-        "distinct groups join higher up. Risk is balanced first within each cluster, "
-        "then across clusters — reducing concentration without requiring return forecasts."
+        "HRP groups assets into correlation clusters before allocating weights, "
+        "balancing risk within each group and then across groups. Each card shows the "
+        "cluster's share of the portfolio, its average intra-cluster correlation (ρ), "
+        "and its annualised volatility — all from the optimizer's ground-truth output."
     )
 
-    _DEND_CLUSTERS = [
-        {
-            "name": "Risk Assets",
-            "color": "#7c5cfc",
-            "bg": "rgba(124,92,252,0.15)",
-            "tickers": ["CSPX.L", "EFA"],
-            "group": 0,
-        },
-        {
-            "name": "Real Assets",
-            "color": "#0dcfb0",
-            "bg": "rgba(13,207,176,0.15)",
-            "tickers": ["GLD", "VNQ"],
-            "group": 1,
-        },
-        {
-            "name": "Safe Haven",
-            "color": "#f59e0b",
-            "bg": "rgba(245,158,11,0.15)",
-            "tickers": ["AGGH.MI", "TLT", "TIP"],
-            "group": 2,
-        },
-        {
-            "name": "Cash",
-            "color": "#3b82f6",
-            "bg": "rgba(59,130,246,0.15)",
-            "tickers": ["XEON.MI"],
-            "group": 3,
-        },
-    ]
+    _render_cluster_view(portfolio, weights)
 
-    _chips_items = "".join(
-        f'<span style="display:inline-flex;align-items:center;gap:0.35rem;'
-        f'background:{cl["bg"]};border:1px solid {cl["color"]}50;'
-        f'border-radius:20px;padding:0.25rem 0.65rem;">'
-        f'<span style="width:7px;height:7px;border-radius:50%;background:{cl["color"]};'
-        f'flex-shrink:0;display:inline-block;"></span>'
-        f'<span style="font-size:0.7rem;color:{cl["color"]};font-weight:600;">'
-        f'{cl["name"]}</span>'
-        f'</span>'
-        for cl in _DEND_CLUSTERS
+    st.caption(
+        "Intra-cluster ρ measures how tightly the assets inside a group move together; "
+        "cash has a single member, so no pairwise correlation applies. Higher ρ means "
+        "less diversification benefit within that cluster."
     )
-    st.markdown(
-        '<div style="display:flex;align-items:center;gap:0.45rem;'
-        'flex-wrap:wrap;margin-bottom:0.85rem;">'
-        '<span style="font-size:0.65rem;font-weight:700;letter-spacing:0.1em;'
-        'text-transform:uppercase;color:#475569;margin-right:0.25rem;">Clusters</span>'
-        f'{_chips_items}'
-        '</div>',
-        unsafe_allow_html=True,
-    )
-
-    _dend_col, _info_col = st.columns([3, 1.2])
-
-    with _dend_col:
-        try:
-            import numpy as np
-            from scipy.cluster.hierarchy import linkage
-            from scipy.spatial.distance import squareform
-
-            from backend.optimizer.charts import plot_dendrogram
-
-            tickers_list = list(weights.keys())
-            n = len(tickers_list)
-
-            _ticker_group: dict[str, int] = {
-                t: cl["group"]
-                for cl in _DEND_CLUSTERS
-                for t in cl["tickers"]
-            }
-            corr = np.eye(n)
-            for i in range(n):
-                for j in range(n):
-                    if i != j:
-                        ci = _ticker_group.get(tickers_list[i], -1)
-                        cj = _ticker_group.get(tickers_list[j], -1)
-                        corr[i, j] = 0.70 if ci == cj else 0.10
-
-            dist = np.sqrt(0.5 * (1 - corr))
-            np.fill_diagonal(dist, 0.0)
-            condensed = squareform(dist, checks=False)
-            link = linkage(condensed, method="ward")
-
-            fig_dend = plot_dendrogram(link, tickers_list)
-            fig_dend = apply_plotly_dark_theme(fig_dend)
-            fig_dend.update_traces(line=dict(color="#a78bfa", width=2))
-            fig_dend.update_layout(
-                paper_bgcolor="rgba(0,0,0,0)",
-                plot_bgcolor="rgba(0,0,0,0)",
-                margin=dict(l=50, r=20, t=50, b=90),
-                height=350,
-                xaxis=dict(
-                    tickangle=-35,
-                    tickfont=dict(color="#94a3b8", size=11),
-                    showgrid=False,
-                ),
-                yaxis=dict(
-                    title=dict(text="Distance", font=dict(color="#64748b", size=11)),
-                    tickfont=dict(color="#64748b", size=10),
-                ),
-            )
-            st.plotly_chart(fig_dend, use_container_width=True, config={"displaylogo": False})
-
-        except Exception as exc:
-            st.caption(f"Dendrogram unavailable: {exc}")
-
-    with _info_col:
-        _HOW_TO_POINTS = [
-            ("Branch height", "The higher two assets join, the less correlated they are."),
-            ("Early linkage", "Assets merged near the bottom share similar return patterns."),
-            ("Cluster balance", "HRP divides risk equally within each subtree before scaling up."),
-            ("No forecasts", "Uses only historical correlations — no return predictions."),
-            (
-                "Line colour",
-                "All branches share a single colour — the dendrogram encodes distance "
-                "through height, not colour. The chips above label economic asset groups.",
-            ),
-        ]
-        _pts_html = "".join(
-            f'<div style="display:flex;gap:0.55rem;margin-bottom:0.6rem;">'
-            f'<span style="color:#7c5cfc;font-size:0.75rem;margin-top:0.1rem;'
-            f'flex-shrink:0;">▸</span>'
-            f'<div>'
-            f'<div style="font-size:0.75rem;font-weight:600;color:#c4b5fd;'
-            f'margin-bottom:0.1rem;">{title}</div>'
-            f'<div style="font-size:0.72rem;color:#64748b;line-height:1.55;">{body}</div>'
-            f'</div>'
-            f'</div>'
-            for title, body in _HOW_TO_POINTS
-        )
-        st.markdown(
-            '<div style="background:rgba(124,92,252,0.06);'
-            'border:1px solid rgba(124,92,252,0.18);border-radius:10px;'
-            'padding:1rem 1rem 0.5rem;">'
-            '<div style="font-family:\'Space Grotesk\',sans-serif;font-size:0.8rem;'
-            'font-weight:700;color:#a78bfa;letter-spacing:0.04em;'
-            'text-transform:uppercase;margin-bottom:0.75rem;">How to read this</div>'
-            f'{_pts_html}'
-            '</div>',
-            unsafe_allow_html=True,
-        )
 
 
 
