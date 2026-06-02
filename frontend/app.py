@@ -301,13 +301,31 @@ def main() -> None:
         import base64 as _b64
         _logo_b64 = _b64.b64encode(LOGO_PATH.read_bytes()).decode()
         _logo_tag = (
+            f'<div style="'
+            f'width:44px;height:44px;'
+            f'display:flex;align-items:center;justify-content:center;'
+            f'background:rgba(124,92,252,0.10);'
+            f'border:1px solid rgba(124,92,252,0.28);'
+            f'border-radius:12px;'
+            f'box-shadow:0 0 12px rgba(124,92,252,0.18);'
+            f'flex-shrink:0;">'
             f'<img src="data:image/png;base64,{_logo_b64}"'
-            ' style="height:28px;width:auto;" alt="RoboAdvisor">'
+            f' style="height:30px;width:auto;" alt="RoboAdvisor">'
+            f'</div>'
         )
     else:
         _logo_tag = (
-            '<span style="font-size:1.1rem;font-weight:700;color:#f5f5f7;'
-            "font-family:'Space Grotesk',sans-serif;\">RoboAdvisor</span>"
+            '<div style="'
+            'width:44px;height:44px;'
+            'display:flex;align-items:center;justify-content:center;'
+            'background:rgba(124,92,252,0.10);'
+            'border:1px solid rgba(124,92,252,0.28);'
+            'border-radius:12px;'
+            'box-shadow:0 0 12px rgba(124,92,252,0.18);'
+            'flex-shrink:0;">'
+            '<span style="font-size:1.3rem;font-weight:700;color:#f5f5f7;'
+            "font-family:'Space Grotesk',sans-serif;\">R</span>"
+            '</div>'
         )
 
     # Step 3: render brand HTML + CSS; nav buttons added as st.columns below
@@ -334,18 +352,18 @@ section[data-testid="stMain"] > div:first-child {{
     overflow: visible;
 }}
 .top-navbar .brand {{
-    display: flex; align-items: center; gap: 10px;
-    min-width: 220px; flex-shrink: 0; text-decoration: none;
+    display: flex; align-items: center; gap: 12px;
+    min-width: 240px; flex-shrink: 0; text-decoration: none;
 }}
 .top-navbar .brand-name {{
-    font-size: 15px; font-weight: 600; color: #f5f5f7;
-    letter-spacing: -0.2px;
+    font-size: 16px; font-weight: 700; color: #f5f5f7;
+    letter-spacing: -0.3px; line-height: 1.2;
     font-family: 'Space Grotesk', -apple-system, sans-serif;
 }}
 .top-navbar .brand-sub {{
-    font-size: 9px; letter-spacing: 0.10em;
-    color: rgba(245,245,247,0.35); text-transform: uppercase;
-    line-height: 1.2;
+    font-size: 9.5px; letter-spacing: 0.09em;
+    color: rgba(245,245,247,0.42); text-transform: uppercase;
+    line-height: 1.3; margin-top: 2px;
 }}
 /* ── Streamlit button row moved inside navbar by JS ─────────────────── */
 .top-navbar [data-testid="stHorizontalBlock"] {{
