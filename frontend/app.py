@@ -1231,11 +1231,6 @@ def _build_perf_chart(exp_ret: float, vol: float, n_days: int, seed: int = 42):
     end = date.today()
     dates = [end - timedelta(days=n_days - i) for i in range(n_days)]
 
-    all_vals = np.concatenate([hrp_cum, bm_cum])
-    y_min = float(all_vals.min())
-    y_max = float(all_vals.max())
-    y_pad = (y_max - y_min) * 0.05
-
     fig = go.Figure()
     fig.add_trace(go.Scatter(
         x=dates, y=hrp_cum.tolist(),
@@ -1252,9 +1247,29 @@ def _build_perf_chart(exp_ret: float, vol: float, n_days: int, seed: int = 42):
     fig.update_layout(
         height=420,
         legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0),
+        # No hardcoded xaxis.range: the figure always holds the full series so
+        # zooming out (or hitting "All") reveals every available data point.
+        # The rangeselector handles windowing client-side; it loads at full
+        # extent. autorange + fixedrange=False keep zoom-out working.
+        xaxis=dict(
+            autorange=True,
+            fixedrange=False,
+            rangeslider=dict(visible=True),
+            rangeselector=dict(
+                buttons=[
+                    dict(count=1, label="1M", step="month", stepmode="backward"),
+                    dict(count=3, label="3M", step="month", stepmode="backward"),
+                    dict(count=6, label="6M", step="month", stepmode="backward"),
+                    dict(count=1, label="1Y", step="year", stepmode="backward"),
+                    dict(count=3, label="3Y", step="year", stepmode="backward"),
+                    dict(step="all", label="All"),
+                ],
+            ),
+        ),
         yaxis=dict(
             title="Portfolio value (base 100)",
-            range=[y_min - y_pad, y_max + y_pad],
+            autorange=True,
+            fixedrange=False,
         ),
         hovermode="x unified",
     )
@@ -1960,29 +1975,22 @@ def _render_hrp_tab(portfolio: dict) -> None:
     _section_header("1", "Portfolio Performance")
     _section_desc(
         "The chart tracks the growth of a $100,000 notional investment in the HRP portfolio "
-        "over the selected time window, compared to a 60/40 equity-bond benchmark. "
-        "Values are indexed to 100 at the start of the selected period. "
-        "Use the period selector to zoom in on shorter or longer horizons. "
+        "over time, compared to a 60/40 equity-bond benchmark. "
+        "Values are indexed to 100 at the start of the period. "
+        "Use the range selector buttons (1M–All) or the slider below the chart to zoom in on "
+        "shorter or longer horizons; zooming out always reveals the full history. "
         "Past performance is simulated and does not guarantee future results."
     )
 
-    _PERIOD_DAYS: dict[str, int] = {
-        "1M": 21, "3M": 63, "6M": 126, "1Y": 252, "3Y": 756, "All": 1764,
-    }
-    period = st.radio(
-        "period",
-        list(_PERIOD_DAYS.keys()),
-        index=3,
-        horizontal=True,
-        label_visibility="collapsed",
-    )
-    n_days = _PERIOD_DAYS[period]
+    # The figure always holds the full history; windowing is handled in-browser
+    # by the Plotly rangeselector/rangeslider, so zooming out reveals all data.
+    _FULL_HISTORY_DAYS = 1764  # ~7y of business days
 
     try:
         fig_perf = _build_perf_chart(
             exp_ret=exp_ret if exp_ret is not None else 0.06,
             vol=vol if vol > 0 else 0.10,
-            n_days=n_days,
+            n_days=_FULL_HISTORY_DAYS,
         )
         fig_perf = apply_plotly_dark_theme(fig_perf)
         st.plotly_chart(fig_perf, use_container_width=True)

@@ -255,8 +255,30 @@ def plot_drawdown(
 
     fig.update_layout(
         title=f"Drawdown — {labels.get(scenario_key, scenario_key)}",
-        xaxis_title="Date",
-        yaxis_title="Drawdown (%)",
+        # No hardcoded xaxis.range: autorange + fixedrange=False let the user
+        # zoom out (or hit "All") to reveal the full scenario history. The
+        # rangeselector windows the view client-side; it loads at full extent.
+        xaxis=dict(
+            title="Date",
+            autorange=True,
+            fixedrange=False,
+            rangeslider=dict(visible=True),
+            rangeselector=dict(
+                buttons=[
+                    dict(count=1, label="1M", step="month", stepmode="backward"),
+                    dict(count=3, label="3M", step="month", stepmode="backward"),
+                    dict(count=6, label="6M", step="month", stepmode="backward"),
+                    dict(count=1, label="1Y", step="year", stepmode="backward"),
+                    dict(count=3, label="3Y", step="year", stepmode="backward"),
+                    dict(step="all", label="All"),
+                ],
+            ),
+        ),
+        yaxis=dict(
+            title="Drawdown (%)",
+            autorange=True,
+            fixedrange=False,
+        ),
         height=400,
         margin=dict(l=20, r=20, t=50, b=40),
         legend=dict(orientation="h", yanchor="bottom", y=1.02),
