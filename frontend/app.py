@@ -87,7 +87,7 @@ _LABEL_TO_MOCK: dict[str, str] = {
 _DATA_START: str = "2023-01-01"
 
 ASSETS_DIR = Path(__file__).parent / "assets"
-LOGO_PATH = ASSETS_DIR / "logo.png"
+LOGO_PATH = ASSETS_DIR / "roboadvisor_robot_transparent.png"
 
 # ---------------------------------------------------------------------------
 # Helpers
