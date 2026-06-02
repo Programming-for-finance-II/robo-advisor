@@ -101,6 +101,76 @@ LOGO_PATH = ASSETS_DIR / "roboadvisor_robot_transparent.png"
 # ---------------------------------------------------------------------------
 
 @st.cache_data(ttl=300, show_spinner=False)
+def _build_live_cluster_structure(prices, weights: dict[str, float]):
+    """Compute a real ClusterStructure from live daily prices and HRP weights.
+
+    Mirrors the four clusters used across the dashboard (risk assets, real
+    assets, safe haven, cash) and fills each with its total weight, average
+    intra-cluster correlation, and annualised volatility — so the "How your
+    money is grouped" view shows live numbers instead of placeholders.
+    """
+    import numpy as np
+
+    from backend.schemas.ground_truth import Cluster, ClusterStructure
+
+    _ATTR_BY_TICKER = {
+        "CSPX.L": "cluster_A_risk_assets", "EFA": "cluster_A_risk_assets",
+        "GLD": "cluster_B_real_assets",    "VNQ": "cluster_B_real_assets",
+        "AGGH.MI": "cluster_C_safe_haven", "TLT": "cluster_C_safe_haven",
+        "TIP": "cluster_C_safe_haven",
+        "XEON.MI": "cluster_D_cash",
+    }
+    attrs = [
+        "cluster_A_risk_assets", "cluster_B_real_assets",
+        "cluster_C_safe_haven", "cluster_D_cash",
+    ]
+
+    returns = prices.pct_change().dropna()
+    corr = returns.corr()
+
+    clusters: dict[str, Cluster] = {}
+    for attr in attrs:
+        members = [
+            t for t in weights
+            if _ATTR_BY_TICKER.get(t) == attr and t in returns.columns
+        ]
+        total_weight = float(sum(weights.get(t, 0.0) for t in members))
+
+        # Average off-diagonal pairwise correlation within the cluster.
+        if len(members) >= 2:
+            pair_vals = [
+                float(corr.loc[a, b])
+                for i, a in enumerate(members)
+                for b in members[i + 1:]
+            ]
+            icc = float(np.mean(pair_vals)) if pair_vals else None
+        else:
+            icc = None
+
+        # Annualised volatility of the weight-blended cluster return.
+        if members:
+            w = np.array([weights.get(t, 0.0) for t in members], dtype=float)
+            w = w / w.sum() if w.sum() > 0 else np.full(len(members), 1.0 / len(members))
+            blended = returns[members].to_numpy() @ w
+            cvol = (
+                float(np.std(blended, ddof=1) * np.sqrt(252))
+                if len(blended) > 1 else 0.0
+            )
+        else:
+            cvol = 0.0
+
+        clusters[attr] = Cluster(
+            members=members,
+            total_weight=min(max(total_weight, 0.0), 1.0),
+            intra_cluster_correlation=(
+                None if icc is None else max(-1.0, min(1.0, icc))
+            ),
+            cluster_volatility=max(cvol, 0.0),
+        )
+
+    return ClusterStructure(**clusters)
+
+
 def _run_live_optimization(profile_label: str) -> dict:
     """
     Download market data and run the HRP optimizer.
@@ -136,17 +206,42 @@ def _run_live_optimization(profile_label: str) -> dict:
         fallback_tickers=list(report.fallback_tickers_applied.keys()),
     )
 
+    # Real cluster structure for the "How your money is grouped" view.
+    # Defensive: a failure here must not break the whole live path — the
+    # grouping view falls back gracefully when this is absent.
+    try:
+        cluster_structure = _build_live_cluster_structure(prices, result["weights"])
+    except Exception:
+        cluster_structure = None
+
+    # Historical max drawdown of the (static-weight) portfolio over the loaded
+    # price history, so the KPI card shows a real figure rather than a dash.
+    try:
+        import numpy as np
+
+        _w = result["weights"]
+        _cols = [t for t in _w if t in prices.columns]
+        _rets = prices[_cols].pct_change().dropna()
+        _wv = np.array([_w[t] for t in _cols], dtype=float)
+        _wv = _wv / _wv.sum() if _wv.sum() > 0 else _wv
+        _equity = np.cumprod(1.0 + (_rets.to_numpy() @ _wv))
+        _max_drawdown = float((_equity / np.maximum.accumulate(_equity) - 1.0).min())
+    except Exception:
+        _max_drawdown = None
+
     return {
         "weights": result["weights"],
         "risk_contributions": result["risk_contributions"],
         "expected_volatility": result["expected_volatility"],
         "expected_return": result["expected_return"],
         "sharpe_ratio": result["sharpe_ratio"],
+        "max_drawdown": _max_drawdown,
         "ucits_tickers_used": report.ucits_tickers_used,
         "fallback_tickers_applied": list(report.fallback_tickers_applied.keys()),
         "recommendation_id": str(uuid.uuid4()),
         "stress_regime": regime_result.regime,
         "avg_correlation": regime_result.avg_correlation,
+        "cluster_structure": cluster_structure,
         "source": "live",
     }
 
@@ -283,6 +378,52 @@ _SHIELD_SVG = (
 )
 
 
+def render_page_nav(active: str) -> None:
+    """Previous / Next buttons at the foot of every page.
+
+    Lets the user move to the adjacent section (in PAGES order) without
+    scrolling back up to the top navbar. The forward button is highlighted to
+    suggest the natural reading flow; the first and last pages omit the
+    unavailable direction.
+    """
+    try:
+        idx = PAGES.index(active)
+    except ValueError:
+        return
+    prev_page = PAGES[idx - 1] if idx > 0 else None
+    next_page = PAGES[idx + 1] if idx < len(PAGES) - 1 else None
+    if prev_page is None and next_page is None:
+        return
+
+    st.markdown(
+        '<div style="margin-top:2.75rem;padding-top:1rem;'
+        'border-top:1px solid #1a2236;font-size:0.72rem;font-weight:600;'
+        'letter-spacing:0.08em;text-transform:uppercase;color:#475569;'
+        'margin-bottom:0.6rem;">Continue exploring</div>',
+        unsafe_allow_html=True,
+    )
+    col_prev, col_next = st.columns(2)
+    with col_prev:
+        if prev_page and st.button(
+            f"← {prev_page}",
+            key=f"pgnav_prev_{active}",
+            use_container_width=True,
+        ):
+            st.session_state.active_page = prev_page
+            st.query_params["page"] = prev_page
+            st.rerun()
+    with col_next:
+        if next_page and st.button(
+            f"{next_page} →",
+            key=f"pgnav_next_{active}",
+            type="primary",
+            use_container_width=True,
+        ):
+            st.session_state.active_page = next_page
+            st.query_params["page"] = next_page
+            st.rerun()
+
+
 def main() -> None:
     # UNIFIED TOP NAVBAR (apple.com style) — replaces separate logo block
     # and nav row. Only this section was modified. Do not edit elsewhere.
@@ -335,27 +476,42 @@ section[data-testid="stMain"] > div:first-child {{
     padding-top: 88px !important;
 }}
 /* ── Top navbar ─────────────────────────────────────────────────────── */
+@keyframes navSlideDown {{
+    from {{ opacity: 0; transform: translateY(-10px); }}
+    to   {{ opacity: 1; transform: translateY(0); }}
+}}
 .top-navbar {{
     position: fixed; top: 0; left: 0;
     width: 100%; height: 76px; z-index: 1000;
-    background: rgba(13,17,28,0.92);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
+    background: linear-gradient(180deg,
+        rgba(22,28,46,0.92) 0%, rgba(13,17,28,0.88) 100%);
+    backdrop-filter: blur(30px) saturate(140%);
+    -webkit-backdrop-filter: blur(30px) saturate(140%);
     display: flex; align-items: center; justify-content: space-between;
-    padding: 0 36px; box-sizing: border-box;
-    border-bottom: 1px solid rgba(124,92,252,0.14);
-    box-shadow: 0 2px 24px rgba(0,0,0,0.38);
+    padding: 0 40px; box-sizing: border-box;
+    box-shadow: 0 4px 30px rgba(0,0,0,0.45);
     flex-wrap: nowrap;
     overflow: visible;
+    animation: navSlideDown 0.5s cubic-bezier(0.16,1,0.3,1);
+}}
+/* Gradient hairline under the navbar for a subtle premium edge */
+.top-navbar::after {{
+    content: ""; position: absolute; left: 0; right: 0; bottom: 0;
+    height: 1px;
+    background: linear-gradient(90deg,
+        transparent 0%, rgba(124,92,252,0.55) 50%, transparent 100%);
 }}
 .top-navbar .brand {{
     display: flex; align-items: center; gap: 14px;
     min-width: 260px; flex-shrink: 0; text-decoration: none;
 }}
 .top-navbar .brand-name {{
-    font-size: 19px; font-weight: 700; color: #f5f5f7;
+    font-size: 19px; font-weight: 700;
     letter-spacing: -0.4px; line-height: 1.2;
     font-family: 'Space Grotesk', -apple-system, sans-serif;
+    background: linear-gradient(92deg, #ffffff 0%, #c9bcff 100%);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent; color: #f5f5f7;
 }}
 .top-navbar .brand-sub {{
     font-size: 9.5px; letter-spacing: 0.09em;
@@ -377,31 +533,54 @@ section[data-testid="stMain"] > div:first-child {{
     max-height: 76px !important;
 }}
 .top-navbar .stButton > button {{
+    position: relative !important;
     background: transparent !important;
     border: none !important; box-shadow: none !important;
-    color: rgba(245,245,247,0.60) !important;
+    color: rgba(245,245,247,0.62) !important;
     font-size: 13px !important; font-weight: 500 !important;
     letter-spacing: -0.1px !important;
-    padding: 6px 13px !important; border-radius: 8px !important;
-    min-height: unset !important; height: 36px !important;
+    padding: 7px 15px !important; border-radius: 9px !important;
+    min-height: unset !important; height: 38px !important;
     white-space: nowrap !important;
-    transition: color 0.16s ease, background 0.16s ease !important;
+    transition: color 0.18s ease, background 0.18s ease,
+        transform 0.18s cubic-bezier(0.16,1,0.3,1) !important;
     font-family: -apple-system, 'Space Grotesk', sans-serif !important;
-    display: inline-flex !important; align-items: center !important; gap: 6px !important;
+    display: inline-flex !important; align-items: center !important; gap: 7px !important;
+}}
+/* Animated underline that grows from the centre on hover */
+.top-navbar .stButton > button::after {{
+    content: ""; position: absolute; left: 50%; bottom: 4px;
+    width: 0; height: 2px; border-radius: 2px;
+    background: linear-gradient(90deg, #a78bfa, #7c5cfc);
+    transform: translateX(-50%);
+    transition: width 0.22s cubic-bezier(0.16,1,0.3,1);
 }}
 .top-navbar .stButton > button:hover {{
     color: #f5f5f7 !important;
-    background: rgba(255,255,255,0.06) !important;
+    background: rgba(255,255,255,0.05) !important;
+    transform: translateY(-1px) !important;
 }}
-.top-navbar [data-testid="baseButton-primary"] {{
+.top-navbar .stButton > button:hover::after {{ width: 42%; }}
+.top-navbar [data-testid="stBaseButton-primary"],
+.top-navbar [data-testid="baseButton-primary"],
+.top-navbar .stButton > button[kind="primary"] {{
     color: #ffffff !important; font-weight: 600 !important;
-    background: rgba(124,92,252,0.82) !important;
-    box-shadow: 0 0 12px rgba(124,92,252,0.30) !important;
+    background: linear-gradient(135deg,
+        rgba(124,92,252,0.95) 0%, rgba(109,40,217,0.95) 100%) !important;
+    box-shadow: 0 2px 14px rgba(124,92,252,0.45),
+        inset 0 1px 0 rgba(255,255,255,0.18) !important;
 }}
-.top-navbar [data-testid="baseButton-primary"]:hover {{
-    background: rgba(124,92,252,0.95) !important;
+.top-navbar [data-testid="stBaseButton-primary"]:hover,
+.top-navbar [data-testid="baseButton-primary"]:hover,
+.top-navbar .stButton > button[kind="primary"]:hover {{
+    background: linear-gradient(135deg,
+        rgba(138,108,255,1) 0%, rgba(124,58,237,1) 100%) !important;
     color: #ffffff !important;
+    transform: translateY(-1px) !important;
 }}
+.top-navbar [data-testid="stBaseButton-primary"]::after,
+.top-navbar [data-testid="baseButton-primary"]::after,
+.top-navbar .stButton > button[kind="primary"]::after {{ width: 0 !important; }}
 /* ── Responsive nav + content padding ───────────────────────────────── */
 @media (max-width: 1080px) {{
     .top-navbar [data-testid="stHorizontalBlock"] {{
@@ -506,6 +685,10 @@ section[data-testid="stMain"] > div:first-child {{
         render_compare()
     elif active == "Settings":
         render_settings()
+
+    # Bottom-of-page Previous / Next navigation so users don't have to scroll
+    # back to the top navbar to switch sections.
+    render_page_nav(active)
 
     # Single discreet MiFID II footer, shown once at the bottom of every page.
     render_global_footer()
@@ -1139,53 +1322,43 @@ def render_portfolio() -> None:
         unsafe_allow_html=True,
     )
 
-    default_live = (
-        st.session_state.get("default_data_mode", "")
-        == "Live market data (Phase B — requires network)"
-    )
-
-    # Toggle between mock data (Phase A) and live optimizer (Phase B)
-    use_live = st.toggle(
-        "Use live market data",
-        value=default_live,
-        help=(
-            "When disabled, the dashboard uses stable mock data for demonstration. "
-            "When enabled, it attempts to load current market prices via yfinance "
-            "and runs the HRP optimizer. Takes about 10 seconds on first load."
-        ),
-    )
-
-    # Load portfolio data, either from cache or by running the optimizer
+    # The dashboard always runs on live market data. Mock data is kept only as
+    # an automatic fallback if the network or optimizer is unreachable, so the
+    # app never breaks mid-demo — there is no user-facing data-source toggle.
     portfolio = st.session_state.get("portfolio_data", {})
     cached_label = st.session_state.get("portfolio_profile", "")
 
-    if use_live and (not portfolio or cached_label != profile_label):
-        # Run the live optimizer and store the result in session_state
-        with st.spinner("Downloading data and running HRP optimizer..."):
+    if not portfolio or cached_label != profile_label:
+        with st.spinner("Fetching live market data and running the HRP optimizer…"):
             try:
                 portfolio = _run_live_optimization(profile_label)
-                st.session_state["portfolio_data"] = portfolio
-                st.session_state["portfolio_profile"] = profile_label
-                st.session_state["recommendation_id"] = portfolio["recommendation_id"]
             except Exception as exc:
-                # Live data failed -- fall back to mock so the app keeps working
-                st.warning(f"Live data unavailable ({exc}). Using mock data instead.")
+                # Keep the dashboard usable if live prices can't be reached.
+                st.warning(
+                    f"Live market data is temporarily unavailable ({exc}). "
+                    "Showing a reference allocation until prices can be fetched again."
+                )
                 portfolio = _mock_optimization(profile_key)
-                st.session_state["portfolio_data"] = portfolio
-                st.session_state["portfolio_profile"] = profile_label
-                st.session_state["recommendation_id"] = portfolio["recommendation_id"]
-    elif not portfolio or cached_label != profile_label:
-        # Default path: load mock data (Phase A, always works)
-        portfolio = _mock_optimization(profile_key)
-        st.session_state["portfolio_data"] = portfolio
-        st.session_state["portfolio_profile"] = profile_label
-        st.session_state["recommendation_id"] = portfolio["recommendation_id"]
+            st.session_state["portfolio_data"] = portfolio
+            st.session_state["portfolio_profile"] = profile_label
+            st.session_state["recommendation_id"] = portfolio["recommendation_id"]
 
-    # Show where the data comes from
+    # Discreet data-source status line (no toggle — live is always preferred).
     if portfolio.get("source") == "live":
-        st.success("Live market data loaded successfully.")
+        st.markdown(
+            '<div style="font-size:0.8rem;color:#64748b;margin:-0.2rem 0 0.3rem;">'
+            '<span style="color:#0dcfb0;">●</span> Live market data · prices via yfinance'
+            '</div>',
+            unsafe_allow_html=True,
+        )
     else:
-        st.caption("Showing mock data (Phase A). Enable the toggle above for live prices.")
+        st.markdown(
+            '<div style="font-size:0.8rem;color:#64748b;margin:-0.2rem 0 0.3rem;">'
+            '<span style="color:#f59e0b;">●</span> Reference allocation · '
+            'live prices momentarily unavailable'
+            '</div>',
+            unsafe_allow_html=True,
+        )
 
     # Show a red banner if the regime detector flagged HIGH_STRESS
     regime = portfolio.get("stress_regime", "NORMAL")
@@ -3386,11 +3559,11 @@ def render_settings() -> None:
     st.markdown("---")
 
     st.markdown("**Data Source**")
-    st.radio(
-        "Default data mode for Portfolio Dashboard",
-        ["Mock data (Phase A — always works)", "Live market data (Phase B — requires network)"],
-        index=0,
-        key="default_data_mode",
+    st.caption(
+        "The Portfolio Dashboard always uses live market data (prices via "
+        "yfinance) and runs the HRP optimizer on the latest available history. "
+        "If the network is briefly unreachable it falls back to a cached "
+        "reference allocation so the app keeps working."
     )
 
     st.markdown("---")
