@@ -567,7 +567,7 @@ def _compute_profile(answers: dict[str, int]) -> dict:
 # ---------------------------------------------------------------------------
 
 def render_questionnaire() -> None:
-    page_header("Investor Profile Questionnaire", "Grable-Lytton Scale · 10 questions")
+    page_header("Investor Profile Questionnaire", "Grable-Lytton Scale · 10 questions", icon="🧭")
     render_disclaimer()
 
     # Info card — Grable-Lytton explanation (native <details> for full style control)
@@ -914,6 +914,7 @@ def render_portfolio() -> None:
     page_header(
         "Portfolio Dashboard",
         f"HRP optimization · {profile_label.capitalize()} profile",
+        icon="📊",
     )
     render_disclaimer()
     # (EU note moved to bottom — avoid duplicate banners at top)
