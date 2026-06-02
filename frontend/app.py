@@ -2128,6 +2128,9 @@ def _render_hrp_tab(portfolio: dict) -> None:
             profile_label=profile_label,
         )
         fig_risk = apply_plotly_dark_theme(fig_risk)
+        # The "Risk Contributions" section header above already titles this chart
+        # (outside the dark plot background), so drop the duplicate in-figure title.
+        fig_risk.update_layout(title_text="")
         st.plotly_chart(fig_risk, use_container_width=True, config={"displaylogo": False})
     except Exception as exc:
         st.caption(f"Risk contribution chart unavailable: {exc}")

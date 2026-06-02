@@ -115,14 +115,7 @@ def plot_risk_contributions(
         title += f" — {profile_label}"
 
     fig.update_layout(
-        title=dict(
-            text=title,
-            yref="paper",
-            y=1,
-            yanchor="bottom",
-            pad=dict(b=10),
-            automargin=True,
-        ),
+        title=title,
         xaxis_title="Risk Contribution (%)",
         yaxis_title="Asset",
         xaxis=dict(range=[0, max(values) * 1.2]),
