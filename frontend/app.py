@@ -87,7 +87,7 @@ _LABEL_TO_MOCK: dict[str, str] = {
 _DATA_START: str = "2023-01-01"
 
 ASSETS_DIR = Path(__file__).parent / "assets"
-LOGO_PATH = ASSETS_DIR / "logo.png"
+LOGO_PATH = ASSETS_DIR / "roboadvisor_robot_transparent.png"
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -301,13 +301,31 @@ def main() -> None:
         import base64 as _b64
         _logo_b64 = _b64.b64encode(LOGO_PATH.read_bytes()).decode()
         _logo_tag = (
+            f'<div style="'
+            f'width:62px;height:62px;'
+            f'display:flex;align-items:center;justify-content:center;'
+            f'background:rgba(124,92,252,0.13);'
+            f'border:1.5px solid rgba(124,92,252,0.38);'
+            f'border-radius:16px;'
+            f'box-shadow:0 0 18px rgba(124,92,252,0.28),0 2px 8px rgba(0,0,0,0.35);'
+            f'flex-shrink:0;">'
             f'<img src="data:image/png;base64,{_logo_b64}"'
-            ' style="height:28px;width:auto;" alt="RoboAdvisor">'
+            f' style="height:42px;width:auto;" alt="RoboAdvisor">'
+            f'</div>'
         )
     else:
         _logo_tag = (
-            '<span style="font-size:1.1rem;font-weight:700;color:#f5f5f7;'
-            "font-family:'Space Grotesk',sans-serif;\">RoboAdvisor</span>"
+            '<div style="'
+            'width:62px;height:62px;'
+            'display:flex;align-items:center;justify-content:center;'
+            'background:rgba(124,92,252,0.13);'
+            'border:1.5px solid rgba(124,92,252,0.38);'
+            'border-radius:16px;'
+            'box-shadow:0 0 18px rgba(124,92,252,0.28),0 2px 8px rgba(0,0,0,0.35);'
+            'flex-shrink:0;">'
+            '<span style="font-size:1.6rem;font-weight:700;color:#f5f5f7;'
+            "font-family:'Space Grotesk',sans-serif;\">R</span>"
+            '</div>'
         )
 
     # Step 3: render brand HTML + CSS; nav buttons added as st.columns below
@@ -318,68 +336,75 @@ header[data-testid="stHeader"] {{ display: none !important; }}
 [data-testid="stSidebarCollapsedControl"] {{ display: none !important; }}
 #MainMenu {{ visibility: hidden; }}
 section[data-testid="stMain"] > div:first-child {{
-    padding-top: 72px !important;
+    padding-top: 88px !important;
 }}
-/* ── Apple-style top navbar ─────────────────────────────────────────── */
+/* ── Top navbar ─────────────────────────────────────────────────────── */
 .top-navbar {{
     position: fixed; top: 0; left: 0;
-    width: 100%; height: 60px; z-index: 1000;
-    background: rgba(29,29,31,0.88);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    width: 100%; height: 76px; z-index: 1000;
+    background: rgba(13,17,28,0.92);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
     display: flex; align-items: center; justify-content: space-between;
-    padding: 0 40px; box-sizing: border-box;
-    border-bottom: 1px solid rgba(255,255,255,0.08);
+    padding: 0 36px; box-sizing: border-box;
+    border-bottom: 1px solid rgba(124,92,252,0.14);
+    box-shadow: 0 2px 24px rgba(0,0,0,0.38);
     flex-wrap: nowrap;
     overflow: visible;
 }}
 .top-navbar .brand {{
-    display: flex; align-items: center; gap: 10px;
-    min-width: 220px; flex-shrink: 0; text-decoration: none;
+    display: flex; align-items: center; gap: 14px;
+    min-width: 260px; flex-shrink: 0; text-decoration: none;
 }}
 .top-navbar .brand-name {{
-    font-size: 15px; font-weight: 600; color: #f5f5f7;
-    letter-spacing: -0.2px;
+    font-size: 19px; font-weight: 700; color: #f5f5f7;
+    letter-spacing: -0.4px; line-height: 1.2;
     font-family: 'Space Grotesk', -apple-system, sans-serif;
 }}
 .top-navbar .brand-sub {{
-    font-size: 9px; letter-spacing: 0.10em;
-    color: rgba(245,245,247,0.35); text-transform: uppercase;
-    line-height: 1.2;
+    font-size: 9.5px; letter-spacing: 0.09em;
+    color: rgba(245,245,247,0.44); text-transform: uppercase;
+    line-height: 1.3; margin-top: 3px;
 }}
 /* ── Streamlit button row moved inside navbar by JS ─────────────────── */
 .top-navbar [data-testid="stHorizontalBlock"] {{
     display: flex !important; align-items: center !important;
     flex: 1 1 auto !important; justify-content: flex-end !important;
-    gap: 4px !important; background: transparent !important;
+    gap: 2px !important; background: transparent !important;
     padding: 0 !important; margin: 0 !important;
     flex-wrap: nowrap !important; min-width: 0 !important;
-    overflow: visible !important; max-height: 60px !important;
+    overflow: visible !important; max-height: 76px !important;
 }}
 .top-navbar [data-testid="stHorizontalBlock"] > div {{
     flex: 0 0 auto !important; width: auto !important;
     min-width: unset !important; padding: 0 !important;
-    max-height: 60px !important;
+    max-height: 76px !important;
 }}
 .top-navbar .stButton > button {{
     background: transparent !important;
     border: none !important; box-shadow: none !important;
-    color: rgba(245,245,247,0.68) !important;
+    color: rgba(245,245,247,0.60) !important;
     font-size: 13px !important; font-weight: 400 !important;
     letter-spacing: -0.1px !important;
-    padding: 5px 11px !important; border-radius: 6px !important;
-    min-height: unset !important; height: 32px !important;
+    padding: 6px 13px !important; border-radius: 8px !important;
+    min-height: unset !important; height: 36px !important;
     white-space: nowrap !important;
-    transition: color 0.18s ease, background 0.18s ease !important;
+    transition: color 0.16s ease, background 0.16s ease !important;
     font-family: -apple-system, 'Space Grotesk', sans-serif !important;
+    display: inline-flex !important; align-items: center !important; gap: 6px !important;
 }}
 .top-navbar .stButton > button:hover {{
     color: #f5f5f7 !important;
-    background: rgba(255,255,255,0.07) !important;
+    background: rgba(255,255,255,0.06) !important;
 }}
 .top-navbar [data-testid="baseButton-primary"] {{
-    color: #f5f5f7 !important; font-weight: 500 !important;
-    background: rgba(255,255,255,0.10) !important;
+    color: #ffffff !important; font-weight: 600 !important;
+    background: rgba(124,92,252,0.82) !important;
+    box-shadow: 0 0 12px rgba(124,92,252,0.30) !important;
+}}
+.top-navbar [data-testid="baseButton-primary"]:hover {{
+    background: rgba(124,92,252,0.95) !important;
+    color: #ffffff !important;
 }}
 /* ── Responsive nav + content padding ───────────────────────────────── */
 @media (max-width: 1080px) {{
@@ -394,7 +419,7 @@ section[data-testid="stMain"] > div:first-child {{
 }}
 @media (max-width: 1080px) {{
     section[data-testid="stMain"] > div:first-child {{
-        padding-top: 64px !important;
+        padding-top: 80px !important;
     }}
 }}
 </style>
@@ -427,25 +452,46 @@ section[data-testid="stMain"] > div:first-child {{
                 st.query_params["page"] = _page
                 st.rerun()
 
-    # Step 5: JS — move stHorizontalBlock into .top-navbar, then watch overflow
+    # Step 5: JS — move stHorizontalBlock into .top-navbar and inject SVG icons
+    _icon_js_map = "{" + ",".join(
+        f'"{p}": `{_NAV_SVGS[p]}`' for p in PAGES if p in _NAV_SVGS
+    ) + "}"
     import streamlit.components.v1 as _stc
     _stc.html(
-        """<script>
-(function () {
-    /* Move the nav button row into the fixed .top-navbar element. */
-    function move() {
+        f"""<script>
+(function () {{
+    var icons = {_icon_js_map};
+    function injectIcons() {{
+        var btns = window.parent.document.querySelectorAll('.top-navbar .stButton > button');
+        btns.forEach(function(btn) {{
+            var label = btn.textContent.trim();
+            if (icons[label] && !btn.querySelector('svg')) {{
+                var wrap = window.parent.document.createElement('span');
+                wrap.style.cssText = 'display:inline-flex;align-items:center;'
+                    + 'gap:6px;pointer-events:none;';
+                wrap.innerHTML = icons[label] + '<span>' + label + '</span>';
+                btn.innerHTML = '';
+                btn.appendChild(wrap);
+            }}
+        }});
+    }}
+    function move() {{
         var nav = window.parent.document.querySelector('.top-navbar');
         var block = window.parent.document.querySelector(
             '[data-testid="stHorizontalBlock"]'
         );
-        if (nav && block) {
-            if (!nav.contains(block)) { nav.appendChild(block); }
-        } else {
+        if (nav && block) {{
+            if (!nav.contains(block)) {{ nav.appendChild(block); }}
+            injectIcons();
+        }} else {{
             setTimeout(move, 50);
-        }
-    }
+        }}
+    }}
     move();
-}());
+    /* Re-inject after Streamlit rerenders */
+    setTimeout(injectIcons, 400);
+    setTimeout(injectIcons, 900);
+}}());
 </script>""",
         height=0,
     )
