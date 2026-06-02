@@ -68,6 +68,13 @@ def plot_weights_donut(weights: dict[str, float]) -> go.Figure:
                 xref="paper", yref="paper",
             )
         ],
+        modebar_remove=[
+            "select2d", "lasso2d", "autoScale2d",
+            "hoverClosestCartesian", "hoverCompareCartesian",
+            "toggleSpikelines", "zoomIn2d", "zoomOut2d",
+        ],
+        modebar_add=["resetScale2d"],
+        dragmode="pan",
     )
 
     return fig
@@ -115,22 +122,12 @@ def plot_risk_contributions(
         height=400,
         margin=dict(l=20, r=40, t=50, b=40),
         modebar_remove=[
-            "select",
-            "lasso2d",
-            "autoScale2d",
-            "hoverClosestCartesian",
-            "hoverCompareCartesian",
-            "toggleSpikelines",
-            "zoomIn2d",
-            "zoomOut2d",
+            "select2d", "lasso2d", "autoScale2d",
+            "hoverClosestCartesian", "hoverCompareCartesian",
+            "toggleSpikelines", "zoomIn2d", "zoomOut2d",
         ],
-        modebar_add=[
-            "zoomIn2d",
-            "zoomOut2d",
-            "pan2d",
-            "resetScale2d",
-            "toImage",
-        ],
+        modebar_add=["resetScale2d"],
+        dragmode="pan",
     )
 
     return fig
@@ -179,22 +176,12 @@ def plot_dendrogram(
         height=400,
         margin=dict(l=20, r=20, t=50, b=80),
         modebar_remove=[
-            "select",
-            "lasso2d",
-            "autoScale2d",
-            "hoverClosestCartesian",
-            "hoverCompareCartesian",
-            "toggleSpikelines",
-            "zoomIn2d",
-            "zoomOut2d",
+            "select2d", "lasso2d", "autoScale2d",
+            "hoverClosestCartesian", "hoverCompareCartesian",
+            "toggleSpikelines", "zoomIn2d", "zoomOut2d",
         ],
-        modebar_add=[
-            "zoomIn2d",
-            "zoomOut2d",
-            "pan2d",
-            "resetScale2d",
-            "toImage",
-        ],
+        modebar_add=["resetScale2d"],
+        dragmode="pan",
     )
 
     return fig
@@ -261,22 +248,12 @@ def plot_drawdown(
         margin=dict(l=20, r=20, t=50, b=40),
         legend=dict(orientation="h", yanchor="bottom", y=1.02),
         modebar_remove=[
-            "select",
-            "lasso2d",
-            "autoScale2d",
-            "hoverClosestCartesian",
-            "hoverCompareCartesian",
-            "toggleSpikelines",
-            "zoomIn2d",
-            "zoomOut2d",
+            "select2d", "lasso2d", "autoScale2d",
+            "hoverClosestCartesian", "hoverCompareCartesian",
+            "toggleSpikelines", "zoomIn2d", "zoomOut2d",
         ],
-        modebar_add=[
-            "zoomIn2d",
-            "zoomOut2d",
-            "pan2d",
-            "resetScale2d",
-            "toImage",
-        ],
+        modebar_add=["resetScale2d"],
+        dragmode="pan",
     )
 
     return fig
@@ -353,22 +330,12 @@ def plot_efficient_frontier(
         margin=dict(l=20, r=20, t=50, b=40),
         legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0),
         modebar_remove=[
-            "select",
-            "lasso2d",
-            "autoScale2d",
-            "hoverClosestCartesian",
-            "hoverCompareCartesian",
-            "toggleSpikelines",
-            "zoomIn2d",
-            "zoomOut2d",
+            "select2d", "lasso2d", "autoScale2d",
+            "hoverClosestCartesian", "hoverCompareCartesian",
+            "toggleSpikelines", "zoomIn2d", "zoomOut2d",
         ],
-        modebar_add=[
-            "zoomIn2d",
-            "zoomOut2d",
-            "pan2d",
-            "resetScale2d",
-            "toImage",
-        ],
+        modebar_add=["resetScale2d"],
+        dragmode="pan",
     )
 
     return fig

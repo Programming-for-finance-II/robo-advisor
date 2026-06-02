@@ -1275,6 +1275,13 @@ def _build_perf_chart(
         xaxis=xaxis,
         yaxis=yaxis,
         hovermode="x unified",
+        modebar_remove=[
+            "select2d", "lasso2d", "autoScale2d",
+            "hoverClosestCartesian", "hoverCompareCartesian",
+            "toggleSpikelines", "zoomIn2d", "zoomOut2d",
+        ],
+        modebar_add=["resetScale2d"],
+        dragmode="pan",
     )
     return fig
 
@@ -1791,18 +1798,15 @@ def _render_etf_explorer() -> None:
                     gridcolor="rgba(255,255,255,0.05)", color="#64748b",
                     range=[y_lo - y_pad, y_hi + y_pad], fixedrange=False,
                 ),
-            )
-            chart_config = {
-                "modeBarButtonsToRemove": [
-                    "select2d", "lasso2d",
+                modebar_remove=[
+                    "select2d", "lasso2d", "autoScale2d",
                     "hoverClosestCartesian", "hoverCompareCartesian",
-                    "toggleSpikelines",
+                    "toggleSpikelines", "zoomIn2d", "zoomOut2d",
                 ],
-                "modeBarButtonsToAdd": [
-                    "zoomIn2d", "zoomOut2d", "pan2d", "resetScale2d", "toImage",
-                ],
-                "displaylogo": False,
-            }
+                modebar_add=["resetScale2d"],
+                dragmode="pan",
+            )
+            chart_config = {"displaylogo": False}
             st.plotly_chart(
                 fig, use_container_width=True, config=chart_config,
                 key=f"etf_price_{selected}",
@@ -2024,7 +2028,7 @@ def _render_hrp_tab(portfolio: dict) -> None:
             window_days=window_days,
         )
         fig_perf = apply_plotly_dark_theme(fig_perf)
-        st.plotly_chart(fig_perf, use_container_width=True)
+        st.plotly_chart(fig_perf, use_container_width=True, config={"displaylogo": False})
     except Exception as exc:
         st.caption(f"Performance chart unavailable: {exc}")
 
@@ -2076,7 +2080,7 @@ def _render_hrp_tab(portfolio: dict) -> None:
         from backend.optimizer.charts import plot_weights_donut
         fig_donut = plot_weights_donut(weights)
         fig_donut = apply_plotly_dark_theme(fig_donut)
-        st.plotly_chart(fig_donut, use_container_width=True)
+        st.plotly_chart(fig_donut, use_container_width=True, config={"displaylogo": False})
     except Exception as exc:
         st.caption(f"Allocation chart unavailable: {exc}")
 
@@ -2124,7 +2128,7 @@ def _render_hrp_tab(portfolio: dict) -> None:
             profile_label=profile_label,
         )
         fig_risk = apply_plotly_dark_theme(fig_risk)
-        st.plotly_chart(fig_risk, use_container_width=True)
+        st.plotly_chart(fig_risk, use_container_width=True, config={"displaylogo": False})
     except Exception as exc:
         st.caption(f"Risk contribution chart unavailable: {exc}")
 
@@ -2240,7 +2244,7 @@ def _render_hrp_tab(portfolio: dict) -> None:
                     tickfont=dict(color="#64748b", size=10),
                 ),
             )
-            st.plotly_chart(fig_dend, use_container_width=True)
+            st.plotly_chart(fig_dend, use_container_width=True, config={"displaylogo": False})
 
         except Exception as exc:
             st.caption(f"Dendrogram unavailable: {exc}")
@@ -3086,8 +3090,17 @@ def render_backtesting() -> None:
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
         )
         fig = apply_plotly_dark_theme(fig)
-        fig.update_layout(margin=dict(t=56))
-        st.plotly_chart(fig, use_container_width=True)
+        fig.update_layout(
+            margin=dict(t=56),
+            modebar_remove=[
+                "select2d", "lasso2d", "autoScale2d",
+                "hoverClosestCartesian", "hoverCompareCartesian",
+                "toggleSpikelines", "zoomIn2d", "zoomOut2d",
+            ],
+            modebar_add=["resetScale2d"],
+            dragmode="pan",
+        )
+        st.plotly_chart(fig, use_container_width=True, config={"displaylogo": False})
 
         # ── Drawdown chart ───────────────────────────────────────────────────
         import numpy as np
@@ -3120,8 +3133,17 @@ def render_backtesting() -> None:
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
         )
         fig_dd = apply_plotly_dark_theme(fig_dd)
-        fig_dd.update_layout(margin=dict(t=56))
-        st.plotly_chart(fig_dd, use_container_width=True)
+        fig_dd.update_layout(
+            margin=dict(t=56),
+            modebar_remove=[
+                "select2d", "lasso2d", "autoScale2d",
+                "hoverClosestCartesian", "hoverCompareCartesian",
+                "toggleSpikelines", "zoomIn2d", "zoomOut2d",
+            ],
+            modebar_add=["resetScale2d"],
+            dragmode="pan",
+        )
+        st.plotly_chart(fig_dd, use_container_width=True, config={"displaylogo": False})
 
     st.caption(
         "Profile: MODERATE · Rebalancing: monthly · TC: 10 bps/rebalance · "
@@ -3274,8 +3296,17 @@ def render_compare() -> None:
         margin=dict(l=40, r=40, t=60, b=40),
     )
     fig_radar = apply_plotly_dark_theme(fig_radar)
-    fig_radar.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
-    st.plotly_chart(fig_radar, use_container_width=True)
+    fig_radar.update_layout(
+        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+        modebar_remove=[
+            "select2d", "lasso2d", "autoScale2d",
+            "hoverClosestCartesian", "hoverCompareCartesian",
+            "toggleSpikelines", "zoomIn2d", "zoomOut2d",
+        ],
+        modebar_add=["resetScale2d"],
+        dragmode="pan",
+    )
+    st.plotly_chart(fig_radar, use_container_width=True, config={"displaylogo": False})
     st.caption(
         "All axes normalised to [0, 1]. "
         "Low Risk = 1 − σ (normalised). "
@@ -3320,8 +3351,17 @@ def render_compare() -> None:
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
     )
     fig_rc = apply_plotly_dark_theme(fig_rc)
-    fig_rc.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
-    st.plotly_chart(fig_rc, use_container_width=True)
+    fig_rc.update_layout(
+        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+        modebar_remove=[
+            "select2d", "lasso2d", "autoScale2d",
+            "hoverClosestCartesian", "hoverCompareCartesian",
+            "toggleSpikelines", "zoomIn2d", "zoomOut2d",
+        ],
+        modebar_add=["resetScale2d"],
+        dragmode="pan",
+    )
+    st.plotly_chart(fig_rc, use_container_width=True, config={"displaylogo": False})
     st.caption(
         "HRP targets equal risk contributions across assets. "
         "MV concentrates risk in low-volatility assets (bonds), "
@@ -3368,8 +3408,17 @@ def render_compare() -> None:
     ))
     fig_hm.update_layout(height=420, margin=dict(l=8, r=8, t=8, b=8))
     fig_hm = apply_plotly_dark_theme(fig_hm)
-    fig_hm.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
-    st.plotly_chart(fig_hm, use_container_width=True)
+    fig_hm.update_layout(
+        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+        modebar_remove=[
+            "select2d", "lasso2d", "autoScale2d",
+            "hoverClosestCartesian", "hoverCompareCartesian",
+            "toggleSpikelines", "zoomIn2d", "zoomOut2d",
+        ],
+        modebar_add=["resetScale2d"],
+        dragmode="pan",
+    )
+    st.plotly_chart(fig_hm, use_container_width=True, config={"displaylogo": False})
     st.caption(
         "Correlation matrix used by HRP to build the hierarchical cluster tree. "
         "Negative equity–bond correlation (flight-to-quality) is the key diversification driver. "
