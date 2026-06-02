@@ -384,7 +384,7 @@ section[data-testid="stMain"] > div:first-child {{
     background: transparent !important;
     border: none !important; box-shadow: none !important;
     color: rgba(245,245,247,0.60) !important;
-    font-size: 13px !important; font-weight: 400 !important;
+    font-size: 13px !important; font-weight: 500 !important;
     letter-spacing: -0.1px !important;
     padding: 6px 13px !important; border-radius: 8px !important;
     min-height: unset !important; height: 36px !important;
