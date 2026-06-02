@@ -1209,10 +1209,21 @@ def render_portfolio() -> None:
     render_eu_note()
 
 
-def _build_perf_chart(exp_ret: float, vol: float, n_days: int, seed: int = 42):
+def _build_perf_chart(
+    exp_ret: float,
+    vol: float,
+    n_days: int,
+    window_days: int | None = None,
+    seed: int = 42,
+):
     """
     Build a synthetic cumulative-return line chart (HRP vs 60/40 benchmark).
     Uses a fixed-seed RNG so the chart is stable across Streamlit reruns.
+
+    The figure always holds the *full* ``n_days`` history. ``window_days``
+    only sets the initial visible window (x/y range); because the data is all
+    present and ``fixedrange=False``, zooming or panning out reveals the real
+    series outside that initial window instead of empty space.
     """
     from datetime import date, timedelta
 
@@ -1244,33 +1255,25 @@ def _build_perf_chart(exp_ret: float, vol: float, n_days: int, seed: int = 42):
         mode="lines", name="60/40 Benchmark",
         line=dict(color="#94a3b8", width=2, dash="dot"),
     ))
+
+    # Clean look (no in-chart rangeselector/rangeslider). The Streamlit radio
+    # picks the initial window; fixedrange=False keeps zoom-out working so the
+    # rest of the real series is reachable by panning/zooming out.
+    xaxis = dict(fixedrange=False)
+    yaxis = dict(title="Portfolio value (base 100)", fixedrange=False)
+    if window_days and 0 < window_days < n_days:
+        w = window_days
+        xaxis["range"] = [dates[-w], dates[-1]]
+        win_vals = np.concatenate([hrp_cum[-w:], bm_cum[-w:]])
+        y_lo, y_hi = float(win_vals.min()), float(win_vals.max())
+        pad = (y_hi - y_lo) * 0.08 or 1.0
+        yaxis["range"] = [y_lo - pad, y_hi + pad]
+
     fig.update_layout(
         height=420,
         legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0),
-        # No hardcoded xaxis.range: the figure always holds the full series so
-        # zooming out (or hitting "All") reveals every available data point.
-        # The rangeselector handles windowing client-side; it loads at full
-        # extent. autorange + fixedrange=False keep zoom-out working.
-        xaxis=dict(
-            autorange=True,
-            fixedrange=False,
-            rangeslider=dict(visible=True),
-            rangeselector=dict(
-                buttons=[
-                    dict(count=1, label="1M", step="month", stepmode="backward"),
-                    dict(count=3, label="3M", step="month", stepmode="backward"),
-                    dict(count=6, label="6M", step="month", stepmode="backward"),
-                    dict(count=1, label="1Y", step="year", stepmode="backward"),
-                    dict(count=3, label="3Y", step="year", stepmode="backward"),
-                    dict(step="all", label="All"),
-                ],
-            ),
-        ),
-        yaxis=dict(
-            title="Portfolio value (base 100)",
-            autorange=True,
-            fixedrange=False,
-        ),
+        xaxis=xaxis,
+        yaxis=yaxis,
         hovermode="x unified",
     )
     return fig
@@ -1755,14 +1758,23 @@ def _render_etf_explorer() -> None:
                     float(sliced.iloc[-1]) / float(sliced.iloc[0]) - 1.0
                 ) * 100.0
 
+            # Plot the FULL downloaded series, but open on the selected window.
+            # fixedrange=False keeps the rest reachable by zooming/panning out
+            # (the previous version plotted only the slice, so zoom-out showed
+            # empty space). The y-range is fitted to the window so the initial
+            # view stays well-scaled rather than flattened by the full history.
             fig = go.Figure()
             fig.add_trace(go.Scatter(
-                x=sliced.index, y=sliced.values,
+                x=close.index, y=close.values,
                 mode="lines",
                 line=dict(color=line_color, width=2),
                 fill="tozeroy", fillcolor=fill_color,
                 name=selected,
             ))
+            x_range = [sliced.index[0], close.index[-1]]
+            sv = sliced.astype(float)
+            y_lo, y_hi = float(sv.min()), float(sv.max())
+            y_pad = (y_hi - y_lo) * 0.08 or (abs(y_hi) * 0.02 or 1.0)
             fig.update_layout(
                 margin=dict(l=0, r=0, t=8, b=0),
                 height=220,
@@ -1770,15 +1782,19 @@ def _render_etf_explorer() -> None:
                 paper_bgcolor="rgba(0,0,0,0)",
                 showlegend=False,
                 hovermode="x",
-                xaxis=dict(showgrid=False, color="#64748b"),
+                xaxis=dict(
+                    showgrid=False, color="#64748b",
+                    range=x_range, fixedrange=False,
+                ),
                 yaxis=dict(
                     side="right", showgrid=True,
                     gridcolor="rgba(255,255,255,0.05)", color="#64748b",
+                    range=[y_lo - y_pad, y_hi + y_pad], fixedrange=False,
                 ),
             )
             chart_config = {
                 "modeBarButtonsToRemove": [
-                    "select2d", "lasso2d", "autoScale2d",
+                    "select2d", "lasso2d",
                     "hoverClosestCartesian", "hoverCompareCartesian",
                     "toggleSpikelines",
                 ],
@@ -1975,22 +1991,37 @@ def _render_hrp_tab(portfolio: dict) -> None:
     _section_header("1", "Portfolio Performance")
     _section_desc(
         "The chart tracks the growth of a $100,000 notional investment in the HRP portfolio "
-        "over time, compared to a 60/40 equity-bond benchmark. "
-        "Values are indexed to 100 at the start of the period. "
-        "Use the range selector buttons (1M–All) or the slider below the chart to zoom in on "
-        "shorter or longer horizons; zooming out always reveals the full history. "
+        "over the selected time window, compared to a 60/40 equity-bond benchmark. "
+        "Values are indexed to 100 at the start of the full history. "
+        "Use the period selector to set the window; the rest of the history stays available, "
+        "so zooming or panning out reveals what happens outside the initial window. "
         "Past performance is simulated and does not guarantee future results."
     )
 
-    # The figure always holds the full history; windowing is handled in-browser
-    # by the Plotly rangeselector/rangeslider, so zooming out reveals all data.
-    _FULL_HISTORY_DAYS = 1764  # ~7y of business days
+    _PERIOD_DAYS: dict[str, int] = {
+        "1M": 21, "3M": 63, "6M": 126, "1Y": 252, "3Y": 756, "All": 1764,
+    }
+    period = st.radio(
+        "period",
+        list(_PERIOD_DAYS.keys()),
+        index=3,
+        horizontal=True,
+        label_visibility="collapsed",
+    )
+
+    # The figure always holds the full ~7y history; the radio only sets the
+    # initial visible window. With fixedrange=False, zooming/panning out then
+    # reveals the real series outside that window (the previous version sliced
+    # the data to the window, so zoom-out showed empty space).
+    _FULL_HISTORY_DAYS = _PERIOD_DAYS["All"]
+    window_days = _PERIOD_DAYS[period]
 
     try:
         fig_perf = _build_perf_chart(
             exp_ret=exp_ret if exp_ret is not None else 0.06,
             vol=vol if vol > 0 else 0.10,
             n_days=_FULL_HISTORY_DAYS,
+            window_days=window_days,
         )
         fig_perf = apply_plotly_dark_theme(fig_perf)
         st.plotly_chart(fig_perf, use_container_width=True)
