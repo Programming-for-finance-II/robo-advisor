@@ -467,7 +467,8 @@ section[data-testid="stMain"] > div:first-child {{
             var label = btn.textContent.trim();
             if (icons[label] && !btn.querySelector('svg')) {{
                 var wrap = window.parent.document.createElement('span');
-                wrap.style.cssText = 'display:inline-flex;align-items:center;gap:6px;pointer-events:none;';
+                wrap.style.cssText = 'display:inline-flex;align-items:center;'
+                    + 'gap:6px;pointer-events:none;';
                 wrap.innerHTML = icons[label] + '<span>' + label + '</span>';
                 btn.innerHTML = '';
                 btn.appendChild(wrap);
