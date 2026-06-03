@@ -1943,11 +1943,12 @@ ETF_METADATA: dict[str, dict] = {
 
 
 def _section_header(number: str, title: str) -> None:
+    prefix = f"{number}. " if number else ""
     st.markdown(
         f'<div style="border-left:3px solid #7c5cfc;padding-left:0.9rem;margin-bottom:0.8rem;">'
         f'<div style="font-family:\'Space Grotesk\',sans-serif;'
         f'font-size:1.2rem;font-weight:700;color:#f1f5f9;letter-spacing:-0.01em;">'
-        f'{number}. {title}</div>'
+        f'{prefix}{title}</div>'
         f'</div>',
         unsafe_allow_html=True,
     )
@@ -3306,15 +3307,18 @@ def render_compare() -> None:
             justify-content:center;font-size:0.95rem;">⚖️</div>
             <div>
                 <div style="font-family:'Space Grotesk',sans-serif;font-size:0.9rem;
-                font-weight:600;color:#e2e8f0;margin-bottom:0.25rem;">
-                    Markowitz Mean-Variance (MV) — benchmark
+                font-weight:600;color:#e2e8f0;margin-bottom:0.45rem;">
+                    Markowitz Mean-Variance (MV) — classical benchmark
                 </div>
-                <div style="font-size:0.79rem;color:#64748b;line-height:1.55;">
-                    Markowitz (1952) maximises the Sharpe ratio given expected returns
-                    and a covariance matrix. It typically produces concentrated portfolios
-                    sensitive to estimation error ("corner solutions"). Used here as a
-                    benchmark to highlight the diversification benefits of HRP.
-                    Phase A values are mock; enable live data for real MV weights.
+                <div style="font-size:0.79rem;color:#94a3b8;line-height:1.6;margin-bottom:0.45rem;">
+                    Mean-variance optimization, introduced by Markowitz in 1952, builds portfolios
+                    by maximising expected return for a given level of risk. It remains the standard
+                    academic reference for portfolio construction.
+                </div>
+                <div style="font-size:0.79rem;color:#94a3b8;line-height:1.6;">
+                    In practice, the approach is sensitive to estimation error in returns and
+                    covariances, and tends to produce concentrated allocations &#8212; often called
+                    &#8220;corner solutions&#8221; &#8212; where a few assets dominate.
                 </div>
             </div>
         </div>
@@ -3354,7 +3358,17 @@ def render_compare() -> None:
     st.markdown("---")
 
     # ── 1. Radar chart ────────────────────────────────────────────────────────
-    st.markdown("**Multi-dimensional comparison**")
+    _section_header("1", "Portfolio Quality Comparison")
+    st.markdown(
+        "<p style='color:#94a3b8;font-size:0.82rem;line-height:1.55;margin-bottom:0.5rem;'>"
+        "This chart summarizes the trade-offs between the recommended HRP portfolio and the "
+        "classical Markowitz benchmark. Each dimension is normalized from 0 to 1, where higher "
+        "values indicate a stronger result. The goal is to help users understand whether the HRP "
+        "allocation is more diversified, more defensive, or more robust than the traditional "
+        "mean-variance alternative."
+        "</p>",
+        unsafe_allow_html=True,
+    )
 
     def _hhi(w: dict) -> float:
         return sum(v ** 2 for v in w.values())
@@ -3440,7 +3454,15 @@ def render_compare() -> None:
 
     # ── 2. Risk contributions ─────────────────────────────────────────────────
     st.markdown("---")
-    st.markdown("**Risk contributions — who drives portfolio risk?**")
+    _section_header("2", "Risk Contributions")
+    st.markdown(
+        "<p style='color:#94a3b8;font-size:0.82rem;line-height:1.55;margin-bottom:0.5rem;'>"
+        "Portfolio weights do not always reveal where risk really comes from. This chart shows "
+        "each ETF's contribution to total portfolio risk and compares whether HRP and Markowitz "
+        "distribute volatility evenly or concentrate it in a few assets."
+        "</p>",
+        unsafe_allow_html=True,
+    )
 
     all_tickers = sorted(
         set(hrp_rc) | set(mv_rc),
@@ -3493,7 +3515,19 @@ def render_compare() -> None:
 
     # ── 3. Correlation heatmap ────────────────────────────────────────────────
     st.markdown("---")
-    st.markdown("**Asset correlation matrix**")
+    _section_header("3", "Asset Correlation Matrix")
+    st.markdown(
+        "<p style='color:#94a3b8;font-size:0.82rem;line-height:1.55;margin-bottom:0.5rem;'>"
+        "Diversification is not only about holding many ETFs, but about combining assets that "
+        "behave differently. This matrix shows the correlation structure of the ETF universe and "
+        "explains why HRP groups some assets together while separating others."
+        "</p>",
+        unsafe_allow_html=True,
+    )
+    st.caption(
+        "How to read it: values in the matrix close to 1 indicate assets moving together, "
+        "while values near 0 or below 0 indicate stronger diversification potential."
+    )
 
     _TICKERS_HM = ["CSPX.L", "EFA", "GLD", "VNQ", "AGGH.MI", "TLT", "TIP", "XEON.MI"]
     _CORR = np.array([
@@ -3553,12 +3587,91 @@ def render_compare() -> None:
 # Page 6 -- Settings
 # ---------------------------------------------------------------------------
 
+def _team_img_b64(filename: str) -> str:
+    """Return a base64 data-URI for a team photo, or empty string if missing."""
+    import base64 as _b64
+    path = ASSETS_DIR / "team" / filename
+    if path.exists():
+        return "data:image/png;base64," + _b64.b64encode(path.read_bytes()).decode()
+    return ""
+
+
+def render_team_section() -> None:
+    """Render the Team section on the Settings page."""
+    _TEAM = [
+        {
+            "img": "p1_sabrina.png",
+            "name": "Sabrina Virgillito",
+            "role": "Backend Developer",
+            "resp": "API · database design · data pipeline",
+            "color": "#7c5cfc",
+        },
+        {
+            "img": "p2_emma.png",
+            "name": "Emma Erba",
+            "role": "Quantitative Analyst",
+            "resp": "Portfolio optimization · HRP · risk models",
+            "color": "#0dcfb0",
+        },
+        {
+            "img": "p3_matteo.png",
+            "name": "Matteo Buttiglieri",
+            "role": "ML Engineer",
+            "resp": "ML profiling · model training · evaluation",
+            "color": "#f87171",
+        },
+        {
+            "img": "p4_elena.png",
+            "name": "Elena Trombini",
+            "role": "Frontend / LLM / Docs",
+            "resp": "UI/UX · dashboard · LLM advisor · documentation",
+            "color": "#fbbf24",
+        },
+    ]
+
+    cards_html = (
+        '<div style="display:flex;flex-wrap:wrap;gap:1rem;'
+        'margin-top:0.75rem;justify-content:center;">'
+    )
+    for m in _TEAM:
+        src = _team_img_b64(m["img"])
+        img_tag = (
+            f'<div style="width:100px;height:100px;border-radius:50%;'
+            f'background:#ffffff;border:2px solid {m["color"]}55;'
+            f'overflow:hidden;margin-bottom:0.65rem;flex-shrink:0;">'
+            f'<img src="{src}" alt="{m["name"]}" '
+            f'style="width:100%;height:100%;object-fit:cover;display:block;">'
+            f'</div>'
+            if src else
+            f'<div style="width:100px;height:100px;border-radius:50%;'
+            f'background:#ffffff;border:2px solid {m["color"]}55;'
+            f'display:flex;align-items:center;justify-content:center;'
+            f'font-size:1.5rem;margin-bottom:0.65rem;">👤</div>'
+        )
+        cards_html += (
+            f'<div style="flex:1 1 200px;max-width:260px;'
+            f'background:rgba(30,38,64,0.5);border:1px solid #1e2640;'
+            f'border-top:2px solid {m["color"]};border-radius:12px;'
+            f'padding:1.1rem 1rem;display:flex;flex-direction:column;'
+            f'align-items:center;text-align:center;">'
+            f'{img_tag}'
+            f'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:0.9rem;'
+            f'font-weight:600;color:#e2e8f0;margin-bottom:0.2rem;">{m["name"]}</div>'
+            f'<div style="font-size:0.75rem;font-weight:600;color:{m["color"]};'
+            f'letter-spacing:0.03em;margin-bottom:0.4rem;">{m["role"]}</div>'
+            f'<div style="font-size:0.73rem;color:#64748b;line-height:1.5;">{m["resp"]}</div>'
+            f'</div>'
+        )
+    cards_html += '</div>'
+    st.markdown(cards_html, unsafe_allow_html=True)
+
+
 def render_settings() -> None:
     """Platform configuration and status page."""
     page_header("Settings", "Platform configuration")
     st.markdown("---")
 
-    st.markdown("**Data Source**")
+    _section_header("", "Data Source")
     st.caption(
         "The Portfolio Dashboard always uses live market data (prices via "
         "yfinance) and runs the HRP optimizer on the latest available history. "
@@ -3567,7 +3680,7 @@ def render_settings() -> None:
     )
 
     st.markdown("---")
-    st.markdown("**API Status**")
+    _section_header("", "API Status")
     api_key = os.environ.get("ANTHROPIC_API_KEY", "")
     if not api_key:
         try:
@@ -3580,10 +3693,13 @@ def render_settings() -> None:
         st.error("Claude API key not found — Chat Advisor will not work.")
 
     st.markdown("---")
-    st.markdown("**About**")
+    _section_header("", "Team")
+    render_team_section()
+
+    st.markdown("---")
+    _section_header("", "About")
     st.caption("AI-Powered Robo-Advisor Platform · USI Programming in Finance II 2026")
     st.caption("Design v3.1 · HRP + LLM Narrator + EU Awareness")
-    st.caption("Team: P1 Backend · P2 Quant · P3 ML · P4 Frontend/LLM/Docs")
 
 
 # ---------------------------------------------------------------------------
