@@ -3630,7 +3630,8 @@ def render_team_section() -> None:
     ]
 
     cards_html = (
-        '<div style="display:flex;flex-wrap:wrap;gap:1rem;margin-top:0.75rem;justify-content:center;">'
+        '<div style="display:flex;flex-wrap:wrap;gap:1rem;'
+        'margin-top:0.75rem;justify-content:center;">'
     )
     for m in _TEAM:
         src = _team_img_b64(m["img"])
