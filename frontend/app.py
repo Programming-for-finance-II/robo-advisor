@@ -3296,16 +3296,6 @@ def render_compare() -> None:
     page_header("Compare Markowitz", "Deep-dive analysis · HRP vs Markowitz", icon="⚖")
 
     st.markdown(
-        "<p style='color:#94a3b8;font-size:0.85rem;line-height:1.6;margin-bottom:1rem;'>"
-        "This page explains why the robo-advisor uses HRP as its default optimizer. "
-        "Markowitz mean-variance optimization is included as the classical benchmark, "
-        "helping users understand how different portfolio construction methods affect "
-        "diversification, risk concentration, and return potential."
-        "</p>",
-        unsafe_allow_html=True,
-    )
-
-    st.markdown(
         """
         <div style="background:rgba(30,38,64,0.5);border:1px solid #1e2640;
         border-radius:10px;padding:0.9rem 1rem;margin-bottom:1.25rem;
@@ -3316,15 +3306,18 @@ def render_compare() -> None:
             justify-content:center;font-size:0.95rem;">⚖️</div>
             <div>
                 <div style="font-family:'Space Grotesk',sans-serif;font-size:0.9rem;
-                font-weight:600;color:#e2e8f0;margin-bottom:0.25rem;">
-                    Markowitz Mean-Variance (MV) — benchmark
+                font-weight:600;color:#e2e8f0;margin-bottom:0.45rem;">
+                    Markowitz Mean-Variance (MV) — classical benchmark
                 </div>
-                <div style="font-size:0.79rem;color:#64748b;line-height:1.55;">
-                    Markowitz (1952) maximises the Sharpe ratio given expected returns
-                    and a covariance matrix. It typically produces concentrated portfolios
-                    sensitive to estimation error ("corner solutions"). Used here as a
-                    benchmark to highlight the diversification benefits of HRP.
-                    Phase A values are mock; enable live data for real MV weights.
+                <div style="font-size:0.79rem;color:#94a3b8;line-height:1.6;margin-bottom:0.45rem;">
+                    Mean-variance optimization, introduced by Markowitz in 1952, builds portfolios
+                    by maximising expected return for a given level of risk. It remains the standard
+                    academic reference for portfolio construction.
+                </div>
+                <div style="font-size:0.79rem;color:#94a3b8;line-height:1.6;">
+                    In practice, the approach is sensitive to estimation error in returns and
+                    covariances, and tends to produce concentrated allocations &#8212; often called
+                    &#8220;corner solutions&#8221; &#8212; where a few assets dominate.
                 </div>
             </div>
         </div>
@@ -3364,7 +3357,7 @@ def render_compare() -> None:
     st.markdown("---")
 
     # ── 1. Radar chart ────────────────────────────────────────────────────────
-    st.markdown("**Portfolio quality comparison**")
+    _section_header("1", "Portfolio Quality Comparison")
     st.markdown(
         "<p style='color:#94a3b8;font-size:0.82rem;line-height:1.55;margin-bottom:0.5rem;'>"
         "This chart summarizes the trade-offs between the recommended HRP portfolio and the "
@@ -3460,6 +3453,7 @@ def render_compare() -> None:
 
     # ── 2. Risk contributions ─────────────────────────────────────────────────
     st.markdown("---")
+    _section_header("2", "Risk Contributions")
     st.markdown(
         "<p style='color:#94a3b8;font-size:0.82rem;line-height:1.55;margin-bottom:0.5rem;'>"
         "Portfolio weights do not always reveal where risk really comes from. This chart shows "
@@ -3468,7 +3462,6 @@ def render_compare() -> None:
         "</p>",
         unsafe_allow_html=True,
     )
-    st.markdown("**Risk contributions — who drives portfolio risk?**")
 
     all_tickers = sorted(
         set(hrp_rc) | set(mv_rc),
@@ -3521,6 +3514,7 @@ def render_compare() -> None:
 
     # ── 3. Correlation heatmap ────────────────────────────────────────────────
     st.markdown("---")
+    _section_header("3", "Asset Correlation Matrix")
     st.markdown(
         "<p style='color:#94a3b8;font-size:0.82rem;line-height:1.55;margin-bottom:0.5rem;'>"
         "Diversification is not only about holding many ETFs, but about combining assets that "
@@ -3529,11 +3523,9 @@ def render_compare() -> None:
         "</p>",
         unsafe_allow_html=True,
     )
-    st.markdown("**Asset correlation matrix**")
     st.caption(
-        "How to read it: higher bars indicate larger risk contribution; values in the matrix "
-        "close to 1 indicate assets moving together, while values near 0 or below 0 indicate "
-        "stronger diversification potential."
+        "How to read it: values in the matrix close to 1 indicate assets moving together, "
+        "while values near 0 or below 0 indicate stronger diversification potential."
     )
 
     _TICKERS_HM = ["CSPX.L", "EFA", "GLD", "VNQ", "AGGH.MI", "TLT", "TIP", "XEON.MI"]
