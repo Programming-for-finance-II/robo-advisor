@@ -694,7 +694,11 @@ def render_disclaimer() -> None:
 
 
 def render_global_footer() -> None:
-    """Render the single app-wide MiFID II footer line (call once per page)."""
+    """Render the single app-wide MiFID II footer line (call once per page).
+
+    Called once at the bottom of every page via main() so the MiFID II notice
+    stays visible without being repeated on each individual screen.
+    """
     st.markdown(GLOBAL_FOOTER_HTML, unsafe_allow_html=True)
 
 
