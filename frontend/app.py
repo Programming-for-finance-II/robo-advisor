@@ -3586,6 +3586,84 @@ def render_compare() -> None:
 # Page 6 -- Settings
 # ---------------------------------------------------------------------------
 
+def _team_img_b64(filename: str) -> str:
+    """Return a base64 data-URI for a team photo, or empty string if missing."""
+    import base64 as _b64
+    path = ASSETS_DIR / "team" / filename
+    if path.exists():
+        return "data:image/png;base64," + _b64.b64encode(path.read_bytes()).decode()
+    return ""
+
+
+def render_team_section() -> None:
+    """Render the Team section on the Settings page."""
+    _TEAM = [
+        {
+            "img": "p1_sabrina.png",
+            "name": "Sabrina Virgillito",
+            "role": "Backend Developer",
+            "resp": "API · database design · data pipeline",
+            "color": "#7c5cfc",
+        },
+        {
+            "img": "p2_emma.png",
+            "name": "Emma Erba",
+            "role": "Quantitative Analyst",
+            "resp": "Portfolio optimization · HRP · risk models",
+            "color": "#0dcfb0",
+        },
+        {
+            "img": "p3_matteo.png",
+            "name": "Matteo Buttiglieri",
+            "role": "ML Engineer",
+            "resp": "ML profiling · model training · evaluation",
+            "color": "#f87171",
+        },
+        {
+            "img": "p4_elena.png",
+            "name": "Elena Trombini",
+            "role": "Frontend / LLM / Docs",
+            "resp": "UI/UX · dashboard · LLM advisor · documentation",
+            "color": "#fbbf24",
+        },
+    ]
+
+    cards_html = (
+        '<div style="display:flex;flex-wrap:wrap;gap:1rem;margin-top:0.75rem;justify-content:center;">'
+    )
+    for m in _TEAM:
+        src = _team_img_b64(m["img"])
+        img_tag = (
+            f'<div style="width:100px;height:100px;border-radius:50%;'
+            f'background:#ffffff;border:2px solid {m["color"]}55;'
+            f'overflow:hidden;margin-bottom:0.65rem;flex-shrink:0;">'
+            f'<img src="{src}" alt="{m["name"]}" '
+            f'style="width:100%;height:100%;object-fit:cover;display:block;">'
+            f'</div>'
+            if src else
+            f'<div style="width:100px;height:100px;border-radius:50%;'
+            f'background:#ffffff;border:2px solid {m["color"]}55;'
+            f'display:flex;align-items:center;justify-content:center;'
+            f'font-size:1.5rem;margin-bottom:0.65rem;">👤</div>'
+        )
+        cards_html += (
+            f'<div style="flex:1 1 200px;max-width:260px;'
+            f'background:rgba(30,38,64,0.5);border:1px solid #1e2640;'
+            f'border-top:2px solid {m["color"]};border-radius:12px;'
+            f'padding:1.1rem 1rem;display:flex;flex-direction:column;'
+            f'align-items:center;text-align:center;">'
+            f'{img_tag}'
+            f'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:0.9rem;'
+            f'font-weight:600;color:#e2e8f0;margin-bottom:0.2rem;">{m["name"]}</div>'
+            f'<div style="font-size:0.75rem;font-weight:600;color:{m["color"]};'
+            f'letter-spacing:0.03em;margin-bottom:0.4rem;">{m["role"]}</div>'
+            f'<div style="font-size:0.73rem;color:#64748b;line-height:1.5;">{m["resp"]}</div>'
+            f'</div>'
+        )
+    cards_html += '</div>'
+    st.markdown(cards_html, unsafe_allow_html=True)
+
+
 def render_settings() -> None:
     """Platform configuration and status page."""
     page_header("Settings", "Platform configuration")
@@ -3613,10 +3691,13 @@ def render_settings() -> None:
         st.error("Claude API key not found — Chat Advisor will not work.")
 
     st.markdown("---")
+    st.markdown("**Team**")
+    render_team_section()
+
+    st.markdown("---")
     st.markdown("**About**")
     st.caption("AI-Powered Robo-Advisor Platform · USI Programming in Finance II 2026")
     st.caption("Design v3.1 · HRP + LLM Narrator + EU Awareness")
-    st.caption("Team: P1 Backend · P2 Quant · P3 ML · P4 Frontend/LLM/Docs")
 
 
 # ---------------------------------------------------------------------------
