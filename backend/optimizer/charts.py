@@ -24,6 +24,25 @@ _TICKER_CLUSTER: dict[str, str] = {
     "XEON.MI": "Cash",
 }
 
+# Short, plain-language names for chart labels. Full names live in the
+# allocation table; here they must stay compact enough for pie slices and
+# bar ticks. The raw ticker is kept in the hover tooltip for reference.
+_TICKER_SHORT_NAME: dict[str, str] = {
+    "CSPX.L":  "US Equity",
+    "EFA":     "Intl Equity",
+    "GLD":     "Gold",
+    "VNQ":     "Real Estate",
+    "AGGH.MI": "Euro Bonds",
+    "TLT":     "US Treasuries",
+    "TIP":     "Inflation Bonds",
+    "XEON.MI": "Euro Cash",
+}
+
+
+def _short_name(ticker: str) -> str:
+    """Plain-language chart label for a ticker, falling back to the ticker."""
+    return _TICKER_SHORT_NAME.get(ticker, ticker)
+
 
 def plot_weights_donut(weights: dict[str, float]) -> go.Figure:
     """Donut chart of portfolio weights coloured by asset cluster.
@@ -36,16 +55,18 @@ def plot_weights_donut(weights: dict[str, float]) -> go.Figure:
     """
     tickers = list(weights.keys())
     values = [weights[t] for t in tickers]
+    labels = [_short_name(t) for t in tickers]
     colors = [_CLUSTER_COLORS.get(_TICKER_CLUSTER.get(t, ""), "#64748b") for t in tickers]
 
     fig = go.Figure(go.Pie(
-        labels=tickers,
+        labels=labels,
         values=values,
+        customdata=tickers,
         hole=0.52,
         marker=dict(colors=colors, line=dict(color="#0d1220", width=2)),
         textinfo="label+percent",
         textfont=dict(size=11),
-        hovertemplate="<b>%{label}</b><br>Weight: %{percent}<extra></extra>",
+        hovertemplate="<b>%{label}</b> (%{customdata})<br>Weight: %{percent}<extra></extra>",
     ))
 
     cluster_legend = " · ".join(
@@ -100,14 +121,17 @@ def plot_risk_contributions(
     """
     tickers = list(risk_contributions.keys())
     values = [round(v * 100, 2) for v in risk_contributions.values()]
+    labels = [_short_name(t) for t in tickers]
 
     fig = go.Figure(go.Bar(
         x=values,
-        y=tickers,
+        y=labels,
         orientation="h",
         marker_color="steelblue",
         text=[f"{v:.1f}%" for v in values],
         textposition="outside",
+        customdata=tickers,
+        hovertemplate="<b>%{y}</b> (%{customdata})<br>Risk: %{x:.1f}%<extra></extra>",
     ))
 
     title = "Risk Contributions"

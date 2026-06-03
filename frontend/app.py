@@ -32,8 +32,8 @@ from frontend.style import (
     apply_plotly_dark_theme,
     inject_css,
     page_header,
-    render_disclaimer,
     render_eu_note,
+    render_global_footer,
 )
 
 # ---------------------------------------------------------------------------
@@ -93,11 +93,6 @@ LOGO_PATH = ASSETS_DIR / "roboadvisor_robot_transparent.png"
 # Helpers
 # ---------------------------------------------------------------------------
 
-def show_disclaimer() -> None:
-    # Show the mandatory MiFID II disclaimer at the top of every page
-    render_disclaimer()  # use HTML custom of style.py
-
-
 # ---------------------------------------------------------------------------
 # Portfolio data loading
 # Two paths:
@@ -106,6 +101,76 @@ def show_disclaimer() -> None:
 # ---------------------------------------------------------------------------
 
 @st.cache_data(ttl=300, show_spinner=False)
+def _build_live_cluster_structure(prices, weights: dict[str, float]):
+    """Compute a real ClusterStructure from live daily prices and HRP weights.
+
+    Mirrors the four clusters used across the dashboard (risk assets, real
+    assets, safe haven, cash) and fills each with its total weight, average
+    intra-cluster correlation, and annualised volatility — so the "How your
+    money is grouped" view shows live numbers instead of placeholders.
+    """
+    import numpy as np
+
+    from backend.schemas.ground_truth import Cluster, ClusterStructure
+
+    _ATTR_BY_TICKER = {
+        "CSPX.L": "cluster_A_risk_assets", "EFA": "cluster_A_risk_assets",
+        "GLD": "cluster_B_real_assets",    "VNQ": "cluster_B_real_assets",
+        "AGGH.MI": "cluster_C_safe_haven", "TLT": "cluster_C_safe_haven",
+        "TIP": "cluster_C_safe_haven",
+        "XEON.MI": "cluster_D_cash",
+    }
+    attrs = [
+        "cluster_A_risk_assets", "cluster_B_real_assets",
+        "cluster_C_safe_haven", "cluster_D_cash",
+    ]
+
+    returns = prices.pct_change().dropna()
+    corr = returns.corr()
+
+    clusters: dict[str, Cluster] = {}
+    for attr in attrs:
+        members = [
+            t for t in weights
+            if _ATTR_BY_TICKER.get(t) == attr and t in returns.columns
+        ]
+        total_weight = float(sum(weights.get(t, 0.0) for t in members))
+
+        # Average off-diagonal pairwise correlation within the cluster.
+        if len(members) >= 2:
+            pair_vals = [
+                float(corr.loc[a, b])
+                for i, a in enumerate(members)
+                for b in members[i + 1:]
+            ]
+            icc = float(np.mean(pair_vals)) if pair_vals else None
+        else:
+            icc = None
+
+        # Annualised volatility of the weight-blended cluster return.
+        if members:
+            w = np.array([weights.get(t, 0.0) for t in members], dtype=float)
+            w = w / w.sum() if w.sum() > 0 else np.full(len(members), 1.0 / len(members))
+            blended = returns[members].to_numpy() @ w
+            cvol = (
+                float(np.std(blended, ddof=1) * np.sqrt(252))
+                if len(blended) > 1 else 0.0
+            )
+        else:
+            cvol = 0.0
+
+        clusters[attr] = Cluster(
+            members=members,
+            total_weight=min(max(total_weight, 0.0), 1.0),
+            intra_cluster_correlation=(
+                None if icc is None else max(-1.0, min(1.0, icc))
+            ),
+            cluster_volatility=max(cvol, 0.0),
+        )
+
+    return ClusterStructure(**clusters)
+
+
 def _run_live_optimization(profile_label: str) -> dict:
     """
     Download market data and run the HRP optimizer.
@@ -141,17 +206,42 @@ def _run_live_optimization(profile_label: str) -> dict:
         fallback_tickers=list(report.fallback_tickers_applied.keys()),
     )
 
+    # Real cluster structure for the "How your money is grouped" view.
+    # Defensive: a failure here must not break the whole live path — the
+    # grouping view falls back gracefully when this is absent.
+    try:
+        cluster_structure = _build_live_cluster_structure(prices, result["weights"])
+    except Exception:
+        cluster_structure = None
+
+    # Historical max drawdown of the (static-weight) portfolio over the loaded
+    # price history, so the KPI card shows a real figure rather than a dash.
+    try:
+        import numpy as np
+
+        _w = result["weights"]
+        _cols = [t for t in _w if t in prices.columns]
+        _rets = prices[_cols].pct_change().dropna()
+        _wv = np.array([_w[t] for t in _cols], dtype=float)
+        _wv = _wv / _wv.sum() if _wv.sum() > 0 else _wv
+        _equity = np.cumprod(1.0 + (_rets.to_numpy() @ _wv))
+        _max_drawdown = float((_equity / np.maximum.accumulate(_equity) - 1.0).min())
+    except Exception:
+        _max_drawdown = None
+
     return {
         "weights": result["weights"],
         "risk_contributions": result["risk_contributions"],
         "expected_volatility": result["expected_volatility"],
         "expected_return": result["expected_return"],
         "sharpe_ratio": result["sharpe_ratio"],
+        "max_drawdown": _max_drawdown,
         "ucits_tickers_used": report.ucits_tickers_used,
         "fallback_tickers_applied": list(report.fallback_tickers_applied.keys()),
         "recommendation_id": str(uuid.uuid4()),
         "stress_regime": regime_result.regime,
         "avg_correlation": regime_result.avg_correlation,
+        "cluster_structure": cluster_structure,
         "source": "live",
     }
 
@@ -288,6 +378,52 @@ _SHIELD_SVG = (
 )
 
 
+def render_page_nav(active: str) -> None:
+    """Previous / Next buttons at the foot of every page.
+
+    Lets the user move to the adjacent section (in PAGES order) without
+    scrolling back up to the top navbar. The forward button is highlighted to
+    suggest the natural reading flow; the first and last pages omit the
+    unavailable direction.
+    """
+    try:
+        idx = PAGES.index(active)
+    except ValueError:
+        return
+    prev_page = PAGES[idx - 1] if idx > 0 else None
+    next_page = PAGES[idx + 1] if idx < len(PAGES) - 1 else None
+    if prev_page is None and next_page is None:
+        return
+
+    st.markdown(
+        '<div style="margin-top:2.75rem;padding-top:1rem;'
+        'border-top:1px solid #1a2236;font-size:0.72rem;font-weight:600;'
+        'letter-spacing:0.08em;text-transform:uppercase;color:#475569;'
+        'margin-bottom:0.6rem;">Continue exploring</div>',
+        unsafe_allow_html=True,
+    )
+    col_prev, col_next = st.columns(2)
+    with col_prev:
+        if prev_page and st.button(
+            f"← {prev_page}",
+            key=f"pgnav_prev_{active}",
+            use_container_width=True,
+        ):
+            st.session_state.active_page = prev_page
+            st.query_params["page"] = prev_page
+            st.rerun()
+    with col_next:
+        if next_page and st.button(
+            f"{next_page} →",
+            key=f"pgnav_next_{active}",
+            type="primary",
+            use_container_width=True,
+        ):
+            st.session_state.active_page = next_page
+            st.query_params["page"] = next_page
+            st.rerun()
+
+
 def main() -> None:
     # UNIFIED TOP NAVBAR (apple.com style) — replaces separate logo block
     # and nav row. Only this section was modified. Do not edit elsewhere.
@@ -340,27 +476,42 @@ section[data-testid="stMain"] > div:first-child {{
     padding-top: 88px !important;
 }}
 /* ── Top navbar ─────────────────────────────────────────────────────── */
+@keyframes navSlideDown {{
+    from {{ opacity: 0; transform: translateY(-10px); }}
+    to   {{ opacity: 1; transform: translateY(0); }}
+}}
 .top-navbar {{
     position: fixed; top: 0; left: 0;
     width: 100%; height: 76px; z-index: 1000;
-    background: rgba(13,17,28,0.92);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
+    background: linear-gradient(180deg,
+        rgba(22,28,46,0.92) 0%, rgba(13,17,28,0.88) 100%);
+    backdrop-filter: blur(30px) saturate(140%);
+    -webkit-backdrop-filter: blur(30px) saturate(140%);
     display: flex; align-items: center; justify-content: space-between;
-    padding: 0 36px; box-sizing: border-box;
-    border-bottom: 1px solid rgba(124,92,252,0.14);
-    box-shadow: 0 2px 24px rgba(0,0,0,0.38);
+    padding: 0 40px; box-sizing: border-box;
+    box-shadow: 0 4px 30px rgba(0,0,0,0.45);
     flex-wrap: nowrap;
     overflow: visible;
+    animation: navSlideDown 0.5s cubic-bezier(0.16,1,0.3,1);
+}}
+/* Gradient hairline under the navbar for a subtle premium edge */
+.top-navbar::after {{
+    content: ""; position: absolute; left: 0; right: 0; bottom: 0;
+    height: 1px;
+    background: linear-gradient(90deg,
+        transparent 0%, rgba(124,92,252,0.55) 50%, transparent 100%);
 }}
 .top-navbar .brand {{
     display: flex; align-items: center; gap: 14px;
     min-width: 260px; flex-shrink: 0; text-decoration: none;
 }}
 .top-navbar .brand-name {{
-    font-size: 19px; font-weight: 700; color: #f5f5f7;
+    font-size: 19px; font-weight: 700;
     letter-spacing: -0.4px; line-height: 1.2;
     font-family: 'Space Grotesk', -apple-system, sans-serif;
+    background: linear-gradient(92deg, #ffffff 0%, #c9bcff 100%);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent; color: #f5f5f7;
 }}
 .top-navbar .brand-sub {{
     font-size: 9.5px; letter-spacing: 0.09em;
@@ -382,31 +533,54 @@ section[data-testid="stMain"] > div:first-child {{
     max-height: 76px !important;
 }}
 .top-navbar .stButton > button {{
+    position: relative !important;
     background: transparent !important;
     border: none !important; box-shadow: none !important;
-    color: rgba(245,245,247,0.60) !important;
+    color: rgba(245,245,247,0.62) !important;
     font-size: 13px !important; font-weight: 500 !important;
     letter-spacing: -0.1px !important;
-    padding: 6px 13px !important; border-radius: 8px !important;
-    min-height: unset !important; height: 36px !important;
+    padding: 7px 15px !important; border-radius: 9px !important;
+    min-height: unset !important; height: 38px !important;
     white-space: nowrap !important;
-    transition: color 0.16s ease, background 0.16s ease !important;
+    transition: color 0.18s ease, background 0.18s ease,
+        transform 0.18s cubic-bezier(0.16,1,0.3,1) !important;
     font-family: -apple-system, 'Space Grotesk', sans-serif !important;
-    display: inline-flex !important; align-items: center !important; gap: 6px !important;
+    display: inline-flex !important; align-items: center !important; gap: 7px !important;
+}}
+/* Animated underline that grows from the centre on hover */
+.top-navbar .stButton > button::after {{
+    content: ""; position: absolute; left: 50%; bottom: 4px;
+    width: 0; height: 2px; border-radius: 2px;
+    background: linear-gradient(90deg, #a78bfa, #7c5cfc);
+    transform: translateX(-50%);
+    transition: width 0.22s cubic-bezier(0.16,1,0.3,1);
 }}
 .top-navbar .stButton > button:hover {{
     color: #f5f5f7 !important;
-    background: rgba(255,255,255,0.06) !important;
+    background: rgba(255,255,255,0.05) !important;
+    transform: translateY(-1px) !important;
 }}
-.top-navbar [data-testid="baseButton-primary"] {{
+.top-navbar .stButton > button:hover::after {{ width: 42%; }}
+.top-navbar [data-testid="stBaseButton-primary"],
+.top-navbar [data-testid="baseButton-primary"],
+.top-navbar .stButton > button[kind="primary"] {{
     color: #ffffff !important; font-weight: 600 !important;
-    background: rgba(124,92,252,0.82) !important;
-    box-shadow: 0 0 12px rgba(124,92,252,0.30) !important;
+    background: linear-gradient(135deg,
+        rgba(124,92,252,0.95) 0%, rgba(109,40,217,0.95) 100%) !important;
+    box-shadow: 0 2px 14px rgba(124,92,252,0.45),
+        inset 0 1px 0 rgba(255,255,255,0.18) !important;
 }}
-.top-navbar [data-testid="baseButton-primary"]:hover {{
-    background: rgba(124,92,252,0.95) !important;
+.top-navbar [data-testid="stBaseButton-primary"]:hover,
+.top-navbar [data-testid="baseButton-primary"]:hover,
+.top-navbar .stButton > button[kind="primary"]:hover {{
+    background: linear-gradient(135deg,
+        rgba(138,108,255,1) 0%, rgba(124,58,237,1) 100%) !important;
     color: #ffffff !important;
+    transform: translateY(-1px) !important;
 }}
+.top-navbar [data-testid="stBaseButton-primary"]::after,
+.top-navbar [data-testid="baseButton-primary"]::after,
+.top-navbar .stButton > button[kind="primary"]::after {{ width: 0 !important; }}
 /* ── Responsive nav + content padding ───────────────────────────────── */
 @media (max-width: 1080px) {{
     .top-navbar [data-testid="stHorizontalBlock"] {{
@@ -511,6 +685,13 @@ section[data-testid="stMain"] > div:first-child {{
         render_compare()
     elif active == "Settings":
         render_settings()
+
+    # Bottom-of-page Previous / Next navigation so users don't have to scroll
+    # back to the top navbar to switch sections.
+    render_page_nav(active)
+
+    # Single discreet MiFID II footer, shown once at the bottom of every page.
+    render_global_footer()
 
 
 # ---------------------------------------------------------------------------
@@ -698,7 +879,6 @@ def _compute_profile(answers: dict[str, int]) -> dict:
 
 def render_questionnaire() -> None:
     page_header("Investor Profile Questionnaire", "Grable-Lytton Scale · 10 questions", icon="🧭")
-    render_disclaimer()
 
     # Info card — Grable-Lytton explanation (native <details> for full style control)
     st.markdown(
@@ -969,7 +1149,7 @@ def render_questionnaire() -> None:
             # score card
             f'<div style="flex:1;min-width:120px;background:rgba(0,0,0,0.25);'
             f'border:1px solid #1e2640;border-radius:10px;padding:0.75rem 1.1rem;">'
-            f'<div style="font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;'
+            f'<div style="font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;'
             f'color:#475569;margin-bottom:0.35rem;">Score</div>'
             f'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:1.7rem;'
             f'font-weight:700;color:#f1f5f9;line-height:1;">'
@@ -984,7 +1164,7 @@ def render_questionnaire() -> None:
             # confidence card
             f'<div style="flex:1;min-width:120px;background:rgba(0,0,0,0.25);'
             f'border:1px solid #1e2640;border-radius:10px;padding:0.75rem 1.1rem;">'
-            f'<div style="font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;'
+            f'<div style="font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;'
             f'color:#475569;margin-bottom:0.35rem;">Model Confidence</div>'
             f'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:1.7rem;'
             f'font-weight:700;color:{rm["color"]};line-height:1;">{conf_pct}%</div>'
@@ -1047,7 +1227,6 @@ def render_portfolio() -> None:
         f"HRP optimization · {profile_label.capitalize()} profile",
         icon="📊",
     )
-    render_disclaimer()
 
     st.markdown(
         """
@@ -1113,7 +1292,7 @@ def render_portfolio() -> None:
 
     # Small badges row
     _badge_style = (
-        f'font-size:0.68rem;font-weight:600;letter-spacing:0.06em;'
+        f'font-size:0.72rem;font-weight:600;letter-spacing:0.06em;'
         f'text-transform:uppercase;color:{color}90;'
         f'background:{color}15;border:1px solid {color}30;'
         f'border-radius:6px;padding:0.2rem 0.55rem;'
@@ -1143,53 +1322,43 @@ def render_portfolio() -> None:
         unsafe_allow_html=True,
     )
 
-    default_live = (
-        st.session_state.get("default_data_mode", "")
-        == "Live market data (Phase B — requires network)"
-    )
-
-    # Toggle between mock data (Phase A) and live optimizer (Phase B)
-    use_live = st.toggle(
-        "Use live market data",
-        value=default_live,
-        help=(
-            "When disabled, the dashboard uses stable mock data for demonstration. "
-            "When enabled, it attempts to load current market prices via yfinance "
-            "and runs the HRP optimizer. Takes about 10 seconds on first load."
-        ),
-    )
-
-    # Load portfolio data, either from cache or by running the optimizer
+    # The dashboard always runs on live market data. Mock data is kept only as
+    # an automatic fallback if the network or optimizer is unreachable, so the
+    # app never breaks mid-demo — there is no user-facing data-source toggle.
     portfolio = st.session_state.get("portfolio_data", {})
     cached_label = st.session_state.get("portfolio_profile", "")
 
-    if use_live and (not portfolio or cached_label != profile_label):
-        # Run the live optimizer and store the result in session_state
-        with st.spinner("Downloading data and running HRP optimizer..."):
+    if not portfolio or cached_label != profile_label:
+        with st.spinner("Fetching live market data and running the HRP optimizer…"):
             try:
                 portfolio = _run_live_optimization(profile_label)
-                st.session_state["portfolio_data"] = portfolio
-                st.session_state["portfolio_profile"] = profile_label
-                st.session_state["recommendation_id"] = portfolio["recommendation_id"]
             except Exception as exc:
-                # Live data failed -- fall back to mock so the app keeps working
-                st.warning(f"Live data unavailable ({exc}). Using mock data instead.")
+                # Keep the dashboard usable if live prices can't be reached.
+                st.warning(
+                    f"Live market data is temporarily unavailable ({exc}). "
+                    "Showing a reference allocation until prices can be fetched again."
+                )
                 portfolio = _mock_optimization(profile_key)
-                st.session_state["portfolio_data"] = portfolio
-                st.session_state["portfolio_profile"] = profile_label
-                st.session_state["recommendation_id"] = portfolio["recommendation_id"]
-    elif not portfolio or cached_label != profile_label:
-        # Default path: load mock data (Phase A, always works)
-        portfolio = _mock_optimization(profile_key)
-        st.session_state["portfolio_data"] = portfolio
-        st.session_state["portfolio_profile"] = profile_label
-        st.session_state["recommendation_id"] = portfolio["recommendation_id"]
+            st.session_state["portfolio_data"] = portfolio
+            st.session_state["portfolio_profile"] = profile_label
+            st.session_state["recommendation_id"] = portfolio["recommendation_id"]
 
-    # Show where the data comes from
+    # Discreet data-source status line (no toggle — live is always preferred).
     if portfolio.get("source") == "live":
-        st.success("Live market data loaded successfully.")
+        st.markdown(
+            '<div style="font-size:0.8rem;color:#64748b;margin:-0.2rem 0 0.3rem;">'
+            '<span style="color:#0dcfb0;">●</span> Live market data · prices via yfinance'
+            '</div>',
+            unsafe_allow_html=True,
+        )
     else:
-        st.caption("Showing mock data (Phase A). Enable the toggle above for live prices.")
+        st.markdown(
+            '<div style="font-size:0.8rem;color:#64748b;margin:-0.2rem 0 0.3rem;">'
+            '<span style="color:#f59e0b;">●</span> Reference allocation · '
+            'live prices momentarily unavailable'
+            '</div>',
+            unsafe_allow_html=True,
+        )
 
     # Show a red banner if the regime detector flagged HIGH_STRESS
     regime = portfolio.get("stress_regime", "NORMAL")
@@ -1250,11 +1419,11 @@ def _render_resilience_strip(profile_label: str) -> None:
         cards_html += (
             f'<div style="flex:1;background:#0f1628;border:1px solid #1e2640;'
             f'border-radius:12px;padding:0.9rem 1rem;">'
-            f'<div style="font-size:0.64rem;font-weight:600;letter-spacing:0.08em;'
+            f'<div style="font-size:0.72rem;font-weight:600;letter-spacing:0.08em;'
             f'text-transform:uppercase;color:#64748b;margin-bottom:0.5rem;">{short}</div>'
             f'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:1.5rem;'
             f'font-weight:700;color:#e2e8f0;line-height:1;">{hrp_dd*100:.1f}%</div>'
-            f'<div style="font-size:0.7rem;color:#475569;margin-top:0.35rem;">'
+            f'<div style="font-size:0.74rem;color:#475569;margin-top:0.35rem;">'
             f'HRP max drawdown</div>'
             f'<div style="font-size:0.72rem;color:{delta_color};font-weight:600;'
             f'margin-top:0.45rem;">{delta_sign}{improvement:.1f} pp vs MV</div>'
@@ -1279,16 +1448,43 @@ def _render_cluster_view(portfolio: dict, weights: dict[str, float]) -> None:
     """
     cs = portfolio.get("cluster_structure")
 
-    # name, attribute on ClusterStructure, colour, member fallback
+    # name, attribute, colour, plain-language description, member fallback
     _CLUSTER_DEFS = [
-        ("Risk Assets", "cluster_A_risk_assets", "#7c5cfc", ["CSPX.L", "EFA"]),
-        ("Real Assets", "cluster_B_real_assets", "#0dcfb0", ["GLD", "VNQ"]),
-        ("Safe Haven", "cluster_C_safe_haven", "#f59e0b", ["AGGH.MI", "TLT", "TIP"]),
-        ("Cash", "cluster_D_cash", "#3b82f6", ["XEON.MI"]),
+        ("Risk Assets", "cluster_A_risk_assets", "#7c5cfc",
+         "Stocks — the growth engine. Higher long-term reward, bigger swings.",
+         ["CSPX.L", "EFA"]),
+        ("Real Assets", "cluster_B_real_assets", "#0dcfb0",
+         "Gold & property — inflation hedges that move on their own rhythm.",
+         ["GLD", "VNQ"]),
+        ("Safe Haven", "cluster_C_safe_haven", "#f59e0b",
+         "High-quality bonds — ballast that cushions equity downturns.",
+         ["AGGH.MI", "TLT", "TIP"]),
+        ("Cash", "cluster_D_cash", "#3b82f6",
+         "Cash-like — maximum stability and ready liquidity.",
+         ["XEON.MI"]),
     ]
 
-    cols = st.columns(4)
-    for col, (name, attr, color, fallback_members) in zip(cols, _CLUSTER_DEFS):
+    def _diversification(corr: float | None) -> tuple[str, str]:
+        """Plain-language label + colour from intra-cluster correlation."""
+        if corr is None:
+            return "Single asset", "#64748b"
+        if corr < 0.30:
+            return "Well diversified", "#0dcfb0"
+        if corr < 0.60:
+            return "Moderately diversified", "#f59e0b"
+        return "Moves together", "#f87171"
+
+    def _risk_level(vol: float | None) -> tuple[str, str]:
+        """Plain-language risk label + colour from annualised volatility."""
+        if vol is None:
+            return "—", "#64748b"
+        if vol < 0.06:
+            return "Low", "#0dcfb0"
+        if vol < 0.14:
+            return "Medium", "#f59e0b"
+        return "High", "#f87171"
+
+    for name, attr, color, desc, fallback_members in _CLUSTER_DEFS:
         cl = getattr(cs, attr, None) if cs is not None else None
         members = list(cl.members) if cl is not None else fallback_members
         members = [m for m in members if m in weights] or members
@@ -1299,42 +1495,61 @@ def _render_cluster_view(portfolio: dict, weights: dict[str, float]) -> None:
         corr = cl.intra_cluster_correlation if cl is not None else None
         vol = cl.cluster_volatility if cl is not None else None
 
+        div_label, div_color = _diversification(corr)
+        risk_label, risk_color = _risk_level(vol)
+        corr_note = f"ρ {corr:.2f}" if corr is not None else "n/a"
+        vol_note = f"{vol*100:.1f}% vol" if vol is not None else ""
+
+        # Member chips use the plain asset name, ticker kept as a small tag.
         chips = "".join(
             f'<span style="display:inline-block;background:rgba(148,163,184,0.08);'
-            f'border:1px solid #1e2640;border-radius:5px;padding:0.1rem 0.4rem;'
-            f'font-size:0.66rem;color:#94a3b8;margin:0 0.25rem 0.25rem 0;">{m}</span>'
+            f'border:1px solid #1e2640;border-radius:6px;padding:0.12rem 0.5rem;'
+            f'font-size:0.74rem;color:#94a3b8;margin:0 0.3rem 0.3rem 0;">'
+            f'{_TICKER_DISPLAY_NAME.get(m, m)}</span>'
             for m in members
         )
-        corr_txt = f"{corr:.2f}" if corr is not None else "n/a"
-        vol_txt = f"{vol*100:.1f}%" if vol is not None else "—"
 
-        with col:
-            st.markdown(
-                f'<div style="background:#0f1628;border:1px solid #1e2640;'
-                f'border-top:3px solid {color};border-radius:10px;'
-                f'padding:0.85rem 0.9rem;height:100%;">'
-                f'<div style="display:flex;align-items:center;gap:0.4rem;'
-                f'margin-bottom:0.5rem;">'
-                f'<span style="width:8px;height:8px;border-radius:50%;'
-                f'background:{color};flex-shrink:0;"></span>'
-                f'<span style="font-family:\'Space Grotesk\',sans-serif;'
-                f'font-size:0.82rem;font-weight:600;color:{color};">{name}</span></div>'
-                f'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:1.35rem;'
-                f'font-weight:700;color:#e2e8f0;line-height:1;">{weight*100:.0f}%</div>'
-                f'<div style="font-size:0.64rem;color:#475569;text-transform:uppercase;'
-                f'letter-spacing:0.06em;margin:0.25rem 0 0.7rem;">of portfolio</div>'
-                f'<div style="display:flex;justify-content:space-between;'
-                f'font-size:0.7rem;color:#64748b;margin-bottom:0.2rem;">'
-                f'<span>Intra-ρ</span><span style="color:#94a3b8;font-weight:600;">'
-                f'{corr_txt}</span></div>'
-                f'<div style="display:flex;justify-content:space-between;'
-                f'font-size:0.7rem;color:#64748b;margin-bottom:0.7rem;">'
-                f'<span>Volatility</span><span style="color:#94a3b8;font-weight:600;">'
-                f'{vol_txt}</span></div>'
-                f'<div>{chips}</div>'
-                f'</div>',
-                unsafe_allow_html=True,
-            )
+        st.markdown(
+            f'<div style="background:#0f1628;border:1px solid #1e2640;'
+            f'border-left:4px solid {color};border-radius:12px;'
+            f'padding:1rem 1.2rem;margin-bottom:0.75rem;display:flex;'
+            f'align-items:flex-start;gap:1.25rem;flex-wrap:wrap;">'
+            # Left: name + description + chips
+            f'<div style="flex:2.4;min-width:240px;">'
+            f'<div style="display:flex;align-items:center;gap:0.5rem;'
+            f'margin-bottom:0.3rem;">'
+            f'<span style="width:9px;height:9px;border-radius:50%;'
+            f'background:{color};flex-shrink:0;"></span>'
+            f'<span style="font-family:\'Space Grotesk\',sans-serif;'
+            f'font-size:1.02rem;font-weight:600;color:{color};">{name}</span></div>'
+            f'<div style="font-size:0.86rem;color:#94a3b8;line-height:1.55;'
+            f'margin-bottom:0.6rem;">{desc}</div>'
+            f'<div>{chips}</div></div>'
+            # Middle: diversification + risk, plain words with the number small
+            f'<div style="flex:1.5;min-width:170px;">'
+            f'<div style="font-size:0.72rem;font-weight:600;letter-spacing:0.06em;'
+            f'text-transform:uppercase;color:#475569;margin-bottom:0.15rem;">'
+            f'Diversification</div>'
+            f'<div style="font-size:0.95rem;font-weight:600;color:{div_color};'
+            f'margin-bottom:0.7rem;">{div_label}'
+            f'<span style="font-size:0.74rem;color:#5b6678;font-weight:400;'
+            f'margin-left:0.4rem;">{corr_note}</span></div>'
+            f'<div style="font-size:0.72rem;font-weight:600;letter-spacing:0.06em;'
+            f'text-transform:uppercase;color:#475569;margin-bottom:0.15rem;">'
+            f'Risk level</div>'
+            f'<div style="font-size:0.95rem;font-weight:600;color:{risk_color};">'
+            f'{risk_label}'
+            f'<span style="font-size:0.74rem;color:#5b6678;font-weight:400;'
+            f'margin-left:0.4rem;">{vol_note}</span></div></div>'
+            # Right: weight
+            f'<div style="flex:0.9;min-width:110px;text-align:right;">'
+            f'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:1.75rem;'
+            f'font-weight:700;color:#e2e8f0;line-height:1;">{weight*100:.0f}%</div>'
+            f'<div style="font-size:0.72rem;color:#475569;text-transform:uppercase;'
+            f'letter-spacing:0.06em;margin-top:0.25rem;">of portfolio</div></div>'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -1365,6 +1580,88 @@ _HRP_CLUSTER_BG: dict[str, str] = {
     "Bonds":        "rgba(13,207,176,0.15)",
     "Cash":         "rgba(59,130,246,0.15)",
 }
+
+# Plain-language asset names so the allocation table reads clearly for a
+# non-specialist. The raw ticker is still shown, but as a small subtitle.
+_TICKER_DISPLAY_NAME: dict[str, str] = {
+    "CSPX.L":  "US Large-Cap Equity",
+    "EFA":     "Developed Markets ex-US Equity",
+    "GLD":     "Gold",
+    "VNQ":     "US Real Estate",
+    "AGGH.MI": "Euro Aggregate Bonds",
+    "TLT":     "US Long-Term Treasuries",
+    "TIP":     "US Inflation-Linked Bonds",
+    "XEON.MI": "Euro Cash (Overnight)",
+}
+
+
+def _render_allocation_table(
+    weights: dict[str, float],
+    risk_contributions: dict[str, float],
+) -> None:
+    """
+    Readable allocation table: plain asset name with the ticker as a small
+    subtitle, an asset-class colour dot, a proportional weight bar, and the
+    risk contribution. Replaces the ticker-first st.dataframe (which also
+    carried a UCITS column) so a non-specialist can read it at a glance.
+    """
+    items = sorted(weights.items(), key=lambda kv: -kv[1])
+    max_w = max((w for _, w in items), default=1.0) or 1.0
+
+    header = (
+        '<div style="display:flex;align-items:center;padding:0 0.4rem 0.6rem;'
+        'border-bottom:1px solid #1e2640;margin-bottom:0.1rem;">'
+        '<div style="flex:1.7;font-size:0.72rem;font-weight:600;letter-spacing:0.08em;'
+        'text-transform:uppercase;color:#475569;">Asset</div>'
+        '<div style="flex:1.5;font-size:0.72rem;font-weight:600;letter-spacing:0.08em;'
+        'text-transform:uppercase;color:#475569;">Weight</div>'
+        '<div style="flex:0.8;font-size:0.72rem;font-weight:600;letter-spacing:0.08em;'
+        'text-transform:uppercase;color:#475569;text-align:right;">Risk</div>'
+        '</div>'
+    )
+
+    body = ""
+    for ticker, w in items:
+        cls = _HRP_TICKER_CLUSTER.get(ticker, "Other")
+        color = _HRP_CLUSTER_COLOR.get(cls, "#64748b")
+        name = _TICKER_DISPLAY_NAME.get(ticker, ticker)
+        rc = risk_contributions.get(ticker, 0.0)
+        bar_pct = max(4.0, w / max_w * 100.0)
+        body += (
+            '<div style="display:flex;align-items:center;padding:0.62rem 0.4rem;'
+            'border-bottom:1px solid #141b2e;">'
+            # Asset name + ticker subtitle
+            '<div style="flex:1.7;display:flex;align-items:center;gap:0.6rem;">'
+            f'<span style="width:9px;height:9px;border-radius:50%;background:{color};'
+            'flex-shrink:0;"></span>'
+            '<div style="min-width:0;">'
+            f'<div style="font-size:0.9rem;font-weight:600;color:#e2e8f0;'
+            f'line-height:1.25;">{name}</div>'
+            f'<div style="font-size:0.72rem;color:#5b6678;letter-spacing:0.02em;'
+            f'font-family:\'Space Grotesk\',sans-serif;">{ticker}</div>'
+            '</div></div>'
+            # Weight bar + value
+            '<div style="flex:1.5;display:flex;align-items:center;gap:0.55rem;'
+            'padding-right:0.8rem;">'
+            '<div style="flex:1;height:7px;background:#161d30;border-radius:4px;'
+            'overflow:hidden;">'
+            f'<div style="width:{bar_pct:.1f}%;height:100%;background:{color};'
+            'border-radius:4px;"></div></div>'
+            f'<span style="font-size:0.9rem;font-weight:600;color:#e2e8f0;'
+            f'font-family:\'Space Grotesk\',sans-serif;min-width:3rem;'
+            f'text-align:right;">{w*100:.1f}%</span>'
+            '</div>'
+            # Risk contribution
+            f'<div style="flex:0.8;font-size:0.85rem;color:#94a3b8;text-align:right;'
+            f'font-family:\'Space Grotesk\',sans-serif;">{rc*100:.1f}%</div>'
+            '</div>'
+        )
+
+    st.markdown(
+        '<div style="background:#0f1628;border:1px solid #1e2640;border-radius:12px;'
+        'padding:0.9rem 1rem;">' + header + body + '</div>',
+        unsafe_allow_html=True,
+    )
 
 # ---------------------------------------------------------------------------
 # ETF explorer ("What do these tickers mean?" section)
@@ -1645,18 +1942,12 @@ ETF_METADATA: dict[str, dict] = {
 }
 
 
-def _sparkline(trend: list[int]) -> str:
-    """Convert a list of 1–7 integers into a Unicode bar sparkline."""
-    bars = "▁▂▃▄▅▆▇"
-    mx = max(trend) or 1
-    return "".join(bars[round((v / mx) * 6)] for v in trend)
-
-
 def _section_header(number: str, title: str) -> None:
     st.markdown(
-        f'<div style="border-left:3px solid #7c5cfc;padding-left:0.875rem;margin-bottom:0.75rem;">'
+        f'<div style="border-left:3px solid #7c5cfc;padding-left:0.9rem;margin-bottom:0.8rem;">'
         f'<div style="font-family:\'Space Grotesk\',sans-serif;'
-        f'font-size:1.05rem;font-weight:600;color:#f1f5f9;">{number}. {title}</div>'
+        f'font-size:1.2rem;font-weight:700;color:#f1f5f9;letter-spacing:-0.01em;">'
+        f'{number}. {title}</div>'
         f'</div>',
         unsafe_allow_html=True,
     )
@@ -1664,8 +1955,8 @@ def _section_header(number: str, title: str) -> None:
 
 def _section_desc(text: str) -> None:
     st.markdown(
-        f'<div style="font-size:0.82rem;color:#64748b;line-height:1.65;'
-        f'margin-bottom:1.25rem;">{text}</div>',
+        f'<div style="font-size:0.95rem;color:#94a3b8;line-height:1.6;'
+        f'margin-bottom:1.35rem;max-width:62rem;">{text}</div>',
         unsafe_allow_html=True,
     )
 
@@ -1897,7 +2188,7 @@ def _render_etf_explorer() -> None:
         f'{etf.currency} &middot; {ucits_tag}</div>'
         f'<div style="font-size:0.84rem;color:#cbd5e1;line-height:1.6;'
         f'margin-bottom:0.6rem;">{meta["description"]}</div>'
-        f'<div style="font-size:0.76rem;color:#7c8aa0;font-style:italic;'
+        f'<div style="font-size:0.8rem;color:#7c8aa0;font-style:italic;'
         f'line-height:1.55;margin-bottom:1rem;">Universe rationale: '
         f'{etf.rationale}</div>'
         f'<div style="display:grid;grid-template-columns:1fr 1fr;'
@@ -1990,7 +2281,6 @@ def _render_etf_explorer() -> None:
         {
             "Metric": f["label"],
             "Value": f["value"],
-            "Trend": _sparkline(f["trend"]),
         }
         for f in meta["financials"]
     ]
@@ -2004,7 +2294,6 @@ def _render_etf_explorer() -> None:
 def _render_hrp_tab(portfolio: dict) -> None:
     weights: dict[str, float] = portfolio["weights"]
     risk_contributions: dict[str, float] = portfolio["risk_contributions"]
-    ucits_used: list[str] = portfolio.get("ucits_tickers_used", [])
     vol: float = portfolio.get("expected_volatility", 0.0)
     exp_ret = portfolio.get("expected_return")
     max_dd = portfolio.get("max_drawdown")
@@ -2090,27 +2379,7 @@ def _render_hrp_tab(portfolio: dict) -> None:
             st.caption(f"Allocation chart unavailable: {exc}")
 
     with col_table:
-        ucits_set = set(ucits_used) | _UCITS_TICKERS
-        rows = []
-        for ticker, w in sorted(weights.items(), key=lambda kv: -kv[1]):
-            rows.append({
-                "Ticker": ticker,
-                "Cluster": _HRP_TICKER_CLUSTER.get(ticker, "Other"),
-                "Weight (%)": round(w * 100, 2),
-                "UCITS": "EU ✓" if ticker in ucits_set else "—",
-                "Risk Contribution": f"{risk_contributions.get(ticker, 0.0):.1%}",
-            })
-        df = pd.DataFrame(rows)
-        st.dataframe(
-            df,
-            hide_index=True,
-            use_container_width=True,
-            column_config={
-                "Weight (%)": st.column_config.ProgressColumn(
-                    "Weight (%)", format="%.1f%%", min_value=0, max_value=100,
-                ),
-            },
-        )
+        _render_allocation_table(weights, risk_contributions)
 
     with st.expander("What do these tickers mean?"):
         _render_etf_explorer()
@@ -2141,21 +2410,22 @@ def _render_hrp_tab(portfolio: dict) -> None:
 
     _v_spacer(2.5)
 
-    # ── Section 4: Cluster Structure ───────────────────────────────────────
-    _section_header("4", "Cluster Structure")
+    # ── Section 4: How your money is grouped ───────────────────────────────
+    _section_header("4", "How your money is grouped")
     _section_desc(
-        "HRP groups assets into correlation clusters before allocating weights, "
-        "balancing risk within each group and then across groups. Each card shows the "
-        "cluster's share of the portfolio, its average intra-cluster correlation (ρ), "
-        "and its annualised volatility — all from the optimizer's ground-truth output."
+        "Before deciding the weights, HRP sorts the assets into four families that "
+        "tend to behave alike. It then balances risk inside each family and across "
+        "them. For each family you can see its share of the portfolio, how "
+        "diversified it is, and how much it tends to move."
     )
 
     _render_cluster_view(portfolio, weights)
 
     st.caption(
-        "Intra-cluster ρ measures how tightly the assets inside a group move together; "
-        "cash has a single member, so no pairwise correlation applies. Higher ρ means "
-        "less diversification benefit within that cluster."
+        "“Diversification” reflects how closely the assets in a family move together — "
+        "well-diversified families spread risk better. “Risk level” reflects how much "
+        "the family tends to swing. The small ρ and vol figures are the underlying "
+        "technical values for the curious."
     )
 
 
@@ -2723,7 +2993,6 @@ def render_chat() -> None:
         "LLM Narrator · Validated responses",
         icon="💬",
     )
-    render_disclaimer()
     st.markdown(_CHAT_CSS, unsafe_allow_html=True)
     st.markdown('<div class="ca-page">', unsafe_allow_html=True)
 
@@ -2854,7 +3123,6 @@ _STRATEGY_COLORS: dict[str, str] = {
 
 def render_backtesting() -> None:
     page_header("Backtesting", "Walk-forward simulation · HRP vs MV vs 1/N", icon="📈")
-    render_disclaimer()
 
     profile_data = st.session_state.get("profile", {})
     profile_label = profile_data.get("profile_label", "MODERATE").lower()
@@ -3026,7 +3294,6 @@ _MOCK_MV_WEIGHTS: dict[str, float] = {
 
 def render_compare() -> None:
     page_header("Compare Markowitz", "Deep-dive analysis · HRP vs Markowitz", icon="⚖")
-    render_disclaimer()
 
     st.markdown(
         """
@@ -3289,15 +3556,14 @@ def render_compare() -> None:
 def render_settings() -> None:
     """Platform configuration and status page."""
     page_header("Settings", "Platform configuration")
-    render_disclaimer()
     st.markdown("---")
 
     st.markdown("**Data Source**")
-    st.radio(
-        "Default data mode for Portfolio Dashboard",
-        ["Mock data (Phase A — always works)", "Live market data (Phase B — requires network)"],
-        index=0,
-        key="default_data_mode",
+    st.caption(
+        "The Portfolio Dashboard always uses live market data (prices via "
+        "yfinance) and runs the HRP optimizer on the latest available history. "
+        "If the network is briefly unreachable it falls back to a cached "
+        "reference allocation so the app keeps working."
     )
 
     st.markdown("---")

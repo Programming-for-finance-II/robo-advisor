@@ -10,6 +10,33 @@ html, body, [class*="css"] {
     font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
 }
 
+/* ── Typographic base ──────────────────────────────────────────────────────
+   One coherent reading scale. Body copy sits at 0.95rem / line-height 1.6 so
+   nothing on a content page is hard to read; micro-labels never go below
+   0.72rem. Display headings use Space Grotesk, body uses DM Sans.            */
+[data-testid="stMarkdownContainer"] p,
+[data-testid="stMarkdownContainer"] li {
+    font-size: 0.95rem !important;
+    line-height: 1.6 !important;
+    color: #cbd5e1;
+}
+[data-testid="stCaptionContainer"],
+[data-testid="stCaptionContainer"] p,
+small, .stCaption {
+    font-size: 0.84rem !important;
+    line-height: 1.55 !important;
+    color: #64748b !important;
+}
+/* Data tables: lift the default cell text to a readable size */
+[data-testid="stDataFrame"] [role="gridcell"],
+[data-testid="stDataFrame"] [data-testid="stTable"] td {
+    font-size: 0.88rem !important;
+}
+[data-testid="stDataFrame"] [role="columnheader"] {
+    font-size: 0.78rem !important;
+    letter-spacing: 0.04em !important;
+}
+
 /* ── Sidebar nav: icon + button rows ──────────────────────────────────────── */
 
 /* Row container: no gap, vertically centered */
@@ -180,14 +207,14 @@ section[data-testid="stSidebar"],
     padding: 1rem 1.1rem !important;
 }
 [data-testid="stMetricLabel"] {
-    font-size: 0.65rem !important;
+    font-size: 0.72rem !important;
     letter-spacing: 0.08em !important;
     text-transform: uppercase !important;
-    color: #475569 !important;
+    color: #64748b !important;
 }
 [data-testid="stMetricValue"] {
     font-family: 'Space Grotesk', sans-serif !important;
-    font-size: 1.6rem !important;
+    font-size: 1.7rem !important;
     font-weight: 600 !important;
 }
 
@@ -198,9 +225,10 @@ section[data-testid="stSidebar"],
 }
 .stTabs [data-baseweb="tab"] {
     background: transparent !important;
-    color: #475569 !important;
-    font-size: 0.75rem !important;
-    letter-spacing: 0.06em !important;
+    color: #64748b !important;
+    font-size: 0.82rem !important;
+    font-weight: 500 !important;
+    letter-spacing: 0.05em !important;
     text-transform: uppercase !important;
     border-bottom: 2px solid transparent !important;
 }
@@ -626,6 +654,22 @@ font-size:0.9rem;color:#d97706;display:flex;align-items:flex-start;gap:10px;">
 </div>
 """
 
+# Single discreet, app-wide footer line. Replaces the amber per-page banner:
+# rendered once at the bottom of every page (see main()), so the mandatory
+# MiFID II notice stays visible everywhere without shouting on each screen.
+GLOBAL_FOOTER_HTML = """
+<div style="margin-top:3.5rem;padding:1.1rem 0 0.4rem;
+border-top:1px solid #1a2236;display:flex;align-items:center;
+justify-content:center;gap:0.55rem;flex-wrap:wrap;text-align:center;">
+  <span style="font-size:0.78rem;color:#475569;line-height:1.65;
+  letter-spacing:0.01em;">
+    <strong style="color:#64748b;font-weight:600;">Educational prototype</strong>
+    &nbsp;·&nbsp; Not financial advice under MiFID&nbsp;II
+    &nbsp;·&nbsp; Market data may be delayed or inaccurate
+  </span>
+</div>
+"""
+
 EU_NOTE_HTML = ""
 
 STRESS_BANNER_HTML = """
@@ -647,6 +691,11 @@ def inject_css() -> None:
 def render_disclaimer() -> None:
     """Render the mandatory MiFID II educational disclaimer."""
     st.markdown(DISCLAIMER_HTML, unsafe_allow_html=True)
+
+
+def render_global_footer() -> None:
+    """Render the single app-wide MiFID II footer line (call once per page)."""
+    st.markdown(GLOBAL_FOOTER_HTML, unsafe_allow_html=True)
 
 
 def render_eu_note() -> None:
@@ -694,8 +743,8 @@ def render_stress_banner() -> None:
 def page_header(title: str, subtitle: str = "", icon: str = "") -> None:
     """Render a styled page header with Space Grotesk font and optional icon."""
     sub_html = (
-        f'<div style="font-size:0.88rem;color:#64748b;margin-top:6px;'
-        f'letter-spacing:0.02em;font-weight:400;">{subtitle}</div>'
+        f'<div style="font-size:0.95rem;color:#94a3b8;margin-top:7px;'
+        f'letter-spacing:0.01em;font-weight:400;">{subtitle}</div>'
         if subtitle else ""
     )
     icon_html = (
