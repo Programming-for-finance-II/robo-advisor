@@ -3296,6 +3296,16 @@ def render_compare() -> None:
     page_header("Compare Markowitz", "Deep-dive analysis · HRP vs Markowitz", icon="⚖")
 
     st.markdown(
+        "<p style='color:#94a3b8;font-size:0.85rem;line-height:1.6;margin-bottom:1rem;'>"
+        "This page explains why the robo-advisor uses HRP as its default optimizer. "
+        "Markowitz mean-variance optimization is included as the classical benchmark, "
+        "helping users understand how different portfolio construction methods affect "
+        "diversification, risk concentration, and return potential."
+        "</p>",
+        unsafe_allow_html=True,
+    )
+
+    st.markdown(
         """
         <div style="background:rgba(30,38,64,0.5);border:1px solid #1e2640;
         border-radius:10px;padding:0.9rem 1rem;margin-bottom:1.25rem;
@@ -3354,7 +3364,17 @@ def render_compare() -> None:
     st.markdown("---")
 
     # ── 1. Radar chart ────────────────────────────────────────────────────────
-    st.markdown("**Multi-dimensional comparison**")
+    st.markdown("**Portfolio quality comparison**")
+    st.markdown(
+        "<p style='color:#94a3b8;font-size:0.82rem;line-height:1.55;margin-bottom:0.5rem;'>"
+        "This chart summarizes the trade-offs between the recommended HRP portfolio and the "
+        "classical Markowitz benchmark. Each dimension is normalized from 0 to 1, where higher "
+        "values indicate a stronger result. The goal is to help users understand whether the HRP "
+        "allocation is more diversified, more defensive, or more robust than the traditional "
+        "mean-variance alternative."
+        "</p>",
+        unsafe_allow_html=True,
+    )
 
     def _hhi(w: dict) -> float:
         return sum(v ** 2 for v in w.values())
@@ -3440,6 +3460,14 @@ def render_compare() -> None:
 
     # ── 2. Risk contributions ─────────────────────────────────────────────────
     st.markdown("---")
+    st.markdown(
+        "<p style='color:#94a3b8;font-size:0.82rem;line-height:1.55;margin-bottom:0.5rem;'>"
+        "Portfolio weights do not always reveal where risk really comes from. This chart shows "
+        "each ETF's contribution to total portfolio risk and compares whether HRP and Markowitz "
+        "distribute volatility evenly or concentrate it in a few assets."
+        "</p>",
+        unsafe_allow_html=True,
+    )
     st.markdown("**Risk contributions — who drives portfolio risk?**")
 
     all_tickers = sorted(
@@ -3493,7 +3521,20 @@ def render_compare() -> None:
 
     # ── 3. Correlation heatmap ────────────────────────────────────────────────
     st.markdown("---")
+    st.markdown(
+        "<p style='color:#94a3b8;font-size:0.82rem;line-height:1.55;margin-bottom:0.5rem;'>"
+        "Diversification is not only about holding many ETFs, but about combining assets that "
+        "behave differently. This matrix shows the correlation structure of the ETF universe and "
+        "explains why HRP groups some assets together while separating others."
+        "</p>",
+        unsafe_allow_html=True,
+    )
     st.markdown("**Asset correlation matrix**")
+    st.caption(
+        "How to read it: higher bars indicate larger risk contribution; values in the matrix "
+        "close to 1 indicate assets moving together, while values near 0 or below 0 indicate "
+        "stronger diversification potential."
+    )
 
     _TICKERS_HM = ["CSPX.L", "EFA", "GLD", "VNQ", "AGGH.MI", "TLT", "TIP", "XEON.MI"]
     _CORR = np.array([
