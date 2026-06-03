@@ -1943,11 +1943,12 @@ ETF_METADATA: dict[str, dict] = {
 
 
 def _section_header(number: str, title: str) -> None:
+    prefix = f"{number}. " if number else ""
     st.markdown(
         f'<div style="border-left:3px solid #7c5cfc;padding-left:0.9rem;margin-bottom:0.8rem;">'
         f'<div style="font-family:\'Space Grotesk\',sans-serif;'
         f'font-size:1.2rem;font-weight:700;color:#f1f5f9;letter-spacing:-0.01em;">'
-        f'{number}. {title}</div>'
+        f'{prefix}{title}</div>'
         f'</div>',
         unsafe_allow_html=True,
     )
@@ -3669,7 +3670,7 @@ def render_settings() -> None:
     page_header("Settings", "Platform configuration")
     st.markdown("---")
 
-    st.markdown("**Data Source**")
+    _section_header("", "Data Source")
     st.caption(
         "The Portfolio Dashboard always uses live market data (prices via "
         "yfinance) and runs the HRP optimizer on the latest available history. "
@@ -3678,7 +3679,7 @@ def render_settings() -> None:
     )
 
     st.markdown("---")
-    st.markdown("**API Status**")
+    _section_header("", "API Status")
     api_key = os.environ.get("ANTHROPIC_API_KEY", "")
     if not api_key:
         try:
@@ -3691,11 +3692,11 @@ def render_settings() -> None:
         st.error("Claude API key not found — Chat Advisor will not work.")
 
     st.markdown("---")
-    st.markdown("**Team**")
+    _section_header("", "Team")
     render_team_section()
 
     st.markdown("---")
-    st.markdown("**About**")
+    _section_header("", "About")
     st.caption("AI-Powered Robo-Advisor Platform · USI Programming in Finance II 2026")
     st.caption("Design v3.1 · HRP + LLM Narrator + EU Awareness")
 
