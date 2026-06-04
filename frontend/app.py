@@ -2833,6 +2833,7 @@ _CHAT_CSS = """
     line-height: 1.65 !important;
     color: #cbd5e1 !important;
     margin-bottom: 0.5rem !important;
+    text-align: center !important;
 }
 [data-testid="stChatMessage"] p:last-child { margin-bottom: 0 !important; }
 [data-testid="stChatMessage"] h1,
