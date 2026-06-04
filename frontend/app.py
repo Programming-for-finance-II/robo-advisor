@@ -2798,6 +2798,8 @@ _CHAT_CSS = """
     padding: 0.35rem 0 !important;
     margin-bottom: 0.85rem !important;
     animation: ca-fade 0.28s ease-out;
+    width: 100% !important;
+    max-width: 100% !important;
 }
 @keyframes ca-fade {
     from { opacity: 0; transform: translateY(4px); }
@@ -2833,7 +2835,7 @@ _CHAT_CSS = """
     line-height: 1.65 !important;
     color: #cbd5e1 !important;
     margin-bottom: 0.5rem !important;
-    text-align: center !important;
+    text-align: justify !important;
 }
 [data-testid="stChatMessage"] p:last-child { margin-bottom: 0 !important; }
 [data-testid="stChatMessage"] h1,
