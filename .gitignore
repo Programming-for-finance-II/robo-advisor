@@ -228,3 +228,12 @@ venv/
 .ruff_cache/
 htmlcov/
 .coverage
+# LaTeX auxiliary files
+docs/*.aux
+docs/*.bbl
+docs/*.bcf
+docs/*.blg
+docs/*.out
+docs/*.run.xml
+docs/*.toc
+docs/*.log
