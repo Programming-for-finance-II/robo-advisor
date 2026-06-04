@@ -291,6 +291,11 @@ def main() -> None:
     # UNIFIED TOP NAVBAR (apple.com style) — replaces separate logo block
     # and nav row. Only this section was modified. Do not edit elsewhere.
 
+    # Stable per-session identifier, persisted in session_state on first load.
+    # Used by the questionnaire to look up any previously saved profile.
+    if "session_token" not in st.session_state:
+        st.session_state["session_token"] = str(uuid.uuid4())
+
     # Step 1: resolve active page from query params; st.button sets it directly
     _qp = unquote_plus(st.query_params.get("page", PAGES[0]))
     active = _qp if _qp in PAGES else PAGES[0]
@@ -692,6 +697,221 @@ def _compute_profile(answers: dict[str, int]) -> dict:
 
 
 # ---------------------------------------------------------------------------
+# Profile persistence helpers
+# Best-effort integration with the backend GET /profile/latest endpoint.
+# When the API base URL is not configured (e.g. the Streamlit-only cloud
+# deployment) every call degrades silently and the questionnaire relies on
+# st.session_state alone, so the 3-state UI keeps working within a session.
+# ---------------------------------------------------------------------------
+
+
+def _api_base_url() -> str | None:
+    """Resolve the FastAPI base URL from env or Streamlit secrets, or None."""
+    base = os.environ.get("ROBO_ADVISOR_API_URL", "")
+    if not base:
+        try:
+            base = st.secrets.get("ROBO_ADVISOR_API_URL", "")
+        except Exception:
+            base = ""
+    return base.rstrip("/") or None
+
+
+def _api_key_header() -> dict[str, str]:
+    """X-API-Key header if an API_KEY is configured, else empty."""
+    key = os.environ.get("API_KEY", "")
+    if not key:
+        try:
+            key = st.secrets.get("API_KEY", "")
+        except Exception:
+            key = ""
+    return {"X-API-Key": key} if key else {}
+
+
+@st.cache_data(ttl=30, show_spinner=False)
+def _fetch_latest_profile(session_token: str) -> dict | None:
+    """Call GET /profile/latest for this session token (best-effort).
+
+    Returns the parsed JSON body, or None when the API is not configured
+    or unreachable. Cached briefly so it does not run on every rerun.
+    """
+    base = _api_base_url()
+    if not base:
+        return None
+    try:
+        import httpx
+
+        resp = httpx.get(
+            f"{base}/profile/latest",
+            params={"session_token": session_token},
+            headers=_api_key_header(),
+            timeout=3.0,
+        )
+        if resp.status_code == 200:
+            return resp.json()
+    except Exception:
+        return None
+    return None
+
+
+def _restore_persisted_profile() -> None:
+    """Rehydrate a saved profile into session_state on first load.
+
+    No-op if a profile is already in this session, if no session token is
+    set, or if the backend has nothing usable for it. Only restores when a
+    complete answer set is available so the result card renders correctly.
+    """
+    if st.session_state.get("profile"):
+        return
+    token = st.session_state.get("session_token")
+    if not token:
+        return
+    latest = _fetch_latest_profile(token)
+    if not latest or not latest.get("exists"):
+        return
+    snapshot = latest.get("questionnaire_snapshot") or {}
+    q_ids = [q["id"] for q in _QUESTIONS]
+    answers = {q: snapshot[q] for q in q_ids if q in snapshot}
+    if len(answers) == len(q_ids):
+        st.session_state["questionnaire_answers"] = answers
+        st.session_state["profile"] = _compute_profile(answers)
+
+
+def _render_profile_result_card(result: dict) -> None:
+    """Render the investor-profile result card (shared by post-submit and
+    read-only states). Extracted verbatim from the original inline block."""
+    _RESULT_META = {
+        "CONSERVATIVE": {
+            "icon": "🛡️",
+            "color": "#0dcfb0",
+            "label": "Conservative",
+            "desc": "Capital preservation focus · low-volatility, income-oriented assets",
+            "bar_gradient": "linear-gradient(90deg,#0dcfb0,#22d3ee)",
+        },
+        "MODERATE": {
+            "icon": "⚖️",
+            "color": "#7c5cfc",
+            "label": "Moderate",
+            "desc": "Balanced growth and protection · diversified multi-asset allocation",
+            "bar_gradient": "linear-gradient(90deg,#7c5cfc,#a78bfa)",
+        },
+        "AGGRESSIVE": {
+            "icon": "🚀",
+            "color": "#f87171",
+            "label": "Aggressive",
+            "desc": "Growth-oriented · higher volatility and drawdown accepted",
+            "bar_gradient": "linear-gradient(90deg,#f87171,#fbbf24)",
+        },
+    }
+    rm = _RESULT_META.get(result["profile_label"], _RESULT_META["MODERATE"])
+    score_pct = result["score"] / 30 * 100  # max possible = 10 × 3 = 30
+
+    # ── top drivers text ────────────────────────────────────────────────
+    driver_labels = {
+        "Q1": "Age", "Q2": "Income", "Q3": "Liquidity",
+        "Q4": "Dependents", "Q5": "Experience", "Q6": "Knowledge",
+        "Q7": "Investment purpose", "Q8": "Loss reaction",
+        "Q9": "Recovery horizon", "Q10": "Self-assessment",
+    }
+    top3 = result.get("top_drivers", [])[:3]
+    drivers_chips = "".join(
+        '<span style="background:rgba(255,255,255,0.06);border:1px solid #2d3a52;'
+        'border-radius:7px;padding:0.3rem 0.75rem;font-size:0.85rem;'
+        'font-weight:500;color:#94a3b8;">'
+        + driver_labels.get(d["feature"], d["feature"]) + "</span>"
+        for d in top3
+    )
+    # Pre-build the optional drivers block — avoids nested f-string inside the card
+    drivers_block = (
+        '<div style="font-size:0.75rem;font-weight:600;letter-spacing:0.1em;'
+        'text-transform:uppercase;color:#64748b;margin-bottom:0.55rem;">'
+        'Top scoring factors</div>'
+        '<div style="display:flex;flex-wrap:wrap;gap:0.5rem;">'
+        + drivers_chips + "</div>"
+    ) if top3 else ""
+
+    conf_pct = int(result["confidence"] * 100)
+
+    card_html = (
+        f'<div style="background:linear-gradient(135deg,{rm["color"]}12,{rm["color"]}06);'
+        f'border:1px solid {rm["color"]}45;border-radius:16px;'
+        f'padding:1.5rem 1.75rem 1.4rem 1.75rem;margin:1.5rem 0 1rem 0;">'
+
+        # ── header ──────────────────────────────────────────────────────
+        f'<div style="display:flex;align-items:flex-start;gap:1.25rem;margin-bottom:1.35rem;">'
+        f'<div style="font-size:2.8rem;line-height:1;flex-shrink:0;margin-top:0.1rem;">'
+        f'{rm["icon"]}</div>'
+        f'<div style="flex:1;">'
+        f'<div style="font-size:0.72rem;font-weight:700;letter-spacing:0.12em;'
+        f'text-transform:uppercase;color:{rm["color"]}90;margin-bottom:0.3rem;">'
+        f'YOUR INVESTOR RISK PROFILE</div>'
+        f'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:2.2rem;'
+        f'font-weight:700;color:{rm["color"]};letter-spacing:-0.02em;line-height:1.1;">'
+        f'{rm["label"]}</div>'
+        f'<div style="font-size:0.9rem;color:#64748b;margin-top:0.4rem;">{rm["desc"]}</div>'
+        f'</div></div>'
+
+        # ── metrics row ──────────────────────────────────────────────────
+        f'<div style="display:flex;gap:0.75rem;flex-wrap:wrap;margin-bottom:1.25rem;">'
+
+        # score card
+        f'<div style="flex:1;min-width:120px;background:rgba(0,0,0,0.25);'
+        f'border:1px solid #1e2640;border-radius:10px;padding:0.75rem 1.1rem;">'
+        f'<div style="font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;'
+        f'color:#475569;margin-bottom:0.35rem;">Score</div>'
+        f'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:1.7rem;'
+        f'font-weight:700;color:#f1f5f9;line-height:1;">'
+        f'{result["score"]}'
+        f'<span style="font-size:0.85rem;color:#475569;font-weight:400;">/30</span></div>'
+        f'<div style="margin-top:0.55rem;height:5px;border-radius:3px;'
+        f'background:#1e2640;overflow:hidden;">'
+        f'<div style="height:100%;width:{score_pct:.0f}%;'
+        f'background:{rm["bar_gradient"]};border-radius:3px;"></div>'
+        f'</div></div>'
+
+        # confidence card
+        f'<div style="flex:1;min-width:120px;background:rgba(0,0,0,0.25);'
+        f'border:1px solid #1e2640;border-radius:10px;padding:0.75rem 1.1rem;">'
+        f'<div style="font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;'
+        f'color:#475569;margin-bottom:0.35rem;">Model Confidence</div>'
+        f'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:1.7rem;'
+        f'font-weight:700;color:{rm["color"]};line-height:1;">{conf_pct}%</div>'
+        f'<div style="margin-top:0.55rem;height:5px;border-radius:3px;'
+        f'background:#1e2640;overflow:hidden;">'
+        f'<div style="height:100%;width:{conf_pct}%;'
+        f'background:{rm["bar_gradient"]};border-radius:3px;"></div>'
+        f'</div></div>'
+
+        '</div>'  # end metrics row
+
+        # ── drivers ──────────────────────────────────────────────────────
+        + drivers_block +
+        '</div>'  # end card
+    )
+    st.markdown(card_html, unsafe_allow_html=True)
+
+    if result["low_confidence_flag"]:
+        st.warning(
+            "⚠️  Borderline score — your answers sit near the boundary between two "
+            "profiles. Consider reviewing your responses for a more precise classification."
+        )
+
+    if result["q7_override_applied"]:
+        st.info(
+            "ℹ️  MiFID II override applied: capital earmarked as a safety net (Q7) "
+            "forces your profile to **CONSERVATIVE** regardless of overall score."
+        )
+
+    if st.button(
+        "View my Portfolio Dashboard →",
+        type="primary",
+        use_container_width=True,
+    ):
+        st.session_state.active_page = "Portfolio Dashboard"
+        st.query_params["page"] = "Portfolio Dashboard"
+        st.rerun()
+
+
+# ---------------------------------------------------------------------------
 # Page 1 -- Questionnaire
 # ---------------------------------------------------------------------------
 
@@ -719,6 +939,39 @@ def render_questionnaire() -> None:
         """,
         unsafe_allow_html=True,
     )
+
+    # ── Determine which of the three states to render ────────────────────────
+    # Try to rehydrate a previously saved profile for this session token, then
+    # branch: read-only (profile exists) vs. form (first-time / reassessment).
+    _restore_persisted_profile()
+    existing = st.session_state.get("profile")
+    reassessing = st.session_state.get("questionnaire_reassess", False)
+
+    # ── State 2: READ-ONLY — a profile already exists for this session ────────
+    if existing and not reassessing:
+        st.markdown(
+            '<div style="font-size:0.92rem;color:#64748b;margin:0 0 0.5rem 0;">'
+            "You have already completed the questionnaire. Your saved investor "
+            "profile is shown below. Start a reassessment to update your answers."
+            "</div>",
+            unsafe_allow_html=True,
+        )
+        _render_profile_result_card(existing)
+        if st.button(
+            "↻ Reassess my profile",
+            key="reassess_btn",
+            use_container_width=True,
+        ):
+            st.session_state["questionnaire_reassess"] = True
+            st.rerun()
+        return
+
+    # ── State 1 & 3: FIRST-TIME or REASSESSMENT — render the editable form ────
+    if reassessing:
+        st.info(
+            "Reassessment in progress — review and update your answers below, "
+            "then recalculate to replace your saved profile."
+        )
 
     st.markdown(
         '<div style="font-size:0.92rem;color:#64748b;margin:0 0 1.5rem 0;">'
@@ -887,140 +1140,12 @@ def render_questionnaire() -> None:
         st.session_state["profile"] = result
         st.session_state["questionnaire_answers"] = answers
         st.session_state.pop("portfolio_data", None)
+        # Reassessment complete — leave reassessment mode so the next rerun
+        # shows the read-only state with the freshly computed profile.
+        st.session_state["questionnaire_reassess"] = False
 
     if st.session_state.get("profile"):
-        result = st.session_state["profile"]
-
-        _RESULT_META = {
-            "CONSERVATIVE": {
-                "icon": "🛡️",
-                "color": "#0dcfb0",
-                "label": "Conservative",
-                "desc": "Capital preservation focus · low-volatility, income-oriented assets",
-                "bar_gradient": "linear-gradient(90deg,#0dcfb0,#22d3ee)",
-            },
-            "MODERATE": {
-                "icon": "⚖️",
-                "color": "#7c5cfc",
-                "label": "Moderate",
-                "desc": "Balanced growth and protection · diversified multi-asset allocation",
-                "bar_gradient": "linear-gradient(90deg,#7c5cfc,#a78bfa)",
-            },
-            "AGGRESSIVE": {
-                "icon": "🚀",
-                "color": "#f87171",
-                "label": "Aggressive",
-                "desc": "Growth-oriented · higher volatility and drawdown accepted",
-                "bar_gradient": "linear-gradient(90deg,#f87171,#fbbf24)",
-            },
-        }
-        rm = _RESULT_META.get(result["profile_label"], _RESULT_META["MODERATE"])
-        score_pct = result["score"] / 30 * 100  # max possible = 10 × 3 = 30
-
-        # ── top drivers text ────────────────────────────────────────────────
-        driver_labels = {
-            "Q1": "Age", "Q2": "Income", "Q3": "Liquidity",
-            "Q4": "Dependents", "Q5": "Experience", "Q6": "Knowledge",
-            "Q7": "Investment purpose", "Q8": "Loss reaction",
-            "Q9": "Recovery horizon", "Q10": "Self-assessment",
-        }
-        top3 = result.get("top_drivers", [])[:3]
-        drivers_chips = "".join(
-            '<span style="background:rgba(255,255,255,0.06);border:1px solid #2d3a52;'
-            'border-radius:7px;padding:0.3rem 0.75rem;font-size:0.85rem;'
-            'font-weight:500;color:#94a3b8;">'
-            + driver_labels.get(d["feature"], d["feature"]) + "</span>"
-            for d in top3
-        )
-        # Pre-build the optional drivers block — avoids nested f-string inside the card
-        drivers_block = (
-            '<div style="font-size:0.75rem;font-weight:600;letter-spacing:0.1em;'
-            'text-transform:uppercase;color:#64748b;margin-bottom:0.55rem;">'
-            'Top scoring factors</div>'
-            '<div style="display:flex;flex-wrap:wrap;gap:0.5rem;">'
-            + drivers_chips + "</div>"
-        ) if top3 else ""
-
-        conf_pct = int(result["confidence"] * 100)
-
-        card_html = (
-            f'<div style="background:linear-gradient(135deg,{rm["color"]}12,{rm["color"]}06);'
-            f'border:1px solid {rm["color"]}45;border-radius:16px;'
-            f'padding:1.5rem 1.75rem 1.4rem 1.75rem;margin:1.5rem 0 1rem 0;">'
-
-            # ── header ──────────────────────────────────────────────────────
-            f'<div style="display:flex;align-items:flex-start;gap:1.25rem;margin-bottom:1.35rem;">'
-            f'<div style="font-size:2.8rem;line-height:1;flex-shrink:0;margin-top:0.1rem;">'
-            f'{rm["icon"]}</div>'
-            f'<div style="flex:1;">'
-            f'<div style="font-size:0.72rem;font-weight:700;letter-spacing:0.12em;'
-            f'text-transform:uppercase;color:{rm["color"]}90;margin-bottom:0.3rem;">'
-            f'YOUR INVESTOR RISK PROFILE</div>'
-            f'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:2.2rem;'
-            f'font-weight:700;color:{rm["color"]};letter-spacing:-0.02em;line-height:1.1;">'
-            f'{rm["label"]}</div>'
-            f'<div style="font-size:0.9rem;color:#64748b;margin-top:0.4rem;">{rm["desc"]}</div>'
-            f'</div></div>'
-
-            # ── metrics row ──────────────────────────────────────────────────
-            f'<div style="display:flex;gap:0.75rem;flex-wrap:wrap;margin-bottom:1.25rem;">'
-
-            # score card
-            f'<div style="flex:1;min-width:120px;background:rgba(0,0,0,0.25);'
-            f'border:1px solid #1e2640;border-radius:10px;padding:0.75rem 1.1rem;">'
-            f'<div style="font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;'
-            f'color:#475569;margin-bottom:0.35rem;">Score</div>'
-            f'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:1.7rem;'
-            f'font-weight:700;color:#f1f5f9;line-height:1;">'
-            f'{result["score"]}'
-            f'<span style="font-size:0.85rem;color:#475569;font-weight:400;">/30</span></div>'
-            f'<div style="margin-top:0.55rem;height:5px;border-radius:3px;'
-            f'background:#1e2640;overflow:hidden;">'
-            f'<div style="height:100%;width:{score_pct:.0f}%;'
-            f'background:{rm["bar_gradient"]};border-radius:3px;"></div>'
-            f'</div></div>'
-
-            # confidence card
-            f'<div style="flex:1;min-width:120px;background:rgba(0,0,0,0.25);'
-            f'border:1px solid #1e2640;border-radius:10px;padding:0.75rem 1.1rem;">'
-            f'<div style="font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;'
-            f'color:#475569;margin-bottom:0.35rem;">Model Confidence</div>'
-            f'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:1.7rem;'
-            f'font-weight:700;color:{rm["color"]};line-height:1;">{conf_pct}%</div>'
-            f'<div style="margin-top:0.55rem;height:5px;border-radius:3px;'
-            f'background:#1e2640;overflow:hidden;">'
-            f'<div style="height:100%;width:{conf_pct}%;'
-            f'background:{rm["bar_gradient"]};border-radius:3px;"></div>'
-            f'</div></div>'
-
-            '</div>'  # end metrics row
-
-            # ── drivers ──────────────────────────────────────────────────────
-            + drivers_block +
-            '</div>'  # end card
-        )
-        st.markdown(card_html, unsafe_allow_html=True)
-
-        if result["low_confidence_flag"]:
-            st.warning(
-                "⚠️  Borderline score — your answers sit near the boundary between two "
-                "profiles. Consider reviewing your responses for a more precise classification."
-            )
-
-        if result["q7_override_applied"]:
-            st.info(
-                "ℹ️  MiFID II override applied: capital earmarked as a safety net (Q7) "
-                "forces your profile to **CONSERVATIVE** regardless of overall score."
-            )
-
-        if st.button(
-            "View my Portfolio Dashboard →",
-            type="primary",
-            use_container_width=True,
-        ):
-            st.session_state.active_page = "Portfolio Dashboard"
-            st.query_params["page"] = "Portfolio Dashboard"
-            st.rerun()
+        _render_profile_result_card(st.session_state["profile"])
 
 
 # ---------------------------------------------------------------------------
