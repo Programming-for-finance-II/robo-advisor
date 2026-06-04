@@ -1001,9 +1001,10 @@ def _restore_persisted_profile() -> None:
         st.session_state["questionnaire_answers"] = saved["answers"]
 
 
-def _render_profile_result_card(result: dict) -> None:
+def _render_profile_result_card(result: dict, show_dashboard_button: bool = True) -> None:
     """Render the investor-profile result card (shared by post-submit and
-    read-only states). Extracted verbatim from the original inline block."""
+    read-only states). The "View my Portfolio Dashboard" button is optional:
+    the read-only state hides it (a Reassess button is shown there instead)."""
     _RESULT_META = {
         "CONSERVATIVE": {
             "icon": "🛡️",
@@ -1126,7 +1127,7 @@ def _render_profile_result_card(result: dict) -> None:
             "forces your profile to **CONSERVATIVE** regardless of overall score."
         )
 
-    if st.button(
+    if show_dashboard_button and st.button(
         "View my Portfolio Dashboard →",
         type="primary",
         use_container_width=True,
@@ -1180,7 +1181,7 @@ def render_questionnaire() -> None:
             "</div>",
             unsafe_allow_html=True,
         )
-        _render_profile_result_card(existing)
+        _render_profile_result_card(existing, show_dashboard_button=False)
         if st.button(
             "↻ Reassess my profile",
             key="reassess_btn",
