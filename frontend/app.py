@@ -2821,6 +2821,9 @@ _CHAT_CSS = """
     padding: 0.75rem 1.05rem !important;
     box-shadow: 0 1px 0 rgba(0,0,0,0.15);
     width: 100% !important;
+    box-sizing: border-box !important;
+    overflow-wrap: break-word !important;
+    word-break: break-word !important;
 }
 /* User message: purple left-border accent (same pattern as selected options) */
 [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"])
