@@ -3185,9 +3185,9 @@ def render_chat() -> None:
         st.session_state["chat_history"] = []
     history: list[dict] = st.session_state["chat_history"]
 
-    # Input is pinned to the bottom of the page regardless of call position.
-    typed = st.chat_input("Ask about your portfolio…")
-    pending = typed or st.session_state.pop("_pending_prompt", None)
+    # Process any pending prompt (submitted via the inline input below or a
+    # suggestion chip) before rendering the thread, so messages appear in order.
+    pending = st.session_state.pop("_pending_prompt", None)
     if pending:
         history.append({"role": "user", "content": pending})
         with st.spinner("Thinking…"):
@@ -3271,6 +3271,14 @@ def render_chat() -> None:
 
         # Close .ca-shell
         st.markdown('</div>', unsafe_allow_html=True)
+
+        # Inline chat input — rendered inside the column so Streamlit keeps it
+        # in normal flow (right below the conversation, above the page's
+        # "Continue exploring" nav) instead of pinning it to the viewport bottom.
+        typed = st.chat_input("Ask about your portfolio…")
+        if typed:
+            st.session_state["_pending_prompt"] = typed
+            st.rerun()
 
     # Close .ca-page
     st.markdown('</div>', unsafe_allow_html=True)
