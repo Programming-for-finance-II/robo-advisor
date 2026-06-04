@@ -2,48 +2,30 @@
 %  AI-Powered Robo-Advisor Platform
 %  Academic Report — Programming in Finance II (2026)
 %  USI — Prof. Peter H. Gruber
-%  GitHub: https://github.com/<YOUR_ORG>/robo-advisor
 % =============================================================
 \documentclass[11pt, a4paper]{article}
 
-% ── Packages ─────────────────────────────────────────────────
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
 \usepackage[english]{babel}
 \usepackage{lmodern}
 \usepackage{microtype}
-
 \usepackage{geometry}
-\geometry{margin=2.5cm}
-
+\geometry{margin=2cm}
 \usepackage{amsmath, amssymb}
-\usepackage{booktabs}       % professional tables
+\usepackage{booktabs}
 \usepackage{graphicx}
 \usepackage{xcolor}
-\usepackage{listings}       % code blocks
 \usepackage{hyperref}
-\usepackage{cleveref}
 \usepackage{float}
 \usepackage{caption}
-\usepackage{subcaption}
 \usepackage{enumitem}
 \usepackage{csquotes}
 \usepackage[style=authoryear, backend=biber]{biblatex}
 \addbibresource{references.bib}
 
-% ── Code listing style ────────────────────────────────────────
-\lstset{
-  basicstyle=\ttfamily\small,
-  keywordstyle=\color{blue!70},
-  commentstyle=\color{gray},
-  stringstyle=\color{teal},
-  breaklines=true,
-  frame=single,
-  numbers=left,
-  numberstyle=\tiny\color{gray}
-}
+\setlist{noitemsep, topsep=2pt}
 
-% ── Metadata ─────────────────────────────────────────────────
 \title{%
   \textbf{AI-Powered Robo-Advisor Platform}\\[0.4em]
   \large Academic Project Report\\
@@ -55,9 +37,7 @@
 }
 \date{May 2026}
 
-% =============================================================
 \begin{document}
-% =============================================================
 
 \maketitle
 \tableofcontents
@@ -65,939 +45,173 @@
 
 % ─────────────────────────────────────────────────────────────
 \section{Introduction}
-\label{sec:intro}
 % ─────────────────────────────────────────────────────────────
-\subsection{Problem Statement}
-Retail investors increasingly rely on algorithm-driven portfolio
-recommendations, yet most commercial robo-advisor platforms share
-three structural limitations. First, their underlying models are
-opaque: users receive a recommended allocation without any
-explanation of why that specific portfolio was produced for their
-profile. Second, their data sources are undisclosed: it is rarely
-clear whether the risk profiler was trained on data representative
-of the investor's own demographic and geographic context. Third,
-their AI components — where present — are unconstrained: a language
-model free to generate financial commentary without grounding in
-verified backend data is a liability, not a feature.
 
-This project addresses all three limitations in an academic
-prototype setting.
+Most commercial robo-advisors share three structural limitations: opaque models, undisclosed training data, and unconstrained AI components. This project addresses all three in an academic prototype combining a Gradient Boosting risk profiler trained on the Federal Reserve Survey of Consumer Finances (SCF~2022), a Hierarchical Risk Parity (HRP) portfolio optimizer with Ledoit--Wolf covariance shrinkage, and a constrained LLM narrator (large language model API) that is mathematically prevented from inventing figures via a Ground Truth JSON contract and a five-step validator. An EU Awareness layer (Rule~9) explicitly communicates the US-centric bias of the SCF training data to European investors at the point of recommendation.
 
-\subsection{Our Contribution}
-We present an educational robo-advisor prototype that combines:
+The platform is a Streamlit web application backed by a FastAPI service, with a SQLite audit trail storing SHA-256 hashes of every market data snapshot and LLM prompt. An agentic GitHub Actions workflow demonstrates the mandatory AI agent criterion: a pull request generated entirely by the LLM API without human intervention.
 
-\begin{itemize}
-  \item A \textbf{Gradient Boosting risk profiler} trained on real
-        household financial behaviour from the Federal Reserve
-        Survey of Consumer Finances~(SCF 2022), with SHAP
-        explainability that exposes the top drivers of each
-        classification to the user;
-  \item A \textbf{Hierarchical Risk Parity portfolio optimizer}
-        with Ledoit--Wolf covariance shrinkage on a UCITS-aware
-        eight-asset ETF universe, with automatic fallback logic
-        for tickers unavailable on \texttt{yfinance};
-  \item A \textbf{constrained LLM narrator} (Claude API,
-        Anthropic) that translates numerical results into
-        natural-language explanations without inventing figures,
-        enforced by a Ground Truth JSON contract and a five-step
-        post-generation validator;
-  \item An \textbf{EU Awareness layer} that explicitly
-        communicates the US-centric bias of the SCF training data
-        to European investors at the point of recommendation,
-        enforced at the system prompt level (Rule~9) and verified
-        by the validator before any response reaches the user.
-\end{itemize}
-
-The platform is implemented as a Streamlit web application backed
-by a FastAPI service, with a SQLite audit trail that stores
-SHA-256 hashes of every market data snapshot and LLM prompt,
-enabling bit-for-bit reproducibility of any historical
-recommendation. An agentic GitHub Actions workflow demonstrates
-the mandatory AI agent criterion: a pull request generated
-entirely by the Claude API without human intervention.
-
-The source code, Architecture Decision Records, and this report
-are available at:
-\url{https://github.com/Programming-for-finance-II/robo-advisor}
+Source code and Architecture Decision Records: \url{https://github.com/Programming-for-finance-II/robo-advisor}
 
 % ─────────────────────────────────────────────────────────────
-\section{ML Risk Profiler}
-\label{sec:ml}
+\section{Backend and Data Infrastructure (P1)}
+% ─────────────────────────────────────────────────────────────
+
+\subsection{API Layer}
+The backend is a \textbf{FastAPI} service exposing five endpoints: \texttt{/profile} (risk profiler), \texttt{/optimize} (portfolio optimiser), \texttt{/advice} (LLM narrator), \texttt{/backtest} (historical scenario analysis), and \texttt{/compare} (HRP vs.\ MVO side-by-side). All protected endpoints require an \texttt{X-API-Key} header validated on every request. Rate limiting is enforced via \texttt{slowapi} at 10 requests per minute per IP address; requests exceeding the limit receive a \texttt{429 Too Many Requests} response without consuming any computation. All responses are Pydantic-validated, ensuring schema consistency between the backend and the Streamlit frontend.
+
+\subsection{Data Pipeline: ValidatedDataLoader}
+Market data is downloaded from \texttt{yfinance} by the \textbf{ValidatedDataLoader} (\texttt{backend/data/loader.py}). The loader applies three sequential quality controls before returning data to the optimiser:
+\begin{enumerate}
+  \item \textbf{UCITS probe.} For each primary UCITS ticker, a lightweight download is performed and the per-ticker NaN ratio is computed. If the ratio exceeds the 2\,\% threshold, the loader substitutes the corresponding US-listed fallback (e.g.\ \texttt{SPY} for \texttt{CSPX.L}) and records the substitution.
+  \item \textbf{Forward-fill.} Gaps of up to two consecutive trading days are filled; remaining NaN values cause a \texttt{DataQualityError}.
+  \item \textbf{Minimum observations gate.} At least 252 valid trading days (one calendar year) must remain after cleaning; shorter series are rejected.
+\end{enumerate}
+The cleaned price matrix is serialised to CSV and hashed (SHA-256) to produce the \texttt{market\_data\_hash} stored in the audit trail.
+
+\subsection{Audit Trail}
+The SQLite database (\texttt{robo\_advisor.db}) contains two tables. \texttt{market\_data\_snapshots} stores one row per unique \texttt{market\_data\_hash}, using \texttt{INSERT OR IGNORE} for deduplication: identical market data downloaded on different days produces a single stored snapshot. \texttt{recommendations} stores one row per optimisation request, linking to the corresponding snapshot via the hash and recording the full input parameters, profile output, portfolio weights, and risk metrics. This design enables bit-for-bit reproducibility of any historical recommendation from the stored hash alone. The application is containerised via \texttt{docker-compose.yml}; on Streamlit Community Cloud the database resets on redeploy, as documented in ADR-005.
+
+% ─────────────────────────────────────────────────────────────
+\section{ML Risk Profiler (P3)}
 % ─────────────────────────────────────────────────────────────
 
 \subsection{Architecture}
+The profiler operates in two phases. \textbf{Phase~A} is a rule-based fallback using the Grable--Lytton (1999) instrument \parencite{grable1999}: ten questionnaire items scored on $[0,30]$ are mapped to three profiles (\texttt{CONSERVATIVE}, \texttt{MODERATE}, \texttt{AGGRESSIVE}), with a capital-preservation override that caps the profile regardless of total score. \textbf{Phase~B} uses a trained GBM classifier grounded in empirically observed household behaviour. Both phases return a uniform \texttt{ProfilerOutput} typed dictionary, so downstream components are agnostic to which phase produced the classification.
 
-The risk profiler operates in two phases. \textbf{Phase A} is a rule-based
-fallback based on the Grable--Lytton (1999) instrument \parencite{grable1999}:
-ten questionnaire items scored on a $[0, 30]$ scale are mapped to three
-profiles (\texttt{CONSERVATIVE}, \texttt{MODERATE}, \texttt{AGGRESSIVE}).
-An investment-objective override caps the profile at \texttt{CONSERVATIVE}
-if the respondent selects capital preservation as their primary objective,
-regardless of total score; borderline scores also reduce prediction confidence.
-Phase A requires no trained model, ensuring graceful degradation if the ML
-pipeline is unavailable.
+\subsection{Label Construction and GBM Classifier}
+Training labels are derived from the SCF~2022 \parencite{FedSCF2022} ($n=4{,}595$ households, implicate~1). Four allocation variables (\texttt{EQUITY}, \texttt{BOND}, \texttt{CASHLI}, \texttt{STOCKS}) are normalised and clustered via K-Means ($K=3$, silhouette $s=0.84$). Clusters are labelled deterministically by mean equity share. A \texttt{HistGradientBoostingClassifier} is trained on nine questionnaire-derived features with SCF sample weights preserved. Performance:
 
-\textbf{Phase B} grounds classification in empirically observed household
-portfolio behaviour rather than expert-calibrated scoring weights. Training
-labels are derived from the Federal Reserve Survey of Consumer Finances
-(SCF~2022) \parencite{FedSCF2022}, a stratified probability sample of
-4{,}595 U.S.\ households (implicate~1). Both phases return a uniform
-\texttt{ProfilerOutput} typed dictionary --- containing profile label,
-confidence score, \texttt{low\_confidence\_flag}, SHAP \texttt{top\_drivers},
-and \texttt{model\_version} --- so downstream components (portfolio optimiser,
-LLM narrator) are agnostic to which phase produced the classification.
-
-\subsection{Label Construction via Behavioural Clustering}
-\label{sec:clustering}
-
-To avoid a circularity common in supervised risk profiling --- using
-rule-based labels to train a supervised model simply re-learns the rule
---- synthetic ground-truth labels are constructed from observed portfolio
-allocation data. Four allocation variables (\texttt{EQUITY}, \texttt{BOND},
-\texttt{CASHLI}, \texttt{STOCKS}) are extracted from the SCF~2022 summary
-extract, normalised to sum to 1.0 per household, and standardised.
-Sample weights (\texttt{WGT}) are preserved throughout: the SCF oversamples
-high-net-worth households, and ignoring weights would bias the model toward
-wealthy-household behaviour \parencite{guiso2018}.
-
-K-Means ($K=3$) is applied to the normalised allocation ratios. The
-silhouette score ($s = 0.84$) confirms well-separated behavioural groups.
-Clusters are labelled deterministically by mean equity share: highest
-$\to$ \texttt{AGGRESSIVE}, lowest $\to$ \texttt{CONSERVATIVE}, intermediate
-$\to$ \texttt{MODERATE}. The resulting distribution ---
-\texttt{AGGRESSIVE}~59.2\%, \texttt{CONSERVATIVE}~34.3\%,
-\texttt{MODERATE}~6.5\% --- is consistent with the heterogeneity in risk
-aversion documented by \textcite{guiso2018}.
-
-\subsection{GBM Classifier}
-\label{sec:gbm}
-
-A \texttt{HistGradientBoostingClassifier} (scikit-learn) is trained on
-nine features available from questionnaire responses at inference time:
-\texttt{AGE}, \texttt{EDUC}, \texttt{INCOME}, \texttt{NETWORTH},
-\texttt{YESFINRISK}, \texttt{NOFINRISK}, \texttt{KIDS}, \texttt{MARRIED},
-and \texttt{WSAVED}. The allocation ratios used for label construction are
-not required at prediction time. Sample weights (\texttt{WGT}) are passed
-to \texttt{fit()} to preserve population representativeness.
-A logistic regression baseline is trained on identical features to
-quantify the contribution of non-linearity.
-
-\begin{table}[h]
-\centering
+\begin{table}[H]
+\centering\small
 \begin{tabular}{lcc}
-\hline
+\toprule
 \textbf{Metric} & \textbf{HistGBM} & \textbf{LR Baseline} \\
-\hline
+\midrule
 Training accuracy    & 97.7\% & 79.9\% \\
 CV accuracy (3-fold) & 94.0\% $\pm$ 0.15\% & 63.3\% $\pm$ 2.9\% \\
-\hline
+\bottomrule
 \end{tabular}
-\caption{Classifier performance on SCF~2022 ($n = 4{,}595$, implicate~1).}
-\label{tab:classifier}
+\caption{Classifier performance on SCF~2022.}
 \end{table}
 
-The 30.7 percentage-point gap in cross-validation accuracy demonstrates that
-demographic and behavioural features interact non-linearly in determining
-risk profile; relevant interactions include age $\times$ net worth and
-income $\times$ financial risk attitude. The low CV variance
-($\pm 0.15\%$) confirms generalisation rather than memorisation.
-
 \subsection{SHAP Explainability}
-\label{sec:shap}
-
-SHAP values are computed via \texttt{shap.TreeExplainer} and normalised
-by absolute magnitude:
-\[
-  \hat{\phi}_i = \frac{|\phi_i|}{\sum_j |\phi_j|}, \qquad
-  i \in \text{top-}N \text{ features}
-\]
-The top-$N$ normalised importances (\texttt{top\_drivers}) are injected
-into the Ground Truth JSON payload. The LLM narrator is constrained to
-reference only features present in \texttt{top\_drivers}
-(Rule~7 of the system prompt, Section~\ref{sec:llm}), preventing the
-model from fabricating correlations unsupported by the classifier output.
-
-\subsection{Profiler Limitations}
-
-The pipeline uses only implicate~1 of the five SCF multiple imputations
-as a deliberate scope simplification: the allocation variables exhibit
-minimal missingness, and 4{,}595 observations are sufficient for a robust
-gradient boosting model. A production system should pool all five implicates
-using Rubin's Rules. The trained model (\texttt{gbm\_model.pkl}) is static
-and not retrained at runtime; updating it requires manual re-execution of
-the SCF pipeline. The US-centrism of the SCF training data relative to
-European investors is addressed in Section~\ref{sec:limitations}.
+SHAP values are computed via \texttt{TreeExplainer} and normalised by absolute magnitude. The top-$N$ drivers are injected into the Ground Truth JSON; the LLM narrator is constrained to reference only features present in \texttt{top\_drivers} (Rule~7), preventing fabricated correlations.
 
 % ─────────────────────────────────────────────────────────────
-\section{Portfolio Optimisation}
-\label{sec:portfolio}
-% Owner: P2 (draft) — P4 integrates
+\section{Portfolio Optimisation (P2)}
 % ─────────────────────────────────────────────────────────────
 
 \subsection{ETF Universe}
-
-The platform allocates capital across a universe of eight exchange-traded
-funds chosen to provide broad multi-asset diversification while respecting
-European investor constraints under MiFID~II\@.
-Three instruments are UCITS-compliant primary tickers; the remaining five
-retain their US-listed form where no liquid UCITS equivalent with adequate
-\texttt{yfinance} coverage exists.
+The platform allocates across eight ETFs providing multi-asset diversification under MiFID~II constraints, with three UCITS-compliant primary tickers and US-listed fallbacks for the remainder.
 
 \begin{table}[H]
-\centering
-\caption{ETF universe — primary tickers, clusters, and UCITS status.}
-\label{tab:etf-universe}
-\small
-\begin{tabular}{llllc}
+\centering\small
+\caption{ETF universe — primary tickers, clusters, UCITS status.}
+\begin{tabular}{lllc}
 \toprule
-Primary ticker & Fallback & Asset class & Cluster & UCITS \\
+Ticker & Asset class & Cluster & UCITS \\
 \midrule
-CSPX.L  & SPY & Equity USA            & risk\_assets & \checkmark \\
-EFA     & EFA & Equity International  & risk\_assets & \\
-GLD     & GLD & Gold                  & real\_assets & \\
-VNQ     & VNQ & REIT USA              & real\_assets & \\
-AGGH.MI & AGG & Bond Aggregate (EUR)  & safe\_haven  & \checkmark \\
-TLT     & TLT & US Treasury 20Y+      & safe\_haven  & \\
-TIP     & TIP & TIPS Inflation-Linked & safe\_haven  & \\
-XEON.MI & BIL & Cash / Overnight      & cash         & \checkmark \\
+CSPX.L  & Equity USA           & risk\_assets & \checkmark \\
+EFA     & Equity International & risk\_assets & \\
+GLD     & Gold                 & real\_assets & \\
+VNQ     & REIT USA             & real\_assets & \\
+AGGH.MI & Bond Aggregate (EUR) & safe\_haven  & \checkmark \\
+TLT     & US Treasury 20Y+     & safe\_haven  & \\
+TIP     & TIPS Inflation-Linked& safe\_haven  & \\
+XEON.MI & Cash / Overnight     & cash         & \checkmark \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-The four structural clusters — \emph{risk\_assets}, \emph{real\_assets},
-\emph{safe\_haven}, and \emph{cash} — reflect the expected correlation
-structure under normal market conditions and are used both by the HRP
-algorithm (Ward linkage) and by the cluster-level weight constraints
-(Section~\ref{subsec:constraints}).
-
-\subsubsection*{UCITS Fallback Logic}
-
-The \texttt{ValidatedDataLoader} monitors the NaN ratio for each primary
-ticker after download. If the ratio exceeds 2\,\% for any primary, the
-loader substitutes the corresponding US-listed fallback, records the
-event in the audit trail (\texttt{ucits\_fallback\_tickers}), and raises
-a warning flag visible in the frontend. This guarantees operational
-continuity regardless of data availability on \texttt{yfinance}.
-
-% ─────────────────────────────────────────────────────────────
 \subsection{Hierarchical Risk Parity}
-\label{subsec:hrp}
-
-The default portfolio construction algorithm is Hierarchical Risk Parity
-(HRP), introduced by \textcite{LopezdePrado2016}.
-HRP was selected over Mean-Variance Optimisation (MVO) for three
-structural reasons documented in ADR-001:
-
-\begin{enumerate}
-  \item \textbf{No matrix inversion.} MVO requires computing $\Sigma^{-1}$,
-        which amplifies estimation errors exponentially when the number of
-        assets is comparable to the sample length. HRP is inversion-free by
-        construction.
-  \item \textbf{No expected-return estimate.} MVO is acutely sensitive to
-        the input vector $\mu$, the least stable quantity in empirical
-        finance \parencite{Michaud1989}. HRP requires no point estimate of
-        forward returns.
-  \item \textbf{No corner solutions.} Unconstrained MVO routinely
-        concentrates the entire portfolio in one or two assets. HRP
-        produces structurally diversified allocations.
-\end{enumerate}
-
-The algorithm proceeds in three phases.
-
-\subsubsection*{Phase 1 — Tree Clustering}
-
-Daily log-returns are computed from the cleaned price series.
-The Ledoit--Wolf covariance estimator $\hat{\Sigma}$ (Section~\ref{subsec:lw})
-is used to derive the correlation matrix $\hat{P}$, from which a
-distance matrix is constructed:
-
+HRP \parencite{LopezdePrado2016} was selected over MVO for three structural reasons (ADR-001): it requires no matrix inversion, no expected-return estimate, and produces no corner solutions. The algorithm proceeds via Ward-linkage tree clustering on a Ledoit--Wolf distance matrix, quasi-diagonalisation, and recursive bisection assigning weights inversely proportional to intra-cluster variance:
 \[
-  D_{ij} = \sqrt{\tfrac{1}{2}\bigl(1 - \hat{\rho}_{ij}\bigr)}, \qquad
-  \hat{\rho}_{ij} = \frac{\hat{\sigma}_{ij}}{\hat{\sigma}_i\,\hat{\sigma}_j}
+  \alpha_L = 1 - \frac{V_L}{V_L + V_R}, \qquad V_k = \mathbf{w}_k^\top \hat{\Sigma}_k\,\mathbf{w}_k
 \]
+Raw weights are tilted by risk profile: Conservative blends toward Minimum Variance; Aggressive toward Equal Risk Contribution \parencite{Maillard2010}; Balanced uses raw HRP weights.
 
-Hierarchical clustering is performed on $D$ using Ward linkage, which
-minimises intra-cluster variance at each merge step, producing a
-dendrogram that reflects the economic similarity structure of the assets.
+\subsection{Ledoit--Wolf Shrinkage and Constraints}
+The Oracle Approximating Shrinkage estimator \parencite{LedoitWolf2004} $\hat{\Sigma} = (1-\alpha)S + \alpha\mu_S I$ is applied before clustering to stabilise the distance matrix. Box constraints clip weights to $[5\%, 40\%]$ per asset and $[10\%, 60\%]$ per cluster; weights are renormalised after clipping.
 
-\subsubsection*{Phase 2 — Quasi-Diagonalisation}
-
-The covariance matrix $\hat{\Sigma}$ is reordered according to the leaf
-sequence of the dendrogram. Correlated assets become adjacent; the
-resulting quasi-diagonal structure makes the recursive bisection step
-numerically stable.
-
-\subsubsection*{Phase 3 — Recursive Bisection}
-
-Starting from the root of the dendrogram, the algorithm splits the
-universe into two sub-clusters at each node and assigns portfolio weights
-inversely proportional to the intra-cluster variance:
-
-\[
-  \alpha_L = 1 - \frac{V_L}{V_L + V_R}, \qquad
-  \alpha_R = 1 - \alpha_L
-\]
-
-where $V_k = \mathbf{w}_k^\top \hat{\Sigma}_k\,\mathbf{w}_k$ is the
-variance of sub-cluster $k$ under inverse-variance weights.
-The recursion terminates at the leaf level, yielding final asset weights.
-
-\subsubsection*{Risk-Profile Tilt}
-
-The raw HRP weights are tilted to reflect the investor's risk profile
-returned by the ML profiler (Section~\ref{sec:ml}):
-
-\begin{itemize}
-  \item \textbf{Conservative} — convex blend towards the Minimum Variance
-        portfolio, increasing allocation to \emph{safe\_haven} and
-        \emph{cash} clusters.
-  \item \textbf{Balanced} — raw HRP weights applied without tilt.
-  \item \textbf{Aggressive} — convex blend towards the Equal Risk
-        Contribution (ERC) portfolio \parencite{Maillard2010}, increasing
-        exposure to \emph{risk\_assets}.
-\end{itemize}
-
-% ─────────────────────────────────────────────────────────────
-\subsection{Covariance Estimation: Ledoit--Wolf Shrinkage}
-\label{subsec:lw}
-
-The sample covariance matrix $S$ computed from a finite return series is
-a noisy, ill-conditioned estimator: its extreme eigenvalues are
-systematically biased \parencite{Marcenko1967}, producing an unstable
-distance matrix $D$ and consequently an unstable dendrogram.
-
-We apply the Oracle Approximating Shrinkage (OAS) estimator of
-\textcite{LedoitWolf2004}:
-
-\[
-  \hat{\Sigma} = (1 - \alpha)\,S + \alpha\,\mu_S\,I
-\]
-
-where $S$ is the sample covariance matrix, $\mu_S = \tfrac{1}{n}\,\mathrm{tr}(S)$
-is its average eigenvalue, and $\alpha \in [0,1]$ is the shrinkage
-intensity estimated analytically (no cross-validation required).
-The target $\mu_S I$ is a scaled identity: it assumes equal variances and
-zero correlations — the maximum-ignorance prior.
-
-Ledoit--Wolf shrinkage is applied \emph{before} HRP clustering, not
-after, because the distance matrix $D$ is a direct function of the
-correlation structure embedded in $\hat{\Sigma}$. A noisy $S$ propagates
-estimation error through $D$ into the dendrogram, causing the cluster
-assignment of assets to change erratically between rebalancing dates and
-increasing portfolio turnover. This choice is documented in
-ADR-004 (\emph{Ledoit-Wolf as mandatory pre-processing for HRP}).
-
-The estimator is implemented via \texttt{sklearn.covariance.LedoitWolf}
-with \texttt{assume\_centered=False}, applied to the matrix of daily
-log-returns.
-
-% ─────────────────────────────────────────────────────────────
-\subsection{Box Constraints}
-\label{subsec:constraints}
-
-HRP weights are clipped to the following guardrails after recursive
-bisection:
-
-\begin{itemize}
-  \item \textbf{Asset level:} $0.05 \leq w_i \leq 0.40$ for all assets~$i$.
-  \item \textbf{Cluster level:} $0.10 \leq W_k \leq 0.60$ for all
-        clusters~$k$, where $W_k = \sum_{i \in k} w_i$.
-\end{itemize}
-
-The asset-level floor of 5\,\% ensures genuine eight-way diversification:
-no asset is effectively excluded from the portfolio.
-The ceiling of 40\,\% prevents over-concentration in any single instrument.
-The cluster-level bounds ensure that no single asset class — in particular
-\emph{risk\_assets} — can dominate the portfolio even if HRP assigns high
-raw weights due to a period of unusually low equity volatility.
-After clipping, weights are renormalised to sum to 1.0.
-
-% ─────────────────────────────────────────────────────────────
 \subsection{Market Regime Detection}
-\label{subsec:regime}
-
-Before weights are finalised, the system evaluates current market
-conditions via a dual-trigger regime detector (ADR-006):
-
-\[
-  \text{HIGH\_STRESS} \iff
-  \bar{\rho}_{\mathrm{LW}} > 0.75 \;\lor\; \mathrm{VIX} > 30
-\]
-
-where $\bar{\rho}_{\mathrm{LW}}$ is the mean absolute pairwise correlation
-derived from $\hat{\Sigma}$ and VIX is the CBOE Volatility Index
-\parencite{Whaley2009}. The OR logic is deliberately conservative: the
-asymmetric cost of a false negative (HRP applied during genuine stress,
-when all correlations converge to 1 and diversification disappears)
-exceeds the cost of a false positive (ERC applied during a normal market).
-
-Under \texttt{HIGH\_STRESS}, the HRP allocation is replaced by a
-cluster-level Equal Risk Contribution (ERC) portfolio
-\parencite{Maillard2010} that assigns equal weight to each of the four
-structural clusters and equal weight within each cluster, subject to the
-same box constraints. A stress banner is displayed in the frontend.
+A dual-trigger detector flags \texttt{HIGH\_STRESS} when $\bar{\rho}_{\mathrm{LW}} > 0.75$ or $\mathrm{VIX} > 30$ (ADR-006). Under stress, HRP is replaced by a cluster-level Equal Risk Contribution portfolio and a banner is shown in the frontend.
 
 % ─────────────────────────────────────────────────────────────
-\subsection{Mean--Variance Comparison}
-\label{subsec:mv}
-
-Mean-Variance Optimisation (MVO, \textcite{Markowitz1952}) is retained as
-an educational benchmark, accessible via a dedicated comparison tab in
-the dashboard. The benchmark maximises the ex-ante Sharpe ratio subject
-to the same asset-level box constraints applied to HRP.
-
-The comparison tab displays:
-
-\begin{itemize}
-  \item The efficient frontier computed via parametric sweep of the
-        risk-aversion parameter;
-  \item MVO and HRP portfolio markers on the frontier;
-  \item Side-by-side weight tables and risk-contribution bar charts.
-\end{itemize}
-
-The key empirical observation is that HRP typically sits near but not on
-the frontier — it sacrifices a small amount of mean-variance efficiency
-in exchange for robustness to estimation error, as documented in
-\textcite{LopezdePrado2016}.
-The expected return $\mu$ and Sharpe ratio are intentionally set to
-\texttt{null} in the HRP Ground Truth JSON: HRP produces no reliable
-point estimate of forward returns, and reporting a spurious figure would
-be academically indefensible.
-
+\section{LLM Narrator and Validator (P4)}
 % ─────────────────────────────────────────────────────────────
-\subsection{Risk Metrics}
-\label{subsec:risk-metrics}
-
-For each optimised portfolio, the following risk metrics are computed and
-passed to the LLM narrator via the Ground Truth JSON:
-
-\begin{itemize}
-  \item \textbf{Per-asset risk contributions} (Maillard et al., 2010):
-    \[
-      \mathrm{RC}_i = \frac{w_i\,(\hat{\Sigma}\mathbf{w})_i}
-                           {\mathbf{w}^\top\hat{\Sigma}\mathbf{w}},
-      \qquad \sum_i \mathrm{RC}_i = 1
-    \]
-  \item \textbf{Annualised volatility:}
-        $\hat{\sigma}_p = \sqrt{252 \cdot \mathbf{w}^\top\hat{\Sigma}\mathbf{w}}$
-        (daily covariance matrix, 252 trading days).
-  \item \textbf{Historical maximum drawdown} from the backtest return
-        series.
-  \item \textbf{Historical VaR and CVaR} at the 95\,\% confidence level,
-        computed from the empirical return distribution.
-\end{itemize}
-
-% ─────────────────────────────────────────────────────────────
-\section{LLM Narrator and Validator}
-\label{sec:llm}
-% Owner: P4
-% TODO W4: narrator pattern, GT JSON, validator 4-step,
-%          prompt injection defense, EU Awareness Rule 9
-% ─────────────────────────────────────────────────────────────
-
-\subsection{Design Principle: Narrator, Not Calculator}
-A language model is not a reliable arithmetic engine. Our architecture
-enforces a strict separation: all numerical computations are performed
-by the quantitative backend; the LLM receives a \emph{Ground Truth JSON}
-containing pre-computed figures and is permitted only to narrate them.
 
 \subsection{Ground Truth JSON Contract}
-The Ground Truth JSON is the sole interface between the quantitative
-backend and the LLM narrator. Before every API call, the backend
-assembles a \texttt{GroundTruthPayload} (defined in
-\texttt{backend/schemas/ground\_truth.py}) containing all and only
-the information the narrator is permitted to discuss. The payload
-is serialised to JSON and injected verbatim into the system prompt
-as a \texttt{<CONTEXT>} block.
+All numerical computations are performed by the backend. The LLM receives a \texttt{GroundTruthPayload} containing pre-computed figures and is permitted only to narrate them. The payload includes portfolio weights, risk metrics (volatility, max drawdown, VaR, CVaR), profiler output with SHAP drivers, an \texttt{allowed\_numbers} whitelist (auto-populated by recursively extracting every float from the payload), and regulatory context. \texttt{expected\_annual\_return} and \texttt{sharpe\_ratio} are intentionally \texttt{null} for HRP, as the algorithm produces no reliable forward-return estimate.
 
-The payload contains five top-level blocks:
+\subsection{System Prompt: Nine Absolute Rules}
+The narrator operates under nine rules enforced at prompt level: (1)~no invented numbers outside \texttt{allowed\_numbers}; (2)~no prescriptive advice (forbidden phrases injected from the payload); (3)~no compliance claims or absolutes; (4)~historical framing only for return figures; (5)~fixed out-of-context response; (6)~cluster descriptions in economic, not correlation, terms; (7)~SHAP drivers only; (8)~mandatory disclaimer; (9)~\textbf{EU Awareness} — when \texttt{profiler\_us\_centric\_caveat} is true, the narrator must acknowledge SCF US-centrism and European investor differences.
 
-\begin{itemize}
-  \item \texttt{portfolio}: asset weights, guardrail flags, and
-        UCITS eligibility of each position;
-  \item \texttt{risk\_metrics}: annualised volatility, historical
-        maximum drawdown, 95\,\% VaR and CVaR.
-        \texttt{expected\_annual\_return} and \texttt{sharpe\_ratio}
-        are intentionally \texttt{null} for HRP: the algorithm
-        requires no estimate of forward returns, and reporting a
-        spurious figure would be academically indefensible;
-  \item \texttt{profiler}: \texttt{profile\_label},
-        \texttt{profile\_confidence}, and \texttt{top\_drivers}
-        (SHAP values in Phase~B, importance scores in Phase~A);
-  \item \texttt{llm\_constraints}: \texttt{allowed\_numbers}
-        (auto-populated by \texttt{build\_allowed\_numbers()},
-        which recursively extracts every float from the payload),
-        \texttt{forbidden\_phrases}, and
-        \texttt{disclaimer\_required};
-  \item \texttt{regulatory\_context}: MiFID~II disclaimer text,
-        currency risk note, UCITS eligibility flags, and the
-        \texttt{profiler\_us\_centric\_caveat} boolean that
-        activates Rule~9 EU Awareness in the system prompt.
-\end{itemize}
-
-A key invariant enforced by Pydantic is that
-\texttt{llm\_constraints.allowed\_numbers} is always a strict
-superset of every numeric value present elsewhere in the payload.
-This closes the hallucination loop: any number the narrator could
-legitimately cite is guaranteed to be in the whitelist, and any
-number outside the whitelist is by definition hallucinated.
-
-\subsection{System Prompt Design}
-The system prompt embeds nine absolute rules. The narrator is
-explicitly instructed that violating any single rule causes the
-response to be discarded by the Validator before it reaches the user.
-
+\subsection{Five-Step Validator}
+Every response passes through \texttt{validator.py} before reaching the user. Steps 1, 2, 4, 5 are blocking; Step 3 is corrective:
 \begin{enumerate}
-  \item \textbf{No invented numbers.} The narrator may only cite
-        numeric values present in the \texttt{<CONTEXT>} block.
-        Rounding, estimating, or drawing from general knowledge
-        is forbidden.
-  \item \textbf{No prescriptive advice.} A set of forbidden phrases
-        (e.g.\ \textit{you should}, \textit{I recommend},
-        \textit{invest}, \textit{liquidate}) is injected directly
-        from \texttt{llm\_constraints.forbidden\_phrases} into the
-        prompt template at request time, ensuring the blacklist is
-        always synchronised with the backend payload.
-  \item \textbf{No compliance claims or absolutes.} The narrator must
-        never state that the portfolio ``complies with MiFID~II'',
-        is ``suitable'', ``safe'', or ``optimal'', nor use words
-        such as \textit{guaranteed}, \textit{risk-free}, or
-        \textit{certain}. Backtest results must always be framed
-        as historical, never as forecasts.
-  \item \textbf{Historical framing only.} If
-        \texttt{expected\_annual\_return} or \texttt{sharpe\_ratio}
-        are present in the payload, they must be described as
-        historical averages, never as forward-looking predictions.
-        If they are \texttt{null}, the narrator must not mention them.
-  \item \textbf{Out-of-context fixed response.} If the user asks
-        about anything not covered by the \texttt{<CONTEXT>} block,
-        the narrator must respond with exactly: \textit{``I do not
-        have sufficient data to answer this question accurately.''}
-  \item \textbf{Cluster economic language.} Portfolio clusters must
-        be described in economic terms, never as correlation
-        coefficients.
-  \item \textbf{Profile drivers.} If \texttt{top\_drivers} are
-        present, the narrator must use them to explain the
-        classification without inventing additional drivers.
-  \item \textbf{Disclaimer required.} Every response must include
-        the \texttt{MANDATORY\_DISCLAIMER}; if absent, the
-        Validator appends it automatically (Step~3).
-  \item \textbf{Rule~9 — EU Awareness.} When
-        \texttt{regulatory\_context.profiler\_us\_centric\_caveat}
-        is \texttt{true}, the narrator must explicitly acknowledge
-        that the risk profiler was trained on US household data
-        (Federal Reserve SCF~2022) and that European investors may
-        exhibit systematically different risk preferences.
-        Compliance with this rule is verified by the Validator at
-        Step~5 before the response is shown to the user.
+  \item \textbf{Forbidden phrase check} — case-insensitive substring scan.
+  \item \textbf{Hallucinated number check} — all floats extracted via regex, percentages normalised, checked against \texttt{allowed\_numbers} within $\pm2\%$ tolerance.
+  \item \textbf{Disclaimer presence} — auto-appended if absent.
+  \item \textbf{Injection detection} — semantic scan of output for known injection patterns.
+  \item \textbf{EU Awareness (Rule~9)} — verifies SCF/Federal Reserve reference and European investor reference are both present when required.
 \end{enumerate}
-
-\subsection{Validator: 5-Step Pipeline}
-Every raw LLM response passes through a five-step post-generation
-filter (\texttt{backend/llm/validator.py}) before it reaches the
-user. Steps~1, 2, 4, and~5 are \emph{blocking}: failure returns
-\texttt{SAFE\_FALLBACK\_MESSAGE} immediately. Step~3 is
-\emph{corrective}: if the disclaimer is absent it is auto-appended
-and the response continues.
-
-\begin{enumerate}
-  \item \textbf{Forbidden phrase check.} Case-insensitive substring
-        scan against \texttt{llm\_constraints.forbidden\_phrases}.
-        Any match blocks the response. Known limitation: the token
-        \textit{safe} also matches the cluster label
-        \textit{safe\_haven}; this false-positive risk is accepted
-        for prototype scope and documented in ADR-004.
-
-  \item \textbf{Hallucinated number check.} All numeric values are
-        extracted from the response via a regex that handles
-        integers, decimals, and percentage notation. Percentages
-        are normalised to their decimal equivalent
-        ($35\% \to 0.35$) to match the Ground Truth JSON format.
-        Each extracted number is checked against
-        \texttt{allowed\_numbers} within a $\pm 2\%$ relative
-        tolerance. Small integers ($\leq 10$) and year-like
-        integers (1900--2100) are exempted as narrative context.
-        The mandatory disclaimer text is stripped before checking
-        to avoid false positives on fixed legal text.
-
-  \item \textbf{Disclaimer presence (corrective).} Checks for the
-        \texttt{MANDATORY\_DISCLAIMER} substring. If absent,
-        appends it and sets \texttt{disclaimer\_appended=True}.
-        The \texttt{MANDATORY\_DISCLAIMER} constant is defined
-        once in \texttt{system\_prompt.py} and imported by both
-        the narrator and the validator, eliminating any risk of
-        drift between the prompt instruction and the check.
-
-  \item \textbf{Post-generation injection detection.} Semantic scan
-        of the LLM output for known injection patterns
-        (e.g.\ \textit{ignore previous}, \textit{act as},
-        \textit{jailbreak}). Catches cases where the model echoes
-        injected instructions back in its output.
-
-  \item \textbf{EU Awareness Rule~9.} Active only when
-        \texttt{eu\_awareness\_required=True}. Verifies that the
-        response contains at least one reference to the US data
-        source (keywords: \textit{scf}, \textit{federal reserve},
-        \textit{us household}, \textit{united states}) \emph{and}
-        at least one reference to European investors
-        (\textit{european}, \textit{eu investor}, \textit{europe},
-        \textit{hfcs}). Both groups must be present; missing
-        either blocks the response.
-\end{enumerate}
-
-If any blocking step fails, the user sees:
-\textit{``I cannot provide a detailed response at this time.
-Please consult a qualified financial advisor for personalised
-advice.''} followed by the mandatory disclaimer.
-The validator is covered by \texttt{tests/test\_validator.py},
-which includes cases for each of the five steps including
-EU Awareness Rule~9.
 
 \subsection{Prompt Injection Defence}
-The platform implements a two-layer defence against prompt injection
-attacks.
-
-\textbf{Layer~1 — Pre-call sanitisation.}
-User input passes through \texttt{backend/llm/input\_sanitiser.py}
-before the API call is made. Two checks are applied: (a) length
-gate — inputs exceeding 500 characters are rejected, since
-legitimate portfolio questions are short and long inputs are likely
-to contain injected instructions after the real question; (b)
-keyword blocking — a fixed tuple of known injection patterns
-(e.g.\ \textit{ignore previous instructions}, \textit{act as},
-\textit{jailbreak}, \textit{override}) is scanned
-case-insensitively. Blocked input returns a safe message without
-consuming any API tokens. Accepted input is wrapped in a
-\texttt{<user\_input>} tag, signalling to the LLM that the content
-is untrusted user data and not part of the system prompt.
-
-\textbf{Layer~2 — Post-generation semantic scan.}
-After the API call, Validator Step~4 scans the LLM output for the
-same injection patterns. This catches edge cases where the model
-echoes injected instructions back in its generated text — a failure
-mode that Layer~1 alone cannot prevent.
-
+Layer~1 sanitises user input before the API call: inputs exceeding 500 characters are rejected; known injection keywords are blocked case-insensitively. Accepted input is wrapped in \texttt{<user\_input>} tags. Layer~2 is Validator Step~4, catching cases where the model echoes injected instructions in its output.
 
 % ─────────────────────────────────────────────────────────────
 \section{Backtest Results}
-\label{sec:backtest}
-% Owner: P2 (tables) — P4 integrates
 % ─────────────────────────────────────────────────────────────
 
-\subsection{Scenarios}
-
-Three historical stress periods are used to evaluate portfolio resilience.
-The \textbf{Global Financial Crisis} (August 2008 -- March 2009) represents
-a severe deflationary shock with peak equity drawdowns exceeding 50\,\%.
-The \textbf{COVID-19 Crash} (January -- December 2020) covers both the
-sharp drawdown of February--March 2020 and the subsequent recovery.
-The \textbf{Rate Hike Cycle} (January -- December 2022) represents a
-simultaneous equity and bond selloff driven by aggressive Fed tightening
---- a scenario in which traditional 60/40 diversification fails.
-All scenarios are run on US proxy tickers (SPY, AGG, BIL, etc.)\ as
-historical equivalents for the UCITS primary tickers, which lack
-sufficient history prior to 2019.
-Transaction costs of 10\,bps per rebalance are applied to all strategies.
-
-\subsection{Performance Metrics}
+Three historical stress scenarios are evaluated using US proxy tickers with 10\,bps transaction costs per rebalance.
 
 \begin{table}[H]
-\centering
-\caption{Backtest summary — HRP vs.\ Mean--Variance vs.\ $1/N$ (US proxy tickers)}
-\label{tab:backtest}
+\centering\small
+\caption{Backtest summary — HRP vs.\ MV vs.\ $1/N$ (MODERATE profile).}
 \begin{tabular}{llrrrr}
 \toprule
 Scenario & Model & Ann.\ Return & Volatility & Sharpe & Max DD \\
 \midrule
-GFC (2008)       & HRP & $-0.1\%$ & $8.6\%$  & $-0.01$ & $-11.9\%$ \\
-                 & MV  & $-5.7\%$ & $10.7\%$ & $-0.53$ & $-18.0\%$ \\
+GFC (2008)       & HRP   & $-0.1\%$ & $8.6\%$  & $-0.01$ & $-11.9\%$ \\
+                 & MV    & $-5.7\%$ & $10.7\%$ & $-0.53$ & $-18.0\%$ \\
                  & $1/N$ & $-5.1\%$ & $18.4\%$ & $-0.28$ & $-25.1\%$ \\
 \midrule
-COVID-19 (2020)  & HRP & $+6.4\%$ & $7.7\%$  & $0.83$  & $-10.1\%$ \\
-                 & MV  & $+7.2\%$ & $13.8\%$ & $0.52$  & $-15.5\%$ \\
-                 & $1/N$ & $+11.9\%$ & $13.3\%$ & $0.90$  & $-15.7\%$ \\
+COVID-19 (2020)  & HRP   & $+6.4\%$ & $7.7\%$  & $0.83$  & $-10.1\%$ \\
+                 & MV    & $+7.2\%$ & $13.8\%$ & $0.52$  & $-15.5\%$ \\
+                 & $1/N$ & $+11.9\%$ & $13.3\%$ & $0.90$  & $-19.1\%$ \\% corrected
 \midrule
-Rate Hike (2022) & HRP & $-8.9\%$ & $7.6\%$  & $-1.17$ & $-13.0\%$ \\
-                 & MV  & $-13.1\%$ & $10.4\%$ & $-1.27$ & $-16.3\%$ \\
+Rate Hike (2022) & HRP   & $-8.9\%$ & $7.6\%$  & $-1.17$ & $-13.0\%$ \\
+                 & MV    & $-13.1\%$ & $10.4\%$ & $-1.27$ & $-16.3\%$ \\
                  & $1/N$ & $-13.7\%$ & $11.3\%$ & $-1.21$ & $-19.1\%$ \\
 \bottomrule
 \end{tabular}
-\smallskip
-\newline
-\footnotesize{Backtest uses US proxy tickers (SPY, AGG, BIL, etc.) as historical equivalents for UCITS ETFs. Transaction cost: 10 bps per rebalance. Profile: MODERATE.}
 \end{table}
 
-% ─────────────────────────────────────────────────────────────
-\section{Limitations and Failure Modes}
-\label{sec:limitations}
-% Owner: P4 (integra contributi) — all members contribute
-% ─────────────────────────────────────────────────────────────
-
-\subsection{Data Fragility: yfinance}
-The platform relies exclusively on \texttt{yfinance} as its market
-data source. This introduces three concrete fragility vectors.
-First, \texttt{yfinance} is an unofficial API with no service-level
-agreement; outages or rate-limiting can render the live optimizer
-unavailable without warning. 
-Second, UCITS-listed tickers (e.g.\ \texttt{CSPX.L},
-\texttt{AGGH.MI}) occasionally return excessive NaN values on
-yfinance due to lower liquidity and less complete data coverage
-compared to their US-listed equivalents. The
-\texttt{ValidatedDataLoader} addresses this with an automatic
-fallback mechanism: if the NaN ratio for any primary ticker exceeds
-2\,\%, the loader substitutes the corresponding US-listed fallback
-(e.g.\ \texttt{SPY} for \texttt{CSPX.L}) and records the
-substitution in the audit trail. Phase~A mock data ensures the
-application remains fully demonstrable regardless of data
-availability.
-
-\subsection{SCF US-Centrism vs.\ EU Investor}
-The risk profiler is trained on the Federal Reserve Survey of Consumer
-Finances~(2022), which captures US household financial behaviour.
-European investors may exhibit materially different risk preferences,
-savings rates, and financial literacy patterns. The EU Awareness layer
-communicates this limitation explicitly at the point of recommendation.
-
-\subsection{HRP Opacity vs.\ Mean--Variance Interpretability}
-Hierarchical Risk Parity presents a communication challenge for
-retail investors. The recursive bisection algorithm produces
-weights that cannot be summarised by a simple rule such as
-\textit{``allocate more to assets with higher expected Sharpe.''}
-The diversification benefit is real but the mechanism is opaque:
-a non-technical user cannot easily verify why \texttt{TLT}
-received a 12\,\% allocation rather than 15\,\%. Mean-Variance
-Optimisation, despite its well-documented instability
-\parencite{Michaud1989}, produces weights that are at least
-narratively connected to expected return and risk estimates.
-The platform partially mitigates HRP opacity through two channels:
-the LLM narrator explains cluster structure in economic terms
-(Rule~7 of the system prompt forbids citing correlation
-coefficients directly), and the Markowitz comparison tab makes
-the diversification benefit visible by showing both allocations
-side by side. The residual opacity is acknowledged as a
-fundamental limitation of the HRP approach and is documented
-in ADR-001.
-
-\subsection{LLM Hallucination Risk}
-The five-step validator substantially reduces but does not
-eliminate hallucination risk. Three residual failure modes exist.
-First, the forbidden phrase check uses substring matching: the
-token \textit{safe} correctly blocks prescriptive language but
-also matches the legitimate cluster label \textit{safe\_haven},
-producing false positives that trigger the fallback message
-unnecessarily. Second, the EU Awareness check (Step~5) is
-keyword-based rather than semantic: a response that satisfies
-the intent of Rule~9 through paraphrasing may fail the keyword
-check, while a response that mentions \textit{SCF} and
-\textit{European} in an unrelated context may pass. Third, the
-allowed numbers check uses a 2\,\% relative tolerance to handle
-rounding, but this tolerance also permits the narrator to cite
-slightly incorrect figures without triggering the hallucination
-flag. These limitations are inherent to post-generation string
-matching and would require a semantic validation layer — itself
-an LLM call — to resolve fully. For an academic prototype, the
-current implementation is considered adequate, and all three
-limitations are explicitly documented in ADR-004.
-
-\subsection{SQLite Persistence on Streamlit Cloud}
-The audit trail database (\texttt{robo\_advisor.db}) is written to the
-application's working directory on Streamlit Community Cloud, which resets
-on every redeploy. Recommendations generated in one session are therefore
-lost after a new deployment. For a production system a managed PostgreSQL
-instance would be required, as documented in ADR-005. For the prototype
-scope this is an accepted limitation: the audit trail functions correctly
-within a session, and local reproducibility is guaranteed via
-\texttt{docker-compose.yml}.
-
-\subsection{Rate Limiting and Cold Starts}
-The FastAPI rate limiting (\texttt{slowapi}) is applied per IP address.
-In a shared network environment such as university WiFi, multiple users
-behind the same NAT share the same rate-limit bucket. Additionally,
-the Streamlit Cloud free tier suspends the application after inactivity,
-causing a cold-start delay of 15--30 seconds on the first request.
+HRP consistently delivers lower volatility and smaller drawdowns than both benchmarks across all three scenarios, at the cost of a modest return penalty relative to $1/N$ in the COVID recovery.
 
 % ─────────────────────────────────────────────────────────────
-\section{Lessons Learned and AI Tools}
-\label{sec:lessons}
+\section{Limitations}
 % ─────────────────────────────────────────────────────────────
 
-\subsection{Agentic Development Workflow}
-The project adopted an explicitly agentic development philosophy
-documented in \texttt{AGENTS.md} from Week~1. Four AI agents
-contributed to the codebase across the four-week development period.
+\textbf{yfinance fragility.} The platform relies on an unofficial API with no SLA. UCITS-listed tickers occasionally return excessive NaN values; the \texttt{ValidatedDataLoader} mitigates this with automatic fallback, but live operation remains dependent on third-party data availability.
 
-The \textbf{CI Validator} (GitHub Actions, \texttt{ci.yml}) ran
-\texttt{ruff} and \texttt{pytest} on every push and pull request,
-enforcing code quality and blocking merges on test failure. The
-\textbf{Docstring PR Agent} (\texttt{agent\_pr.yml}) called the
-Claude API to generate docstrings for the entire
-\texttt{backend/optimizer/} module and opened a pull request
-automatically, without human intervention in the commit-to-PR
-pipeline. Evidence of this agentic PR is recorded in
-\texttt{AGENTS.md} with the GitHub pull request URL. The
-\textbf{LLM Narrator Agent} (\texttt{backend/llm/narrator.py})
-calls the Claude API at runtime to generate natural-language
-explanations of portfolio recommendations. The \textbf{LLM
-Validator Agent} (\texttt{backend/llm/validator.py}) filters
-every narrator response through a five-step safety pipeline
-before it reaches the user.
+\textbf{SCF US-centrism.} The risk profiler is trained on US household data. European investors may exhibit materially different risk preferences, savings rates, and financial literacy patterns. The EU Awareness layer communicates this explicitly at the point of recommendation, but does not correct the underlying distributional mismatch.
 
-This architecture satisfies the course requirement of at least
-one pull request made by an AI agent: the docstring PR was
-opened entirely by GitHub Actions calling the Anthropic API,
-with no human committing or pushing the generated code.
+\textbf{HRP opacity.} The recursive bisection algorithm produces weights that cannot be summarised by a simple rule. The LLM narrator and the MVO comparison tab partially mitigate this, but residual opacity is a fundamental limitation acknowledged in ADR-001.
 
-\subsection{AI Tools Used}
-\begin{description}
-  \item[Claude (Anthropic)] Used as interactive technical advisor
-    throughout the project via the Claude.ai interface. Contributed
-    to code generation and review for \texttt{narrator.py},
-    \texttt{validator.py}, \texttt{input\_sanitiser.py}, and
-    documentation scaffolding. Also called programmatically via
-    the Anthropic API in the Docstring PR Agent and the LLM
-    Narrator at runtime.
-  \item[ChatGPT (OpenAI)] Used for exploratory research and
-    alternative implementation approaches, particularly during
-    the design phase for the risk profiler and the validator
-    pipeline. Responses were critically reviewed before any
-    code was adopted.
-  \item[GitHub Actions] Automated CI pipeline (lint and test on
-    every push) and agent-driven PR generation. The
-    \texttt{agent\_pr.yml} workflow demonstrates a full agentic
-    loop: trigger → Claude API call → code diff → automatic PR.
-\end{description}
+\textbf{Validator false positives.} The substring check for \textit{safe} also matches the cluster label \textit{safe\_haven}, triggering unnecessary fallback responses. Whole-word matching is deferred to future work. The EU Awareness check (Step~5) is keyword-based rather than semantic and may fail on paraphrased compliant responses.
 
-\subsection{Infrastructure and Deployment}
-Deploying to Streamlit Community Cloud exposed a module resolution issue
-absent in local development: Streamlit Cloud launches the application from
-a working directory different from the repository root, causing
-\texttt{ModuleNotFoundError} on all \texttt{backend.*} imports. The fix---
-inserting the repository root into \texttt{sys.path} at the top of
-\texttt{frontend/app.py}---is a one-line change that required significant
-debugging because the error message was redacted in the Streamlit Cloud UI.
-The lesson is to test the deployment environment early, not on the final day.
-
-\subsection{Secret Management}
-Before making the repository public, a manual audit was performed on the
-git history to verify that no API keys had been committed at any point.
-The audit confirmed that all secrets are referenced exclusively via
-\texttt{\$\{\{ secrets.XXX \}\}} in GitHub Actions workflows and never
-hardcoded. This step is often skipped in academic projects but is critical
-when moving from private to public visibility.
-
-\subsection{Database Schema Design}
-The foreign-key constraint on the \texttt{users} table surfaced only during
-the \texttt{test\_ucits\_fallback.py} test suite, not during manual testing.
-This is a concrete example of how automated tests catch schema assumptions
-invisible at the API level, reinforcing the practice of writing tests
-alongside the schema rather than after.
-
-\subsection{Coverage Governance in a Team Setting}
-Reaching 80\,\% line coverage in a multi-person codebase requires explicit
-coordination. Four modules had 0\,\% coverage because their owners had not
-yet written tests. The solution---opening a GitHub issue requesting tests
-from the responsible contributors and temporarily lowering the CI threshold
-to 75\,\%---preserved CI stability without excluding modules unilaterally.
-Coverage reached 81.07\,\% once all tests were merged.
-
-\subsection{What Worked}
-\begin{itemize}
-  \item \textbf{Phase A / Phase B separation.} Designing the
-    frontend to always work with mock data (Phase~A) while the
-    backend was still under development eliminated integration
-    blockers. The demo was always runnable.
-  \item \textbf{Ground Truth JSON as contract.} Defining the
-    \texttt{GroundTruthPayload} schema in Week~1 gave all four
-    team members a shared, stable interface. Backend changes
-    did not break the frontend and vice versa.
-  \item \textbf{ADRs as living documentation.} Writing
-    Architecture Decision Records for every significant design
-    choice (HRP over Markowitz, UCITS fallback, LLM narrator
-    pattern) made the academic PDF substantially easier to write:
-    the rationale was already documented in prose.
-  \item \textbf{Claude as pair programmer.} Using Claude
-    interactively for code review and design discussion
-    accelerated development, particularly for the validator
-    pipeline and the system prompt rules.
-\end{itemize}
-
-\subsection{What Did Not Work}
-\begin{itemize}
-  \item \textbf{AI tool side effects.} Claude Code automatically
-    added a \texttt{.coverage.claude/} entry to
-    \texttt{.gitignore} during an agentic session. The
-    unintended modification was caught during PR review via
-    \texttt{git diff} and reverted with
-    \texttt{git restore --source=HEAD\textasciitilde1}.
-    This incident illustrates that agentic tools require the
-    same review discipline as human contributions.
-  \item \textbf{yfinance UCITS data gaps.} Several UCITS-listed
-    tickers (\texttt{CSPX.L}, \texttt{AGGH.MI}) returned
-    excessive NaN values during development, requiring the
-    fallback logic to be implemented earlier than planned and
-    the validator to be updated to handle GBP-listed tickers
-    whose currency exposure does not sum to 1.0 with USD and
-    EUR alone.
-  \item \textbf{LLM validator false positives.} The substring
-    check for \textit{safe} in the forbidden phrase list
-    blocked legitimate responses containing the cluster label
-    \textit{safe\_haven}. The fix — whole-word matching — was
-    deferred to future work to avoid scope creep in Week~4.
-\end{itemize}
+\textbf{SQLite persistence.} The audit trail resets on Streamlit Cloud redeploy. A managed PostgreSQL instance would be required in production (ADR-005).
 
 % ─────────────────────────────────────────────────────────────
-
 \section{Conclusions}
-\label{sec:conclusions}
-This paper presented an educational robo-advisor prototype that
-demonstrates a complete investment workflow — from risk profiling
-to portfolio optimisation to natural-language explanation — while
-explicitly addressing the transparency and geographic-awareness
-gaps common in commercial robo-advisor platforms.
+% ─────────────────────────────────────────────────────────────
 
-The platform combines two advanced components: a Gradient Boosting
-risk profiler trained on real household financial behaviour (Fed
-SCF~2022) with SHAP explainability, and a constrained LLM narrator
-layer that is mathematically prevented from inventing figures
-through the Ground Truth JSON contract and the five-step validator.
-Four standard components complete the system: HRP portfolio
-optimisation with Ledoit--Wolf shrinkage, a UCITS-aware ETF
-universe with automatic fallback logic, a SQLite audit trail, and
-a Streamlit dashboard with EU Investor Note and stress regime
-detection.
+This paper presented an educational robo-advisor prototype demonstrating a complete investment workflow — from risk profiling to portfolio optimisation to natural-language explanation — while explicitly addressing transparency and geographic-awareness gaps common in commercial platforms. The Ground Truth JSON contract and the five-step validator represent the core architectural innovation: they make hallucination prevention structural rather than instructional. The EU Awareness layer (Rule~9, \texttt{profiler\_us\_centric\_caveat}, Validator Step~5) is a deliberate design choice to surface the geographic limitations of a US-trained model to European investors at the point of recommendation.
 
-The EU Awareness layer — Rule~9 of the system prompt, the
-\texttt{profiler\_us\_centric\_caveat} flag, and the validator
-Step~5 check — represents a deliberate design choice to communicate
-the geographic limitations of a US-trained model to European
-investors at the point of recommendation, rather than burying the
-disclaimer in documentation.
-
-The source code, Architecture Decision Records, and this report
-are available at:
-\url{https://github.com/Programming-for-finance-II/robo-advisor}
-
-\subsection{Future Work}
-
-\begin{itemize}
-  \item Replace the Fed SCF~2022 training dataset with the ECB
-        Household Finance and Consumption Survey (HFCS) to produce
-        a risk profiler genuinely calibrated on European investor
-        behaviour.
-  \item Replace \texttt{yfinance} with a reliable data provider
-        (e.g.\ Bloomberg, Refinitiv) or implement a caching layer
-        that survives API outages without falling back to mock data.
-  \item Implement whole-word matching in the forbidden phrase
-        validator to eliminate the \textit{safe} / \textit{safe\_haven}
-        false-positive failure mode.
-  \item Add retry logic to the narrator pipeline: if the validator
-        blocks a response, re-prompt with explicit feedback before
-        returning the safe fallback message.
-  \item Extend the regime detector with a rolling confirmation
-        window to prevent oscillation between NORMAL and
-        HIGH\_STRESS on consecutive days near the correlation
-        threshold.
-\end{itemize}
+\subsection*{Future Work}
+Replace the SCF~2022 training dataset with the ECB Household Finance and Consumption Survey (HFCS); replace \texttt{yfinance} with a reliable data provider; implement whole-word matching in the validator; add narrator retry logic before returning the safe fallback; extend the regime detector with a rolling confirmation window.
 
 % ─────────────────────────────────────────────────────────────
 \nocite{FedSCF2022, MiFIDII}
