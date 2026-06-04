@@ -291,10 +291,14 @@ def main() -> None:
     # UNIFIED TOP NAVBAR (apple.com style) — replaces separate logo block
     # and nav row. Only this section was modified. Do not edit elsewhere.
 
-    # Stable per-session identifier, persisted in session_state on first load.
-    # Used by the questionnaire to look up any previously saved profile.
-    if "session_token" not in st.session_state:
-        st.session_state["session_token"] = str(uuid.uuid4())
+    # Stable per-browser identifier. Kept in the URL as ?sid= so it survives a
+    # page reload (st.session_state is reset on reload), and mirrored into
+    # session_state. The questionnaire uses it to look up the saved profile.
+    _sid = st.query_params.get("sid")
+    if not _sid:
+        _sid = st.session_state.get("session_token") or str(uuid.uuid4())
+        st.query_params["sid"] = _sid
+    st.session_state["session_token"] = _sid
 
     # Step 1: resolve active page from query params; st.button sets it directly
     _qp = unquote_plus(st.query_params.get("page", PAGES[0]))
@@ -697,83 +701,122 @@ def _compute_profile(answers: dict[str, int]) -> dict:
 
 
 # ---------------------------------------------------------------------------
-# Profile persistence helpers
-# Best-effort integration with the backend GET /profile/latest endpoint.
-# When the API base URL is not configured (e.g. the Streamlit-only cloud
-# deployment) every call degrades silently and the questionnaire relies on
-# st.session_state alone, so the 3-state UI keeps working within a session.
+# Profile persistence
+# The questionnaire profile is persisted in a dedicated SQLite table,
+# `questionnaire_profiles`, keyed by the per-browser session token (kept in
+# the URL as ?sid= so it survives a page reload). The table is append-only:
+# each submission/reassessment inserts a new row and old rows are never
+# overwritten, so the latest profile is simply the most recent row.
+#
+# The table is created on first use from here — it does NOT live in
+# backend/data/schema.sql, so no backend module is modified.
 # ---------------------------------------------------------------------------
 
 
-def _api_base_url() -> str | None:
-    """Resolve the FastAPI base URL from env or Streamlit secrets, or None."""
-    base = os.environ.get("ROBO_ADVISOR_API_URL", "")
-    if not base:
-        try:
-            base = st.secrets.get("ROBO_ADVISOR_API_URL", "")
-        except Exception:
-            base = ""
-    return base.rstrip("/") or None
+def _profile_db_path() -> str:
+    """Path to the SQLite file holding the questionnaire profiles.
 
-
-def _api_key_header() -> dict[str, str]:
-    """X-API-Key header if an API_KEY is configured, else empty."""
-    key = os.environ.get("API_KEY", "")
-    if not key:
-        try:
-            key = st.secrets.get("API_KEY", "")
-        except Exception:
-            key = ""
-    return {"X-API-Key": key} if key else {}
-
-
-@st.cache_data(ttl=30, show_spinner=False)
-def _fetch_latest_profile(session_token: str) -> dict | None:
-    """Call GET /profile/latest for this session token (best-effort).
-
-    Returns the parsed JSON body, or None when the API is not configured
-    or unreachable. Cached briefly so it does not run on every rerun.
+    Defaults to robo_advisor.db at the repository root (same file the
+    backend uses); overridable via the ROBO_ADVISOR_DB env var (tests).
     """
-    base = _api_base_url()
-    if not base:
+    override = os.environ.get("ROBO_ADVISOR_DB", "")
+    if override:
+        return override
+    return str(Path(__file__).resolve().parent.parent / "robo_advisor.db")
+
+
+def _profile_db_connect():
+    """Open the profile DB and ensure the questionnaire_profiles table exists."""
+    import sqlite3
+
+    conn = sqlite3.connect(_profile_db_path(), check_same_thread=False)
+    conn.row_factory = sqlite3.Row
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS questionnaire_profiles (
+            session_token TEXT NOT NULL,
+            created_at    TEXT NOT NULL,
+            profile_label TEXT NOT NULL,
+            profile_json  TEXT NOT NULL,
+            answers_json  TEXT NOT NULL
+        )
+        """
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_qp_token_created "
+        "ON questionnaire_profiles(session_token, created_at DESC)"
+    )
+    conn.commit()
+    return conn
+
+
+def _save_questionnaire_profile(token: str, result: dict, answers: dict) -> None:
+    """Insert a new questionnaire-profile row (append-only audit trail)."""
+    from datetime import datetime, timezone
+
+    if not token:
+        return
+    try:
+        conn = _profile_db_connect()
+        conn.execute(
+            "INSERT INTO questionnaire_profiles "
+            "(session_token, created_at, profile_label, profile_json, answers_json) "
+            "VALUES (?, ?, ?, ?, ?)",
+            (
+                token,
+                datetime.now(timezone.utc).isoformat(),
+                result["profile_label"],
+                json.dumps(result),
+                json.dumps(answers),
+            ),
+        )
+        conn.commit()
+        conn.close()
+    except Exception:
+        # Persistence is best-effort: never break the UI if the DB is
+        # unavailable (e.g. a read-only filesystem). The session_state
+        # copy still drives the 3-state UI within the current session.
+        pass
+
+
+def _load_questionnaire_profile(token: str) -> dict | None:
+    """Return the most recent saved profile for a token, or None."""
+    if not token:
         return None
     try:
-        import httpx
-
-        resp = httpx.get(
-            f"{base}/profile/latest",
-            params={"session_token": session_token},
-            headers=_api_key_header(),
-            timeout=3.0,
-        )
-        if resp.status_code == 200:
-            return resp.json()
+        conn = _profile_db_connect()
+        row = conn.execute(
+            "SELECT profile_json, answers_json FROM questionnaire_profiles "
+            "WHERE session_token = ? ORDER BY created_at DESC LIMIT 1",
+            (token,),
+        ).fetchone()
+        conn.close()
     except Exception:
         return None
-    return None
+    if row is None:
+        return None
+    try:
+        return {
+            "profile": json.loads(row["profile_json"]),
+            "answers": json.loads(row["answers_json"]),
+        }
+    except (TypeError, ValueError):
+        return None
 
 
 def _restore_persisted_profile() -> None:
-    """Rehydrate a saved profile into session_state on first load.
+    """Rehydrate a saved profile into session_state on page load.
 
-    No-op if a profile is already in this session, if no session token is
-    set, or if the backend has nothing usable for it. Only restores when a
-    complete answer set is available so the result card renders correctly.
+    No-op if a profile is already in this session or nothing is saved for
+    this session token. This is what makes the profile survive a reload.
     """
     if st.session_state.get("profile"):
         return
     token = st.session_state.get("session_token")
-    if not token:
-        return
-    latest = _fetch_latest_profile(token)
-    if not latest or not latest.get("exists"):
-        return
-    snapshot = latest.get("questionnaire_snapshot") or {}
-    q_ids = [q["id"] for q in _QUESTIONS]
-    answers = {q: snapshot[q] for q in q_ids if q in snapshot}
-    if len(answers) == len(q_ids):
-        st.session_state["questionnaire_answers"] = answers
-        st.session_state["profile"] = _compute_profile(answers)
+    saved = _load_questionnaire_profile(token)
+    if saved:
+        st.session_state["profile"] = saved["profile"]
+        st.session_state["questionnaire_answers"] = saved["answers"]
 
 
 def _render_profile_result_card(result: dict) -> None:
@@ -1143,6 +1186,10 @@ def render_questionnaire() -> None:
         # Reassessment complete — leave reassessment mode so the next rerun
         # shows the read-only state with the freshly computed profile.
         st.session_state["questionnaire_reassess"] = False
+        # Persist so the profile survives a page reload (append-only row).
+        _save_questionnaire_profile(
+            st.session_state.get("session_token"), result, answers
+        )
 
     if st.session_state.get("profile"):
         _render_profile_result_card(st.session_state["profile"])
