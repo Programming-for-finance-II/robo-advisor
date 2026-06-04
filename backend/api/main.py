@@ -134,6 +134,73 @@ def profile(
 
 
 # ---------------------------------------------------------------------------
+# /profile/latest — session-based lookup of the most recent saved profile
+# ---------------------------------------------------------------------------
+
+
+class LatestProfileResponse(BaseModel):
+    """Most recent saved profile for a session, or exists=False if none."""
+    exists: bool
+    profile_label: str | None = None
+    questionnaire_snapshot: dict | None = None
+    created_at: str | None = None
+
+
+@app.get("/profile/latest", response_model=LatestProfileResponse)
+def profile_latest(
+    session_token: str, _: str = Depends(verify_api_key)
+) -> LatestProfileResponse:
+    """
+    Return the most recent saved profile for a given session token.
+
+    The session_token is resolved to a user_id via the users table, then
+    the latest recommendation for that user is returned. Consumed by the
+    Streamlit questionnaire to choose between the first-time, read-only and
+    reassessment states. Read-only and cheap, so no rate limiting is applied.
+    """
+    try:
+        conn = init_db(DB_PATH)
+    except Exception as e:
+        raise HTTPException(status_code=503, detail=f"DB unavailable: {e}")
+
+    try:
+        user = conn.execute(
+            "SELECT id FROM users WHERE session_token = ?",
+            (session_token,),
+        ).fetchone()
+        if user is None:
+            return LatestProfileResponse(exists=False)
+
+        row = conn.execute(
+            """
+            SELECT questionnaire_snapshot, profile_label, created_at
+            FROM recommendations
+            WHERE user_id = ?
+            ORDER BY created_at DESC
+            LIMIT 1
+            """,
+            (user["id"],),
+        ).fetchone()
+    finally:
+        conn.close()
+
+    if row is None:
+        return LatestProfileResponse(exists=False)
+
+    try:
+        snapshot = json.loads(row["questionnaire_snapshot"])
+    except (TypeError, ValueError):
+        snapshot = None
+
+    return LatestProfileResponse(
+        exists=True,
+        profile_label=row["profile_label"],
+        questionnaire_snapshot=snapshot if isinstance(snapshot, dict) else None,
+        created_at=row["created_at"],
+    )
+
+
+# ---------------------------------------------------------------------------
 # /advice — LLM Narrator + Validator pipeline (W3)
 # ---------------------------------------------------------------------------
 
