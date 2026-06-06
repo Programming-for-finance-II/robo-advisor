@@ -3719,63 +3719,16 @@ def _reference_comparison(profile_key: str) -> dict:
     }
 
 
-_COMPARE_SCENARIOS: dict[str, dict] = {
-    "gfc_2008": {
-        "label": "2008 financial crisis",
-        "blurb": "Banks collapsed and global stock markets lost roughly half "
-                 "their value over 18 months.",
-    },
-    "covid_2020": {
-        "label": "2020 COVID crash",
-        "blurb": "The fastest market collapse in history — a third wiped out in "
-                 "weeks — followed by an equally sharp rebound.",
-    },
-    "rate_hike_2022": {
-        "label": "2022 rate-hike shock",
-        "blurb": "A rare year when stocks and bonds fell together, as central "
-                 "banks raised interest rates at record speed.",
-    },
-}
-
-
-def _load_backtest_scenario(scenario_key: str, profile_label: str) -> dict | None:
-    """Load the committed per-profile crisis simulation (equity curves)."""
-    prof = profile_label.lower()
-    path = _BACKTEST_DIR / f"backtest_{scenario_key}_{prof}.json"
-    if not path.exists():
-        path = _BACKTEST_DIR / f"backtest_{scenario_key}_moderate.json"
-    if not path.exists():
-        return None
-    try:
-        with open(path) as fh:
-            return json.load(fh)
-    except Exception:
-        return None
-
-
-def _curve_stats(equity_curve: list[dict]) -> tuple[float, float]:
-    """Return (final value multiplier, worst drawdown) from a normalised curve."""
-    vals = [e["portfolio_value"] for e in equity_curve]
-    if not vals:
-        return 1.0, 0.0
-    peak, mdd = vals[0], 0.0
-    for v in vals:
-        peak = max(peak, v)
-        mdd = min(mdd, v / peak - 1.0)
-    return vals[-1], mdd
-
-
 def render_compare() -> None:
     page_header(
         "Compare Markowitz",
-        "What the classic textbook method would have done with your money",
+        "How your portfolio is built — and why not the textbook way",
         icon="⚖",
     )
 
     profile_data = st.session_state.get("profile", {})
     profile_label = profile_data.get("profile_label", "MODERATE")
     profile_key = _LABEL_TO_MOCK.get(profile_label, "balanced")
-    INVEST = 10_000
 
     # ── Hero verdict ──────────────────────────────────────────────────────────
     st.markdown(
@@ -3786,148 +3739,93 @@ def render_compare() -> None:
         'text-transform:uppercase;color:#a78bfa;margin-bottom:0.5rem;">Our choice</div>'
         '<div style="font-family:\'Space Grotesk\',sans-serif;font-size:1.3rem;'
         'font-weight:700;color:#f1f5f9;margin-bottom:0.7rem;line-height:1.35;">'
-        'We build your portfolio with HRP — the method that protects you in a crisis.</div>'
+        'Your portfolio is built with HRP, not the classic Markowitz method.</div>'
         '<div style="font-size:0.95rem;color:#94a3b8;line-height:1.7;">'
-        'Markowitz (1952) is the textbook method, and in calm years it can look like '
-        'the winner — it is built to chase whatever performed best in the past, by '
-        'betting big on a few assets. But when one of those bets goes wrong, the whole '
-        'portfolio goes with it. <b style="color:#cbd5e1;">HRP spreads your money</b> '
-        'across assets that behave differently, so a single shock can\'t sink you. '
-        'Below, see for yourself what each method would have done with €10,000.'
+        'Markowitz (1952) is the method every finance textbook teaches — but it works '
+        'by guessing which assets will do best and betting heavily on them. HRP takes a '
+        'calmer approach: it groups assets that behave alike and balances risk across '
+        'them, without trying to predict the future. This page explains <b style="'
+        'color:#cbd5e1;">how the two differ</b>. To see how that plays out through real '
+        'market crises, head to the Backtesting page.'
         '</div></div>',
         unsafe_allow_html=True,
     )
 
-    # ── Section 1: €10,000 through a real crisis ────────────────────────────────
-    _section_header("1", "If you'd invested €10,000 right before a crisis")
+    # ── Section 1: two ways to build a portfolio (the philosophy) ───────────────
+    _section_header("1", "Two ways to build a portfolio")
     _section_desc(
-        "The real test of a portfolio isn't a calm year — it's how it survives when "
-        "markets fall apart. Pick a real crisis and watch how each method would have "
-        "handled your money."
+        "Both methods start from the same assets and the same goal. The difference is "
+        "how they decide where your money goes."
     )
 
-    scen = st.segmented_control(
-        "Crisis",
-        options=list(_COMPARE_SCENARIOS.keys()),
-        format_func=lambda k: _COMPARE_SCENARIOS[k]["label"],
-        default="gfc_2008",
-        required=True,
-        label_visibility="collapsed",
+    def _method_card(accent, bg, icon, name, tagline, points, point_color):
+        bullets = ""
+        for ok, txt in points:
+            mark = "✓" if ok else "✕"
+            mc = "#0dcfb0" if ok else "#f87171"
+            bullets += (
+                f'<div style="display:flex;gap:0.55rem;align-items:flex-start;'
+                f'margin-bottom:0.55rem;">'
+                f'<span style="color:{mc};font-weight:700;flex-shrink:0;'
+                f'font-size:0.95rem;line-height:1.5;">{mark}</span>'
+                f'<span style="font-size:0.9rem;color:#cbd5e1;line-height:1.55;">'
+                f'{txt}</span></div>'
+            )
+        return (
+            f'<div style="flex:1 1 280px;background:#0f1628;border:1px solid #1e2640;'
+            f'border-top:3px solid {accent};border-radius:14px;padding:1.3rem 1.4rem;">'
+            f'<div style="display:flex;align-items:center;gap:0.7rem;'
+            f'margin-bottom:0.5rem;">'
+            f'<div style="width:2.4rem;height:2.4rem;border-radius:10px;background:{bg};'
+            f'display:flex;align-items:center;justify-content:center;font-size:1.3rem;">'
+            f'{icon}</div>'
+            f'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:1.15rem;'
+            f'font-weight:700;color:{accent};">{name}</div></div>'
+            f'<div style="font-size:0.9rem;color:#94a3b8;line-height:1.6;'
+            f'margin-bottom:1rem;font-style:italic;">{tagline}</div>'
+            f'<div>{bullets}</div></div>'
+        )
+
+    mv_points = [
+        (False, "Needs a guess of which assets will perform best — and that guess is "
+                "often wrong."),
+        (False, "Concentrates your money in a few favourites, so one bad call hurts a lot."),
+        (True, "Looks excellent on past data, because it is tuned to exactly that data."),
+    ]
+    hrp_points = [
+        (True, "Needs no forecast of the future — it only looks at how assets move "
+               "relative to each other."),
+        (True, "Spreads your money across the whole mix, so no single asset can sink it."),
+        (True, "Trades a little eye-catching performance for being much harder to break."),
+    ]
+
+    st.markdown(
+        '<div style="display:flex;gap:1rem;flex-wrap:wrap;">'
+        + _method_card(
+            "#f87171", "rgba(248,113,113,0.13)", "🎯",
+            "Markowitz", "“Predict the winners, then bet on them.”",
+            mv_points, "#f87171")
+        + _method_card(
+            "#7c5cfc", "rgba(124,92,252,0.13)", "⚖️",
+            "HRP (yours)", "“Balance the risks, don’t gamble on guesses.”",
+            hrp_points, "#7c5cfc")
+        + '</div>',
+        unsafe_allow_html=True,
     )
-    if scen is None:
-        scen = "gfc_2008"
-
-    detail = _load_backtest_scenario(scen, profile_label)
-    if detail is None:
-        st.info("Crisis simulation data isn't available for this profile.")
-    else:
-        meta = _COMPARE_SCENARIOS[scen]
-        hrp_ec = detail["strategies"]["HRP"]["equity_curve"]
-        mv_ec = detail["strategies"]["MV"]["equity_curve"]
-        hrp_end, hrp_dd = _curve_stats(hrp_ec)
-        mv_end, mv_dd = _curve_stats(mv_ec)
-
-        hrp_low = INVEST * (1 + hrp_dd)
-        mv_low = INVEST * (1 + mv_dd)
-        protected = hrp_low - mv_low  # how much more HRP kept at the worst moment
-
-        st.markdown(
-            f'<div style="font-size:0.9rem;color:#64748b;margin:0.2rem 0 1rem;">'
-            f'<b style="color:#94a3b8;">{meta["label"]}.</b> {meta["blurb"]}</div>',
-            unsafe_allow_html=True,
-        )
-
-        # Two outcome cards — "at the worst moment your money fell to…"
-        def _drop_card(title, color, dd, low):
-            return (
-                f'<div style="flex:1;background:#0f1628;border:1px solid #1e2640;'
-                f'border-top:3px solid {color};border-radius:14px;padding:1.2rem 1.3rem;">'
-                f'<div style="font-size:0.8rem;font-weight:600;letter-spacing:0.04em;'
-                f'color:#94a3b8;margin-bottom:0.6rem;">{title}</div>'
-                f'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:2.4rem;'
-                f'font-weight:700;color:{color};line-height:1;">{dd*100:.0f}%</div>'
-                f'<div style="font-size:0.8rem;color:#64748b;margin-top:0.3rem;'
-                f'margin-bottom:0.9rem;">worst drop during the crisis</div>'
-                f'<div style="border-top:1px solid #1e2640;padding-top:0.7rem;'
-                f'font-size:0.85rem;color:#94a3b8;">At the lowest point your €10,000 '
-                f'was worth <b style="color:#e2e8f0;font-family:\'Space Grotesk\',sans-serif;">'
-                f'€{low:,.0f}</b></div></div>'
-            )
-
-        st.markdown(
-            '<div style="display:flex;gap:1rem;margin-bottom:1rem;">'
-            + _drop_card("Your portfolio (HRP)", "#7c5cfc", hrp_dd, hrp_low)
-            + _drop_card("Markowitz", "#f87171", mv_dd, mv_low)
-            + '</div>',
-            unsafe_allow_html=True,
-        )
-
-        # Highlight strip — the single takeaway for this crisis
-        if protected > 50:
-            st.markdown(
-                f'<div style="background:rgba(13,207,176,0.1);'
-                f'border:1px solid rgba(13,207,176,0.3);border-radius:10px;'
-                f'padding:0.8rem 1.1rem;margin-bottom:1.3rem;font-size:0.95rem;'
-                f'color:#cbd5e1;">'
-                f'💡 At the worst moment, HRP protected '
-                f'<b style="color:#0dcfb0;">€{protected:,.0f} more</b> of your €10,000 '
-                f'than Markowitz — a {abs(hrp_dd-mv_dd)*100:.0f} percentage-point '
-                f'smaller fall.</div>',
-                unsafe_allow_html=True,
-            )
-
-        # Growth-of-€10k chart through the crisis
-        fig = go.Figure()
-        fig.add_trace(go.Scatter(
-            x=[e["date"] for e in hrp_ec],
-            y=[e["portfolio_value"] * INVEST for e in hrp_ec],
-            mode="lines", name="Your portfolio (HRP)",
-            line=dict(color="#7c5cfc", width=2.4),
-            hovertemplate="€%{y:,.0f}<extra>HRP</extra>",
-        ))
-        fig.add_trace(go.Scatter(
-            x=[e["date"] for e in mv_ec],
-            y=[e["portfolio_value"] * INVEST for e in mv_ec],
-            mode="lines", name="Markowitz",
-            line=dict(color="#f87171", width=2.4),
-            hovertemplate="€%{y:,.0f}<extra>Markowitz</extra>",
-        ))
-        fig.add_hline(y=INVEST, line_dash="dot", line_color="#475569", line_width=1,
-                      annotation_text="€10,000 starting value",
-                      annotation_position="bottom right",
-                      annotation_font=dict(size=10, color="#64748b"))
-        fig.update_layout(
-            yaxis=dict(title="Value of your €10,000", tickprefix="€",
-                       gridcolor="#1e2640"),
-            xaxis=dict(title="", gridcolor="#1e2640"),
-            height=380,
-            margin=dict(l=10, r=15, t=40, b=30),
-            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
-            hovermode="x unified",
-        )
-        fig = apply_plotly_dark_theme(fig)
-        fig.update_layout(
-            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-            modebar_remove=[
-                "select2d", "lasso2d", "autoScale2d",
-                "hoverClosestCartesian", "hoverCompareCartesian",
-                "toggleSpikelines", "zoomIn2d", "zoomOut2d",
-            ],
-        )
-        st.plotly_chart(fig, use_container_width=True,
-                        config={"displaylogo": False}, key="cmp_growth")
 
     _v_spacer(2.2)
 
-    # ── Section 2: why — your money isn't all in one place ──────────────────────
-    _section_header("2", "Why it holds up: your money isn't all in one place")
+    # ── Section 2: the difference, in your own portfolio ────────────────────────
+    _section_header("2", "See the difference in your own portfolio")
     _section_desc(
-        "Here is the reason HRP falls less. Markowitz piles most of your money into a "
-        "few assets, so when those drop, you feel the full hit. HRP spreads it out — "
-        "each bar below is one portfolio, split into its holdings."
+        "Built on today’s market data for your "
+        f"{profile_label.capitalize()} profile, here is where each method would put your "
+        "money. Markowitz piles into a few assets; HRP spreads it out. Each bar is one "
+        "portfolio, split into its holdings."
     )
 
     data = _run_live_comparison(profile_label)
+    is_live = data is not None
     if data is None:
         data = _reference_comparison(profile_key)
     hrp_w = data["hrp"]["weights"]
@@ -3953,74 +3851,65 @@ def render_compare() -> None:
                 + '</div>'
             )
         return (
-            f'<div style="margin-bottom:1.1rem;">'
+            f'<div style="margin-bottom:1.2rem;">'
             f'<div style="display:flex;justify-content:space-between;'
             f'align-items:baseline;margin-bottom:0.45rem;">'
-            f'<span style="font-size:0.95rem;font-weight:700;color:{color};'
+            f'<span style="font-size:0.98rem;font-weight:700;color:{color};'
             f'font-family:\'Space Grotesk\',sans-serif;">{title}</span>'
             f'<span style="font-size:0.82rem;color:#64748b;">'
-            f'top 2 assets = <b style="color:#e2e8f0;">{top2*100:.0f}%</b> of your '
-            f'money · biggest bet <b style="color:#e2e8f0;">{biggest*100:.0f}%</b></span>'
+            f'top 2 holdings = <b style="color:#e2e8f0;">{top2*100:.0f}%</b> · '
+            f'biggest bet <b style="color:#e2e8f0;">{biggest*100:.0f}%</b></span>'
             f'</div>'
-            f'<div style="display:flex;height:34px;border-radius:8px;'
+            f'<div style="display:flex;height:36px;border-radius:8px;'
             f'overflow:hidden;">{segs}</div></div>'
         )
 
+    badge = (
+        '<span style="color:#0dcfb0;">● Live market data</span>'
+        if is_live else
+        '<span style="color:#f59e0b;">● Example (live data unavailable)</span>'
+    )
     st.markdown(
         '<div style="background:#0f1628;border:1px solid #1e2640;border-radius:14px;'
         'padding:1.3rem 1.4rem;">'
         + _spread_block("Your portfolio (HRP)", "#7c5cfc", hrp_w)
         + _spread_block("Markowitz", "#f87171", mv_w)
-        + '<div style="font-size:0.8rem;color:#475569;margin-top:0.2rem;">'
-        'Each coloured block is one holding; its width is how much of your money sits '
-        'there. Wider, fewer blocks (Markowitz) mean more concentration risk.</div>'
+        + f'<div style="font-size:0.8rem;color:#475569;margin-top:0.2rem;'
+        f'display:flex;justify-content:space-between;">'
+        f'<span>Each block is one holding; its width is the share of your money there. '
+        f'Colours group assets by type.</span><span>{badge}</span></div>'
         + '</div>',
+        unsafe_allow_html=True,
+    )
+
+    eff_hrp = _effective_assets(hrp_w)
+    eff_mv = _effective_assets(mv_w)
+    st.markdown(
+        f'<div style="background:rgba(13,207,176,0.1);'
+        f'border:1px solid rgba(13,207,176,0.3);border-radius:10px;'
+        f'padding:0.8rem 1.1rem;margin-top:0.9rem;font-size:0.95rem;color:#cbd5e1;">'
+        f'💡 Your money effectively sits across '
+        f'<b style="color:#0dcfb0;">{eff_hrp:.0f} holdings</b>, versus about '
+        f'<b style="color:#f87171;">{eff_mv:.0f}</b> for Markowitz — fewer single '
+        f'points of failure if one asset disappoints.</div>',
         unsafe_allow_html=True,
     )
 
     _v_spacer(2.2)
 
-    # ── Section 3: the bottom line ──────────────────────────────────────────────
-    _section_header("3", "The bottom line")
+    # ── Section 3: pointer to the empirical proof ───────────────────────────────
+    _section_header("3", "Does it actually hold up?")
     _section_desc(
-        "Across every crisis we tested, the pattern is the same: HRP gives up a little "
-        "of the eye-catching past performance in exchange for being far harder to break."
+        "That’s the whole question — and it deserves real evidence, not just a "
+        "philosophy. The Backtesting page replays three real market crises (2008, 2020 "
+        "and 2022) and shows exactly how each method would have handled your money."
     )
 
-    eff_hrp = _effective_assets(hrp_w)
-    eff_mv = _effective_assets(mv_w)
-
-    takeaways = [
-        ("🛡️", "#0dcfb0", "Falls less when it matters",
-         "In each crisis we tested, HRP's worst drop was smaller than Markowitz's — "
-         "the protection you actually feel when markets tumble."),
-        ("📊", "#7c5cfc", "Spreads your money wider",
-         f"Your money effectively sits across {eff_hrp:.0f} holdings, versus about "
-         f"{eff_mv:.0f} for Markowitz — fewer single points of failure."),
-        ("🔮", "#f59e0b", "Doesn't gamble on predictions",
-         "Markowitz needs a guess of future returns to work, and that guess is often "
-         "wrong. HRP needs no such forecast — it just balances risk."),
-    ]
-    cards = '<div style="display:flex;gap:1rem;flex-wrap:wrap;">'
-    for icon, color, title, body in takeaways:
-        cards += (
-            f'<div style="flex:1 1 220px;background:#0f1628;border:1px solid #1e2640;'
-            f'border-top:3px solid {color};border-radius:14px;padding:1.2rem 1.25rem;">'
-            f'<div style="font-size:1.5rem;margin-bottom:0.6rem;">{icon}</div>'
-            f'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:1.0rem;'
-            f'font-weight:700;color:#f1f5f9;margin-bottom:0.5rem;line-height:1.3;">'
-            f'{title}</div>'
-            f'<div style="font-size:0.88rem;color:#94a3b8;line-height:1.6;">{body}</div>'
-            f'</div>'
-        )
-    cards += '</div>'
-    st.markdown(cards, unsafe_allow_html=True)
-
-    st.caption(
-        "Crisis figures come from a walk-forward simulation on real market data for "
-        "your profile; allocations are computed live. See the Backtesting page for the "
-        "full technical breakdown across all strategies."
-    )
+    if st.button("Open the Backtesting evidence  →", key="cmp_to_backtest",
+                 type="primary", use_container_width=True):
+        st.session_state.active_page = "Backtesting"
+        st.query_params["page"] = "Backtesting"
+        st.rerun()
 
 
 # ---------------------------------------------------------------------------
