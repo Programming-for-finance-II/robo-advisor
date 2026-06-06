@@ -1613,56 +1613,57 @@ def _render_resilience_strip(profile_label: str) -> None:
 
 def _render_cluster_view(portfolio: dict, weights: dict[str, float]) -> None:
     """
-    Cluster structure view — 2 × 2 grid of branded cluster cards.
+    Plain-English cluster explanation — 2 × 2 grid of cards.
 
-    Each card shows:
-      • Role badge (Growth / Hedge / Stability / Liquidity) + cluster name
-      • Large portfolio-weight percentage with a proportional fill bar
-      • One-sentence plain-language explanation of what this cluster does
-      • Per-asset breakdown: name · weight bar · weight % · risk %
+    Designed for a non-specialist user.  Each card answers three questions:
+      1. What is this part of my portfolio?  (name + role badge)
+      2. How much of my money is there?       (large %)
+      3. Why does the portfolio hold this?   (one-sentence benefit)
 
-    Numbers come from cluster_structure when present (live path), falling
-    back to summed weights for the mock / Phase-A path.
+    No technical columns (no "Wt", no "Risk %") — those numbers live in
+    Section 2.  Here the asset list is just names, so the user focuses on
+    understanding purpose, not reading a data table.
     """
     cs = portfolio.get("cluster_structure")
 
     _CLUSTER_DEFS = [
         (
-            "Risk Assets", "cluster_A_risk_assets", "#7c5cfc",
-            "rgba(124,92,252,0.12)", "Growth",
-            "The portfolio's return engine — equities deliver the highest "
-            "long-term compounding but also the largest drawdowns.",
+            "Equities", "cluster_A_risk_assets", "#7c5cfc",
+            "Growth",
+            "This is the growth engine of your portfolio. Stocks generate the "
+            "highest long-term returns, but they also fall the most in market "
+            "downturns — this is the part that works hardest for you over time.",
             ["CSPX.L", "EFA"],
         ),
         (
             "Real Assets", "cluster_B_real_assets", "#f59e0b",
-            "rgba(245,158,11,0.12)", "Hedge",
-            "Gold and real estate move on their own cycle — they protect "
-            "purchasing power in inflationary or stagflationary regimes.",
+            "Inflation hedge",
+            "Gold and real estate tend to hold their value when inflation rises "
+            "or the economy stagnates. They protect your purchasing power when "
+            "bonds and equities struggle simultaneously.",
             ["GLD", "VNQ"],
         ),
         (
-            "Safe Haven", "cluster_C_safe_haven", "#0dcfb0",
-            "rgba(13,207,176,0.12)", "Stability",
-            "Investment-grade and inflation-linked bonds act as ballast — "
-            "prices tend to rise when equities fall in deflationary shocks.",
+            "Bonds", "cluster_C_safe_haven", "#0dcfb0",
+            "Safety net",
+            "High-quality government and aggregate bonds are the portfolio's "
+            "shock absorber. When stock markets crash, bond prices often rise — "
+            "reducing your overall loss during crises.",
             ["AGGH.MI", "TLT", "TIP"],
         ),
         (
             "Cash", "cluster_D_cash", "#3b82f6",
-            "rgba(59,130,246,0.12)", "Liquidity",
-            "Near-zero volatility and immediate liquidity — a dry-powder "
-            "buffer that lets you rebalance without selling other positions.",
+            "Liquidity buffer",
+            "A small cash position keeps the portfolio immediately liquid. "
+            "It earns the overnight rate with near-zero volatility and provides "
+            "a reserve for rebalancing without having to sell other assets.",
             ["XEON.MI"],
         ),
     ]
 
-    risk_contributions = portfolio.get("risk_contributions", {})
-
-    # Render in pairs (2 columns per row)
     for row_defs in [_CLUSTER_DEFS[:2], _CLUSTER_DEFS[2:]]:
         cols = st.columns(2, gap="medium")
-        for col, (name, attr, color, bg, role, desc, fallback) in zip(cols, row_defs):
+        for col, (name, attr, color, role, benefit, fallback) in zip(cols, row_defs):
             with col:
                 cl_obj  = getattr(cs, attr, None) if cs is not None else None
                 members = list(cl_obj.members) if cl_obj is not None else fallback
@@ -1672,90 +1673,57 @@ def _render_cluster_view(portfolio: dict, weights: dict[str, float]) -> None:
                     else sum(weights.get(m, 0.0) for m in members)
                 )
 
-                # Per-asset rows inside the card
-                asset_rows = ""
-                for m in sorted(members, key=lambda t: -weights.get(t, 0.0)):
-                    w  = weights.get(m, 0.0)
-                    rc = risk_contributions.get(m, 0.0)
-                    bar_w = max(3, int(w / max(weight, 0.001) * 100))
-                    mname = _TICKER_DISPLAY_NAME.get(m, m)
-                    asset_rows += (
-                        f'<div style="display:flex;align-items:center;'
-                        f'gap:0.55rem;padding:0.3rem 0;'
-                        f'border-top:1px solid #111827;">'
-                        # Name + ticker
-                        f'<div style="flex:1.8;min-width:0;">'
-                        f'<div style="font-size:0.8rem;font-weight:600;'
-                        f'color:#cbd5e1;white-space:nowrap;overflow:hidden;'
-                        f'text-overflow:ellipsis;">{mname}</div>'
-                        f'<div style="font-size:0.68rem;color:#475569;'
-                        f'font-family:\'Space Grotesk\',sans-serif;">{m}</div>'
-                        f'</div>'
-                        # Mini bar
-                        f'<div style="flex:1;height:5px;background:#1a2035;'
-                        f'border-radius:3px;">'
-                        f'<div style="width:{bar_w}%;height:100%;'
-                        f'background:{color};border-radius:3px;opacity:.85;">'
-                        f'</div></div>'
-                        # Weight
-                        f'<div style="font-size:0.8rem;font-weight:700;'
-                        f'color:#e2e8f0;font-family:\'Space Grotesk\',sans-serif;'
-                        f'min-width:2.6rem;text-align:right;">{w*100:.1f}%</div>'
-                        # Risk
-                        f'<div style="font-size:0.75rem;color:#64748b;'
-                        f'font-family:\'Space Grotesk\',sans-serif;'
-                        f'min-width:2.4rem;text-align:right;">'
-                        f'{rc*100:.1f}%</div>'
-                        f'</div>'
-                    )
+                # Asset name chips — plain English, no numbers
+                chips = "".join(
+                    f'<span style="display:inline-block;'
+                    f'background:rgba(255,255,255,0.05);'
+                    f'border:1px solid {color}44;border-radius:6px;'
+                    f'padding:0.2rem 0.55rem;margin:0 0.3rem 0.3rem 0;">'
+                    f'<span style="font-size:0.85rem;color:#cbd5e1;font-weight:500;">'
+                    f'{_TICKER_DISPLAY_NAME.get(m, m)}</span>'
+                    f'</span>'
+                    for m in members
+                )
 
                 st.markdown(
                     f'<div style="background:#0f1628;border:1px solid #1e2640;'
                     f'border-top:3px solid {color};border-radius:14px;'
-                    f'padding:1.1rem 1.15rem;box-sizing:border-box;">'
-                    # ── Header row ──────────────────────────────────────────
+                    f'padding:1.2rem 1.25rem;height:100%;box-sizing:border-box;">'
+                    # Role badge
+                    f'<div style="display:inline-block;font-size:0.72rem;'
+                    f'font-weight:700;letter-spacing:0.1em;text-transform:uppercase;'
+                    f'color:{color};background:rgba(255,255,255,0.05);'
+                    f'border:1px solid {color}55;border-radius:20px;'
+                    f'padding:0.15rem 0.65rem;margin-bottom:0.75rem;">'
+                    f'{role}</div>'
+                    # Name + weight side by side
                     f'<div style="display:flex;justify-content:space-between;'
-                    f'align-items:flex-start;margin-bottom:0.5rem;">'
-                    f'<div>'
-                    f'<div style="font-size:0.62rem;font-weight:700;'
-                    f'letter-spacing:0.12em;text-transform:uppercase;'
-                    f'color:{color};margin-bottom:0.2rem;">{role}</div>'
+                    f'align-items:flex-end;margin-bottom:0.5rem;">'
                     f'<div style="font-family:\'Space Grotesk\',sans-serif;'
-                    f'font-size:1.0rem;font-weight:700;color:#f1f5f9;">{name}</div>'
-                    f'</div>'
+                    f'font-size:1.15rem;font-weight:700;color:#f1f5f9;">{name}</div>'
                     f'<div style="text-align:right;">'
                     f'<div style="font-family:\'Space Grotesk\',sans-serif;'
-                    f'font-size:1.7rem;font-weight:700;color:{color};line-height:1;">'
+                    f'font-size:1.9rem;font-weight:700;color:{color};line-height:1;">'
                     f'{weight*100:.0f}%</div>'
-                    f'<div style="font-size:0.62rem;color:#475569;'
-                    f'text-transform:uppercase;letter-spacing:0.07em;">'
-                    f'of portfolio</div>'
+                    f'<div style="font-size:0.75rem;color:#475569;'
+                    f'letter-spacing:0.04em;">of portfolio</div>'
                     f'</div></div>'
-                    # ── Progress bar ─────────────────────────────────────────
-                    f'<div style="height:4px;background:#1e2640;border-radius:2px;'
-                    f'margin-bottom:0.75rem;">'
+                    # Progress bar
+                    f'<div style="height:5px;background:#1e2640;border-radius:3px;'
+                    f'margin-bottom:1rem;">'
                     f'<div style="width:{min(weight*100,100):.1f}%;height:100%;'
-                    f'background:{color};border-radius:2px;"></div></div>'
-                    # ── Description ──────────────────────────────────────────
-                    f'<div style="font-size:0.8rem;color:#64748b;line-height:1.55;'
-                    f'margin-bottom:0.75rem;">{desc}</div>'
-                    # ── Asset column headers ──────────────────────────────────
-                    f'<div style="display:flex;align-items:center;gap:0.55rem;'
-                    f'padding-bottom:0.25rem;">'
-                    f'<div style="flex:1.8;font-size:0.64rem;font-weight:600;'
-                    f'letter-spacing:0.07em;text-transform:uppercase;color:#334155;">'
-                    f'Asset</div>'
-                    f'<div style="flex:1;"></div>'
-                    f'<div style="font-size:0.64rem;font-weight:600;letter-spacing:0.07em;'
-                    f'text-transform:uppercase;color:#334155;min-width:2.6rem;'
-                    f'text-align:right;">Wt</div>'
-                    f'<div style="font-size:0.64rem;font-weight:600;letter-spacing:0.07em;'
-                    f'text-transform:uppercase;color:#334155;min-width:2.4rem;'
-                    f'text-align:right;">Risk</div>'
-                    f'</div>'
-                    # ── Asset rows ────────────────────────────────────────────
-                    + asset_rows
-                    + '</div>',
+                    f'background:{color};border-radius:3px;"></div></div>'
+                    # Benefit text
+                    f'<div style="font-size:0.9rem;color:#94a3b8;line-height:1.6;'
+                    f'margin-bottom:1rem;">{benefit}</div>'
+                    # Asset chips
+                    f'<div style="border-top:1px solid #1e2640;'
+                    f'padding-top:0.75rem;">'
+                    f'<div style="font-size:0.75rem;font-weight:600;'
+                    f'letter-spacing:0.07em;text-transform:uppercase;'
+                    f'color:#334155;margin-bottom:0.4rem;">Holds</div>'
+                    f'{chips}</div>'
+                    f'</div>',
                     unsafe_allow_html=True,
                 )
 
@@ -1808,71 +1776,85 @@ def _render_allocation_panel(
     risk_contributions: dict[str, float],
 ) -> None:
     """
-    Full-width allocation panel — replaces the old donut + table columns.
+    Full-width allocation panel — unified card with cluster summary bars
+    on the left and a grouped asset table on the right.
 
     Layout
     ------
-    1. Stacked horizontal bar (100 % width, one segment per asset sorted by
-       cluster then descending weight). Hovering over a segment shows the
-       asset name, weight and risk contribution via a CSS tooltip rendered as
-       the segment's ``title`` attribute — no Plotly overhead, no iframe.
+    Left column: four horizontal bars (one per cluster) that show at a
+    glance how the portfolio is split between Equity, Bonds, Alternatives
+    and Cash.  Each bar is full width scaled to the largest cluster, so the
+    relative sizes are immediately comparable.
 
-    2. Asset table grouped by cluster, with a coloured cluster-label row
-       separating each group. Each asset row shows: colour dot · name ·
-       ticker · weight bar · weight % · risk-contribution %.
-
-    Both elements share the same ``#0f1628`` background inside a single
-    unified card, so there are no competing border-radii or sizing
-    mismatches between two independent Streamlit elements.
+    Right column: asset table grouped by cluster.  Columns are Asset
+    (name + ticker), Allocation (bar + %) and Risk contribution (%).
+    All font sizes match the app-wide baseline (0.88–0.92 rem body,
+    0.75 rem labels).
     """
     _ORDER = ["Equity", "Bonds", "Alternatives", "Cash"]
 
-    # Group assets by cluster, sorted descending by weight within each group
+    # ── Compute cluster totals and group assets ───────────────────────────
     groups: dict[str, list[tuple[str, float]]] = {cl: [] for cl in _ORDER}
+    cluster_totals: dict[str, float] = {}
     for ticker, w in weights.items():
         cl = _HRP_TICKER_CLUSTER.get(ticker, "Other")
         groups.setdefault(cl, []).append((ticker, w))
+        cluster_totals[cl] = cluster_totals.get(cl, 0.0) + w
     for cl in groups:
         groups[cl].sort(key=lambda kv: -kv[1])
 
-    # ── 1. Stacked allocation bar ─────────────────────────────────────────
-    bar_segments = ""
+    max_cluster_w = max(cluster_totals.values(), default=1.0) or 1.0
+    max_asset_w   = max(weights.values(), default=1.0) or 1.0
+
+    # ── Left: cluster summary bars ────────────────────────────────────────
+    cluster_bars = ""
     for cl in _ORDER:
+        cl_w  = cluster_totals.get(cl, 0.0)
+        if cl_w < 0.001:
+            continue
         color = _HRP_CLUSTER_COLOR.get(cl, "#64748b")
-        for ticker, w in groups.get(cl, []):
-            if w < 0.001:
-                continue
-            name = _TICKER_DISPLAY_NAME.get(ticker, ticker)
-            rc   = risk_contributions.get(ticker, 0.0)
-            tip  = f"{name} ({ticker}) · {w*100:.1f}% weight · {rc*100:.1f}% risk"
-            bar_segments += (
-                f'<div title="{tip}" style="flex:{w:.4f};background:{color};'
-                f'min-width:2px;position:relative;cursor:default;'
-                f'transition:opacity .15s;opacity:.9;" '
-                f'onmouseenter="this.style.opacity=\'1\'" '
-                f'onmouseleave="this.style.opacity=\'.9\'">'
-                f'</div>'
+        bg    = _HRP_CLUSTER_BG.get(cl, "rgba(100,116,139,0.12)")
+        bar_w = cl_w / max_cluster_w * 100
+        cluster_bars += (
+            f'<div style="margin-bottom:1.1rem;">'
+            # Label row: cluster name left, % right
+            f'<div style="display:flex;justify-content:space-between;'
+            f'align-items:baseline;margin-bottom:0.35rem;">'
+            f'<span style="font-size:0.88rem;font-weight:700;color:{color};'
+            f'font-family:\'Space Grotesk\',sans-serif;letter-spacing:0.01em;">'
+            f'{cl}</span>'
+            f'<span style="font-family:\'Space Grotesk\',sans-serif;'
+            f'font-size:1.1rem;font-weight:700;color:#e2e8f0;">'
+            f'{cl_w*100:.0f}%</span>'
+            f'</div>'
+            # Bar track
+            f'<div style="height:10px;background:#1a2035;border-radius:5px;">'
+            f'<div style="width:{bar_w:.1f}%;height:100%;background:{color};'
+            f'border-radius:5px;"></div></div>'
+            # Constituent assets as small chips below bar
+            f'<div style="display:flex;flex-wrap:wrap;gap:0.3rem;margin-top:0.35rem;">'
+            + "".join(
+                f'<span style="font-size:0.75rem;color:#64748b;'
+                f'background:rgba(255,255,255,0.04);border:1px solid #1e2640;'
+                f'border-radius:4px;padding:0.05rem 0.4rem;">'
+                f'{_TICKER_DISPLAY_NAME.get(t, t)}</span>'
+                for t, _ in groups.get(cl, [])
             )
+            + '</div></div>'
+        )
 
-    bar_html = (
-        '<div style="display:flex;height:20px;border-radius:6px;'
-        'overflow:hidden;margin-bottom:0.5rem;gap:1px;">'
-        + bar_segments + "</div>"
-    )
-
-    # ── 2. Grouped asset table ────────────────────────────────────────────
-    max_w = max(weights.values(), default=1.0) or 1.0
-
+    # ── Right: asset table grouped by cluster ─────────────────────────────
     col_header = (
         '<div style="display:flex;align-items:center;'
-        'padding:0 0.5rem 0.55rem;border-bottom:1px solid #1e2640;">'
-        '<div style="flex:2.2;font-size:0.68rem;font-weight:600;'
-        'letter-spacing:0.09em;text-transform:uppercase;color:#475569;">Asset</div>'
-        '<div style="flex:1.6;font-size:0.68rem;font-weight:600;'
-        'letter-spacing:0.09em;text-transform:uppercase;color:#475569;">Weight</div>'
-        '<div style="flex:0.7;font-size:0.68rem;font-weight:600;'
-        'letter-spacing:0.09em;text-transform:uppercase;color:#475569;'
-        'text-align:right;">Risk %</div>'
+        'padding:0 0.5rem 0.6rem;border-bottom:1px solid #1e2640;">'
+        '<div style="flex:2;font-size:0.75rem;font-weight:600;'
+        'letter-spacing:0.07em;text-transform:uppercase;color:#475569;">Asset</div>'
+        '<div style="flex:1.7;font-size:0.75rem;font-weight:600;'
+        'letter-spacing:0.07em;text-transform:uppercase;color:#475569;">'
+        'Allocation</div>'
+        '<div style="flex:0.7;font-size:0.75rem;font-weight:600;'
+        'letter-spacing:0.07em;text-transform:uppercase;color:#475569;'
+        'text-align:right;">Risk</div>'
         '</div>'
     )
 
@@ -1883,68 +1865,75 @@ def _render_allocation_panel(
             continue
         color = _HRP_CLUSTER_COLOR.get(cl, "#64748b")
         bg    = _HRP_CLUSTER_BG.get(cl, "rgba(100,116,139,0.12)")
-        cl_w  = sum(w for _, w in rows)
+        cl_w  = cluster_totals.get(cl, 0.0)
 
-        # Cluster group header
         table_body += (
             f'<div style="display:flex;align-items:center;gap:0.5rem;'
-            f'padding:0.45rem 0.5rem;background:{bg};'
-            f'border-left:3px solid {color};margin:0.4rem 0 0;">'
-            f'<span style="font-size:0.7rem;font-weight:700;'
-            f'letter-spacing:0.07em;text-transform:uppercase;color:{color};">'
+            f'padding:0.42rem 0.5rem;background:{bg};'
+            f'border-left:3px solid {color};margin:0.5rem 0 0;">'
+            f'<span style="font-size:0.75rem;font-weight:700;'
+            f'letter-spacing:0.06em;text-transform:uppercase;color:{color};">'
             f'{cl}</span>'
-            f'<span style="font-size:0.7rem;color:#64748b;margin-left:auto;">'
-            f'{cl_w*100:.0f}% total</span>'
+            f'<span style="font-size:0.75rem;color:#64748b;margin-left:auto;'
+            f'font-family:\'Space Grotesk\',sans-serif;font-weight:600;">'
+            f'{cl_w*100:.0f}%</span>'
             f'</div>'
         )
 
         for ticker, w in rows:
-            name   = _TICKER_DISPLAY_NAME.get(ticker, ticker)
-            rc     = risk_contributions.get(ticker, 0.0)
-            bar_pct = max(3.0, w / max_w * 100.0)
+            name    = _TICKER_DISPLAY_NAME.get(ticker, ticker)
+            rc      = risk_contributions.get(ticker, 0.0)
+            bar_pct = max(3.0, w / max_asset_w * 100.0)
             table_body += (
                 '<div style="display:flex;align-items:center;'
-                'padding:0.55rem 0.5rem;border-bottom:1px solid #111827;">'
-                # Name + ticker
-                '<div style="flex:2.2;display:flex;align-items:center;gap:0.55rem;">'
+                'padding:0.6rem 0.5rem;border-bottom:1px solid #111827;">'
+                # Asset name + ticker
+                '<div style="flex:2;display:flex;align-items:center;gap:0.55rem;">'
                 f'<span style="width:8px;height:8px;border-radius:50%;'
                 f'background:{color};flex-shrink:0;"></span>'
                 '<div style="min-width:0;">'
-                f'<div style="font-size:0.88rem;font-weight:600;color:#e2e8f0;'
+                f'<div style="font-size:0.92rem;font-weight:600;color:#e2e8f0;'
                 f'line-height:1.25;white-space:nowrap;overflow:hidden;'
                 f'text-overflow:ellipsis;">{name}</div>'
-                f'<div style="font-size:0.7rem;color:#5b6678;'
+                f'<div style="font-size:0.75rem;color:#5b6678;'
                 f'font-family:\'Space Grotesk\',sans-serif;">{ticker}</div>'
                 '</div></div>'
-                # Weight bar + pct
-                '<div style="flex:1.6;display:flex;align-items:center;gap:0.5rem;'
-                'padding-right:0.6rem;">'
-                '<div style="flex:1;height:6px;background:#161d30;border-radius:3px;">'
+                # Allocation bar + %
+                '<div style="flex:1.7;display:flex;align-items:center;gap:0.5rem;'
+                'padding-right:0.5rem;">'
+                '<div style="flex:1;height:7px;background:#161d30;border-radius:4px;">'
                 f'<div style="width:{bar_pct:.1f}%;height:100%;background:{color};'
-                'border-radius:3px;opacity:0.85;"></div></div>'
-                f'<span style="font-size:0.88rem;font-weight:600;color:#e2e8f0;'
-                f'font-family:\'Space Grotesk\',sans-serif;min-width:2.8rem;'
+                'border-radius:4px;opacity:0.85;"></div></div>'
+                f'<span style="font-size:0.92rem;font-weight:700;color:#e2e8f0;'
+                f'font-family:\'Space Grotesk\',sans-serif;min-width:2.9rem;'
                 f'text-align:right;">{w*100:.1f}%</span>'
                 '</div>'
-                # Risk
-                f'<div style="flex:0.7;font-size:0.82rem;color:#94a3b8;'
+                # Risk contribution
+                f'<div style="flex:0.7;font-size:0.88rem;color:#94a3b8;'
                 f'text-align:right;font-family:\'Space Grotesk\',sans-serif;">'
                 f'{rc*100:.1f}%</div>'
                 '</div>'
             )
 
-    # ── Unified card wrapper ──────────────────────────────────────────────
-    st.markdown(
-        '<div style="background:#0f1628;border:1px solid #1e2640;'
-        'border-radius:14px;padding:1rem 1.1rem;">'
-        + bar_html
-        + '<div style="font-size:0.68rem;color:#64748b;'
-        'text-align:right;margin-bottom:0.6rem;'
-        'letter-spacing:0.04em;">Hover a segment for details</div>'
-        + col_header + table_body
-        + '</div>',
-        unsafe_allow_html=True,
-    )
+    # ── Two-column unified card ───────────────────────────────────────────
+    col_l, col_r = st.columns([1, 1.55], gap="large")
+    with col_l:
+        st.markdown(
+            '<div style="background:#0f1628;border:1px solid #1e2640;'
+            'border-radius:14px;padding:1.2rem 1.3rem;">'
+            '<div style="font-size:0.75rem;font-weight:600;letter-spacing:0.09em;'
+            'text-transform:uppercase;color:#475569;margin-bottom:1.1rem;">'
+            'By asset class</div>'
+            + cluster_bars + '</div>',
+            unsafe_allow_html=True,
+        )
+    with col_r:
+        st.markdown(
+            '<div style="background:#0f1628;border:1px solid #1e2640;'
+            'border-radius:14px;padding:1rem 1.1rem;">'
+            + col_header + table_body + '</div>',
+            unsafe_allow_html=True,
+        )
 
 # ---------------------------------------------------------------------------
 # ETF explorer ("What do these tickers mean?" section)
