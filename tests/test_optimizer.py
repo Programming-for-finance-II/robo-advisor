@@ -100,20 +100,75 @@ def test_optimize_weights_sum_to_one_and_box_constraints() -> None:
         )
 
 
+def _equity_share(weights: dict[str, float]) -> float:
+    """Sum of weights in the risk_assets cluster (equity exposure)."""
+    return sum(w for t, w in weights.items() if CLUSTER_MAP[t] == "risk_assets")
+
+
+def _cash_share(weights: dict[str, float]) -> float:
+    """Sum of weights in the cash cluster."""
+    return sum(w for t, w in weights.items() if CLUSTER_MAP[t] == "cash")
+
+
 def test_optimize_profile_tilt_produces_different_weights() -> None:
     """
-    CONSERVATIVE and AGGRESSIVE profiles must produce different weight vectors.
-    The tilt formula (0.7·HRP + 0.3·MinVar vs 0.7·HRP + 0.3·ERC) guarantees
-    this on any non-trivial covariance structure.
+    CONSERVATIVE and AGGRESSIVE must produce *materially* different portfolios,
+    not just numerically distinct ones. The original 1e-4 threshold was too
+    weak: it passed even when both profiles collapsed onto the same boundary
+    allocation. We require a large L1 weight distance instead.
     """
     from backend.optimizer.hrp import optimize
 
-    prices = _make_prices_with_varied_vol()   
+    prices = _make_prices_with_varied_vol()
     w_cons = optimize(prices=prices, profile="CONSERVATIVE", cluster_map=CLUSTER_MAP)["weights"]
     w_agg  = optimize(prices=prices, profile="AGGRESSIVE",   cluster_map=CLUSTER_MAP)["weights"]
 
-    diffs = [abs(w_cons[t] - w_agg[t]) for t in TICKERS]
-    assert max(diffs) > 1e-4, "CONSERVATIVE and AGGRESSIVE weights are identical — tilt not applied"
+    l1 = sum(abs(w_cons[t] - w_agg[t]) for t in TICKERS)
+    assert l1 > 0.40, (
+        f"CONSERVATIVE and AGGRESSIVE are nearly identical (L1={l1:.3f}); "
+        "profile differentiation is not being applied"
+    )
+
+
+def test_aggressive_holds_more_equity_and_less_cash_than_conservative() -> None:
+    """
+    Directional sanity check: an AGGRESSIVE investor must end up with strictly
+    more equity (risk_assets) and strictly less cash than a CONSERVATIVE one.
+    This is the core promise of the robo-advisor and the regression guard for
+    the ERC-tilt bug, where AGGRESSIVE held *less* equity than CONSERVATIVE.
+    """
+    from backend.optimizer.hrp import optimize
+
+    prices = _make_prices_with_varied_vol()
+    w_cons = optimize(prices=prices, profile="CONSERVATIVE", cluster_map=CLUSTER_MAP)["weights"]
+    w_agg  = optimize(prices=prices, profile="AGGRESSIVE",   cluster_map=CLUSTER_MAP)["weights"]
+
+    assert _equity_share(w_agg) > _equity_share(w_cons) + 0.15, (
+        f"AGGRESSIVE equity {_equity_share(w_agg):.3f} not meaningfully above "
+        f"CONSERVATIVE equity {_equity_share(w_cons):.3f}"
+    )
+    assert _cash_share(w_agg) < _cash_share(w_cons), (
+        f"AGGRESSIVE cash {_cash_share(w_agg):.3f} not below "
+        f"CONSERVATIVE cash {_cash_share(w_cons):.3f}"
+    )
+
+
+def test_expected_volatility_increases_with_risk_appetite() -> None:
+    """
+    Portfolio volatility must be monotonically ordered:
+    CONSERVATIVE < MODERATE < AGGRESSIVE. The pre-fix optimizer produced the
+    opposite (AGGRESSIVE had the lowest volatility).
+    """
+    from backend.optimizer.hrp import optimize
+
+    prices = _make_prices_with_varied_vol()
+    vols = {
+        p: optimize(prices=prices, profile=p, cluster_map=CLUSTER_MAP)["expected_volatility"]
+        for p in ("CONSERVATIVE", "MODERATE", "AGGRESSIVE")
+    }
+    assert vols["CONSERVATIVE"] < vols["MODERATE"] < vols["AGGRESSIVE"], (
+        f"volatility not monotonic in risk appetite: {vols}"
+    )
 
 
 def test_optimize_annual_volatility_in_realistic_range() -> None:

@@ -405,7 +405,7 @@ def render_page_nav(active: str) -> None:
     col_prev, col_next = st.columns(2)
     with col_prev:
         if prev_page and st.button(
-            f"← {prev_page}",
+            "← Previous page",
             key=f"pgnav_prev_{active}",
             use_container_width=True,
         ):
@@ -414,7 +414,7 @@ def render_page_nav(active: str) -> None:
             st.rerun()
     with col_next:
         if next_page and st.button(
-            f"{next_page} →",
+            "Next page →",
             key=f"pgnav_next_{active}",
             type="primary",
             use_container_width=True,
@@ -1129,6 +1129,7 @@ def _render_profile_result_card(result: dict, show_dashboard_button: bool = True
 
     if show_dashboard_button and st.button(
         "View my Portfolio Dashboard →",
+        key="view_portfolio_btn",
         type="primary",
         use_container_width=True,
     ):
@@ -1181,7 +1182,7 @@ def render_questionnaire() -> None:
             "</div>",
             unsafe_allow_html=True,
         )
-        _render_profile_result_card(existing, show_dashboard_button=False)
+        _render_profile_result_card(existing, show_dashboard_button=True)
         if st.button(
             "↻ Reassess my profile",
             key="reassess_btn",
@@ -2139,6 +2140,48 @@ def _v_spacer(rem: float = 2.0) -> None:
     st.markdown(f'<div style="height:{rem}rem"></div>', unsafe_allow_html=True)
 
 
+def _kpi_cards(items: list[dict]) -> None:
+    """Render a row of styled KPI cards.
+
+    Replaces the anonymous, colourless ``st.metric`` boxes with branded cards:
+    each has a coloured top accent, an icon chip, an uppercase label, a large
+    Space-Grotesk value, and a one-line hint — so the headline portfolio
+    statistics read as a deliberate, scannable summary rather than as filler.
+
+    Each item dict: {label, value, accent, bg, icon (inner SVG markup), hint}.
+    """
+    cards = ""
+    for it in items:
+        accent = it["accent"]
+        cards += (
+            f'<div style="flex:1 1 140px;min-width:140px;'
+            f'background:linear-gradient(160deg,rgba(30,38,64,0.55),'
+            f'rgba(17,24,39,0.55));border:1px solid #1e2640;'
+            f'border-top:2px solid {accent};border-radius:14px;'
+            f'padding:1rem 1.1rem;box-shadow:0 2px 14px rgba(0,0,0,0.25);">'
+            f'<div style="width:2.1rem;height:2.1rem;border-radius:9px;'
+            f'background:{it["bg"]};border:1px solid {accent}55;'
+            f'display:flex;align-items:center;justify-content:center;'
+            f'margin-bottom:0.7rem;">'
+            f'<svg width="16" height="16" viewBox="0 0 18 18" fill="none" '
+            f'stroke="{accent}" stroke-width="1.8" stroke-linecap="round" '
+            f'stroke-linejoin="round">{it["icon"]}</svg></div>'
+            f'<div style="font-size:0.7rem;font-weight:600;letter-spacing:0.08em;'
+            f'text-transform:uppercase;color:#64748b;margin-bottom:0.3rem;">'
+            f'{it["label"]}</div>'
+            f'<div style="font-family:\'Space Grotesk\',sans-serif;'
+            f'font-size:1.6rem;font-weight:700;color:#f1f5f9;line-height:1;">'
+            f'{it["value"]}</div>'
+            f'<div style="font-size:0.7rem;color:#64748b;margin-top:0.35rem;">'
+            f'{it["hint"]}</div></div>'
+        )
+    st.markdown(
+        f'<div style="display:flex;gap:0.85rem;flex-wrap:wrap;'
+        f'margin-bottom:0.5rem;">{cards}</div>',
+        unsafe_allow_html=True,
+    )
+
+
 @st.cache_data(ttl=3600, show_spinner=False)
 def _fetch_price_history(ticker: str) -> pd.DataFrame:
     """
@@ -2478,11 +2521,38 @@ def _render_hrp_tab(portfolio: dict) -> None:
     )
 
     # ── KPI Cards ──────────────────────────────────────────────────────────
-    c1, c2, c3, c4 = st.columns(4)
-    c1.metric("Exp. Return", f"{exp_ret:.1%}" if exp_ret is not None else "—")
-    c2.metric("Volatility", f"{vol:.1%}")
-    c3.metric("Sharpe", f"{sharpe:.2f}" if sharpe is not None else "—")
-    c4.metric("Max Drawdown", f"{max_dd:.1%}" if max_dd is not None else "—")
+    _kpi_cards([
+        {
+            "label": "Expected Return",
+            "value": f"{exp_ret:.1%}" if exp_ret is not None else "—",
+            "accent": "#0dcfb0", "bg": "rgba(13,207,176,0.13)",
+            "icon": '<polyline points="2,13 7,8 11,11 16,4"/>'
+                    '<polyline points="12,4 16,4 16,8"/>',
+            "hint": "Annualised estimate",
+        },
+        {
+            "label": "Volatility",
+            "value": f"{vol:.1%}",
+            "accent": "#f59e0b", "bg": "rgba(245,158,11,0.13)",
+            "icon": '<polyline points="2,9 5,9 7,3 11,15 13,9 16,9"/>',
+            "hint": "Annualised std. dev.",
+        },
+        {
+            "label": "Sharpe Ratio",
+            "value": f"{sharpe:.2f}" if sharpe is not None else "—",
+            "accent": "#7c5cfc", "bg": "rgba(124,92,252,0.13)",
+            "icon": '<polygon points="9,2 4,10 8,10 7,16 13,8 9,8"/>',
+            "hint": "Return per unit of risk",
+        },
+        {
+            "label": "Max Drawdown",
+            "value": f"{max_dd:.1%}" if max_dd is not None else "—",
+            "accent": "#f87171", "bg": "rgba(248,113,113,0.13)",
+            "icon": '<polyline points="2,4 7,9 11,6 16,13"/>'
+                    '<polyline points="12,13 16,13 16,9"/>',
+            "hint": "Worst peak-to-trough",
+        },
+    ])
 
     _v_spacer(2.5)
 
@@ -2547,8 +2617,20 @@ def _render_hrp_tab(portfolio: dict) -> None:
             from backend.optimizer.charts import plot_weights_donut
             fig_donut = plot_weights_donut(weights)
             fig_donut = apply_plotly_dark_theme(fig_donut)
-            fig_donut.update_layout(height=360)
-            st.plotly_chart(fig_donut, use_container_width=True, config={"displaylogo": False})
+            # Re-assert the donut's own layout: apply_plotly_dark_theme()
+            # overwrites margin (and would clip the bottom colour legend) and
+            # the layout font. The per-slice textfont set in charts.py is not
+            # touched, so the white in-slice labels survive.
+            fig_donut.update_layout(
+                height=360,
+                margin=dict(l=10, r=10, t=12, b=38),
+            )
+            st.plotly_chart(
+                fig_donut,
+                use_container_width=True,
+                config={"displaylogo": False, "responsive": False},
+                key="hrp_allocation_donut",
+            )
         except Exception as exc:
             st.caption(f"Allocation chart unavailable: {exc}")
 
