@@ -2709,11 +2709,10 @@ def _render_hrp_tab(portfolio: dict) -> None:
     # ── Section 4: Cluster Breakdown ───────────────────────────────────────
     _section_header("4", "Cluster Breakdown")
     _section_desc(
-        "HRP groups assets into four clusters based on correlation structure, then "
-        "balances risk across — and within — each group. Each cluster plays a distinct "
-        "economic role: growth, inflation hedge, crisis protection, or liquidity. "
-        "The breakdown below shows what each cluster holds, its share of the portfolio, "
-        "and how much risk each individual position contributes."
+        "HRP groups assets into four clusters based on their correlation structure, "
+        "then balances risk across — and within — each group. Each cluster plays a "
+        "distinct economic role in your portfolio. The cards below explain what each "
+        "part does for you and why the strategy holds it."
     )
 
     _render_cluster_view(portfolio, weights)
