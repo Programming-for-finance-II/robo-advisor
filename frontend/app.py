@@ -246,6 +246,84 @@ def _run_live_optimization(profile_label: str) -> dict:
     }
 
 
+@st.cache_data(ttl=300, show_spinner=False)
+def _run_live_comparison(profile_label: str) -> dict | None:
+    """
+    Load prices once and run BOTH HRP and Markowitz on identical data.
+
+    This is what powers the Compare page. Crucially, HRP and MV see the same
+    yfinance price history, the same Ledoit-Wolf covariance and the same
+    [5%, 40%] box constraints — so any difference is the algorithm, not the
+    inputs. Returns real, directly-comparable metrics (no mocks).
+
+    Returns None if market data is unavailable, so the caller can show an
+    honest "data unavailable" state instead of fabricated numbers.
+    """
+    from datetime import date
+
+    import numpy as np
+
+    from backend.data.loader import ValidatedDataLoader
+    from backend.data.universe_config import get_cluster_map, get_primary_tickers
+    from backend.optimizer.hrp import compute_covariance, optimize
+    from backend.optimizer.markowitz import optimize_markowitz
+
+    try:
+        tickers = get_primary_tickers()
+        cluster_map = get_cluster_map()
+        end_date = date.today().isoformat()
+        loader = ValidatedDataLoader()
+        prices, report = loader.load(
+            tickers=tickers, start=_DATA_START, end=end_date
+        )
+    except Exception:
+        return None
+
+    ucits = report.ucits_tickers_used
+    fb = list(report.fallback_tickers_applied.keys())
+
+    hrp = optimize(
+        prices=prices, profile=profile_label,  # type: ignore[arg-type]
+        cluster_map=cluster_map, ucits_tickers=ucits, fallback_tickers=fb,
+    )
+    mv = optimize_markowitz(prices, ucits_tickers=ucits, fallback_tickers=fb)
+
+    # Real correlation matrix from the same shrunk covariance HRP clusters on
+    cov = compute_covariance(prices)
+    std = np.sqrt(np.diag(cov.values))
+    corr = (cov.values / np.outer(std, std)).clip(-1.0, 1.0)
+
+    def _max_dd(weights: dict[str, float]) -> float:
+        cols = [t for t in weights if t in prices.columns]
+        rets = prices[cols].pct_change().dropna()
+        wv = np.array([weights[t] for t in cols], dtype=float)
+        wv = wv / wv.sum() if wv.sum() > 0 else wv
+        equity = np.cumprod(1.0 + (rets.to_numpy() @ wv))
+        return float((equity / np.maximum.accumulate(equity) - 1.0).min())
+
+    return {
+        "tickers": list(cov.columns),
+        "correlation": corr.tolist(),
+        "hrp": {
+            "weights": hrp["weights"],
+            "risk_contributions": hrp["risk_contributions"],
+            "volatility": hrp["expected_volatility"],
+            "return": hrp["expected_return"],
+            "sharpe": hrp["sharpe_ratio"],
+            "max_drawdown": _max_dd(hrp["weights"]),
+        },
+        "mv": {
+            "weights": mv["weights"],
+            "risk_contributions": mv["risk_contributions"],
+            "volatility": mv["expected_volatility"],
+            "return": mv["expected_return"],
+            "sharpe": mv["sharpe_ratio"],
+            "max_drawdown": _max_dd(mv["weights"]),
+            "solver_status": mv["solver_status"],
+        },
+    }
+
+
 def _mock_optimization(profile_key: str) -> dict:
     """
     Build portfolio data from the Phase A mock payload.
@@ -3582,220 +3660,311 @@ def render_backtesting() -> None:
 # Page 5 -- Compare MV
 # ---------------------------------------------------------------------------
 
-# Mock MV weights for Phase A (Markowitz concentrates in low-vol assets)
-_MOCK_MV_WEIGHTS: dict[str, float] = {
-    "CSPX.L":  0.08,
-    "EFA":     0.04,
-    "GLD":     0.07,
-    "VNQ":     0.01,
-    "AGGH.MI": 0.38,
-    "TLT":     0.27,
-    "TIP":     0.10,
-    "XEON.MI": 0.05,
-}
+# ---------------------------------------------------------------------------
+# Compare helpers
+# ---------------------------------------------------------------------------
+
+def _hhi(weights: dict[str, float]) -> float:
+    """Herfindahl-Hirschman concentration index — sum of squared weights."""
+    return sum(v ** 2 for v in weights.values())
+
+
+def _effective_assets(weights: dict[str, float]) -> float:
+    """Effective number of positions = 1 / HHI (diversification breadth)."""
+    h = _hhi(weights)
+    return 1.0 / h if h > 0 else 0.0
+
+
+def _largest_position(weights: dict[str, float]) -> float:
+    """Largest single-asset weight — flags Markowitz corner solutions."""
+    return max(weights.values(), default=0.0)
+
+
+def _reference_comparison(profile_key: str) -> dict:
+    """Honest fallback when live market data is unavailable.
+
+    Uses the Phase-A mock HRP payload and a reference Markowitz allocation
+    captured from a past live run. Clearly labelled as a reference snapshot
+    in the UI — never presented as live, and never derived by multiplying
+    HRP metrics (the previous dishonest approach).
+    """
+    hrp_port = _mock_optimization(profile_key)
+    # Reference MV snapshot (concentrated in low-vol bonds, as MV tends to be)
+    mv_weights = {
+        "CSPX.L": 0.08, "EFA": 0.05, "GLD": 0.07, "VNQ": 0.05,
+        "AGGH.MI": 0.40, "TLT": 0.20, "TIP": 0.10, "XEON.MI": 0.05,
+    }
+    _CVOL = {
+        "CSPX.L": 0.162, "EFA": 0.162, "GLD": 0.138, "VNQ": 0.138,
+        "AGGH.MI": 0.071, "TLT": 0.071, "TIP": 0.071, "XEON.MI": 0.003,
+    }
+    raw = {t: mv_weights.get(t, 0.0) * _CVOL.get(t, 0.10) for t in mv_weights}
+    tot = sum(raw.values()) or 1.0
+    mv_rc = {t: v / tot for t, v in raw.items()}
+    return {
+        "tickers": list(hrp_port["weights"].keys()),
+        "correlation": None,
+        "hrp": {
+            "weights": hrp_port["weights"],
+            "risk_contributions": hrp_port["risk_contributions"],
+            "volatility": hrp_port.get("expected_volatility") or 0.094,
+            "return": hrp_port.get("expected_return") or 0.068,
+            "sharpe": hrp_port.get("sharpe_ratio") or 0.0,
+            "max_drawdown": hrp_port.get("max_drawdown") or -0.187,
+        },
+        "mv": {
+            "weights": mv_weights,
+            "risk_contributions": mv_rc,
+            "volatility": 0.071,
+            "return": 0.041,
+            "sharpe": 0.58,
+            "max_drawdown": -0.142,
+            "solver_status": "reference",
+        },
+    }
 
 
 def render_compare() -> None:
-    page_header("Compare Markowitz", "Deep-dive analysis · HRP vs Markowitz", icon="⚖")
-
-    st.markdown(
-        """
-        <div style="background:rgba(30,38,64,0.5);border:1px solid #1e2640;
-        border-radius:10px;padding:0.9rem 1rem;margin-bottom:1.25rem;
-        display:flex;gap:0.875rem;align-items:flex-start;">
-            <div style="width:2rem;height:2rem;flex-shrink:0;
-            background:rgba(248,113,113,0.10);border:1px solid rgba(248,113,113,0.25);
-            border-radius:7px;display:inline-flex;align-items:center;
-            justify-content:center;font-size:0.95rem;">⚖️</div>
-            <div>
-                <div style="font-family:'Space Grotesk',sans-serif;font-size:0.9rem;
-                font-weight:600;color:#e2e8f0;margin-bottom:0.45rem;">
-                    Markowitz Mean-Variance (MV) — classical benchmark
-                </div>
-                <div style="font-size:0.79rem;color:#94a3b8;line-height:1.6;margin-bottom:0.45rem;">
-                    Mean-variance optimization, introduced by Markowitz in 1952, builds portfolios
-                    by maximising expected return for a given level of risk. It remains the standard
-                    academic reference for portfolio construction.
-                </div>
-                <div style="font-size:0.79rem;color:#94a3b8;line-height:1.6;">
-                    In practice, the approach is sensitive to estimation error in returns and
-                    covariances, and tends to produce concentrated allocations &#8212; often called
-                    &#8220;corner solutions&#8221; &#8212; where a few assets dominate.
-                </div>
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    import numpy as np
+    page_header("Compare Markowitz", "HRP vs the classical mean-variance benchmark", icon="⚖")
 
     profile_data = st.session_state.get("profile", {})
     profile_label = profile_data.get("profile_label", "MODERATE")
     profile_key = _LABEL_TO_MOCK.get(profile_label, "balanced")
 
-    portfolio = st.session_state.get("portfolio_data") or _mock_optimization(profile_key)
-    hrp_weights: dict[str, float] = portfolio["weights"]
-    hrp_rc: dict[str, float] = portfolio["risk_contributions"]
-    hrp_vol: float = portfolio.get("expected_volatility") or 0.094
-    hrp_ret: float = portfolio.get("expected_return") or 0.068
-    hrp_max_dd: float = portfolio.get("max_drawdown") or -0.187
+    # ── Load real, comparable data (HRP + MV on identical prices) ───────────
+    data = _run_live_comparison(profile_label)
+    is_live = data is not None
+    if data is None:
+        data = _reference_comparison(profile_key)
 
-    mv_weights: dict[str, float] = _MOCK_MV_WEIGHTS
-    mv_vol: float = hrp_vol * 0.92
-    mv_ret: float = hrp_ret * 0.78
-    mv_max_dd: float = hrp_max_dd * 0.85
+    hrp, mv = data["hrp"], data["mv"]
+    tickers = data["tickers"]
 
-    _CLUSTER_VOL: dict[str, float] = {
-        "CSPX.L": 0.162, "EFA": 0.162,
-        "GLD": 0.138, "VNQ": 0.138,
-        "AGGH.MI": 0.071, "TLT": 0.071, "TIP": 0.071,
-        "XEON.MI": 0.003,
-    }
-    mv_raw_rc = {t: mv_weights.get(t, 0.0) * _CLUSTER_VOL.get(t, 0.10) for t in mv_weights}
-    mv_total = sum(mv_raw_rc.values()) or 1.0
-    mv_rc: dict[str, float] = {t: v / mv_total for t, v in mv_raw_rc.items()}
-
-    st.markdown(f"**Active profile: {profile_label}**")
-    st.markdown("---")
-
-    # ── 1. Radar chart ────────────────────────────────────────────────────────
-    _section_header("1", "Portfolio Quality Comparison")
+    # ── Verdict banner ──────────────────────────────────────────────────────
     st.markdown(
-        "<p style='color:#94a3b8;font-size:0.82rem;line-height:1.55;margin-bottom:0.5rem;'>"
-        "This chart summarizes the trade-offs between the recommended HRP portfolio and the "
-        "classical Markowitz benchmark. Each dimension is normalized from 0 to 1, where higher "
-        "values indicate a stronger result. The goal is to help users understand whether the HRP "
-        "allocation is more diversified, more defensive, or more robust than the traditional "
-        "mean-variance alternative."
-        "</p>",
+        '<div style="background:linear-gradient(135deg,rgba(124,92,252,0.12),'
+        'rgba(13,207,176,0.08));border:1px solid rgba(124,92,252,0.3);'
+        'border-radius:14px;padding:1.3rem 1.5rem;margin-bottom:1.5rem;">'
+        '<div style="font-size:0.72rem;font-weight:700;letter-spacing:0.12em;'
+        'text-transform:uppercase;color:#a78bfa;margin-bottom:0.5rem;">'
+        'Our choice</div>'
+        '<div style="font-family:\'Space Grotesk\',sans-serif;font-size:1.25rem;'
+        'font-weight:700;color:#f1f5f9;margin-bottom:0.7rem;line-height:1.35;">'
+        'This robo-advisor builds portfolios with HRP, not Markowitz.</div>'
+        '<div style="font-size:0.92rem;color:#94a3b8;line-height:1.65;">'
+        'Mean-variance optimisation (Markowitz, 1952) is the classical academic '
+        'benchmark, and it looks excellent <em>in-sample</em> — it is designed to '
+        'maximise exactly the historical Sharpe ratio you see below. The problem is '
+        'what happens <em>out-of-sample</em>: MV inverts the covariance matrix, which '
+        'amplifies estimation error, and it depends on expected-return estimates (μ) '
+        'that are notoriously unstable. The result is concentrated, fragile portfolios. '
+        'HRP never inverts the covariance matrix and never uses μ, so it produces more '
+        'diversified, more robust allocations. We keep MV here purely as a transparent '
+        'benchmark.</div></div>',
         unsafe_allow_html=True,
     )
 
-    def _hhi(w: dict) -> float:
-        return sum(v ** 2 for v in w.values())
+    # Data-source badge
+    if is_live:
+        st.markdown(
+            f'<div style="font-size:0.8rem;color:#64748b;margin-bottom:0.5rem;">'
+            f'<span style="color:#0dcfb0;">● Live</span> &nbsp;Both portfolios '
+            f'computed on identical yfinance prices · profile: '
+            f'<b style="color:#a78bfa;">{profile_label}</b> · same Ledoit-Wolf '
+            f'covariance · same 5–40% box constraints.</div>',
+            unsafe_allow_html=True,
+        )
+    else:
+        st.markdown(
+            f'<div style="font-size:0.8rem;color:#64748b;margin-bottom:0.5rem;">'
+            f'<span style="color:#f59e0b;">● Reference snapshot</span> &nbsp;'
+            f'Live market data is unavailable; showing a labelled reference '
+            f'comparison for profile <b style="color:#a78bfa;">{profile_label}</b>. '
+            f'Numbers are illustrative, not live.</div>',
+            unsafe_allow_html=True,
+        )
 
-    def _ucits_cov(w: dict) -> float:
-        return sum(v for t, v in w.items() if t in _UCITS_TICKERS)
+    _v_spacer(1.0)
 
-    hrp_scores = [
-        max(0.0, 1.0 - (hrp_vol - 0.03) / 0.17),
-        1.0 - _hhi(hrp_weights),
-        _ucits_cov(hrp_weights),
-        max(0.0, 1.0 + hrp_max_dd),
-        min(1.0, hrp_ret / 0.12),
-    ]
-    mv_scores = [
-        max(0.0, 1.0 - (mv_vol - 0.03) / 0.17),
-        1.0 - _hhi(mv_weights),
-        _ucits_cov(mv_weights),
-        max(0.0, 1.0 + mv_max_dd),
-        min(1.0, mv_ret / 0.12),
-    ]
-
-    categories = [
-        "Low Risk",
-        "Diversification",
-        "UCITS Coverage",
-        "Drawdown Protection",
-        "Return Potential",
-    ]
-
-    fig_radar = go.Figure()
-    fig_radar.add_trace(go.Scatterpolar(
-        r=hrp_scores + [hrp_scores[0]],
-        theta=categories + [categories[0]],
-        fill="toself",
-        name="HRP",
-        line=dict(color="#7c5cfc", width=2),
-        fillcolor="rgba(124,92,252,0.15)",
-    ))
-    fig_radar.add_trace(go.Scatterpolar(
-        r=mv_scores + [mv_scores[0]],
-        theta=categories + [categories[0]],
-        fill="toself",
-        name="Markowitz MV",
-        line=dict(color="#f87171", width=2),
-        fillcolor="rgba(248,113,113,0.15)",
-    ))
-    fig_radar.update_layout(
-        polar=dict(
-            bgcolor="rgba(0,0,0,0)",
-            radialaxis=dict(
-                visible=True,
-                range=[0, 1],
-                color="#475569",
-                gridcolor="#1e2640",
-                tickfont=dict(size=9, color="#475569"),
-            ),
-            angularaxis=dict(color="#94a3b8", gridcolor="#1e2640"),
-        ),
-        legend=dict(orientation="h", yanchor="bottom", y=1.06, xanchor="center", x=0.5),
-        height=440,
-        margin=dict(l=40, r=40, t=60, b=40),
+    # ── 1. Head-to-head metrics ──────────────────────────────────────────────
+    _section_header("1", "Head-to-Head Metrics")
+    _section_desc(
+        "All figures are computed on the same historical window. Read them with the "
+        "in-sample caveat in mind: Markowitz optimises return, Sharpe and volatility "
+        "directly, so it tends to win on those here by construction. The metrics that "
+        "matter for a real investor — diversification and concentration — are where HRP "
+        "structurally wins, and those advantages persist out-of-sample."
     )
-    fig_radar = apply_plotly_dark_theme(fig_radar)
-    fig_radar.update_layout(
+
+    # winner: +1 HRP better, -1 MV better, 0 neutral. honest=True if the metric
+    # is one MV optimises in-sample (so an MV win is "expected", not meaningful).
+    eff_hrp, eff_mv = _effective_assets(hrp["weights"]), _effective_assets(mv["weights"])
+    top_hrp, top_mv = _largest_position(hrp["weights"]), _largest_position(mv["weights"])
+
+    metrics = [
+        ("Expected return", f"{hrp['return']*100:.1f}%", f"{mv['return']*100:.1f}%",
+         "higher", "in-sample", "Annualised, from historical mean returns."),
+        ("Volatility", f"{hrp['volatility']*100:.1f}%", f"{mv['volatility']*100:.1f}%",
+         "lower", "in-sample", "Annualised standard deviation."),
+        ("Sharpe ratio", f"{hrp['sharpe']:.2f}", f"{mv['sharpe']:.2f}",
+         "higher", "in-sample", "Return per unit of risk."),
+        ("Max drawdown", f"{hrp['max_drawdown']*100:.1f}%", f"{mv['max_drawdown']*100:.1f}%",
+         "higher", "in-sample", "Worst historical peak-to-trough loss."),
+        ("Diversification", f"{eff_hrp:.1f} assets", f"{eff_mv:.1f} assets",
+         "higher", "robust", "Effective number of holdings (1 / HHI). Higher = better spread."),
+        ("Largest position", f"{top_hrp*100:.0f}%", f"{top_mv*100:.0f}%",
+         "lower", "robust", "Biggest single bet. Lower = fewer corner solutions."),
+    ]
+
+    def _num(s: str) -> float:
+        return float(s.replace("%", "").replace(" assets", ""))
+
+    rows_html = ""
+    for label, hrp_v, mv_v, better, kind, hint in metrics:
+        h, m = _num(hrp_v), _num(mv_v)
+        hrp_wins = (h > m) if better == "higher" else (h < m)
+        tie = abs(h - m) < 1e-9
+        # Colour the winning value; for in-sample metrics, the win is muted.
+        win_color = "#0dcfb0" if kind == "robust" else "#94a3b8"
+        hrp_color = win_color if (hrp_wins and not tie) else "#e2e8f0"
+        mv_color  = win_color if (not hrp_wins and not tie) else "#e2e8f0"
+        hrp_weight = "700" if (hrp_wins and not tie) else "600"
+        mv_weight  = "700" if (not hrp_wins and not tie) else "600"
+        tag = (
+            '<span style="font-size:0.62rem;font-weight:600;letter-spacing:0.06em;'
+            'text-transform:uppercase;color:#0dcfb0;background:rgba(13,207,176,0.12);'
+            'border-radius:4px;padding:0.05rem 0.4rem;">robustness</span>'
+            if kind == "robust" else
+            '<span style="font-size:0.62rem;font-weight:600;letter-spacing:0.06em;'
+            'text-transform:uppercase;color:#64748b;background:rgba(100,116,139,0.12);'
+            'border-radius:4px;padding:0.05rem 0.4rem;">in-sample</span>'
+        )
+        rows_html += (
+            f'<div style="display:flex;align-items:center;padding:0.7rem 0.6rem;'
+            f'border-bottom:1px solid #141b2e;">'
+            f'<div style="flex:2.4;">'
+            f'<div style="font-size:0.92rem;font-weight:600;color:#e2e8f0;'
+            f'margin-bottom:0.15rem;">{label}</div>'
+            f'<div style="font-size:0.75rem;color:#64748b;line-height:1.4;">{hint}</div>'
+            f'</div>'
+            f'<div style="flex:1;text-align:center;font-family:\'Space Grotesk\',sans-serif;'
+            f'font-size:1.05rem;font-weight:{hrp_weight};color:{hrp_color};">{hrp_v}</div>'
+            f'<div style="flex:1;text-align:center;font-family:\'Space Grotesk\',sans-serif;'
+            f'font-size:1.05rem;font-weight:{mv_weight};color:{mv_color};">{mv_v}</div>'
+            f'<div style="flex:1;text-align:right;">{tag}</div>'
+            f'</div>'
+        )
+
+    st.markdown(
+        '<div style="background:#0f1628;border:1px solid #1e2640;border-radius:14px;'
+        'padding:0.5rem 1rem 0.9rem;">'
+        # Header row
+        '<div style="display:flex;align-items:center;padding:0.7rem 0.6rem;'
+        'border-bottom:1px solid #1e2640;">'
+        '<div style="flex:2.4;font-size:0.72rem;font-weight:600;letter-spacing:0.08em;'
+        'text-transform:uppercase;color:#475569;">Metric</div>'
+        '<div style="flex:1;text-align:center;font-size:0.78rem;font-weight:700;'
+        'letter-spacing:0.04em;color:#a78bfa;font-family:\'Space Grotesk\',sans-serif;">'
+        'HRP</div>'
+        '<div style="flex:1;text-align:center;font-size:0.78rem;font-weight:700;'
+        'letter-spacing:0.04em;color:#f87171;font-family:\'Space Grotesk\',sans-serif;">'
+        'Markowitz</div>'
+        '<div style="flex:1;"></div>'
+        '</div>'
+        + rows_html
+        + '<div style="font-size:0.75rem;color:#475569;padding:0.7rem 0.6rem 0.2rem;'
+        'line-height:1.5;">'
+        'Teal values mark a <b style="color:#0dcfb0;">robustness</b> win that holds '
+        'out-of-sample. Grey values mark an <b>in-sample</b> metric that Markowitz '
+        'optimises directly — winning there is expected and does not imply better '
+        'real-world performance.</div>'
+        + '</div>',
+        unsafe_allow_html=True,
+    )
+
+    _v_spacer(2.0)
+
+    # ── 2. Allocation comparison ──────────────────────────────────────────────
+    _section_header("2", "Allocation: Spread vs Concentration")
+    _section_desc(
+        "The clearest practical difference. Markowitz piles weight into a few "
+        "low-volatility assets (corner solutions), while HRP spreads capital across "
+        "the whole universe. Bars are sorted by HRP weight."
+    )
+
+    order = sorted(tickers, key=lambda t: -hrp["weights"].get(t, 0.0))
+    labels = [_TICKER_DISPLAY_NAME.get(t, t) for t in order]
+    hrp_w = [hrp["weights"].get(t, 0.0) * 100 for t in order]
+    mv_w = [mv["weights"].get(t, 0.0) * 100 for t in order]
+
+    fig_w = go.Figure()
+    fig_w.add_trace(go.Bar(
+        name="HRP", y=labels, x=hrp_w, orientation="h",
+        marker_color="#7c5cfc",
+        text=[f"{v:.0f}%" for v in hrp_w], textposition="auto",
+        textfont=dict(size=11, color="#ffffff"),
+        hovertemplate="%{y}: %{x:.1f}%<extra>HRP</extra>",
+    ))
+    fig_w.add_trace(go.Bar(
+        name="Markowitz", y=labels, x=mv_w, orientation="h",
+        marker_color="#f87171",
+        text=[f"{v:.0f}%" for v in mv_w], textposition="auto",
+        textfont=dict(size=11, color="#ffffff"),
+        hovertemplate="%{y}: %{x:.1f}%<extra>MV</extra>",
+    ))
+    fig_w.update_layout(
+        barmode="group",
+        xaxis=dict(title="Weight (%)", ticksuffix="%", gridcolor="#1e2640"),
+        yaxis=dict(autorange="reversed", tickfont=dict(size=12)),
+        bargap=0.25, bargroupgap=0.1,
+        height=max(320, len(order) * 50 + 60),
+        margin=dict(l=10, r=20, t=40, b=40),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
+    )
+    fig_w = apply_plotly_dark_theme(fig_w)
+    fig_w.update_layout(
         paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
         modebar_remove=[
             "select2d", "lasso2d", "autoScale2d",
             "hoverClosestCartesian", "hoverCompareCartesian",
             "toggleSpikelines", "zoomIn2d", "zoomOut2d",
         ],
-        modebar_add=["resetScale2d"],
-        dragmode="pan",
     )
-    st.plotly_chart(fig_radar, use_container_width=True, config={"displaylogo": False})
-    st.caption(
-        "All axes normalised to [0, 1]. "
-        "Low Risk = 1 − σ (normalised). "
-        "Diversification = 1 − HHI (Herfindahl index). "
-        "Drawdown Protection = 1 − |max DD|. "
-        "Phase A: volatility and return from mock data."
+    st.plotly_chart(fig_w, use_container_width=True,
+                    config={"displaylogo": False}, key="cmp_weights")
+
+    _v_spacer(2.0)
+
+    # ── 3. Risk contributions ─────────────────────────────────────────────────
+    _section_header("3", "Where Does the Risk Come From?")
+    _section_desc(
+        "Weights can hide the truth: a small bond-heavy book can still load most of "
+        "its risk on a couple of positions. HRP targets a balanced risk spread; MV, "
+        "by concentrating capital, tends to concentrate risk too."
     )
 
-    # ── 2. Risk contributions ─────────────────────────────────────────────────
-    st.markdown("---")
-    _section_header("2", "Risk Contributions")
-    st.markdown(
-        "<p style='color:#94a3b8;font-size:0.82rem;line-height:1.55;margin-bottom:0.5rem;'>"
-        "Portfolio weights do not always reveal where risk really comes from. This chart shows "
-        "each ETF's contribution to total portfolio risk and compares whether HRP and Markowitz "
-        "distribute volatility evenly or concentrate it in a few assets."
-        "</p>",
-        unsafe_allow_html=True,
-    )
-
-    all_tickers = sorted(
-        set(hrp_rc) | set(mv_rc),
-        key=lambda t: -hrp_rc.get(t, 0.0),
-    )
-    hrp_rc_vals = [hrp_rc.get(t, 0.0) * 100 for t in all_tickers]
-    mv_rc_vals = [mv_rc.get(t, 0.0) * 100 for t in all_tickers]
+    hrp_rc = [hrp["risk_contributions"].get(t, 0.0) * 100 for t in order]
+    mv_rc = [mv["risk_contributions"].get(t, 0.0) * 100 for t in order]
 
     fig_rc = go.Figure()
     fig_rc.add_trace(go.Bar(
-        name="HRP",
-        y=all_tickers,
-        x=hrp_rc_vals,
-        orientation="h",
+        name="HRP", y=labels, x=hrp_rc, orientation="h",
         marker_color="#7c5cfc",
         hovertemplate="%{y}: %{x:.1f}%<extra>HRP</extra>",
     ))
     fig_rc.add_trace(go.Bar(
-        name="Markowitz MV",
-        y=all_tickers,
-        x=mv_rc_vals,
-        orientation="h",
+        name="Markowitz", y=labels, x=mv_rc, orientation="h",
         marker_color="#f87171",
         hovertemplate="%{y}: %{x:.1f}%<extra>MV</extra>",
     ))
     fig_rc.update_layout(
         barmode="group",
-        xaxis_title="Risk contribution (%)",
-        height=360,
-        margin=dict(l=8, r=24, t=24, b=40),
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+        xaxis=dict(title="Risk contribution (%)", ticksuffix="%", gridcolor="#1e2640"),
+        yaxis=dict(autorange="reversed", tickfont=dict(size=12)),
+        bargap=0.25, bargroupgap=0.1,
+        height=max(320, len(order) * 50 + 60),
+        margin=dict(l=10, r=20, t=40, b=40),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
     )
     fig_rc = apply_plotly_dark_theme(fig_rc)
     fig_rc.update_layout(
@@ -3805,84 +3974,45 @@ def render_compare() -> None:
             "hoverClosestCartesian", "hoverCompareCartesian",
             "toggleSpikelines", "zoomIn2d", "zoomOut2d",
         ],
-        modebar_add=["resetScale2d"],
-        dragmode="pan",
     )
-    st.plotly_chart(fig_rc, use_container_width=True, config={"displaylogo": False})
-    st.caption(
-        "HRP targets equal risk contributions across assets. "
-        "MV concentrates risk in low-volatility assets (bonds), "
-        "which can reduce diversification benefits in a stress regime."
-    )
+    st.plotly_chart(fig_rc, use_container_width=True,
+                    config={"displaylogo": False}, key="cmp_risk")
 
-    # ── 3. Correlation heatmap ────────────────────────────────────────────────
-    st.markdown("---")
-    _section_header("3", "Asset Correlation Matrix")
-    st.markdown(
-        "<p style='color:#94a3b8;font-size:0.82rem;line-height:1.55;margin-bottom:0.5rem;'>"
-        "Diversification is not only about holding many ETFs, but about combining assets that "
-        "behave differently. This matrix shows the correlation structure of the ETF universe and "
-        "explains why HRP groups some assets together while separating others."
-        "</p>",
-        unsafe_allow_html=True,
-    )
-    st.caption(
-        "How to read it: values in the matrix close to 1 indicate assets moving together, "
-        "while values near 0 or below 0 indicate stronger diversification potential."
-    )
+    # ── 4. Correlation matrix (live only) ─────────────────────────────────────
+    if data.get("correlation") is not None:
+        _v_spacer(2.0)
+        _section_header("4", "Why HRP Clusters the Way It Does")
+        _section_desc(
+            "HRP's first step is to read the correlation structure below and group "
+            "assets that move together. Values near 1 (purple) move in lockstep; "
+            "values near 0 or negative (red) are natural diversifiers — the negative "
+            "equity–bond correlation is the engine of crisis protection."
+        )
 
-    _TICKERS_HM = ["CSPX.L", "EFA", "GLD", "VNQ", "AGGH.MI", "TLT", "TIP", "XEON.MI"]
-    _CORR = np.array([
-        [ 1.00,  0.85,  0.05,  0.55, -0.15, -0.20, -0.05,  0.02],
-        [ 0.85,  1.00,  0.08,  0.52, -0.12, -0.18, -0.03,  0.01],
-        [ 0.05,  0.08,  1.00,  0.18,  0.22,  0.28,  0.30,  0.02],
-        [ 0.55,  0.52,  0.18,  1.00, -0.02,  0.05,  0.10,  0.01],
-        [-0.15, -0.12,  0.22, -0.02,  1.00,  0.82,  0.78,  0.05],
-        [-0.20, -0.18,  0.28,  0.05,  0.82,  1.00,  0.75,  0.04],
-        [-0.05, -0.03,  0.30,  0.10,  0.78,  0.75,  1.00,  0.03],
-        [ 0.02,  0.01,  0.02,  0.01,  0.05,  0.04,  0.03,  1.00],
-    ])
-
-    fig_hm = go.Figure(go.Heatmap(
-        z=_CORR.tolist(),
-        x=_TICKERS_HM,
-        y=_TICKERS_HM,
-        colorscale=[
-            [0.00, "#f87171"],
-            [0.50, "#111827"],
-            [1.00, "#7c5cfc"],
-        ],
-        zmin=-1,
-        zmax=1,
-        text=[[f"{v:.2f}" for v in row] for row in _CORR],
-        texttemplate="%{text}",
-        textfont=dict(size=10),
-        hovertemplate="%{y} / %{x}: %{z:.2f}<extra></extra>",
-        colorbar=dict(
-            title="ρ",
-            tickvals=[-1, -0.5, 0, 0.5, 1],
-            thickness=12,
-            len=0.85,
-        ),
-    ))
-    fig_hm.update_layout(height=420, margin=dict(l=8, r=8, t=8, b=8))
-    fig_hm = apply_plotly_dark_theme(fig_hm)
-    fig_hm.update_layout(
-        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-        modebar_remove=[
-            "select2d", "lasso2d", "autoScale2d",
-            "hoverClosestCartesian", "hoverCompareCartesian",
-            "toggleSpikelines", "zoomIn2d", "zoomOut2d",
-        ],
-        modebar_add=["resetScale2d"],
-        dragmode="pan",
-    )
-    st.plotly_chart(fig_hm, use_container_width=True, config={"displaylogo": False})
-    st.caption(
-        "Correlation matrix used by HRP to build the hierarchical cluster tree. "
-        "Negative equity–bond correlation (flight-to-quality) is the key diversification driver. "
-        "Phase A: stylised static matrix. Phase B: computed from 2-year rolling prices."
-    )
+        corr = data["correlation"]
+        labels_hm = [_TICKER_DISPLAY_NAME.get(t, t) for t in tickers]
+        fig_hm = go.Figure(go.Heatmap(
+            z=corr, x=labels_hm, y=labels_hm,
+            colorscale=[[0.0, "#f87171"], [0.5, "#111827"], [1.0, "#7c5cfc"]],
+            zmin=-1, zmax=1,
+            text=[[f"{v:.2f}" for v in row] for row in corr],
+            texttemplate="%{text}", textfont=dict(size=10),
+            hovertemplate="%{y} / %{x}: %{z:.2f}<extra></extra>",
+            colorbar=dict(title="ρ", tickvals=[-1, -0.5, 0, 0.5, 1],
+                          thickness=12, len=0.85),
+        ))
+        fig_hm.update_layout(height=460, margin=dict(l=8, r=8, t=8, b=8))
+        fig_hm = apply_plotly_dark_theme(fig_hm)
+        fig_hm.update_layout(
+            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+            modebar_remove=[
+                "select2d", "lasso2d", "autoScale2d",
+                "hoverClosestCartesian", "hoverCompareCartesian",
+                "toggleSpikelines", "zoomIn2d", "zoomOut2d",
+            ],
+        )
+        st.plotly_chart(fig_hm, use_container_width=True,
+                        config={"displaylogo": False}, key="cmp_corr")
 
 
 # ---------------------------------------------------------------------------
