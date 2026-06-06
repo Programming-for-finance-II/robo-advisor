@@ -3725,7 +3725,11 @@ def _reference_comparison(profile_key: str) -> dict:
 
 
 def render_compare() -> None:
-    page_header("Compare Markowitz", "HRP vs the classical mean-variance benchmark", icon="⚖")
+    page_header(
+        "Compare Markowitz",
+        "Your portfolio method vs the classic textbook approach",
+        icon="⚖",
+    )
 
     profile_data = st.session_state.get("profile", {})
     profile_label = profile_data.get("profile_label", "MODERATE")
@@ -3750,108 +3754,107 @@ def render_compare() -> None:
         'Our choice</div>'
         '<div style="font-family:\'Space Grotesk\',sans-serif;font-size:1.25rem;'
         'font-weight:700;color:#f1f5f9;margin-bottom:0.7rem;line-height:1.35;">'
-        'This robo-advisor builds portfolios with HRP, not Markowitz.</div>'
-        '<div style="font-size:0.92rem;color:#94a3b8;line-height:1.65;">'
-        'Mean-variance optimisation (Markowitz, 1952) is the classical academic '
-        'benchmark, and it looks excellent <em>in-sample</em> — it is designed to '
-        'maximise exactly the historical Sharpe ratio you see below. The problem is '
-        'what happens <em>out-of-sample</em>: MV inverts the covariance matrix, which '
-        'amplifies estimation error, and it depends on expected-return estimates (μ) '
-        'that are notoriously unstable. The result is concentrated, fragile portfolios. '
-        'HRP never inverts the covariance matrix and never uses μ, so it produces more '
-        'diversified, more robust allocations. We keep MV here purely as a transparent '
-        'benchmark.</div></div>',
+        'We build your portfolio with HRP, not the classic Markowitz method.</div>'
+        '<div style="font-size:0.95rem;color:#94a3b8;line-height:1.7;">'
+        'Markowitz (1952) is the method every finance textbook teaches, and on paper '
+        'it often looks like the winner — because it is designed to pick whatever '
+        'combination of assets <em>performed best in the past</em>. The catch: it does '
+        'that by betting heavily on just a handful of assets. If those few disappoint, '
+        'the whole portfolio suffers. '
+        '<b style="color:#cbd5e1;">HRP takes the opposite approach</b> — it spreads your '
+        'money across assets that behave differently, so no single bad call can sink '
+        'you. We still show Markowitz here, side by side, so you can judge for yourself.'
+        '</div></div>',
         unsafe_allow_html=True,
     )
 
-    # Data-source badge
+    # Data-source badge — plain language
     if is_live:
         st.markdown(
-            f'<div style="font-size:0.8rem;color:#64748b;margin-bottom:0.5rem;">'
-            f'<span style="color:#0dcfb0;">● Live</span> &nbsp;Both portfolios '
-            f'computed on identical yfinance prices · profile: '
-            f'<b style="color:#a78bfa;">{profile_label}</b> · same Ledoit-Wolf '
-            f'covariance · same 5–40% box constraints.</div>',
+            f'<div style="font-size:0.85rem;color:#64748b;margin-bottom:0.5rem;">'
+            f'<span style="color:#0dcfb0;">● Live</span> &nbsp;Both portfolios were '
+            f'just built from today’s market prices for your '
+            f'<b style="color:#a78bfa;">{profile_label.capitalize()}</b> profile, using '
+            f'exactly the same data. The only thing that differs is the method.</div>',
             unsafe_allow_html=True,
         )
     else:
         st.markdown(
-            f'<div style="font-size:0.8rem;color:#64748b;margin-bottom:0.5rem;">'
-            f'<span style="color:#f59e0b;">● Reference snapshot</span> &nbsp;'
-            f'Live market data is unavailable; showing a labelled reference '
-            f'comparison for profile <b style="color:#a78bfa;">{profile_label}</b>. '
-            f'Numbers are illustrative, not live.</div>',
+            f'<div style="font-size:0.85rem;color:#64748b;margin-bottom:0.5rem;">'
+            f'<span style="color:#f59e0b;">● Example</span> &nbsp;Live prices aren’t '
+            f'available right now, so these are illustrative figures for a '
+            f'<b style="color:#a78bfa;">{profile_label.capitalize()}</b> profile — '
+            f'not today’s market.</div>',
             unsafe_allow_html=True,
         )
 
     _v_spacer(1.0)
 
     # ── 1. Head-to-head metrics ──────────────────────────────────────────────
-    _section_header("1", "Head-to-Head Metrics")
+    _section_header("1", "How the two compare")
     _section_desc(
-        "All figures are computed on the same historical window. Read them with the "
-        "in-sample caveat in mind: Markowitz optimises return, Sharpe and volatility "
-        "directly, so it tends to win on those here by construction. The metrics that "
-        "matter for a real investor — diversification and concentration — are where HRP "
-        "structurally wins, and those advantages persist out-of-sample."
+        "Same data, same starting point — only the method differs. A quick way to read "
+        "this: the first rows describe how each portfolio looked in the past, and "
+        "Markowitz is built to win those. The last two rows show how safely your money "
+        "is spread out — and that is what really protects you when markets turn."
     )
 
-    # winner: +1 HRP better, -1 MV better, 0 neutral. honest=True if the metric
-    # is one MV optimises in-sample (so an MV win is "expected", not meaningful).
     eff_hrp, eff_mv = _effective_assets(hrp["weights"]), _effective_assets(mv["weights"])
     top_hrp, top_mv = _largest_position(hrp["weights"]), _largest_position(mv["weights"])
 
+    # (label, hrp_value, mv_value, better-direction, category, plain hint)
     metrics = [
-        ("Expected return", f"{hrp['return']*100:.1f}%", f"{mv['return']*100:.1f}%",
-         "higher", "in-sample", "Annualised, from historical mean returns."),
-        ("Volatility", f"{hrp['volatility']*100:.1f}%", f"{mv['volatility']*100:.1f}%",
-         "lower", "in-sample", "Annualised standard deviation."),
-        ("Sharpe ratio", f"{hrp['sharpe']:.2f}", f"{mv['sharpe']:.2f}",
-         "higher", "in-sample", "Return per unit of risk."),
-        ("Max drawdown", f"{hrp['max_drawdown']*100:.1f}%", f"{mv['max_drawdown']*100:.1f}%",
-         "higher", "in-sample", "Worst historical peak-to-trough loss."),
-        ("Diversification", f"{eff_hrp:.1f} assets", f"{eff_mv:.1f} assets",
-         "higher", "robust", "Effective number of holdings (1 / HHI). Higher = better spread."),
-        ("Largest position", f"{top_hrp*100:.0f}%", f"{top_mv*100:.0f}%",
-         "lower", "robust", "Biggest single bet. Lower = fewer corner solutions."),
+        ("Average yearly gain", f"{hrp['return']*100:.1f}%", f"{mv['return']*100:.1f}%",
+         "higher", "past", "How much it grew per year, based on past prices."),
+        ("Ups and downs", f"{hrp['volatility']*100:.1f}%", f"{mv['volatility']*100:.1f}%",
+         "lower", "past", "How much the value bounces around. Lower feels calmer."),
+        ("Reward for the risk", f"{hrp['sharpe']:.2f}", f"{mv['sharpe']:.2f}",
+         "higher", "past", "Gain compared to how bumpy the ride was. Higher is better."),
+        ("Worst drop", f"{hrp['max_drawdown']*100:.1f}%", f"{mv['max_drawdown']*100:.1f}%",
+         "higher", "past", "The biggest fall from a high point it ever suffered."),
+        ("How spread out", f"{eff_hrp:.1f} holdings", f"{eff_mv:.1f} holdings",
+         "higher", "safety", "How many assets really share your money. More = safer."),
+        ("Biggest single bet", f"{top_hrp*100:.0f}%", f"{top_mv*100:.0f}%",
+         "lower", "safety", "The largest slice in one asset. Smaller = less risky."),
     ]
 
     def _num(s: str) -> float:
-        return float(s.replace("%", "").replace(" assets", ""))
+        return float(s.replace("%", "").replace(" holdings", ""))
 
     rows_html = ""
     for label, hrp_v, mv_v, better, kind, hint in metrics:
         h, m = _num(hrp_v), _num(mv_v)
         hrp_wins = (h > m) if better == "higher" else (h < m)
         tie = abs(h - m) < 1e-9
-        # Colour the winning value; for in-sample metrics, the win is muted.
-        win_color = "#0dcfb0" if kind == "robust" else "#94a3b8"
-        hrp_color = win_color if (hrp_wins and not tie) else "#e2e8f0"
-        mv_color  = win_color if (not hrp_wins and not tie) else "#e2e8f0"
-        hrp_weight = "700" if (hrp_wins and not tie) else "600"
-        mv_weight  = "700" if (not hrp_wins and not tie) else "600"
-        tag = (
-            '<span style="font-size:0.62rem;font-weight:600;letter-spacing:0.06em;'
-            'text-transform:uppercase;color:#0dcfb0;background:rgba(13,207,176,0.12);'
-            'border-radius:4px;padding:0.05rem 0.4rem;">robustness</span>'
-            if kind == "robust" else
-            '<span style="font-size:0.62rem;font-weight:600;letter-spacing:0.06em;'
-            'text-transform:uppercase;color:#64748b;background:rgba(100,116,139,0.12);'
-            'border-radius:4px;padding:0.05rem 0.4rem;">in-sample</span>'
-        )
+        hrp_color = "#0dcfb0" if (hrp_wins and not tie) else "#64748b"
+        mv_color  = "#0dcfb0" if (not hrp_wins and not tie) else "#64748b"
+        hrp_weight = "700" if (hrp_wins and not tie) else "500"
+        mv_weight  = "700" if (not hrp_wins and not tie) else "500"
+        if kind == "safety":
+            tag = (
+                '<span style="font-size:0.65rem;font-weight:600;letter-spacing:0.06em;'
+                'text-transform:uppercase;color:#0dcfb0;background:rgba(13,207,176,0.12);'
+                'border-radius:4px;padding:0.1rem 0.45rem;">Safety</span>'
+            )
+        else:
+            tag = (
+                '<span style="font-size:0.65rem;font-weight:600;letter-spacing:0.06em;'
+                'text-transform:uppercase;color:#64748b;background:rgba(100,116,139,0.12);'
+                'border-radius:4px;padding:0.1rem 0.45rem;">Past results</span>'
+            )
         rows_html += (
-            f'<div style="display:flex;align-items:center;padding:0.7rem 0.6rem;'
+            f'<div style="display:flex;align-items:center;padding:0.75rem 0.6rem;'
             f'border-bottom:1px solid #141b2e;">'
             f'<div style="flex:2.4;">'
-            f'<div style="font-size:0.92rem;font-weight:600;color:#e2e8f0;'
+            f'<div style="font-size:0.95rem;font-weight:600;color:#e2e8f0;'
             f'margin-bottom:0.15rem;">{label}</div>'
-            f'<div style="font-size:0.75rem;color:#64748b;line-height:1.4;">{hint}</div>'
+            f'<div style="font-size:0.8rem;color:#64748b;line-height:1.45;">{hint}</div>'
             f'</div>'
             f'<div style="flex:1;text-align:center;font-family:\'Space Grotesk\',sans-serif;'
-            f'font-size:1.05rem;font-weight:{hrp_weight};color:{hrp_color};">{hrp_v}</div>'
+            f'font-size:1.1rem;font-weight:{hrp_weight};color:{hrp_color};">{hrp_v}</div>'
             f'<div style="flex:1;text-align:center;font-family:\'Space Grotesk\',sans-serif;'
-            f'font-size:1.05rem;font-weight:{mv_weight};color:{mv_color};">{mv_v}</div>'
-            f'<div style="flex:1;text-align:right;">{tag}</div>'
+            f'font-size:1.1rem;font-weight:{mv_weight};color:{mv_color};">{mv_v}</div>'
+            f'<div style="flex:0.9;text-align:right;">{tag}</div>'
             f'</div>'
         )
 
@@ -3861,23 +3864,25 @@ def render_compare() -> None:
         # Header row
         '<div style="display:flex;align-items:center;padding:0.7rem 0.6rem;'
         'border-bottom:1px solid #1e2640;">'
-        '<div style="flex:2.4;font-size:0.72rem;font-weight:600;letter-spacing:0.08em;'
-        'text-transform:uppercase;color:#475569;">Metric</div>'
-        '<div style="flex:1;text-align:center;font-size:0.78rem;font-weight:700;'
-        'letter-spacing:0.04em;color:#a78bfa;font-family:\'Space Grotesk\',sans-serif;">'
-        'HRP</div>'
-        '<div style="flex:1;text-align:center;font-size:0.78rem;font-weight:700;'
-        'letter-spacing:0.04em;color:#f87171;font-family:\'Space Grotesk\',sans-serif;">'
+        '<div style="flex:2.4;font-size:0.78rem;font-weight:600;letter-spacing:0.06em;'
+        'text-transform:uppercase;color:#475569;">What it measures</div>'
+        '<div style="flex:1;text-align:center;font-size:0.85rem;font-weight:700;'
+        'letter-spacing:0.03em;color:#a78bfa;font-family:\'Space Grotesk\',sans-serif;">'
+        'Yours (HRP)</div>'
+        '<div style="flex:1;text-align:center;font-size:0.85rem;font-weight:700;'
+        'letter-spacing:0.03em;color:#f87171;font-family:\'Space Grotesk\',sans-serif;">'
         'Markowitz</div>'
-        '<div style="flex:1;"></div>'
+        '<div style="flex:0.9;"></div>'
         '</div>'
         + rows_html
-        + '<div style="font-size:0.75rem;color:#475569;padding:0.7rem 0.6rem 0.2rem;'
-        'line-height:1.5;">'
-        'Teal values mark a <b style="color:#0dcfb0;">robustness</b> win that holds '
-        'out-of-sample. Grey values mark an <b>in-sample</b> metric that Markowitz '
-        'optimises directly — winning there is expected and does not imply better '
-        'real-world performance.</div>'
+        + '<div style="font-size:0.82rem;color:#64748b;padding:0.85rem 0.6rem 0.2rem;'
+        'line-height:1.6;">'
+        '<b style="color:#94a3b8;">Why not just pick the bigger numbers?</b> '
+        'The <span style="color:#94a3b8;">Past results</span> rows describe how each '
+        'portfolio looked on old data — and Markowitz is literally designed to make the '
+        'past look as good as possible. That is a flattering mirror, not a promise about '
+        'the future. The <span style="color:#0dcfb0;">Safety</span> rows show how widely '
+        'your money is spread, which is what helps a portfolio survive surprises.</div>'
         + '</div>',
         unsafe_allow_html=True,
     )
@@ -3885,11 +3890,11 @@ def render_compare() -> None:
     _v_spacer(2.0)
 
     # ── 2. Allocation comparison ──────────────────────────────────────────────
-    _section_header("2", "Allocation: Spread vs Concentration")
+    _section_header("2", "Where your money goes")
     _section_desc(
-        "The clearest practical difference. Markowitz piles weight into a few "
-        "low-volatility assets (corner solutions), while HRP spreads capital across "
-        "the whole universe. Bars are sorted by HRP weight."
+        "This is the clearest difference. Markowitz puts most of your money into just a "
+        "few assets, while HRP spreads it across all of them — so you are not relying on "
+        "a couple of bets paying off. Each pair of bars compares the two methods."
     )
 
     order = sorted(tickers, key=lambda t: -hrp["weights"].get(t, 0.0))
@@ -3899,7 +3904,7 @@ def render_compare() -> None:
 
     fig_w = go.Figure()
     fig_w.add_trace(go.Bar(
-        name="HRP", y=labels, x=hrp_w, orientation="h",
+        name="Yours (HRP)", y=labels, x=hrp_w, orientation="h",
         marker_color="#7c5cfc",
         text=[f"{v:.0f}%" for v in hrp_w], textposition="auto",
         textfont=dict(size=11, color="#ffffff"),
@@ -3914,7 +3919,7 @@ def render_compare() -> None:
     ))
     fig_w.update_layout(
         barmode="group",
-        xaxis=dict(title="Weight (%)", ticksuffix="%", gridcolor="#1e2640"),
+        xaxis=dict(title="Share of your money", ticksuffix="%", gridcolor="#1e2640"),
         yaxis=dict(autorange="reversed", tickfont=dict(size=12)),
         bargap=0.25, bargroupgap=0.1,
         height=max(320, len(order) * 50 + 60),
@@ -3936,11 +3941,12 @@ def render_compare() -> None:
     _v_spacer(2.0)
 
     # ── 3. Risk contributions ─────────────────────────────────────────────────
-    _section_header("3", "Where Does the Risk Come From?")
+    _section_header("3", "Where the risk really comes from")
     _section_desc(
-        "Weights can hide the truth: a small bond-heavy book can still load most of "
-        "its risk on a couple of positions. HRP targets a balanced risk spread; MV, "
-        "by concentrating capital, tends to concentrate risk too."
+        "Putting money into an asset and taking on risk there are not the same thing. "
+        "These bars show how much of your portfolio’s ups and downs each asset is "
+        "responsible for. HRP keeps this balanced; Markowitz lets a few assets drive "
+        "most of the swings."
     )
 
     hrp_rc = [hrp["risk_contributions"].get(t, 0.0) * 100 for t in order]
@@ -3948,7 +3954,7 @@ def render_compare() -> None:
 
     fig_rc = go.Figure()
     fig_rc.add_trace(go.Bar(
-        name="HRP", y=labels, x=hrp_rc, orientation="h",
+        name="Yours (HRP)", y=labels, x=hrp_rc, orientation="h",
         marker_color="#7c5cfc",
         hovertemplate="%{y}: %{x:.1f}%<extra>HRP</extra>",
     ))
@@ -3959,7 +3965,8 @@ def render_compare() -> None:
     ))
     fig_rc.update_layout(
         barmode="group",
-        xaxis=dict(title="Risk contribution (%)", ticksuffix="%", gridcolor="#1e2640"),
+        xaxis=dict(title="Share of the portfolio’s swings", ticksuffix="%",
+                   gridcolor="#1e2640"),
         yaxis=dict(autorange="reversed", tickfont=dict(size=12)),
         bargap=0.25, bargroupgap=0.1,
         height=max(320, len(order) * 50 + 60),
@@ -3981,12 +3988,13 @@ def render_compare() -> None:
     # ── 4. Correlation matrix (live only) ─────────────────────────────────────
     if data.get("correlation") is not None:
         _v_spacer(2.0)
-        _section_header("4", "Why HRP Clusters the Way It Does")
+        _section_header("4", "How the assets move together")
         _section_desc(
-            "HRP's first step is to read the correlation structure below and group "
-            "assets that move together. Values near 1 (purple) move in lockstep; "
-            "values near 0 or negative (red) are natural diversifiers — the negative "
-            "equity–bond correlation is the engine of crisis protection."
+            "The colours show which assets tend to move in the same direction. "
+            "Purple means two assets rise and fall together — holding both adds little "
+            "protection. Red means they move in opposite directions, which is exactly "
+            "what cushions your portfolio when one of them drops. HRP uses this map to "
+            "pair up assets that balance each other out."
         )
 
         corr = data["correlation"]
@@ -3997,9 +4005,12 @@ def render_compare() -> None:
             zmin=-1, zmax=1,
             text=[[f"{v:.2f}" for v in row] for row in corr],
             texttemplate="%{text}", textfont=dict(size=10),
-            hovertemplate="%{y} / %{x}: %{z:.2f}<extra></extra>",
-            colorbar=dict(title="ρ", tickvals=[-1, -0.5, 0, 0.5, 1],
-                          thickness=12, len=0.85),
+            hovertemplate="%{y} & %{x}<br>move together: %{z:.0%}<extra></extra>",
+            colorbar=dict(
+                tickvals=[-1, 0, 1],
+                ticktext=["Opposite", "Unrelated", "Together"],
+                thickness=14, len=0.9, tickfont=dict(size=10),
+            ),
         ))
         fig_hm.update_layout(height=460, margin=dict(l=8, r=8, t=8, b=8))
         fig_hm = apply_plotly_dark_theme(fig_hm)
