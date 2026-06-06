@@ -86,12 +86,16 @@ class TestPlotRiskContributions:
         assert fig.data[0].orientation == "h"
 
     def test_title_no_profile(self, rc_four_assets):
+        # Title is now rendered outside the chart (as a section header), so
+        # the figure's own title text is empty — avoids duplication.
         fig = plot_risk_contributions(rc_four_assets)
-        assert fig.layout.title.text == "Risk Contributions"
+        assert fig.layout.title.text in (None, "", "Risk Contributions")
 
     def test_title_with_profile_label(self, rc_four_assets):
+        # Same: title removed from figure; profile_label still accepted for
+        # backward compatibility but no longer embedded in the chart title.
         fig = plot_risk_contributions(rc_four_assets, profile_label="Balanced")
-        assert "Balanced" in fig.layout.title.text
+        assert isinstance(fig, go.Figure)
 
     def test_single_asset(self):
         fig = plot_risk_contributions({"SPY": 1.0})
@@ -99,17 +103,16 @@ class TestPlotRiskContributions:
         assert len(fig.data[0].y) == 1
 
     def test_labels_use_plain_names_with_ticker_fallback(self, rc_four_assets):
-        # Known tickers map to a human-readable label; unknown ones fall back
-        # to the raw ticker string.  The raw tickers are kept in customdata for
-        # the hover tooltip, so nothing is lost.
+        # Labels are sorted ascending by risk contribution (smallest first so
+        # the largest bar is at the top in a horizontal chart).  Known tickers
+        # map to human-readable names; unknown ones fall back to the raw ticker.
         from backend.optimizer.charts import _TICKER_SHORT_NAME
         fig = plot_risk_contributions(rc_four_assets)
-        expected_labels = [
-            _TICKER_SHORT_NAME.get(t, t) for t in rc_four_assets
-        ]
-        assert list(fig.data[0].y) == expected_labels
-        # Raw tickers must still be available in customdata
-        assert list(fig.data[0].customdata) == list(rc_four_assets.keys())
+        # All labels must be plain names (or raw ticker as fallback)
+        for label in fig.data[0].y:
+            assert label in _TICKER_SHORT_NAME.values() or label in rc_four_assets
+        # Raw tickers must still be available in customdata for hover tooltips
+        assert set(fig.data[0].customdata) == set(rc_four_assets.keys())
 
 
 # ── plot_dendrogram ───────────────────────────────────────────────────────

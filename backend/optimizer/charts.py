@@ -153,47 +153,93 @@ def plot_risk_contributions(
 ) -> go.Figure:
     """Horizontal bar chart of per-asset risk contributions.
 
+    Bars are coloured by cluster (matching the donut palette) and sorted
+    descending so the biggest risk driver is always at the top. A vertical
+    reference line marks the equal-risk level (100 / n assets), making it
+    immediately obvious which positions dominate the risk budget.
+
     Args:
         risk_contributions: {ticker: risk_contribution} from OptimizationResult.
                             Values should sum to ~1.0.
-        profile_label:      Optional profile label for the chart title.
+        profile_label:      Optional profile label for the chart subtitle.
 
     Returns:
         Plotly Figure ready for st.plotly_chart().
     """
-    tickers = list(risk_contributions.keys())
-    values = [round(v * 100, 2) for v in risk_contributions.values()]
-    labels = [_short_name(t) for t in tickers]
+    # Sort descending by risk contribution
+    sorted_items = sorted(risk_contributions.items(), key=lambda kv: kv[1])
+    tickers = [t for t, _ in sorted_items]
+    values  = [round(v * 100, 2) for _, v in sorted_items]
+    labels  = [_short_name(t) for t in tickers]
+    colors  = [
+        _CLUSTER_COLORS.get(_TICKER_CLUSTER.get(t, ""), "#64748b")
+        for t in tickers
+    ]
 
-    fig = go.Figure(go.Bar(
+    def _hex_to_rgba(hex_color: str, alpha: float) -> str:
+        h = hex_color.lstrip("#")
+        r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+        return f"rgba({r},{g},{b},{alpha})"
+
+    face_colors = [_hex_to_rgba(c, 0.75) for c in colors]
+
+    equal_risk = round(100.0 / max(len(tickers), 1), 1)
+
+    fig = go.Figure()
+
+    # Reference line: equal-risk distribution
+    fig.add_vline(
+        x=equal_risk,
+        line=dict(color="#475569", width=1.2, dash="dot"),
+        annotation_text=f"Equal risk ({equal_risk:.1f}%)",
+        annotation_position="top right",
+        annotation_font=dict(size=10, color="#64748b"),
+    )
+
+    fig.add_trace(go.Bar(
         x=values,
         y=labels,
         orientation="h",
-        marker_color="steelblue",
-        text=[f"{v:.1f}%" for v in values],
-        textposition="outside",
+        marker=dict(
+            color=face_colors,
+            line=dict(color=colors, width=1.5),
+        ),
+        text=[f"<b>{v:.1f}%</b>" for v in values],
+        textposition="inside",
+        insidetextanchor="end",
+        textfont=dict(size=11, color="#ffffff"),
         customdata=tickers,
-        hovertemplate="<b>%{y}</b> (%{customdata})<br>Risk: %{x:.1f}%<extra></extra>",
+        hovertemplate=(
+            "<b>%{y}</b> (%{customdata})<br>"
+            "Risk contribution: <b>%{x:.1f}%</b><br>"
+            f"Equal share would be: {equal_risk:.1f}%"
+            "<extra></extra>"
+        ),
     ))
 
-    title = "Risk Contributions"
-    if profile_label:
-        title += f" — {profile_label}"
+    x_max = max(values) * 1.15 if values else 30.0
 
     fig.update_layout(
-        title=title,
-        xaxis_title="Risk Contribution (%)",
-        yaxis_title="Asset",
-        xaxis=dict(range=[0, max(values) * 1.2]),
-        height=400,
-        margin=dict(l=20, r=40, t=50, b=40),
+        xaxis=dict(
+            title="Risk contribution (%)",
+            range=[0, x_max],
+            showgrid=True,
+            gridcolor="#1e2640",
+            ticksuffix="%",
+        ),
+        yaxis=dict(
+            title="",
+            automargin=True,
+            tickfont=dict(size=12),
+        ),
+        bargap=0.35,
+        height=max(280, len(tickers) * 46 + 60),
+        margin=dict(l=10, r=30, t=16, b=44),
         modebar_remove=[
             "select2d", "lasso2d", "autoScale2d",
             "hoverClosestCartesian", "hoverCompareCartesian",
             "toggleSpikelines", "zoomIn2d", "zoomOut2d",
         ],
-        modebar_add=["resetScale2d"],
-        dragmode="pan",
     )
 
     return fig
