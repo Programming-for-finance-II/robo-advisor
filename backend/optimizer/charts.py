@@ -44,17 +44,43 @@ def _short_name(ticker: str) -> str:
     return _TICKER_SHORT_NAME.get(ticker, ticker)
 
 
+_CLUSTER_ORDER: dict[str, int] = {
+    "Equity": 0,
+    "Alternatives": 1,
+    "Bonds": 2,
+    "Cash": 3,
+}
+
+
 def plot_weights_donut(weights: dict[str, float]) -> go.Figure:
     """Donut chart of portfolio weights coloured by asset cluster.
 
+    Design notes (rework):
+      * Slices are sorted by cluster then descending weight, so same-coloured
+        assets sit together and the ring reads as four clean colour arcs.
+      * Labels live *inside* the slices, horizontally oriented, so they never
+        rotate or spill outside the chart. Slices too small to fit their label
+        simply hide it (``uniformtext`` ``mode="hide"``) — the name is still in
+        the hover tooltip and the colour legend — which removes the crooked /
+        overflowing text and the layout flicker of the previous outside labels.
+      * A center label summarises the holding count; a single-line colour
+        legend sits below.
+
     Args:
-        weights: {ticker: weight} from OptimizationResult. Values should sum to ~1.0.
+        weights: {ticker: weight} from OptimizationResult. Values sum to ~1.0.
 
     Returns:
         Plotly Figure ready for st.plotly_chart().
     """
-    tickers = list(weights.keys())
-    values = [weights[t] for t in tickers]
+    items = sorted(
+        weights.items(),
+        key=lambda kv: (
+            _CLUSTER_ORDER.get(_TICKER_CLUSTER.get(kv[0], ""), 9),
+            -kv[1],
+        ),
+    )
+    tickers = [t for t, _ in items]
+    values = [w for _, w in items]
     labels = [_short_name(t) for t in tickers]
     colors = [_CLUSTER_COLORS.get(_TICKER_CLUSTER.get(t, ""), "#64748b") for t in tickers]
 
@@ -62,40 +88,56 @@ def plot_weights_donut(weights: dict[str, float]) -> go.Figure:
         labels=labels,
         values=values,
         customdata=tickers,
-        hole=0.52,
-        marker=dict(colors=colors, line=dict(color="#0d1220", width=2)),
-        textinfo="label+percent",
-        textfont=dict(size=11),
+        hole=0.62,
+        sort=False,
+        direction="clockwise",
+        rotation=0,
+        marker=dict(colors=colors, line=dict(color="#0d1220", width=2.5)),
+        texttemplate="%{label}<br>%{percent}",
+        textposition="inside",
+        insidetextorientation="horizontal",
+        textfont=dict(size=12, color="#ffffff", family="Space Grotesk, sans-serif"),
         hovertemplate="<b>%{label}</b> (%{customdata})<br>Weight: %{percent}<extra></extra>",
     ))
 
-    cluster_legend = " · ".join(
-        f'<span style="color:{c}">■</span> {cl}'
+    cluster_legend = "&nbsp;&nbsp;&nbsp;".join(
+        f'<span style="color:{c}">●</span> '
+        f'<span style="color:#cbd5e1">{cl}</span>'
         for cl, c in _CLUSTER_COLORS.items()
     )
 
     fig.update_layout(
-        title=dict(text="Portfolio Allocation", font=dict(size=13)),
         showlegend=False,
-        height=320,
-        margin=dict(l=8, r=8, t=40, b=8),
+        height=340,
+        margin=dict(l=10, r=10, t=12, b=38),
+        uniformtext=dict(minsize=10, mode="hide"),
         annotations=[
             dict(
+                text=(
+                    f'<span style="font-size:24px;color:#f1f5f9;font-weight:700;'
+                    f'font-family:Space Grotesk">{len(tickers)}</span>'
+                    f'<br><span style="font-size:10px;color:#64748b;'
+                    f'letter-spacing:0.12em">HOLDINGS</span>'
+                ),
+                x=0.5, y=0.5,
+                xanchor="center", yanchor="middle",
+                showarrow=False,
+                xref="paper", yref="paper",
+            ),
+            dict(
                 text=cluster_legend,
-                x=0.5, y=-0.06,
+                x=0.5, y=-0.04,
                 xanchor="center", yanchor="top",
                 showarrow=False,
-                font=dict(size=10),
+                font=dict(size=11),
                 xref="paper", yref="paper",
-            )
+            ),
         ],
         modebar_remove=[
             "select2d", "lasso2d", "autoScale2d",
             "hoverClosestCartesian", "hoverCompareCartesian",
             "toggleSpikelines", "zoomIn2d", "zoomOut2d",
         ],
-        modebar_add=["resetScale2d"],
-        dragmode="pan",
     )
 
     return fig

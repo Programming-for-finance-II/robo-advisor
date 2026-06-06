@@ -89,6 +89,13 @@ rebalancing dates — directly reducing turnover.
 
 ### Profile tilt (no γ in HRP)
 
+> **⚠️ Superseded by [ADR-008](ADR-008-profile-differentiation.md).** The ERC
+> aggressive tilt and uniform guardrails described below were found to produce
+> nearly identical portfolios across all three profiles (L1 distance 0.037,
+> with volatility *inverted*). ADR-008 replaces this with per-profile SAA bands
+> and a μ-free risk-seeking tilt. The no-μ principle is preserved. This section
+> is retained for historical context.
+
 Since HRP has no explicit risk-aversion parameter γ, a profile-dependent
 tilt is applied post-optimisation:
 
