@@ -82,15 +82,19 @@ def compute_allocation_ratios(alloc: pd.DataFrame) -> pd.DataFrame:
     Ratios are independent of total wealth and capture *how* a household
     allocates its portfolio.
 
-    Args:
-        alloc: DataFrame with raw SCF allocation columns:
-               EQUITY, BOND, CASHLI (output of build_pipeline).
+    Parameters
+    ----------
+    alloc : pd.DataFrame
+        DataFrame with raw SCF allocation columns:
+        EQUITY, BOND, CASHLI (output of build_pipeline).
 
-    Returns:
+    Returns
+    -------
+    pd.DataFrame
         DataFrame with three ratio columns:
-            equity_ratio -- share of equity in total holdings
-            bond_ratio   -- share of bonds in total holdings
-            cash_ratio   -- share of cash/liquid assets in total holdings
+        ``equity_ratio`` — share of equity in total holdings,
+        ``bond_ratio`` — share of bonds in total holdings,
+        ``cash_ratio`` — share of cash/liquid assets in total holdings.
     """
     total = alloc["EQUITY"] + alloc["BOND"] + alloc["CASHLI"] + EPSILON
 
@@ -110,12 +114,17 @@ def validate_k(
 ) -> dict[int, float]:
     """Compute silhouette scores for candidate K values.
 
-    Args:
-        X_ratios: Standardised allocation ratios array (n_samples x 3).
-        k_candidates: List of K values to evaluate.
+    Parameters
+    ----------
+    X_ratios : np.ndarray
+        Standardised allocation ratios array (n_samples x 3).
+    k_candidates : list[int]
+        List of K values to evaluate.
 
-    Returns:
-        Dict mapping K -> silhouette score.
+    Returns
+    -------
+    dict[int, float]
+        Mapping of K → silhouette score.
     """
     scores: dict[int, float] = {}
     for k in k_candidates:
@@ -141,12 +150,22 @@ def assign_labels(
     This avoids hardcoding cluster-to-label mapping, which would break
     if KMeans assigns different cluster IDs across runs.
 
-    Args:
-        cluster_ids: Integer cluster assignments (n_samples,).
-        alloc_ratios: DataFrame with equity_ratio, bond_ratio, cash_ratio.
+    Parameters
+    ----------
+    cluster_ids : np.ndarray
+        Integer cluster assignments (n_samples,).
+    alloc_ratios : pd.DataFrame
+        DataFrame with columns ``equity_ratio``, ``bond_ratio``, ``cash_ratio``.
 
-    Returns:
+    Returns
+    -------
+    np.ndarray
         Array of profile label strings (n_samples,).
+
+    Raises
+    ------
+    ValueError
+        If the number of unique cluster IDs does not equal ``N_CLUSTERS``.
     """
     unique_clusters = np.unique(cluster_ids)
     if len(unique_clusters) != N_CLUSTERS:
@@ -191,21 +210,28 @@ def run_clustering(
 ) -> pd.DataFrame:
     """Full clustering pipeline: load SCF → cluster → label → save.
 
-    Args:
-        scf_path: Path to the SCF 2022 CSV file.
-        output_path: Where to save the labeled parquet file.
-        save: If True, save output to output_path. Default: True.
+    Parameters
+    ----------
+    scf_path : Path
+        Path to the SCF 2022 CSV file.
+    output_path : Path
+        Where to save the labeled parquet file.
+    save : bool
+        If ``True``, save output to ``output_path``. Default: ``True``.
 
-    Returns:
-        DataFrame with all SCF features plus 'profile_label' column.
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame with all SCF features plus ``profile_label`` column.
         Ready for GBM training in W3.
 
-    Example:
-        >>> df_labeled = run_clustering()
-        >>> df_labeled["profile_label"].value_counts()
-        AGGRESSIVE      2721
-        CONSERVATIVE    1575
-        MODERATE         299
+    Examples
+    --------
+    >>> df_labeled = run_clustering()
+    >>> df_labeled["profile_label"].value_counts()
+    AGGRESSIVE      2721
+    CONSERVATIVE    1575
+    MODERATE         299
     """
     # --- 1. Load and preprocess SCF ---
     logger.info("Running SCF pipeline...")

@@ -98,9 +98,18 @@ class TestPlotRiskContributions:
         assert isinstance(fig, go.Figure)
         assert len(fig.data[0].y) == 1
 
-    def test_tickers_preserved_in_y_axis(self, rc_four_assets):
+    def test_labels_use_plain_names_with_ticker_fallback(self, rc_four_assets):
+        # Known tickers map to a human-readable label; unknown ones fall back
+        # to the raw ticker string.  The raw tickers are kept in customdata for
+        # the hover tooltip, so nothing is lost.
+        from backend.optimizer.charts import _TICKER_SHORT_NAME
         fig = plot_risk_contributions(rc_four_assets)
-        assert list(fig.data[0].y) == list(rc_four_assets.keys())
+        expected_labels = [
+            _TICKER_SHORT_NAME.get(t, t) for t in rc_four_assets
+        ]
+        assert list(fig.data[0].y) == expected_labels
+        # Raw tickers must still be available in customdata
+        assert list(fig.data[0].customdata) == list(rc_four_assets.keys())
 
 
 # ── plot_dendrogram ───────────────────────────────────────────────────────

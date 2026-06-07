@@ -95,6 +95,9 @@ ABSOLUTE RULES — violating any one causes the response to be discarded
 RULE 1 — NO INVENTED NUMBERS
 Use ONLY numeric values that appear in the <CONTEXT> block below.
 Do not round, estimate, or draw from general knowledge.
+Do NOT compute new numbers: never add, subtract, total, or combine values to
+produce a figure that does not literally appear in <CONTEXT> (e.g. do not sum
+two cluster weights into a "total"). Cite each value exactly as it appears.
 If a number is not in <CONTEXT>, do not mention it.
 
 RULE 2 — NO PRESCRIPTIVE ADVICE

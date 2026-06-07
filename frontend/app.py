@@ -16,6 +16,7 @@ import os
 import sys
 import uuid
 from pathlib import Path
+from urllib.parse import unquote_plus
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -23,16 +24,17 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
+import yfinance as yf
 
-from backend.llm.narrator import NarratorClient, NarratorError
+from backend.llm.narrator import NarratorClient
 from backend.llm.validator import validate
 from backend.schemas.mock_data import get_mock_payload
 from frontend.style import (
     apply_plotly_dark_theme,
     inject_css,
     page_header,
-    render_disclaimer,
     render_eu_note,
+    render_global_footer,
 )
 
 # ---------------------------------------------------------------------------
@@ -42,7 +44,7 @@ st.set_page_config(
     page_title="RoboAdvisor · USI 2026",
     page_icon="📊",
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="collapsed",
 )
 inject_css()
 
@@ -86,16 +88,11 @@ _LABEL_TO_MOCK: dict[str, str] = {
 _DATA_START: str = "2023-01-01"
 
 ASSETS_DIR = Path(__file__).parent / "assets"
-LOGO_PATH = ASSETS_DIR / "logo.png"
+LOGO_PATH = ASSETS_DIR / "roboadvisor_robot_transparent.png"
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
-
-def show_disclaimer() -> None:
-    # Show the mandatory MiFID II disclaimer at the top of every page
-    render_disclaimer()  # use HTML custom of style.py
-
 
 # ---------------------------------------------------------------------------
 # Portfolio data loading
@@ -105,6 +102,76 @@ def show_disclaimer() -> None:
 # ---------------------------------------------------------------------------
 
 @st.cache_data(ttl=300, show_spinner=False)
+def _build_live_cluster_structure(prices, weights: dict[str, float]):
+    """Compute a real ClusterStructure from live daily prices and HRP weights.
+
+    Mirrors the four clusters used across the dashboard (risk assets, real
+    assets, safe haven, cash) and fills each with its total weight, average
+    intra-cluster correlation, and annualised volatility — so the "How your
+    money is grouped" view shows live numbers instead of placeholders.
+    """
+    import numpy as np
+
+    from backend.schemas.ground_truth import Cluster, ClusterStructure
+
+    _ATTR_BY_TICKER = {
+        "CSPX.L": "cluster_A_risk_assets", "EFA": "cluster_A_risk_assets",
+        "GLD": "cluster_B_real_assets",    "VNQ": "cluster_B_real_assets",
+        "AGGH.MI": "cluster_C_safe_haven", "TLT": "cluster_C_safe_haven",
+        "TIP": "cluster_C_safe_haven",
+        "XEON.MI": "cluster_D_cash",
+    }
+    attrs = [
+        "cluster_A_risk_assets", "cluster_B_real_assets",
+        "cluster_C_safe_haven", "cluster_D_cash",
+    ]
+
+    returns = prices.pct_change().dropna()
+    corr = returns.corr()
+
+    clusters: dict[str, Cluster] = {}
+    for attr in attrs:
+        members = [
+            t for t in weights
+            if _ATTR_BY_TICKER.get(t) == attr and t in returns.columns
+        ]
+        total_weight = float(sum(weights.get(t, 0.0) for t in members))
+
+        # Average off-diagonal pairwise correlation within the cluster.
+        if len(members) >= 2:
+            pair_vals = [
+                float(corr.loc[a, b])
+                for i, a in enumerate(members)
+                for b in members[i + 1:]
+            ]
+            icc = float(np.mean(pair_vals)) if pair_vals else None
+        else:
+            icc = None
+
+        # Annualised volatility of the weight-blended cluster return.
+        if members:
+            w = np.array([weights.get(t, 0.0) for t in members], dtype=float)
+            w = w / w.sum() if w.sum() > 0 else np.full(len(members), 1.0 / len(members))
+            blended = returns[members].to_numpy() @ w
+            cvol = (
+                float(np.std(blended, ddof=1) * np.sqrt(252))
+                if len(blended) > 1 else 0.0
+            )
+        else:
+            cvol = 0.0
+
+        clusters[attr] = Cluster(
+            members=members,
+            total_weight=min(max(total_weight, 0.0), 1.0),
+            intra_cluster_correlation=(
+                None if icc is None else max(-1.0, min(1.0, icc))
+            ),
+            cluster_volatility=max(cvol, 0.0),
+        )
+
+    return ClusterStructure(**clusters)
+
+
 def _run_live_optimization(profile_label: str) -> dict:
     """
     Download market data and run the HRP optimizer.
@@ -140,17 +207,42 @@ def _run_live_optimization(profile_label: str) -> dict:
         fallback_tickers=list(report.fallback_tickers_applied.keys()),
     )
 
+    # Real cluster structure for the "How your money is grouped" view.
+    # Defensive: a failure here must not break the whole live path — the
+    # grouping view falls back gracefully when this is absent.
+    try:
+        cluster_structure = _build_live_cluster_structure(prices, result["weights"])
+    except Exception:
+        cluster_structure = None
+
+    # Historical max drawdown of the (static-weight) portfolio over the loaded
+    # price history, so the KPI card shows a real figure rather than a dash.
+    try:
+        import numpy as np
+
+        _w = result["weights"]
+        _cols = [t for t in _w if t in prices.columns]
+        _rets = prices[_cols].pct_change().dropna()
+        _wv = np.array([_w[t] for t in _cols], dtype=float)
+        _wv = _wv / _wv.sum() if _wv.sum() > 0 else _wv
+        _equity = np.cumprod(1.0 + (_rets.to_numpy() @ _wv))
+        _max_drawdown = float((_equity / np.maximum.accumulate(_equity) - 1.0).min())
+    except Exception:
+        _max_drawdown = None
+
     return {
         "weights": result["weights"],
         "risk_contributions": result["risk_contributions"],
         "expected_volatility": result["expected_volatility"],
         "expected_return": result["expected_return"],
         "sharpe_ratio": result["sharpe_ratio"],
+        "max_drawdown": _max_drawdown,
         "ucits_tickers_used": report.ucits_tickers_used,
         "fallback_tickers_applied": list(report.fallback_tickers_applied.keys()),
         "recommendation_id": str(uuid.uuid4()),
         "stress_regime": regime_result.regime,
         "avg_correlation": regime_result.avg_correlation,
+        "cluster_structure": cluster_structure,
         "source": "live",
     }
 
@@ -194,6 +286,7 @@ def _mock_optimization(profile_key: str) -> dict:
         "stress_scenarios": payload.stress_scenarios,
         "backtest": payload.backtest_summary,
         "regulatory_context": payload.regulatory_context,
+        "cluster_structure": payload.cluster_structure,
     }
 
 
@@ -204,9 +297,9 @@ def _mock_optimization(profile_key: str) -> dict:
 PAGES = [
     "Questionnaire",
     "Portfolio Dashboard",
+    "Compare Markowitz",
     "Chat Advisor",
     "Backtesting",
-    "Compare (MV)",
     "Settings",
 ]
 
@@ -248,7 +341,7 @@ _NAV_SVGS: dict[str, str] = {
         '<polyline points="17 6 23 6 23 12"/>'
         "</svg>"
     ),
-    "Compare (MV)": (
+    "Compare Markowitz": (
         '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"'
         ' stroke="currentColor" stroke-width="2"'
         ' stroke-linecap="round" stroke-linejoin="round">'
@@ -286,87 +379,307 @@ _SHIELD_SVG = (
 )
 
 
+def render_page_nav(active: str) -> None:
+    """Previous / Next buttons at the foot of every page.
+
+    Lets the user move to the adjacent section (in PAGES order) without
+    scrolling back up to the top navbar. The forward button is highlighted to
+    suggest the natural reading flow; the first and last pages omit the
+    unavailable direction.
+    """
+    try:
+        idx = PAGES.index(active)
+    except ValueError:
+        return
+    prev_page = PAGES[idx - 1] if idx > 0 else None
+    next_page = PAGES[idx + 1] if idx < len(PAGES) - 1 else None
+    if prev_page is None and next_page is None:
+        return
+
+    st.markdown(
+        '<div style="margin-top:2.75rem;padding-top:1rem;'
+        'border-top:1px solid #1a2236;font-size:0.72rem;font-weight:600;'
+        'letter-spacing:0.08em;text-transform:uppercase;color:#475569;'
+        'margin-bottom:0.6rem;">Continue exploring</div>',
+        unsafe_allow_html=True,
+    )
+    col_prev, col_next = st.columns(2)
+    with col_prev:
+        if prev_page and st.button(
+            "← Previous page",
+            key=f"pgnav_prev_{active}",
+            use_container_width=True,
+        ):
+            st.session_state.active_page = prev_page
+            st.query_params["page"] = prev_page
+            st.rerun()
+    with col_next:
+        if next_page and st.button(
+            "Next page →",
+            key=f"pgnav_next_{active}",
+            type="primary",
+            use_container_width=True,
+        ):
+            st.session_state.active_page = next_page
+            st.query_params["page"] = next_page
+            st.rerun()
+
+
 def main() -> None:
-    if "active_page" not in st.session_state:
-        st.session_state.active_page = PAGES[0]
+    # UNIFIED TOP NAVBAR (apple.com style) — replaces separate logo block
+    # and nav row. Only this section was modified. Do not edit elsewhere.
 
-    # ── Sidebar ──────────────────────────────────────────────────────
-    with st.sidebar:
-        if LOGO_PATH.exists():
-            st.image(str(LOGO_PATH), use_container_width=True)
-        else:
-            st.markdown("### RoboAdvisor")
+    # Stable per-browser identifier. Kept in the URL as ?sid= so it survives a
+    # page reload (st.session_state is reset on reload), and mirrored into
+    # session_state. The questionnaire uses it to look up the saved profile.
+    _sid = st.query_params.get("sid")
+    if not _sid:
+        _sid = st.session_state.get("session_token") or str(uuid.uuid4())
+        st.query_params["sid"] = _sid
+    st.session_state["session_token"] = _sid
 
-        st.markdown(
-            """
-            <div style="
-                text-align: center;
-                margin-top: -0.5rem;
-                margin-bottom: 1rem;
-                font-size: 0.65rem;
-                letter-spacing: 0.1em;
-                color: #475569;
-                text-transform: uppercase;
-            ">
-                USI · Programming in Finance II · 2026
+    # Step 1: resolve active page from query params; st.button sets it directly
+    _qp = unquote_plus(st.query_params.get("page", PAGES[0]))
+    active = _qp if _qp in PAGES else PAGES[0]
+    st.session_state.active_page = active
+
+    # Step 2: embed logo as base64 for the fixed-position HTML element
+    if LOGO_PATH.exists():
+        import base64 as _b64
+        _logo_b64 = _b64.b64encode(LOGO_PATH.read_bytes()).decode()
+        _logo_tag = (
+            f'<div style="'
+            f'width:62px;height:62px;'
+            f'display:flex;align-items:center;justify-content:center;'
+            f'background:rgba(124,92,252,0.13);'
+            f'border:1.5px solid rgba(124,92,252,0.38);'
+            f'border-radius:16px;'
+            f'box-shadow:0 0 18px rgba(124,92,252,0.28),0 2px 8px rgba(0,0,0,0.35);'
+            f'flex-shrink:0;">'
+            f'<img src="data:image/png;base64,{_logo_b64}"'
+            f' style="height:42px;width:auto;" alt="RoboAdvisor">'
+            f'</div>'
+        )
+    else:
+        _logo_tag = (
+            '<div style="'
+            'width:62px;height:62px;'
+            'display:flex;align-items:center;justify-content:center;'
+            'background:rgba(124,92,252,0.13);'
+            'border:1.5px solid rgba(124,92,252,0.38);'
+            'border-radius:16px;'
+            'box-shadow:0 0 18px rgba(124,92,252,0.28),0 2px 8px rgba(0,0,0,0.35);'
+            'flex-shrink:0;">'
+            '<span style="font-size:1.6rem;font-weight:700;color:#f5f5f7;'
+            "font-family:'Space Grotesk',sans-serif;\">R</span>"
+            '</div>'
+        )
+
+    # Step 3: render brand HTML + CSS; nav buttons added as st.columns below
+    st.markdown(
+        f"""<style>
+/* ── Reset Streamlit chrome ─────────────────────────────────────────── */
+header[data-testid="stHeader"] {{ display: none !important; }}
+[data-testid="stSidebarCollapsedControl"] {{ display: none !important; }}
+#MainMenu {{ visibility: hidden; }}
+section[data-testid="stMain"] > div:first-child {{
+    padding-top: 88px !important;
+}}
+/* ── Top navbar ─────────────────────────────────────────────────────── */
+@keyframes navSlideDown {{
+    from {{ opacity: 0; transform: translateY(-10px); }}
+    to   {{ opacity: 1; transform: translateY(0); }}
+}}
+.top-navbar {{
+    position: fixed; top: 0; left: 0;
+    width: 100%; height: 76px; z-index: 1000;
+    background: linear-gradient(180deg,
+        rgba(22,28,46,0.92) 0%, rgba(13,17,28,0.88) 100%);
+    backdrop-filter: blur(30px) saturate(140%);
+    -webkit-backdrop-filter: blur(30px) saturate(140%);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 40px; box-sizing: border-box;
+    box-shadow: 0 4px 30px rgba(0,0,0,0.45);
+    flex-wrap: nowrap;
+    overflow: visible;
+    animation: navSlideDown 0.5s cubic-bezier(0.16,1,0.3,1);
+}}
+/* Gradient hairline under the navbar for a subtle premium edge */
+.top-navbar::after {{
+    content: ""; position: absolute; left: 0; right: 0; bottom: 0;
+    height: 1px;
+    background: linear-gradient(90deg,
+        transparent 0%, rgba(124,92,252,0.55) 50%, transparent 100%);
+}}
+.top-navbar .brand {{
+    display: flex; align-items: center; gap: 14px;
+    min-width: 260px; flex-shrink: 0; text-decoration: none;
+}}
+.top-navbar .brand-name {{
+    font-size: 19px; font-weight: 700;
+    letter-spacing: -0.4px; line-height: 1.2;
+    font-family: 'Space Grotesk', -apple-system, sans-serif;
+    background: linear-gradient(92deg, #ffffff 0%, #c9bcff 100%);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent; color: #f5f5f7;
+}}
+.top-navbar .brand-sub {{
+    font-size: 9.5px; letter-spacing: 0.09em;
+    color: rgba(245,245,247,0.44); text-transform: uppercase;
+    line-height: 1.3; margin-top: 3px;
+}}
+/* ── Streamlit button row moved inside navbar by JS ─────────────────── */
+.top-navbar [data-testid="stHorizontalBlock"] {{
+    display: flex !important; align-items: center !important;
+    flex: 1 1 auto !important; justify-content: flex-end !important;
+    gap: 2px !important; background: transparent !important;
+    padding: 0 !important; margin: 0 !important;
+    flex-wrap: nowrap !important; min-width: 0 !important;
+    overflow: visible !important; max-height: 76px !important;
+}}
+.top-navbar [data-testid="stHorizontalBlock"] > div {{
+    flex: 0 0 auto !important; width: auto !important;
+    min-width: unset !important; padding: 0 !important;
+    max-height: 76px !important;
+}}
+.top-navbar .stButton > button {{
+    position: relative !important;
+    background: transparent !important;
+    border: none !important; box-shadow: none !important;
+    color: rgba(245,245,247,0.62) !important;
+    font-size: 13px !important; font-weight: 500 !important;
+    letter-spacing: -0.1px !important;
+    padding: 7px 15px !important; border-radius: 9px !important;
+    min-height: unset !important; height: 38px !important;
+    white-space: nowrap !important;
+    transition: color 0.18s ease, background 0.18s ease,
+        transform 0.18s cubic-bezier(0.16,1,0.3,1) !important;
+    font-family: -apple-system, 'Space Grotesk', sans-serif !important;
+    display: inline-flex !important; align-items: center !important; gap: 7px !important;
+}}
+/* Animated underline that grows from the centre on hover */
+.top-navbar .stButton > button::after {{
+    content: ""; position: absolute; left: 50%; bottom: 4px;
+    width: 0; height: 2px; border-radius: 2px;
+    background: linear-gradient(90deg, #a78bfa, #7c5cfc);
+    transform: translateX(-50%);
+    transition: width 0.22s cubic-bezier(0.16,1,0.3,1);
+}}
+.top-navbar .stButton > button:hover {{
+    color: #f5f5f7 !important;
+    background: rgba(255,255,255,0.05) !important;
+    transform: translateY(-1px) !important;
+}}
+.top-navbar .stButton > button:hover::after {{ width: 42%; }}
+.top-navbar [data-testid="stBaseButton-primary"],
+.top-navbar [data-testid="baseButton-primary"],
+.top-navbar .stButton > button[kind="primary"] {{
+    color: #ffffff !important; font-weight: 600 !important;
+    background: linear-gradient(135deg,
+        rgba(124,92,252,0.95) 0%, rgba(109,40,217,0.95) 100%) !important;
+    box-shadow: 0 2px 14px rgba(124,92,252,0.45),
+        inset 0 1px 0 rgba(255,255,255,0.18) !important;
+}}
+.top-navbar [data-testid="stBaseButton-primary"]:hover,
+.top-navbar [data-testid="baseButton-primary"]:hover,
+.top-navbar .stButton > button[kind="primary"]:hover {{
+    background: linear-gradient(135deg,
+        rgba(138,108,255,1) 0%, rgba(124,58,237,1) 100%) !important;
+    color: #ffffff !important;
+    transform: translateY(-1px) !important;
+}}
+.top-navbar [data-testid="stBaseButton-primary"]::after,
+.top-navbar [data-testid="baseButton-primary"]::after,
+.top-navbar .stButton > button[kind="primary"]::after {{ width: 0 !important; }}
+/* ── Responsive nav + content padding ───────────────────────────────── */
+@media (max-width: 1080px) {{
+    .top-navbar [data-testid="stHorizontalBlock"] {{
+        display: none !important;
+    }}
+}}
+@media (min-width: 1081px) {{
+    .top-navbar [data-testid="stHorizontalBlock"] {{
+        display: flex !important;
+    }}
+}}
+@media (max-width: 1080px) {{
+    section[data-testid="stMain"] > div:first-child {{
+        padding-top: 80px !important;
+    }}
+}}
+</style>
+<nav class="top-navbar">
+    <div class="brand">
+        {_logo_tag}
+        <div>
+            <div class="brand-name">RoboAdvisor</div>
+            <div class="brand-sub">
+                USI &middot; Programming in Finance II &middot; 2026
             </div>
-            """,
-            unsafe_allow_html=True,
-        )
-        st.markdown(
-            "<hr style='border-color:#1e2640; margin: 0.5rem 0 0.6rem 0;'>",
-            unsafe_allow_html=True,
-        )
-        st.markdown(
-            "<div style='font-size:0.58rem;letter-spacing:0.12em;color:#475569;"
-            "text-transform:uppercase;padding:0 0.85rem 0.5rem;font-weight:600;'>"
-            "NAVIGATION</div>",
-            unsafe_allow_html=True,
-        )
+        </div>
+    </div>
+</nav>""",
+        unsafe_allow_html=True,
+    )
 
-        active = st.session_state.active_page
-        for page_name in PAGES:
-            btn_type = "primary" if page_name == active else "secondary"
-            wrap_cls = "nav-svg-wrap active" if page_name == active else "nav-svg-wrap"
-            col_icon, col_btn = st.columns([0.15, 0.85])
-            with col_icon:
-                st.markdown(
-                    f'<div class="{wrap_cls}">{_NAV_SVGS[page_name]}</div>',
-                    unsafe_allow_html=True,
-                )
-            with col_btn:
-                if st.button(
-                    page_name,
-                    key=f"nav_{page_name}",
-                    use_container_width=True,
-                    type=btn_type,
-                ):
-                    st.session_state.active_page = page_name
-                    st.rerun()
+    # Step 4: native st.button() nav — JS moves this row into .top-navbar
+    _nav_cols = st.columns(len(PAGES))
+    for _nc, _page in zip(_nav_cols, PAGES):
+        with _nc:
+            _btype = "primary" if _page == active else "secondary"
+            if st.button(
+                _page,
+                key=f"nav_{_page}",
+                type=_btype,
+                use_container_width=False,
+            ):
+                st.session_state.active_page = _page
+                st.query_params["page"] = _page
+                st.rerun()
 
-        st.markdown(
-            f"""
-            <div style="
-                background: rgba(124,92,252,0.08);
-                border: 1px solid rgba(124,92,252,0.2);
-                border-radius: 10px;
-                padding: 0.75rem 0.875rem;
-                margin: 1.5rem 0 0 0;
-            ">
-                <div style="
-                    display:flex;align-items:center;gap:0.4rem;
-                    font-size:0.7rem;font-weight:600;color:#a78bfa;margin-bottom:0.3rem;
-                ">{_SHIELD_SVG} Educational Prototype</div>
-                <div style="font-size:0.67rem;color:#64748b;line-height:1.5;">
-                    This is an educational prototype and not financial advice.
-                </div>
-                <div style="font-size:0.63rem;color:#475569;margin-top:0.3rem;">
-                    Market data may be delayed or inaccurate.
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
+    # Step 5: JS — move stHorizontalBlock into .top-navbar and inject SVG icons
+    _icon_js_map = "{" + ",".join(
+        f'"{p}": `{_NAV_SVGS[p]}`' for p in PAGES if p in _NAV_SVGS
+    ) + "}"
+    import streamlit.components.v1 as _stc
+    _stc.html(
+        f"""<script>
+(function () {{
+    var icons = {_icon_js_map};
+    function injectIcons() {{
+        var btns = window.parent.document.querySelectorAll('.top-navbar .stButton > button');
+        btns.forEach(function(btn) {{
+            var label = btn.textContent.trim();
+            if (icons[label] && !btn.querySelector('svg')) {{
+                var wrap = window.parent.document.createElement('span');
+                wrap.style.cssText = 'display:inline-flex;align-items:center;'
+                    + 'gap:6px;pointer-events:none;';
+                wrap.innerHTML = icons[label] + '<span>' + label + '</span>';
+                btn.innerHTML = '';
+                btn.appendChild(wrap);
+            }}
+        }});
+    }}
+    function move() {{
+        var nav = window.parent.document.querySelector('.top-navbar');
+        var block = window.parent.document.querySelector(
+            '[data-testid="stHorizontalBlock"]'
+        );
+        if (nav && block) {{
+            if (!nav.contains(block)) {{ nav.appendChild(block); }}
+            injectIcons();
+        }} else {{
+            setTimeout(move, 50);
+        }}
+    }}
+    move();
+    /* Re-inject after Streamlit rerenders */
+    setTimeout(injectIcons, 400);
+    setTimeout(injectIcons, 900);
+}}());
+</script>""",
+        height=0,
+    )
 
     # ── Pages ────────────────────────────────────────────────────────
     active = st.session_state.active_page
@@ -378,10 +691,17 @@ def main() -> None:
         render_chat()
     elif active == "Backtesting":
         render_backtesting()
-    elif active == "Compare (MV)":
+    elif active == "Compare Markowitz":
         render_compare()
     elif active == "Settings":
         render_settings()
+
+    # Bottom-of-page Previous / Next navigation so users don't have to scroll
+    # back to the top navbar to switch sections.
+    render_page_nav(active)
+
+    # Single discreet MiFID II footer, shown once at the bottom of every page.
+    render_global_footer()
 
 
 # ---------------------------------------------------------------------------
@@ -395,8 +715,8 @@ _QUESTIONS: list[dict] = [
     {
         "id": "Q1", "section": "Who You Are Financially",
         "text": "How old are you?",
-        "options": ["Over 60", "46-60", "30-45", "Under 30"],
-        "scores": [0, 1, 2, 3],
+        "options": ["Under 30", "30-45", "46-60", "Over 60"],
+        "scores": [3, 2, 1, 0],
     },
     {
         "id": "Q2", "section": "Who You Are Financially",
@@ -564,53 +884,324 @@ def _compute_profile(answers: dict[str, int]) -> dict:
 
 
 # ---------------------------------------------------------------------------
+# Profile persistence
+# The questionnaire profile is persisted in a dedicated SQLite table,
+# `questionnaire_profiles`, keyed by the per-browser session token (kept in
+# the URL as ?sid= so it survives a page reload). The table is append-only:
+# each submission/reassessment inserts a new row and old rows are never
+# overwritten, so the latest profile is simply the most recent row.
+#
+# The table is created on first use from here — it does NOT live in
+# backend/data/schema.sql, so no backend module is modified.
+# ---------------------------------------------------------------------------
+
+
+def _profile_db_path() -> str:
+    """Path to the SQLite file holding the questionnaire profiles.
+
+    Defaults to robo_advisor.db at the repository root (same file the
+    backend uses); overridable via the ROBO_ADVISOR_DB env var (tests).
+    """
+    override = os.environ.get("ROBO_ADVISOR_DB", "")
+    if override:
+        return override
+    return str(Path(__file__).resolve().parent.parent / "robo_advisor.db")
+
+
+def _profile_db_connect():
+    """Open the profile DB and ensure the questionnaire_profiles table exists."""
+    import sqlite3
+
+    conn = sqlite3.connect(_profile_db_path(), check_same_thread=False)
+    conn.row_factory = sqlite3.Row
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS questionnaire_profiles (
+            session_token TEXT NOT NULL,
+            created_at    TEXT NOT NULL,
+            profile_label TEXT NOT NULL,
+            profile_json  TEXT NOT NULL,
+            answers_json  TEXT NOT NULL
+        )
+        """
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_qp_token_created "
+        "ON questionnaire_profiles(session_token, created_at DESC)"
+    )
+    conn.commit()
+    return conn
+
+
+def _save_questionnaire_profile(token: str, result: dict, answers: dict) -> None:
+    """Insert a new questionnaire-profile row (append-only audit trail)."""
+    from datetime import datetime, timezone
+
+    if not token:
+        return
+    try:
+        conn = _profile_db_connect()
+        conn.execute(
+            "INSERT INTO questionnaire_profiles "
+            "(session_token, created_at, profile_label, profile_json, answers_json) "
+            "VALUES (?, ?, ?, ?, ?)",
+            (
+                token,
+                datetime.now(timezone.utc).isoformat(),
+                result["profile_label"],
+                json.dumps(result),
+                json.dumps(answers),
+            ),
+        )
+        conn.commit()
+        conn.close()
+    except Exception:
+        # Persistence is best-effort: never break the UI if the DB is
+        # unavailable (e.g. a read-only filesystem). The session_state
+        # copy still drives the 3-state UI within the current session.
+        pass
+
+
+def _load_questionnaire_profile(token: str) -> dict | None:
+    """Return the most recent saved profile for a token, or None."""
+    if not token:
+        return None
+    try:
+        conn = _profile_db_connect()
+        row = conn.execute(
+            "SELECT profile_json, answers_json FROM questionnaire_profiles "
+            "WHERE session_token = ? ORDER BY created_at DESC LIMIT 1",
+            (token,),
+        ).fetchone()
+        conn.close()
+    except Exception:
+        return None
+    if row is None:
+        return None
+    try:
+        return {
+            "profile": json.loads(row["profile_json"]),
+            "answers": json.loads(row["answers_json"]),
+        }
+    except (TypeError, ValueError):
+        return None
+
+
+def _restore_persisted_profile() -> None:
+    """Rehydrate a saved profile into session_state on page load.
+
+    No-op if a profile is already in this session or nothing is saved for
+    this session token. This is what makes the profile survive a reload.
+    """
+    if st.session_state.get("profile"):
+        return
+    token = st.session_state.get("session_token")
+    saved = _load_questionnaire_profile(token)
+    if saved:
+        st.session_state["profile"] = saved["profile"]
+        st.session_state["questionnaire_answers"] = saved["answers"]
+
+
+def _render_profile_result_card(result: dict, show_dashboard_button: bool = True) -> None:
+    """Render the investor-profile result card (shared by post-submit and
+    read-only states). The "View my Portfolio Dashboard" button is optional:
+    the read-only state hides it (a Reassess button is shown there instead)."""
+    _RESULT_META = {
+        "CONSERVATIVE": {
+            "icon": "🛡️",
+            "color": "#0dcfb0",
+            "label": "Conservative",
+            "desc": "Capital preservation focus · low-volatility, income-oriented assets",
+            "bar_gradient": "linear-gradient(90deg,#0dcfb0,#22d3ee)",
+        },
+        "MODERATE": {
+            "icon": "⚖️",
+            "color": "#7c5cfc",
+            "label": "Moderate",
+            "desc": "Balanced growth and protection · diversified multi-asset allocation",
+            "bar_gradient": "linear-gradient(90deg,#7c5cfc,#a78bfa)",
+        },
+        "AGGRESSIVE": {
+            "icon": "🚀",
+            "color": "#f87171",
+            "label": "Aggressive",
+            "desc": "Growth-oriented · higher volatility and drawdown accepted",
+            "bar_gradient": "linear-gradient(90deg,#f87171,#fbbf24)",
+        },
+    }
+    rm = _RESULT_META.get(result["profile_label"], _RESULT_META["MODERATE"])
+    score_pct = result["score"] / 30 * 100  # max possible = 10 × 3 = 30
+
+    # ── top drivers text ────────────────────────────────────────────────
+    driver_labels = {
+        "Q1": "Age", "Q2": "Income", "Q3": "Liquidity",
+        "Q4": "Dependents", "Q5": "Experience", "Q6": "Knowledge",
+        "Q7": "Investment purpose", "Q8": "Loss reaction",
+        "Q9": "Recovery horizon", "Q10": "Self-assessment",
+    }
+    top3 = result.get("top_drivers", [])[:3]
+    drivers_chips = "".join(
+        '<span style="background:rgba(255,255,255,0.06);border:1px solid #2d3a52;'
+        'border-radius:7px;padding:0.3rem 0.75rem;font-size:0.85rem;'
+        'font-weight:500;color:#94a3b8;">'
+        + driver_labels.get(d["feature"], d["feature"]) + "</span>"
+        for d in top3
+    )
+    # Pre-build the optional drivers block — avoids nested f-string inside the card
+    drivers_block = (
+        '<div style="font-size:0.75rem;font-weight:600;letter-spacing:0.1em;'
+        'text-transform:uppercase;color:#64748b;margin-bottom:0.55rem;">'
+        'Top scoring factors</div>'
+        '<div style="display:flex;flex-wrap:wrap;gap:0.5rem;">'
+        + drivers_chips + "</div>"
+    ) if top3 else ""
+
+    conf_pct = int(result["confidence"] * 100)
+
+    card_html = (
+        f'<div style="background:linear-gradient(135deg,{rm["color"]}12,{rm["color"]}06);'
+        f'border:1px solid {rm["color"]}45;border-radius:16px;'
+        f'padding:1.5rem 1.75rem 1.4rem 1.75rem;margin:1.5rem 0 1rem 0;">'
+
+        # ── header ──────────────────────────────────────────────────────
+        f'<div style="display:flex;align-items:flex-start;gap:1.25rem;margin-bottom:1.35rem;">'
+        f'<div style="font-size:2.8rem;line-height:1;flex-shrink:0;margin-top:0.1rem;">'
+        f'{rm["icon"]}</div>'
+        f'<div style="flex:1;">'
+        f'<div style="font-size:0.72rem;font-weight:700;letter-spacing:0.12em;'
+        f'text-transform:uppercase;color:{rm["color"]}90;margin-bottom:0.3rem;">'
+        f'YOUR INVESTOR RISK PROFILE</div>'
+        f'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:2.2rem;'
+        f'font-weight:700;color:{rm["color"]};letter-spacing:-0.02em;line-height:1.1;">'
+        f'{rm["label"]}</div>'
+        f'<div style="font-size:0.9rem;color:#64748b;margin-top:0.4rem;">{rm["desc"]}</div>'
+        f'</div></div>'
+
+        # ── metrics row ──────────────────────────────────────────────────
+        f'<div style="display:flex;gap:0.75rem;flex-wrap:wrap;margin-bottom:1.25rem;">'
+
+        # score card
+        f'<div style="flex:1;min-width:120px;background:rgba(0,0,0,0.25);'
+        f'border:1px solid #1e2640;border-radius:10px;padding:0.75rem 1.1rem;">'
+        f'<div style="font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;'
+        f'color:#475569;margin-bottom:0.35rem;">Score</div>'
+        f'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:1.7rem;'
+        f'font-weight:700;color:#f1f5f9;line-height:1;">'
+        f'{result["score"]}'
+        f'<span style="font-size:0.85rem;color:#475569;font-weight:400;">/30</span></div>'
+        f'<div style="margin-top:0.55rem;height:5px;border-radius:3px;'
+        f'background:#1e2640;overflow:hidden;">'
+        f'<div style="height:100%;width:{score_pct:.0f}%;'
+        f'background:{rm["bar_gradient"]};border-radius:3px;"></div>'
+        f'</div></div>'
+
+        # confidence card
+        f'<div style="flex:1;min-width:120px;background:rgba(0,0,0,0.25);'
+        f'border:1px solid #1e2640;border-radius:10px;padding:0.75rem 1.1rem;">'
+        f'<div style="font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;'
+        f'color:#475569;margin-bottom:0.35rem;">Model Confidence</div>'
+        f'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:1.7rem;'
+        f'font-weight:700;color:{rm["color"]};line-height:1;">{conf_pct}%</div>'
+        f'<div style="margin-top:0.55rem;height:5px;border-radius:3px;'
+        f'background:#1e2640;overflow:hidden;">'
+        f'<div style="height:100%;width:{conf_pct}%;'
+        f'background:{rm["bar_gradient"]};border-radius:3px;"></div>'
+        f'</div></div>'
+
+        '</div>'  # end metrics row
+
+        # ── drivers ──────────────────────────────────────────────────────
+        + drivers_block +
+        '</div>'  # end card
+    )
+    st.markdown(card_html, unsafe_allow_html=True)
+
+    if result["low_confidence_flag"]:
+        st.warning(
+            "⚠️  Borderline score — your answers sit near the boundary between two "
+            "profiles. Consider reviewing your responses for a more precise classification."
+        )
+
+    if result["q7_override_applied"]:
+        st.info(
+            "ℹ️  MiFID II override applied: capital earmarked as a safety net (Q7) "
+            "forces your profile to **CONSERVATIVE** regardless of overall score."
+        )
+
+    if show_dashboard_button and st.button(
+        "View my Portfolio Dashboard →",
+        key="view_portfolio_btn",
+        type="primary",
+        use_container_width=True,
+    ):
+        st.session_state.active_page = "Portfolio Dashboard"
+        st.query_params["page"] = "Portfolio Dashboard"
+        st.rerun()
+
+
+# ---------------------------------------------------------------------------
 # Page 1 -- Questionnaire
 # ---------------------------------------------------------------------------
 
 def render_questionnaire() -> None:
-    page_header("Investor Profile Questionnaire", "Grable-Lytton Scale · 10 questions")
-    render_disclaimer()
+    page_header("Investor Profile Questionnaire", "Grable-Lytton Scale · 10 questions", icon="🧭")
 
-    # Info card — Grable-Lytton explanation (only this one, no icon on page title)
+    # Info card — Grable-Lytton explanation (native <details> for full style control)
     st.markdown(
         """
-        <div style="
-            background: rgba(30,38,64,0.5);
-            border: 1px solid #1e2640;
-            border-radius: 10px;
-            padding: 0.9rem 1rem;
-            margin-bottom: 1.25rem;
-            display: flex;
-            gap: 0.875rem;
-            align-items: flex-start;
-        ">
-            <div style="
-                width:2rem;height:2rem;flex-shrink:0;
-                background:rgba(59,130,246,0.12);
-                border:1px solid rgba(59,130,246,0.25);
-                border-radius:7px;
-                display:inline-flex;align-items:center;
-                justify-content:center;font-size:0.95rem;
-            ">🎓</div>
-            <div>
-                <div style="
-                    font-family:'Space Grotesk',sans-serif;
-                    font-size:0.9rem;font-weight:600;
-                    color:#e2e8f0;margin-bottom:0.25rem;
-                ">What is the Grable-Lytton Scale?</div>
-                <div style="font-size:0.79rem;color:#64748b;line-height:1.55;">
-                    An academic risk-tolerance questionnaire used to estimate how much financial
-                    risk an investor is willing and able to take. In this prototype, it provides
-                    the rule-based baseline for the investor profile.
-                </div>
-            </div>
-        </div>
+        <details class="qs-info-card">
+          <summary>
+            <span class="qs-info-icon">🎓</span>
+            <span class="qs-info-title">What is the Grable-Lytton Scale?</span>
+            <span class="qs-info-chevron">▾</span>
+          </summary>
+          <div class="qs-info-body">
+            An academic risk-tolerance questionnaire (Grable &amp; Lytton, 1999) used to
+            estimate how much financial risk an investor is willing and able to take.
+            In this prototype it provides the rule-based baseline for the investor profile.
+            The 10 items cover financial situation, investment behaviour and reactions to
+            market stress — yielding a composite score mapped to a risk category.
+          </div>
+        </details>
         """,
         unsafe_allow_html=True,
     )
 
+    # ── Determine which of the three states to render ────────────────────────
+    # Try to rehydrate a previously saved profile for this session token, then
+    # branch: read-only (profile exists) vs. form (first-time / reassessment).
+    _restore_persisted_profile()
+    existing = st.session_state.get("profile")
+    reassessing = st.session_state.get("questionnaire_reassess", False)
+
+    # ── State 2: READ-ONLY — a profile already exists for this session ────────
+    if existing and not reassessing:
+        st.markdown(
+            '<div style="font-size:0.92rem;color:#64748b;margin:0 0 0.5rem 0;">'
+            "You have already completed the questionnaire. Your saved investor "
+            "profile is shown below. Start a reassessment to update your answers."
+            "</div>",
+            unsafe_allow_html=True,
+        )
+        _render_profile_result_card(existing, show_dashboard_button=True)
+        if st.button(
+            "↻ Reassess my profile",
+            key="reassess_btn",
+            use_container_width=True,
+        ):
+            st.session_state["questionnaire_reassess"] = True
+            st.rerun()
+        return
+
+    # ── State 1 & 3: FIRST-TIME or REASSESSMENT — render the editable form ────
+    if reassessing:
+        st.info(
+            "Reassessment in progress — review and update your answers below, "
+            "then recalculate to replace your saved profile."
+        )
+
     st.markdown(
-        '<div style="font-size:0.85rem;color:#64748b;margin:0 0 1.5rem 0;">'
+        '<div style="font-size:0.92rem;color:#64748b;margin:0 0 1.5rem 0;">'
         "Complete the three sections below to generate your investor risk profile."
         "</div>",
         unsafe_allow_html=True,
@@ -624,20 +1215,86 @@ def render_questionnaire() -> None:
             "title": "Financial Situation",
             "subtitle": "Basic information about your financial background.",
             "key": "Who You Are Financially",
+            "css_class": "qs-s1",
+            "accent": "#60a5fa",
+            "accent_bg": "rgba(59,130,246,0.13)",
+            "accent_border": "rgba(59,130,246,0.28)",
         },
         {
             "number": "02",
             "title": "Investment Behaviour",
             "subtitle": "How you think about time horizon, return and uncertainty.",
             "key": "How You Invest",
+            "css_class": "qs-s2",
+            "accent": "#a78bfa",
+            "accent_bg": "rgba(124,92,252,0.13)",
+            "accent_border": "rgba(124,92,252,0.28)",
         },
         {
             "number": "03",
             "title": "Reaction to Risk",
             "subtitle": "How you would react under market stress.",
             "key": "How You React",
+            "css_class": "qs-s3",
+            "accent": "#fbbf24",
+            "accent_bg": "rgba(245,158,11,0.13)",
+            "accent_border": "rgba(245,158,11,0.28)",
         },
     ]
+
+    # ── Section stepper ──────────────────────────────────────────────────────
+    # align-items:flex-start + margin-top:1.4rem on connectors keeps the
+    # gradient lines perfectly centred on the circles (circle height = 2.8rem,
+    # centre = 1.4rem from top) regardless of the label below each circle.
+    st.markdown(
+        """
+        <div style="display:flex;align-items:flex-start;
+            padding:1rem 1.5rem;margin:0 0 1.25rem 0;
+            background:rgba(15,23,42,0.55);
+            border:1px solid #1e2640;border-radius:12px;">
+
+          <div style="display:flex;flex-direction:column;align-items:center;gap:0.4rem;">
+            <div style="width:2.8rem;height:2.8rem;border-radius:50%;
+              background:rgba(59,130,246,0.15);border:2px solid #3b82f6;
+              display:flex;align-items:center;justify-content:center;
+              font-family:'Space Grotesk',sans-serif;
+              font-size:0.88rem;font-weight:700;color:#60a5fa;">01</div>
+            <div style="font-size:0.75rem;font-weight:500;color:#60a5fa;
+              white-space:nowrap;">Financial</div>
+          </div>
+
+          <div style="flex:1;height:2px;
+            background:linear-gradient(to right,#3b82f6,#7c5cfc);
+            margin:1.4rem 0.8rem 0 0.8rem;"></div>
+
+          <div style="display:flex;flex-direction:column;align-items:center;gap:0.4rem;">
+            <div style="width:2.8rem;height:2.8rem;border-radius:50%;
+              background:rgba(124,92,252,0.15);border:2px solid #7c5cfc;
+              display:flex;align-items:center;justify-content:center;
+              font-family:'Space Grotesk',sans-serif;
+              font-size:0.88rem;font-weight:700;color:#a78bfa;">02</div>
+            <div style="font-size:0.75rem;font-weight:500;color:#a78bfa;
+              white-space:nowrap;">Behaviour</div>
+          </div>
+
+          <div style="flex:1;height:2px;
+            background:linear-gradient(to right,#7c5cfc,#f59e0b);
+            margin:1.4rem 0.8rem 0 0.8rem;"></div>
+
+          <div style="display:flex;flex-direction:column;align-items:center;gap:0.4rem;">
+            <div style="width:2.8rem;height:2.8rem;border-radius:50%;
+              background:rgba(245,158,11,0.15);border:2px solid #f59e0b;
+              display:flex;align-items:center;justify-content:center;
+              font-family:'Space Grotesk',sans-serif;
+              font-size:0.88rem;font-weight:700;color:#fbbf24;">03</div>
+            <div style="font-size:0.75rem;font-weight:500;color:#fbbf24;
+              white-space:nowrap;">Reaction</div>
+          </div>
+
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
     with st.form("questionnaire_form"):
         for section in sections:
@@ -645,7 +1302,7 @@ def render_questionnaire() -> None:
             with st.container(border=True):
                 st.markdown(
                     f"""
-                    <div class="qs-header">
+                    <div class="qs-header {section['css_class']}">
                         <div class="qs-num">{section["number"]}</div>
                         <div>
                             <div class="qs-title">{section["title"]}</div>
@@ -663,7 +1320,12 @@ def render_questionnaire() -> None:
                     st.markdown(
                         f"""
                         <div class="qs-q-row">
-                            <span class="qs-q-badge">{q["id"]}</span>
+                            <span class="qs-q-badge" style="
+                                color:{section['accent']};
+                                background:{section['accent_bg']};
+                                border-color:{section['accent_border']};">
+                                {q["id"]}
+                            </span>
                             <span class="qs-q-text">{q["text"]}</span>
                         </div>
                         """,
@@ -674,13 +1336,17 @@ def render_questionnaire() -> None:
                         "questionnaire_answers", {}
                     ).get(q["id"])
 
-                    selected = st.radio(
-                        label="",
-                        options=q["options"],
-                        index=saved_idx,
-                        key=f"q_{q['id']}",
-                        label_visibility="collapsed",
-                    )
+                    # Indent radio options to align with the question text
+                    # (badge ≈ 11% wide, remaining 89% starts under the text)
+                    _spacer, _col = st.columns([0.11, 0.89])
+                    with _col:
+                        selected = st.radio(
+                            label="",
+                            options=q["options"],
+                            index=saved_idx,
+                            key=f"q_{q['id']}",
+                            label_visibility="collapsed",
+                        )
 
                     answers[q["id"]] = (
                         q["options"].index(selected) if selected is not None else None
@@ -701,27 +1367,16 @@ def render_questionnaire() -> None:
         st.session_state["profile"] = result
         st.session_state["questionnaire_answers"] = answers
         st.session_state.pop("portfolio_data", None)
+        # Reassessment complete — leave reassessment mode so the next rerun
+        # shows the read-only state with the freshly computed profile.
+        st.session_state["questionnaire_reassess"] = False
+        # Persist so the profile survives a page reload (append-only row).
+        _save_questionnaire_profile(
+            st.session_state.get("session_token"), result, answers
+        )
 
     if st.session_state.get("profile"):
-        result = st.session_state["profile"]
-        st.success("Profile calculated.")
-        col_a, col_b, col_c = st.columns([1, 1, 1])
-        col_a.metric("Your risk profile", result["profile_label"])
-        col_b.metric("Confidence", f"{result['confidence']:.0%}")
-        with col_c:
-            st.markdown("<div style='height:0.5rem'></div>", unsafe_allow_html=True)
-            if st.button("Go to Portfolio Dashboard →", type="primary", use_container_width=True):
-                st.session_state.active_page = "Portfolio Dashboard"
-                st.rerun()
-
-        if result["low_confidence_flag"]:
-            st.warning("Borderline score — consider reviewing your answers.")
-
-        if result["q7_override_applied"]:
-            st.info(
-                "Q7 override applied: capital earmarked as a safety net "
-                "forces profile to CONSERVATIVE (MiFID II suitability rule)."
-            )
+        _render_profile_result_card(st.session_state["profile"])
 
 
 # ---------------------------------------------------------------------------
@@ -736,70 +1391,149 @@ def render_portfolio() -> None:
         Phase A (default): mock payload from backend/schemas/mock_data.py
         Phase B (live toggle on): ValidatedDataLoader + HRP + regime detector
     """
-    page_header("Portfolio Dashboard", "HRP optimization · Balanced profile")
-    render_disclaimer()
-    render_eu_note()
-
-    # Read the profile that was set by the Questionnaire page
+    # Read profile first so we can use it in the header
     profile_data = st.session_state.get("profile", {})
     profile_label = profile_data.get("profile_label", "MODERATE")
     confidence = profile_data.get("confidence", None)
     profile_key = _LABEL_TO_MOCK.get(profile_label, "balanced")
 
-    # Show current profile at the top
-    col1, col2 = st.columns(2)
-    with col1:
-        st.metric("Investor Profile", profile_label)
-    with col2:
-        if confidence is not None:
-            st.metric("Confidence", f"{confidence:.0%}")
-
-    default_live = (
-        st.session_state.get("default_data_mode", "")
-        == "Live market data (Phase B — requires network)"
+    page_header(
+        "Portfolio Dashboard",
+        f"HRP optimization · {profile_label.capitalize()} profile",
+        icon="📊",
     )
 
-    # Toggle between mock data (Phase A) and live optimizer (Phase B)
-    use_live = st.toggle(
-        "Load live market data",
-        value=default_live,
-        help=(
-            "Downloads real prices from yfinance and runs the HRP optimizer. "
-            "Takes about 10 seconds on first load."
-        ),
+    st.markdown(
+        """
+        <div style="background:rgba(30,38,64,0.5);border:1px solid #1e2640;
+        border-radius:10px;padding:0.9rem 1rem;margin-bottom:1.25rem;
+        display:flex;gap:0.875rem;align-items:flex-start;">
+            <div style="width:2rem;height:2rem;flex-shrink:0;
+            background:rgba(124,92,252,0.12);border:1px solid rgba(124,92,252,0.25);
+            border-radius:7px;display:inline-flex;align-items:center;
+            justify-content:center;font-size:0.95rem;">📐</div>
+            <div>
+                <div style="font-family:'Space Grotesk',sans-serif;font-size:0.9rem;
+                font-weight:600;color:#e2e8f0;margin-bottom:0.25rem;">
+                    Hierarchical Risk Parity (HRP)
+                </div>
+                <div style="font-size:0.79rem;color:#64748b;line-height:1.55;">
+                    HRP (López de Prado, 2016) clusters assets by correlation, then allocates
+                    weights so that each cluster contributes equally to total portfolio risk.
+                    Unlike Markowitz, it requires no expected-return estimates and avoids
+                    corner solutions. Covariance is shrunk via Ledoit-Wolf.
+                    Weights are constrained to 5–40% per asset and 10–60% per cluster.
+                </div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
     )
 
-    # Load portfolio data, either from cache or by running the optimizer
+    # ── Profile hero strip ───────────────────────────────────────────────────
+    _PROFILE_META = {
+        "CONSERVATIVE": {
+            "icon": "🛡️", "color": "#0dcfb0", "label": "Conservative",
+            "desc": (
+                "Capital-preservation focus with low-volatility, income-oriented "
+                "exposure across bonds, cash, and select alternatives."
+            ),
+        },
+        "MODERATE": {
+            "icon": "⚖️", "color": "#7c5cfc", "label": "Moderate",
+            "desc": (
+                "Balanced HRP allocation with diversified exposure across "
+                "equity, bonds, alternatives, and cash."
+            ),
+        },
+        "AGGRESSIVE": {
+            "icon": "🚀", "color": "#f87171", "label": "Aggressive",
+            "desc": (
+                "Growth-oriented HRP allocation with higher equity exposure, "
+                "accepting greater volatility for long-term return potential."
+            ),
+        },
+    }
+    pm = _PROFILE_META.get(profile_label, _PROFILE_META["MODERATE"])
+    color = pm["color"]
+
+    # Pre-compute optional confidence inline text
+    conf_inline = (
+        f'&nbsp;&middot;&nbsp;'
+        f'<span style="color:{color};font-weight:600;">'
+        f'Confidence {confidence:.0%}</span>'
+        if confidence is not None else ""
+    )
+
+    # Small badges row
+    _badge_style = (
+        f'font-size:0.72rem;font-weight:600;letter-spacing:0.06em;'
+        f'text-transform:uppercase;color:{color}90;'
+        f'background:{color}15;border:1px solid {color}30;'
+        f'border-radius:6px;padding:0.2rem 0.55rem;'
+    )
+    badges_html = "".join(
+        f'<span style="{_badge_style}">{b}</span>'
+        for b in ["HRP", pm["label"], "Educational prototype"]
+    )
+
+    # Single self-contained block — no leading indentation that would
+    # trigger Markdown's 4-space code-block rule
+    st.markdown(
+        f'<div style="display:flex;align-items:flex-start;gap:1rem;'
+        f'background:linear-gradient(135deg,{color}12,{color}06);'
+        f'border:1px solid {color}35;border-radius:12px;'
+        f'padding:0.85rem 1.25rem;margin-bottom:1.25rem;">'
+        f'<div style="font-size:1.6rem;flex-shrink:0;margin-top:0.1rem;">{pm["icon"]}</div>'
+        f'<div style="min-width:0;">'
+        f'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:1.05rem;'
+        f'font-weight:700;color:{color};letter-spacing:0.03em;margin-bottom:0.25rem;">'
+        f'{pm["label"]} Investor</div>'
+        f'<div style="font-size:0.82rem;color:#94a3b8;margin-bottom:0.5rem;line-height:1.5;">'
+        f'{pm["desc"]}{conf_inline}</div>'
+        f'<div style="display:flex;flex-wrap:wrap;gap:0.35rem;">{badges_html}</div>'
+        f'</div>'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
+
+    # The dashboard always runs on live market data. Mock data is kept only as
+    # an automatic fallback if the network or optimizer is unreachable, so the
+    # app never breaks mid-demo — there is no user-facing data-source toggle.
     portfolio = st.session_state.get("portfolio_data", {})
     cached_label = st.session_state.get("portfolio_profile", "")
 
-    if use_live and (not portfolio or cached_label != profile_label):
-        # Run the live optimizer and store the result in session_state
-        with st.spinner("Downloading data and running HRP optimizer..."):
+    if not portfolio or cached_label != profile_label:
+        with st.spinner("Fetching live market data and running the HRP optimizer…"):
             try:
                 portfolio = _run_live_optimization(profile_label)
-                st.session_state["portfolio_data"] = portfolio
-                st.session_state["portfolio_profile"] = profile_label
-                st.session_state["recommendation_id"] = portfolio["recommendation_id"]
             except Exception as exc:
-                # Live data failed -- fall back to mock so the app keeps working
-                st.warning(f"Live data unavailable ({exc}). Using mock data instead.")
+                # Keep the dashboard usable if live prices can't be reached.
+                st.warning(
+                    f"Live market data is temporarily unavailable ({exc}). "
+                    "Showing a reference allocation until prices can be fetched again."
+                )
                 portfolio = _mock_optimization(profile_key)
-                st.session_state["portfolio_data"] = portfolio
-                st.session_state["portfolio_profile"] = profile_label
-                st.session_state["recommendation_id"] = portfolio["recommendation_id"]
-    elif not portfolio or cached_label != profile_label:
-        # Default path: load mock data (Phase A, always works)
-        portfolio = _mock_optimization(profile_key)
-        st.session_state["portfolio_data"] = portfolio
-        st.session_state["portfolio_profile"] = profile_label
-        st.session_state["recommendation_id"] = portfolio["recommendation_id"]
+            st.session_state["portfolio_data"] = portfolio
+            st.session_state["portfolio_profile"] = profile_label
+            st.session_state["recommendation_id"] = portfolio["recommendation_id"]
 
-    # Show where the data comes from
+    # Discreet data-source status line (no toggle — live is always preferred).
     if portfolio.get("source") == "live":
-        st.success("Live market data loaded successfully.")
+        st.markdown(
+            '<div style="font-size:0.8rem;color:#64748b;margin:-0.2rem 0 0.3rem;">'
+            '<span style="color:#0dcfb0;">●</span> Live market data · prices via yfinance'
+            '</div>',
+            unsafe_allow_html=True,
+        )
     else:
-        st.caption("Showing mock data (Phase A). Enable the toggle above for live prices.")
+        st.markdown(
+            '<div style="font-size:0.8rem;color:#64748b;margin:-0.2rem 0 0.3rem;">'
+            '<span style="color:#f59e0b;">●</span> Reference allocation · '
+            'live prices momentarily unavailable'
+            '</div>',
+            unsafe_allow_html=True,
+        )
 
     # Show a red banner if the regime detector flagged HIGH_STRESS
     regime = portfolio.get("stress_regime", "NORMAL")
@@ -813,26 +1547,189 @@ def render_portfolio() -> None:
 
     st.markdown("---")
 
-    # Two tabs: HRP (default) and Markowitz benchmark
-    tab_hrp, tab_mv = st.tabs(["HRP Portfolio", "Markowitz Benchmark"])
-
-    with tab_hrp:
-        _render_hrp_tab(portfolio)
-
-    with tab_mv:
-        _render_mv_tab(portfolio, profile_key)
+    _render_hrp_tab(portfolio)
 
     # EU Investor Note -- mandatory on every portfolio page (EU Awareness Rule 9)
     st.markdown("---")
-    st.info(
-        "EU Investor Note -- The risk profile model is trained on "
-        "US Federal Reserve SCF data (2022). Results may not fully reflect "
-        "the behaviour of European retail investors. "
-        "The ECB Household Finance and Consumption Survey (HFCS) would be a "
-        "more geographically appropriate training source. "
-        "(EU Awareness Rule 9 -- Design v3.1)"
-    )
+    render_eu_note()
 
+
+def _render_resilience_strip(profile_label: str) -> None:
+    """
+    Compact "crisis resilience" strip backed by REAL backtest results.
+
+    Reads backtest_summary_{profile}.json and shows the HRP historical maximum
+    drawdown across three stress scenarios, with the improvement vs the
+    Mean-Variance benchmark. A button links to the full Backtesting page so we
+    do not duplicate its equity-curve charts here.
+    """
+    summary_file = _BACKTEST_DIR / f"backtest_summary_{profile_label.lower()}.json"
+    if not summary_file.exists():
+        summary_file = _BACKTEST_DIR / "backtest_summary_moderate.json"
+    if not summary_file.exists():
+        st.caption("Backtest data unavailable — run scripts/run_backtest.py.")
+        return
+
+    with open(summary_file) as fh:
+        summary = json.load(fh)
+
+    _SHORT = {
+        "gfc_2008": "GFC 2008",
+        "covid_2020": "COVID 2020",
+        "rate_hike_2022": "Rate Hike 2022",
+    }
+
+    cards_html = '<div style="display:flex;gap:0.75rem;margin-bottom:1rem;">'
+    for key, short in _SHORT.items():
+        scen = summary.get(key)
+        if not scen:
+            continue
+        hrp_dd = scen["strategies"]["HRP"]["max_drawdown"]
+        mv_dd = scen["strategies"]["MV"]["max_drawdown"]
+        # Both negative; HRP less negative => shallower drawdown => improvement > 0
+        improvement = (hrp_dd - mv_dd) * 100
+        better = improvement > 0
+        delta_color = "#0dcfb0" if better else "#f87171"
+        delta_sign = "+" if better else ""
+        cards_html += (
+            f'<div style="flex:1;background:#0f1628;border:1px solid #1e2640;'
+            f'border-radius:12px;padding:0.9rem 1rem;">'
+            f'<div style="font-size:0.72rem;font-weight:600;letter-spacing:0.08em;'
+            f'text-transform:uppercase;color:#64748b;margin-bottom:0.5rem;">{short}</div>'
+            f'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:1.5rem;'
+            f'font-weight:700;color:#e2e8f0;line-height:1;">{hrp_dd*100:.1f}%</div>'
+            f'<div style="font-size:0.74rem;color:#475569;margin-top:0.35rem;">'
+            f'HRP max drawdown</div>'
+            f'<div style="font-size:0.72rem;color:{delta_color};font-weight:600;'
+            f'margin-top:0.45rem;">{delta_sign}{improvement:.1f} pp vs MV</div>'
+            f'</div>'
+        )
+    cards_html += "</div>"
+    st.markdown(cards_html, unsafe_allow_html=True)
+
+    if st.button("View full backtesting  →", key="hrp_to_backtest"):
+        st.session_state.active_page = "Backtesting"
+        st.rerun()
+
+
+def _render_cluster_view(portfolio: dict, weights: dict[str, float]) -> None:
+    """
+    Honest cluster structure view driven by the Ground Truth payload.
+
+    Replaces the previous dendrogram, whose pairwise correlation matrix was
+    fabricated (0.70 / 0.10). Here every number — weight, intra-cluster
+    correlation, cluster volatility — comes from cluster_structure when present,
+    with a graceful fallback for the live path.
+    """
+    cs = portfolio.get("cluster_structure")
+
+    # name, attribute, colour, plain-language description, member fallback
+    _CLUSTER_DEFS = [
+        ("Risk Assets", "cluster_A_risk_assets", "#7c5cfc",
+         "Stocks — the growth engine. Higher long-term reward, bigger swings.",
+         ["CSPX.L", "EFA"]),
+        ("Real Assets", "cluster_B_real_assets", "#0dcfb0",
+         "Gold & property — inflation hedges that move on their own rhythm.",
+         ["GLD", "VNQ"]),
+        ("Safe Haven", "cluster_C_safe_haven", "#f59e0b",
+         "High-quality bonds — ballast that cushions equity downturns.",
+         ["AGGH.MI", "TLT", "TIP"]),
+        ("Cash", "cluster_D_cash", "#3b82f6",
+         "Cash-like — maximum stability and ready liquidity.",
+         ["XEON.MI"]),
+    ]
+
+    def _diversification(corr: float | None) -> tuple[str, str]:
+        """Plain-language label + colour from intra-cluster correlation."""
+        if corr is None:
+            return "Single asset", "#64748b"
+        if corr < 0.30:
+            return "Well diversified", "#0dcfb0"
+        if corr < 0.60:
+            return "Moderately diversified", "#f59e0b"
+        return "Moves together", "#f87171"
+
+    def _risk_level(vol: float | None) -> tuple[str, str]:
+        """Plain-language risk label + colour from annualised volatility."""
+        if vol is None:
+            return "—", "#64748b"
+        if vol < 0.06:
+            return "Low", "#0dcfb0"
+        if vol < 0.14:
+            return "Medium", "#f59e0b"
+        return "High", "#f87171"
+
+    for name, attr, color, desc, fallback_members in _CLUSTER_DEFS:
+        cl = getattr(cs, attr, None) if cs is not None else None
+        members = list(cl.members) if cl is not None else fallback_members
+        members = [m for m in members if m in weights] or members
+        weight = (
+            cl.total_weight if cl is not None
+            else sum(weights.get(m, 0.0) for m in members)
+        )
+        corr = cl.intra_cluster_correlation if cl is not None else None
+        vol = cl.cluster_volatility if cl is not None else None
+
+        div_label, div_color = _diversification(corr)
+        risk_label, risk_color = _risk_level(vol)
+        corr_note = f"ρ {corr:.2f}" if corr is not None else "n/a"
+        vol_note = f"{vol*100:.1f}% vol" if vol is not None else ""
+
+        # Member chips use the plain asset name, ticker kept as a small tag.
+        chips = "".join(
+            f'<span style="display:inline-block;background:rgba(148,163,184,0.08);'
+            f'border:1px solid #1e2640;border-radius:6px;padding:0.12rem 0.5rem;'
+            f'font-size:0.74rem;color:#94a3b8;margin:0 0.3rem 0.3rem 0;">'
+            f'{_TICKER_DISPLAY_NAME.get(m, m)}</span>'
+            for m in members
+        )
+
+        st.markdown(
+            f'<div style="background:#0f1628;border:1px solid #1e2640;'
+            f'border-left:4px solid {color};border-radius:12px;'
+            f'padding:1rem 1.2rem;margin-bottom:0.75rem;display:flex;'
+            f'align-items:flex-start;gap:1.25rem;flex-wrap:wrap;">'
+            # Left: name + description + chips
+            f'<div style="flex:2.4;min-width:240px;">'
+            f'<div style="display:flex;align-items:center;gap:0.5rem;'
+            f'margin-bottom:0.3rem;">'
+            f'<span style="width:9px;height:9px;border-radius:50%;'
+            f'background:{color};flex-shrink:0;"></span>'
+            f'<span style="font-family:\'Space Grotesk\',sans-serif;'
+            f'font-size:1.02rem;font-weight:600;color:{color};">{name}</span></div>'
+            f'<div style="font-size:0.86rem;color:#94a3b8;line-height:1.55;'
+            f'margin-bottom:0.6rem;">{desc}</div>'
+            f'<div>{chips}</div></div>'
+            # Middle: diversification + risk, plain words with the number small
+            f'<div style="flex:1.5;min-width:170px;">'
+            f'<div style="font-size:0.72rem;font-weight:600;letter-spacing:0.06em;'
+            f'text-transform:uppercase;color:#475569;margin-bottom:0.15rem;">'
+            f'Diversification</div>'
+            f'<div style="font-size:0.95rem;font-weight:600;color:{div_color};'
+            f'margin-bottom:0.7rem;">{div_label}'
+            f'<span style="font-size:0.74rem;color:#5b6678;font-weight:400;'
+            f'margin-left:0.4rem;">{corr_note}</span></div>'
+            f'<div style="font-size:0.72rem;font-weight:600;letter-spacing:0.06em;'
+            f'text-transform:uppercase;color:#475569;margin-bottom:0.15rem;">'
+            f'Risk level</div>'
+            f'<div style="font-size:0.95rem;font-weight:600;color:{risk_color};">'
+            f'{risk_label}'
+            f'<span style="font-size:0.74rem;color:#5b6678;font-weight:400;'
+            f'margin-left:0.4rem;">{vol_note}</span></div></div>'
+            # Right: weight
+            f'<div style="flex:0.9;min-width:110px;text-align:right;">'
+            f'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:1.75rem;'
+            f'font-weight:700;color:#e2e8f0;line-height:1;">{weight*100:.0f}%</div>'
+            f'<div style="font-size:0.72rem;color:#475569;text-transform:uppercase;'
+            f'letter-spacing:0.06em;margin-top:0.25rem;">of portfolio</div></div>'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
+
+
+# ---------------------------------------------------------------------------
+# Dashboard display constants (HRP cluster colours and profile palette)
+# ---------------------------------------------------------------------------
 
 _HRP_TICKER_CLUSTER: dict[str, str] = {
     "CSPX.L":  "Equity",
@@ -859,56 +1756,840 @@ _HRP_CLUSTER_BG: dict[str, str] = {
     "Cash":         "rgba(59,130,246,0.15)",
 }
 
-_PROFILE_COLOR: dict[str, str] = {
-    "CONSERVATIVE": "#0dcfb0",
-    "MODERATE":     "#7c5cfc",
-    "AGGRESSIVE":   "#f87171",
+# Plain-language asset names so the allocation table reads clearly for a
+# non-specialist. The raw ticker is still shown, but as a small subtitle.
+_TICKER_DISPLAY_NAME: dict[str, str] = {
+    "CSPX.L":  "US Large-Cap Equity",
+    "EFA":     "Developed Markets ex-US Equity",
+    "GLD":     "Gold",
+    "VNQ":     "US Real Estate",
+    "AGGH.MI": "Euro Aggregate Bonds",
+    "TLT":     "US Long-Term Treasuries",
+    "TIP":     "US Inflation-Linked Bonds",
+    "XEON.MI": "Euro Cash (Overnight)",
 }
 
 
-def _render_hrp_tab(portfolio: dict) -> None:
+def _render_allocation_table(
+    weights: dict[str, float],
+    risk_contributions: dict[str, float],
+) -> None:
     """
-    HRP tab: cluster breakdown, key metrics, weights table, colored risk chart.
+    Readable allocation table: plain asset name with the ticker as a small
+    subtitle, an asset-class colour dot, a proportional weight bar, and the
+    risk contribution. Replaces the ticker-first st.dataframe (which also
+    carried a UCITS column) so a non-specialist can read it at a glance.
     """
-    profile_label = st.session_state.get("profile", {}).get("profile_label", "MODERATE")
-    profile_color = _PROFILE_COLOR.get(profile_label, "#7c5cfc")
+    items = sorted(weights.items(), key=lambda kv: -kv[1])
+    max_w = max((w for _, w in items), default=1.0) or 1.0
 
-    # ── Section header ───────────────────────────────────────────────────────
+    header = (
+        '<div style="display:flex;align-items:center;padding:0 0.4rem 0.6rem;'
+        'border-bottom:1px solid #1e2640;margin-bottom:0.1rem;">'
+        '<div style="flex:1.7;font-size:0.72rem;font-weight:600;letter-spacing:0.08em;'
+        'text-transform:uppercase;color:#475569;">Asset</div>'
+        '<div style="flex:1.5;font-size:0.72rem;font-weight:600;letter-spacing:0.08em;'
+        'text-transform:uppercase;color:#475569;">Weight</div>'
+        '<div style="flex:0.8;font-size:0.72rem;font-weight:600;letter-spacing:0.08em;'
+        'text-transform:uppercase;color:#475569;text-align:right;">Risk</div>'
+        '</div>'
+    )
+
+    body = ""
+    for ticker, w in items:
+        cls = _HRP_TICKER_CLUSTER.get(ticker, "Other")
+        color = _HRP_CLUSTER_COLOR.get(cls, "#64748b")
+        name = _TICKER_DISPLAY_NAME.get(ticker, ticker)
+        rc = risk_contributions.get(ticker, 0.0)
+        bar_pct = max(4.0, w / max_w * 100.0)
+        body += (
+            '<div style="display:flex;align-items:center;padding:0.62rem 0.4rem;'
+            'border-bottom:1px solid #141b2e;">'
+            # Asset name + ticker subtitle
+            '<div style="flex:1.7;display:flex;align-items:center;gap:0.6rem;">'
+            f'<span style="width:9px;height:9px;border-radius:50%;background:{color};'
+            'flex-shrink:0;"></span>'
+            '<div style="min-width:0;">'
+            f'<div style="font-size:0.9rem;font-weight:600;color:#e2e8f0;'
+            f'line-height:1.25;">{name}</div>'
+            f'<div style="font-size:0.72rem;color:#5b6678;letter-spacing:0.02em;'
+            f'font-family:\'Space Grotesk\',sans-serif;">{ticker}</div>'
+            '</div></div>'
+            # Weight bar + value
+            '<div style="flex:1.5;display:flex;align-items:center;gap:0.55rem;'
+            'padding-right:0.8rem;">'
+            '<div style="flex:1;height:7px;background:#161d30;border-radius:4px;'
+            'overflow:hidden;">'
+            f'<div style="width:{bar_pct:.1f}%;height:100%;background:{color};'
+            'border-radius:4px;"></div></div>'
+            f'<span style="font-size:0.9rem;font-weight:600;color:#e2e8f0;'
+            f'font-family:\'Space Grotesk\',sans-serif;min-width:3rem;'
+            f'text-align:right;">{w*100:.1f}%</span>'
+            '</div>'
+            # Risk contribution
+            f'<div style="flex:0.8;font-size:0.85rem;color:#94a3b8;text-align:right;'
+            f'font-family:\'Space Grotesk\',sans-serif;">{rc*100:.1f}%</div>'
+            '</div>'
+        )
+
     st.markdown(
-        f"""
-        <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:1.25rem;">
-            <div style="
-                font-family:'Space Grotesk',sans-serif;font-size:1.1rem;
-                font-weight:600;color:#f1f5f9;">
-                Hierarchical Risk Parity
-            </div>
-            <div style="
-                font-family:'Space Grotesk',sans-serif;font-size:0.7rem;
-                font-weight:700;color:{profile_color};
-                background:rgba(124,92,252,0.1);
-                border:1px solid {profile_color}40;
-                border-radius:5px;padding:0.1rem 0.5rem;letter-spacing:0.06em;">
-                {profile_label}
-            </div>
-        </div>
-        """,
+        '<div style="background:#0f1628;border:1px solid #1e2640;border-radius:12px;'
+        'padding:0.9rem 1rem;">' + header + body + '</div>',
         unsafe_allow_html=True,
     )
 
+# ---------------------------------------------------------------------------
+# ETF explorer ("What do these tickers mean?" section)
+# Static per-ticker reference data. Live prices come from yfinance; everything
+# below is curated metadata used by _render_etf_explorer().
+# ---------------------------------------------------------------------------
+
+# Cluster -> dot colour for the ticker selector pills
+CLUSTER_COLORS: dict[str, str] = {
+    "risk_assets": "#185FA5",
+    "safe_haven":  "#0F6E56",
+    "real_assets": "#BA7517",
+    "cash":        "#888780",
+}
+
+ETF_METADATA: dict[str, dict] = {
+    "CSPX.L": {
+        "full_name": "iShares Core S&P 500 UCITS ETF",
+        "issuer": "iShares (BlackRock)",
+        "category": "Large Cap US Equity",
+        "inception": "2010",
+        "distribution": "Accumulating",
+        "ter": "0.07%",
+        "aum": "$52.1B",
+        "description": (
+            "Tracks the S&P 500 Index — 500 of the largest US companies across "
+            "all major sectors. Physically replicated, UCITS-compliant, domiciled "
+            "in Ireland. Same economic exposure as SPY but wrapped for European "
+            "regulatory compliance. Primary equity position in the HRP portfolio."
+        ),
+        "key_stats": {
+            "P/E ratio (underlying)": "22.4x",
+            "P/B ratio": "4.1x",
+            "Dividend yield": "1.31%",
+            "Number of holdings": "503",
+            "Weight in HRP portfolio": "18.2%",
+        },
+        "morningstar": 4,
+        "esg": {"environmental": 6, "social": 5, "governance": 7, "total": 18, "risk": 4},
+        "analyst": {"buy": 72, "hold": 20, "sell": 8},
+        "financials": [
+            {"label": "AUM", "value": "$52.1B",
+             "trend": [3, 4, 4, 5, 5, 5, 5]},
+            {"label": "Avg daily volume", "value": "$320M",
+             "trend": [2, 3, 3, 4, 4, 5, 5]},
+            {"label": "TER (expense ratio)", "value": "0.07%",
+             "trend": [5, 5, 5, 5, 5, 5, 5]},
+            {"label": "12m return (NAV)", "value": "+23.1%",
+             "trend": [2, 3, 3, 4, 5, 5, 5]},
+            {"label": "Tracking error (ann.)", "value": "0.03%",
+             "trend": [5, 5, 5, 5, 5, 5, 5]},
+        ],
+    },
+    "EFA": {
+        "full_name": "iShares MSCI EAFE ETF",
+        "issuer": "iShares (BlackRock)",
+        "category": "Developed Markets Ex-US",
+        "inception": "2001",
+        "distribution": "Distributing",
+        "ter": "0.32%",
+        "aum": "$48.3B",
+        "description": (
+            "Tracks the MSCI EAFE Index (Europe, Australasia, Far East) — ~900 "
+            "stocks across 21 developed markets outside the US and Canada. Major "
+            "exposures: Japan, UK, France, Switzerland, Germany. No UCITS equivalent "
+            "with equivalent yfinance coverage; retained as-is in the v3.1 universe."
+        ),
+        "key_stats": {
+            "P/E ratio (underlying)": "14.8x",
+            "P/B ratio": "1.7x",
+            "Dividend yield": "3.12%",
+            "Number of holdings": "~900",
+            "Weight in HRP portfolio": "14.8%",
+        },
+        "morningstar": 3,
+        "esg": {"environmental": 5, "social": 6, "governance": 6, "total": 17, "risk": 3},
+        "analyst": {"buy": 61, "hold": 28, "sell": 11},
+        "financials": [
+            {"label": "AUM", "value": "$48.3B", "trend": [4, 4, 4, 4, 4, 4, 4]},
+            {"label": "Avg daily volume", "value": "$890M", "trend": [4, 4, 5, 5, 5, 5, 5]},
+            {"label": "TER (expense ratio)", "value": "0.32%", "trend": [4, 4, 4, 4, 4, 4, 4]},
+            {"label": "12m return (NAV)", "value": "+9.8%", "trend": [2, 2, 3, 3, 3, 4, 4]},
+            {"label": "Tracking error (ann.)", "value": "0.18%", "trend": [4, 4, 4, 4, 4, 4, 4]},
+        ],
+    },
+    "AGGH.MI": {
+        "full_name": "iShares Core € Aggregate Bond UCITS ETF",
+        "issuer": "iShares (BlackRock)",
+        "category": "EUR Aggregate Bond",
+        "inception": "2017",
+        "distribution": "Accumulating",
+        "ter": "0.10%",
+        "aum": "€9.8B",
+        "description": (
+            "Tracks the Bloomberg Euro Aggregate Bond Index — EUR-denominated "
+            "investment-grade bonds (government, corporate, securitised). The main "
+            "fixed income position for EU investors: reduces FX risk vs USD-denominated "
+            "bonds while maintaining broad duration exposure across the eurozone."
+        ),
+        "key_stats": {
+            "Yield to maturity": "3.42%",
+            "Modified duration": "6.8 yrs",
+            "Credit quality (avg)": "AA-",
+            "Number of holdings": "~2,400",
+            "Weight in HRP portfolio": "12.1%",
+        },
+        "morningstar": 4,
+        "esg": {"environmental": 7, "social": 6, "governance": 8, "total": 21, "risk": 5},
+        "analyst": {"buy": 55, "hold": 35, "sell": 10},
+        "financials": [
+            {"label": "AUM", "value": "€9.8B", "trend": [3, 3, 4, 4, 4, 4, 5]},
+            {"label": "Avg daily volume", "value": "€42M", "trend": [2, 3, 3, 3, 4, 4, 4]},
+            {"label": "TER (expense ratio)", "value": "0.10%", "trend": [5, 5, 5, 5, 5, 5, 5]},
+            {"label": "12m return (NAV)", "value": "+2.1%", "trend": [1, 1, 2, 2, 3, 3, 4]},
+            {"label": "Modified duration", "value": "6.8 yrs", "trend": [3, 3, 3, 3, 3, 3, 3]},
+        ],
+    },
+    "TLT": {
+        "full_name": "iShares 20+ Year Treasury Bond ETF",
+        "issuer": "iShares (BlackRock)",
+        "category": "US Long-Duration Treasuries",
+        "inception": "2002",
+        "distribution": "Distributing",
+        "ter": "0.15%",
+        "aum": "$58.2B",
+        "description": (
+            "US Treasury bonds with 20+ year maturities. The quintessential "
+            "long-duration flight-to-quality instrument: prices rise when yields "
+            "fall, especially in risk-off environments. Kept as USD-priced duration "
+            "anchor for stress scenarios in the HRP portfolio."
+        ),
+        "key_stats": {
+            "Yield to maturity": "4.81%",
+            "Modified duration": "17.1 yrs",
+            "SEC 30-day yield": "4.76%",
+            "Number of holdings": "~40",
+            "Weight in HRP portfolio": "10.4%",
+        },
+        "morningstar": 2,
+        "esg": {"environmental": 9, "social": 8, "governance": 9, "total": 26, "risk": 5},
+        "analyst": {"buy": 38, "hold": 40, "sell": 22},
+        "financials": [
+            {"label": "AUM", "value": "$58.2B", "trend": [5, 5, 5, 5, 5, 4, 3]},
+            {"label": "Avg daily volume", "value": "$1.8B", "trend": [4, 5, 5, 5, 5, 5, 5]},
+            {"label": "TER (expense ratio)", "value": "0.15%", "trend": [5, 5, 5, 5, 5, 5, 5]},
+            {"label": "12m return (NAV)", "value": "-4.2%", "trend": [4, 3, 3, 2, 2, 1, 2]},
+            {"label": "Modified duration", "value": "17.1 yrs", "trend": [3, 3, 3, 3, 3, 3, 3]},
+        ],
+    },
+    "GLD": {
+        "full_name": "SPDR Gold Shares",
+        "issuer": "State Street (SPDR)",
+        "category": "Physical Gold",
+        "inception": "2004",
+        "distribution": "Non-distributing",
+        "ter": "0.40%",
+        "aum": "$62.4B",
+        "description": (
+            "Physically-backed gold ETF — each share ≈ 1/10 troy oz held in HSBC "
+            "vaults in London. Gold is USD-priced globally; no UCITS equivalent changes "
+            "the economic exposure. Acts as inflation hedge, tail-risk hedge, and "
+            "currency diversifier in the HRP portfolio."
+        ),
+        "key_stats": {
+            "Gold spot price": "$3,368/oz",
+            "Physical gold held": "876 tonnes",
+            "Custody bank": "HSBC London",
+            "Correlation vs S&P500": "+0.04",
+            "Weight in HRP portfolio": "13.7%",
+        },
+        "morningstar": 3,
+        "esg": {"environmental": 4, "social": 5, "governance": 6, "total": 15, "risk": 3},
+        "analyst": {"buy": 65, "hold": 27, "sell": 8},
+        "financials": [
+            {"label": "AUM", "value": "$62.4B", "trend": [3, 3, 4, 4, 5, 5, 5]},
+            {"label": "Avg daily volume", "value": "$1.2B", "trend": [3, 3, 4, 4, 5, 5, 5]},
+            {"label": "TER (expense ratio)", "value": "0.40%", "trend": [3, 3, 3, 3, 3, 3, 3]},
+            {"label": "12m return (NAV)", "value": "+28.4%", "trend": [2, 2, 3, 4, 5, 5, 5]},
+            {"label": "Gold held per share", "value": "0.0929 oz", "trend": [3, 3, 3, 3, 3, 3, 3]},
+        ],
+    },
+    "VNQ": {
+        "full_name": "Vanguard Real Estate ETF",
+        "issuer": "Vanguard",
+        "category": "US Real Estate / REITs",
+        "inception": "2004",
+        "distribution": "Distributing",
+        "ter": "0.13%",
+        "aum": "$35.1B",
+        "description": (
+            "Tracks the MSCI US Investable Market Real Estate 25/50 Index — US REITs "
+            "across residential, commercial, industrial, and specialty segments. Provides "
+            "inflation linkage via real asset rents and mandated 90%+ dividend distribution. "
+            "Intentionally US-focused; EU REIT markets have lower liquidity and shorter histories."
+        ),
+        "key_stats": {
+            "P/FFO ratio": "18.2x",
+            "Dividend yield": "4.12%",
+            "Largest holding": "Prologis 7.1%",
+            "Number of holdings": "162",
+            "Weight in HRP portfolio": "9.8%",
+        },
+        "morningstar": 3,
+        "esg": {"environmental": 5, "social": 4, "governance": 6, "total": 15, "risk": 3},
+        "analyst": {"buy": 52, "hold": 33, "sell": 15},
+        "financials": [
+            {"label": "AUM", "value": "$35.1B", "trend": [4, 4, 4, 4, 4, 3, 3]},
+            {"label": "Avg daily volume", "value": "$420M", "trend": [3, 4, 4, 4, 4, 4, 4]},
+            {"label": "TER (expense ratio)", "value": "0.13%", "trend": [5, 5, 5, 5, 5, 5, 5]},
+            {"label": "12m return (NAV)", "value": "+4.8%", "trend": [3, 2, 2, 3, 3, 3, 4]},
+            {"label": "Distribution yield", "value": "4.12%", "trend": [4, 4, 4, 4, 4, 4, 4]},
+        ],
+    },
+    "TIP": {
+        "full_name": "iShares TIPS Bond ETF",
+        "issuer": "iShares (BlackRock)",
+        "category": "US Inflation-Linked Bonds",
+        "inception": "2003",
+        "distribution": "Distributing",
+        "ter": "0.19%",
+        "aum": "$18.6B",
+        "description": (
+            "US Treasury Inflation-Protected Securities (TIPS) across the full maturity "
+            "range. Principal and interest adjust with CPI, providing direct inflation "
+            "breakeven exposure. Retained alongside AGGH.MI to capture the US inflation "
+            "breakeven spread — a distinct risk factor from EUR aggregate duration."
+        ),
+        "key_stats": {
+            "Real yield (10y TIPS)": "1.82%",
+            "Modified duration": "6.2 yrs",
+            "CPI linkage": "US CPI-U",
+            "Number of holdings": "49",
+            "Weight in HRP portfolio": "10.1%",
+        },
+        "morningstar": 3,
+        "esg": {"environmental": 9, "social": 8, "governance": 9, "total": 26, "risk": 5},
+        "analyst": {"buy": 48, "hold": 42, "sell": 10},
+        "financials": [
+            {"label": "AUM", "value": "$18.6B", "trend": [3, 3, 4, 4, 4, 3, 3]},
+            {"label": "Avg daily volume", "value": "$195M", "trend": [3, 3, 3, 3, 3, 3, 3]},
+            {"label": "TER (expense ratio)", "value": "0.19%", "trend": [5, 5, 5, 5, 5, 5, 5]},
+            {"label": "12m return (NAV)", "value": "+3.8%", "trend": [2, 2, 3, 3, 4, 4, 4]},
+            {"label": "Inflation breakeven (5y)", "value": "2.34%", "trend": [3, 3, 3, 4, 4, 4, 4]},
+        ],
+    },
+    "XEON.MI": {
+        "full_name": "Xtrackers EUR Overnight Rate Swap UCITS ETF",
+        "issuer": "Xtrackers (DWS)",
+        "category": "EUR Money Market / Overnight",
+        "inception": "2007",
+        "distribution": "Accumulating",
+        "ter": "0.10%",
+        "aum": "€6.2B",
+        "description": (
+            "Tracks the ESTER overnight rate via total return swap — EUR equivalent of "
+            "a T-Bill money market fund in ETF form. Replaces USD BIL in the v3.1 universe "
+            "to avoid EUR/USD FX risk for EU investors. Minimal duration, minimal credit risk, "
+            "daily compounding of the ECB overnight rate."
+        ),
+        "key_stats": {
+            "Effective duration": "< 1 day",
+            "Credit risk": "Minimal (swap)",
+            "ESTER reference rate": "2.15%",
+            "Replication method": "Synthetic (swap)",
+            "Weight in HRP portfolio": "10.9%",
+        },
+        "morningstar": 5,
+        "esg": {"environmental": 8, "social": 7, "governance": 9, "total": 24, "risk": 5},
+        "analyst": {"buy": 80, "hold": 18, "sell": 2},
+        "financials": [
+            {"label": "AUM", "value": "€6.2B", "trend": [2, 2, 3, 4, 5, 5, 5]},
+            {"label": "Avg daily volume", "value": "€18M", "trend": [2, 3, 3, 4, 4, 5, 5]},
+            {"label": "TER (expense ratio)", "value": "0.10%", "trend": [5, 5, 5, 5, 5, 5, 5]},
+            {"label": "12m return (NAV)", "value": "+3.9%", "trend": [3, 3, 4, 4, 4, 5, 5]},
+            {"label": "ESTER rate (current)", "value": "2.15%", "trend": [5, 5, 5, 5, 5, 4, 3]},
+        ],
+    },
+}
+
+
+def _section_header(number: str, title: str) -> None:
+    prefix = f"{number}. " if number else ""
+    st.markdown(
+        f'<div style="border-left:3px solid #7c5cfc;padding-left:0.9rem;margin-bottom:0.8rem;">'
+        f'<div style="font-family:\'Space Grotesk\',sans-serif;'
+        f'font-size:1.2rem;font-weight:700;color:#f1f5f9;letter-spacing:-0.01em;">'
+        f'{prefix}{title}</div>'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
+
+
+def _section_desc(text: str) -> None:
+    st.markdown(
+        f'<div style="font-size:0.95rem;color:#94a3b8;line-height:1.6;'
+        f'margin-bottom:1.35rem;max-width:62rem;">{text}</div>',
+        unsafe_allow_html=True,
+    )
+
+
+def _v_spacer(rem: float = 2.0) -> None:
+    st.markdown(f'<div style="height:{rem}rem"></div>', unsafe_allow_html=True)
+
+
+def _kpi_cards(items: list[dict]) -> None:
+    """Render a row of styled KPI cards.
+
+    Replaces the anonymous, colourless ``st.metric`` boxes with branded cards:
+    each has a coloured top accent, an icon chip, an uppercase label, a large
+    Space-Grotesk value, and a one-line hint — so the headline portfolio
+    statistics read as a deliberate, scannable summary rather than as filler.
+
+    Each item dict: {label, value, accent, bg, icon (inner SVG markup), hint}.
+    """
+    cards = ""
+    for it in items:
+        accent = it["accent"]
+        cards += (
+            f'<div style="flex:1 1 140px;min-width:140px;'
+            f'background:linear-gradient(160deg,rgba(30,38,64,0.55),'
+            f'rgba(17,24,39,0.55));border:1px solid #1e2640;'
+            f'border-top:2px solid {accent};border-radius:14px;'
+            f'padding:1rem 1.1rem;box-shadow:0 2px 14px rgba(0,0,0,0.25);">'
+            f'<div style="width:2.1rem;height:2.1rem;border-radius:9px;'
+            f'background:{it["bg"]};border:1px solid {accent}55;'
+            f'display:flex;align-items:center;justify-content:center;'
+            f'margin-bottom:0.7rem;">'
+            f'<svg width="16" height="16" viewBox="0 0 18 18" fill="none" '
+            f'stroke="{accent}" stroke-width="1.8" stroke-linecap="round" '
+            f'stroke-linejoin="round">{it["icon"]}</svg></div>'
+            f'<div style="font-size:0.7rem;font-weight:600;letter-spacing:0.08em;'
+            f'text-transform:uppercase;color:#64748b;margin-bottom:0.3rem;">'
+            f'{it["label"]}</div>'
+            f'<div style="font-family:\'Space Grotesk\',sans-serif;'
+            f'font-size:1.6rem;font-weight:700;color:#f1f5f9;line-height:1;">'
+            f'{it["value"]}</div>'
+            f'<div style="font-size:0.7rem;color:#64748b;margin-top:0.35rem;">'
+            f'{it["hint"]}</div></div>'
+        )
+    st.markdown(
+        f'<div style="display:flex;gap:0.85rem;flex-wrap:wrap;'
+        f'margin-bottom:0.5rem;">{cards}</div>',
+        unsafe_allow_html=True,
+    )
+
+
+@st.cache_data(ttl=3600, show_spinner=False)
+def _fetch_price_history(ticker: str) -> pd.DataFrame:
+    """
+    Download 2 years of daily prices for a single ticker via yfinance.
+    Cached for 1 hour (keyed on the ticker symbol) so flipping between
+    pills or reruns does not re-hit the network.
+    """
+    df = yf.download(
+        ticker,
+        period="2y",
+        interval="1d",
+        progress=False,
+        auto_adjust=True,
+    )
+    return df
+
+
+def _close_series(df: pd.DataFrame) -> "pd.Series":
+    """Extract a flat Close price Series from a yfinance download frame."""
+    close = df["Close"]
+    # Single-ticker downloads can return a MultiIndex column frame
+    if isinstance(close, pd.DataFrame):
+        close = close.iloc[:, 0]
+    return close.dropna()
+
+
+def _slice_price_range(close: "pd.Series", rng: str) -> "pd.Series":
+    """Slice the 2y Close series to the selected time-range option."""
+    if close.empty:
+        return close
+    if rng == "YTD":
+        from datetime import date
+        start = pd.Timestamp(date.today().year, 1, 1)
+        idx_tz = getattr(close.index, "tz", None)
+        if idx_tz is not None:
+            start = start.tz_localize(idx_tz)
+        return close[close.index >= start]
+    # Approximate trading-day windows; "2y"/"5y" use the full download
+    rows: dict[str, int] = {
+        "2h": 16, "1d": 1, "1w": 5, "1m": 21,
+        "3m": 63, "6m": 126, "1y": 252,
+    }
+    n = rows.get(rng)
+    if n is None:  # "2y", "5y"
+        return close
+    return close.iloc[-n:]
+
+
+def _render_etf_explorer() -> None:
+    """
+    Three-panel ETF explorer rendered inside the "What do these tickers mean?"
+    expander: ticker selector pills, a live yfinance price chart, a description
+    card, and a static financial-data block (Morningstar/ESG, analyst
+    consensus, key financials).
+    """
+    from backend.data.universe_config import ETF_UNIVERSE
+
+    tickers = [e.primary_ticker for e in ETF_UNIVERSE]
+    cluster_by_ticker = {e.primary_ticker: e.cluster for e in ETF_UNIVERSE}
+    etf_by_ticker = {e.primary_ticker: e for e in ETF_UNIVERSE}
+
+    if "selected_ticker" not in st.session_state:
+        st.session_state["selected_ticker"] = tickers[0]
+
+    selected = st.session_state["selected_ticker"]
+    if selected not in tickers:
+        selected = tickers[0]
+        st.session_state["selected_ticker"] = selected
+
+    # ── Panel 1: ticker selector pills ───────────────────────────────────
+    # Per-pill CSS: cluster-coloured dot + active (navy) / inactive (grey).
+    # Streamlit tags each keyed widget's container with `st-key-<key>`.
+    css_rules = [
+        'div[class*="st-key-pill_"] button {'
+        ' background: rgba(255,255,255,0.05) !important;'
+        ' border: 1px solid rgba(255,255,255,0.10) !important;'
+        ' color: #94a3b8 !important; border-radius: 18px !important;'
+        " font-family: 'Space Grotesk', sans-serif !important;"
+        ' font-size: 0.8rem !important; font-weight: 600 !important;'
+        ' padding: 0.3rem 0.4rem !important; box-shadow: none !important; }',
+        'div[class*="st-key-pill_"] button::before {'
+        ' content: ""; display: inline-block; width: 8px; height: 8px;'
+        ' border-radius: 50%; margin-right: 7px; vertical-align: middle; }',
+    ]
+    for t in tickers:
+        safe = t.replace(".", "_")
+        dot = CLUSTER_COLORS.get(cluster_by_ticker[t], "#888780")
+        css_rules.append(
+            f".st-key-pill_{safe} button::before {{ background: {dot} !important; }}"
+        )
+    active_safe = selected.replace(".", "_")
+    css_rules.append(
+        f".st-key-pill_{active_safe} button {{ background: #042C53 !important;"
+        f" color: #ffffff !important; border-color: #042C53 !important; }}"
+    )
+    st.markdown("<style>" + "\n".join(css_rules) + "</style>", unsafe_allow_html=True)
+
+    pill_cols = st.columns(len(tickers))
+    for col, t in zip(pill_cols, tickers):
+        with col:
+            safe = t.replace(".", "_")
+            if st.button(t, key=f"pill_{safe}", use_container_width=True):
+                st.session_state["selected_ticker"] = t
+                st.rerun()
+
+    selected = st.session_state["selected_ticker"]
+    meta = ETF_METADATA[selected]
+    etf = etf_by_ticker[selected]
+
+    # ── Panel 2 (Section 1): live price chart ────────────────────────────
+    _section_header("1", "Price chart")
+    rng = st.radio(
+        "range",
+        ["2h", "1d", "1w", "1m", "3m", "6m", "1y", "2y", "5y", "YTD"],
+        index=7,
+        horizontal=True,
+        label_visibility="collapsed",
+        key=f"etf_range_{selected}",
+    )
+
+    period_return: float | None = None
+    try:
+        raw = _fetch_price_history(selected)
+        close = _close_series(raw)
+        sliced = _slice_price_range(close, rng)
+        if len(sliced) >= 1:
+            up = float(sliced.iloc[-1]) >= float(sliced.iloc[0])
+            line_color = "#185FA5" if up else "#E24B4A"
+            fill_color = (
+                "rgba(24,95,165,0.07)" if up else "rgba(226,75,74,0.07)"
+            )
+            if len(sliced) >= 2:
+                period_return = (
+                    float(sliced.iloc[-1]) / float(sliced.iloc[0]) - 1.0
+                ) * 100.0
+
+            # Plot the FULL downloaded series, but open on the selected window.
+            # fixedrange=False keeps the rest reachable by zooming/panning out
+            # (the previous version plotted only the slice, so zoom-out showed
+            # empty space). The y-range is fitted to the window so the initial
+            # view stays well-scaled rather than flattened by the full history.
+            fig = go.Figure()
+            fig.add_trace(go.Scatter(
+                x=close.index, y=close.values,
+                mode="lines",
+                line=dict(color=line_color, width=2),
+                fill="tozeroy", fillcolor=fill_color,
+                name=selected,
+            ))
+            x_range = [sliced.index[0], close.index[-1]]
+            sv = sliced.astype(float)
+            y_lo, y_hi = float(sv.min()), float(sv.max())
+            y_pad = (y_hi - y_lo) * 0.08 or (abs(y_hi) * 0.02 or 1.0)
+            fig.update_layout(
+                margin=dict(l=0, r=0, t=8, b=0),
+                height=220,
+                plot_bgcolor="rgba(0,0,0,0)",
+                paper_bgcolor="rgba(0,0,0,0)",
+                showlegend=False,
+                hovermode="x",
+                xaxis=dict(
+                    showgrid=False, color="#64748b",
+                    range=x_range, fixedrange=False,
+                ),
+                yaxis=dict(
+                    side="right", showgrid=True,
+                    gridcolor="rgba(255,255,255,0.05)", color="#64748b",
+                    range=[y_lo - y_pad, y_hi + y_pad], fixedrange=False,
+                ),
+                modebar_remove=[
+                    "select2d", "lasso2d", "autoScale2d",
+                    "hoverClosestCartesian", "hoverCompareCartesian",
+                    "toggleSpikelines", "zoomIn2d", "zoomOut2d",
+                ],
+                modebar_add=["resetScale2d"],
+                dragmode="pan",
+            )
+            chart_config = {"displaylogo": False}
+            st.plotly_chart(
+                fig, use_container_width=True, config=chart_config,
+                key=f"etf_price_{selected}",
+            )
+        else:
+            st.caption(f"No price data available for {selected}.")
+    except Exception as exc:
+        st.caption(f"Price chart unavailable: {exc}")
+
+    pr_str = f"{period_return:+.2f}%" if period_return is not None else "—"
+    st.markdown(
+        f'<div style="font-size:0.8rem;color:#94a3b8;margin:0.25rem 0 0.5rem 0;">'
+        f'Period return: <span style="color:#f1f5f9;font-weight:600;">{pr_str}</span>'
+        f' &nbsp;|&nbsp; TER: <span style="color:#f1f5f9;font-weight:600;">'
+        f'{meta["ter"]}</span>'
+        f' &nbsp;|&nbsp; AUM: <span style="color:#f1f5f9;font-weight:600;">'
+        f'{meta["aum"]}</span></div>',
+        unsafe_allow_html=True,
+    )
+
+    _v_spacer(1.5)
+
+    # ── Panel 3 (Section 2): description card ────────────────────────────
+    _section_header("2", "What this ETF holds")
+    stats_rows = "".join(
+        f'<div style="display:flex;justify-content:space-between;gap:1rem;'
+        f'padding:0.4rem 0;border-bottom:1px solid rgba(255,255,255,0.05);">'
+        f'<span style="font-size:0.78rem;color:#64748b;">{k}</span>'
+        f'<span style="font-size:0.78rem;color:#e2e8f0;font-weight:600;">{v}</span>'
+        f'</div>'
+        for k, v in meta["key_stats"].items()
+    )
+    ucits_tag = "UCITS-eligible" if etf.is_ucits else "US-listed (non-UCITS)"
+    st.markdown(
+        f'<div style="background:rgba(124,92,252,0.05);'
+        f'border:1px solid rgba(124,92,252,0.18);border-radius:12px;'
+        f'padding:1.1rem 1.25rem;">'
+        f'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:1.05rem;'
+        f'font-weight:700;color:#f1f5f9;">{meta["full_name"]}</div>'
+        f'<div style="font-size:0.74rem;color:#64748b;margin:0.3rem 0 0.85rem 0;">'
+        f'{meta["issuer"]} &middot; {meta["category"]} &middot; '
+        f'Inception {meta["inception"]} &middot; {meta["distribution"]} &middot; '
+        f'{etf.currency} &middot; {ucits_tag}</div>'
+        f'<div style="font-size:0.84rem;color:#cbd5e1;line-height:1.6;'
+        f'margin-bottom:0.6rem;">{meta["description"]}</div>'
+        f'<div style="font-size:0.8rem;color:#7c8aa0;font-style:italic;'
+        f'line-height:1.55;margin-bottom:1rem;">Universe rationale: '
+        f'{etf.rationale}</div>'
+        f'<div style="display:grid;grid-template-columns:1fr 1fr;'
+        f'gap:0 1.5rem;">{stats_rows}</div>'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
+
+    _v_spacer(1.5)
+
+    # ── Panel 4 (Section 3): financial data ──────────────────────────────
+    _section_header("3", "Financial data")
+
+    # (a) Morningstar & ESG ----------------------------------------------
+    st.markdown(
+        '<div style="font-size:0.8rem;font-weight:700;letter-spacing:0.06em;'
+        'text-transform:uppercase;color:#a78bfa;margin-bottom:0.5rem;">'
+        'Morningstar &amp; ESG</div>',
+        unsafe_allow_html=True,
+    )
+    ms = meta["morningstar"]
+    esg = meta["esg"]
+    esg_rating = esg["risk"]
+    ms_html = (
+        f'<span style="color:#BA7517;">{"★" * ms}</span>'
+        f'<span style="color:#475569;">{"☆" * (5 - ms)}</span>'
+    )
+    esg_html = (
+        f'<span style="color:#0F6E56;">{"●" * esg_rating}</span>'
+        f'<span style="color:#475569;">{"○" * (5 - esg_rating)}</span>'
+    )
+    rc1, rc2 = st.columns(2)
+    with rc1:
+        st.markdown(
+            f'<div style="font-size:0.72rem;color:#64748b;'
+            f'margin-bottom:0.2rem;">Morningstar rating</div>'
+            f'<div style="font-size:1.3rem;letter-spacing:2px;">{ms_html}</div>',
+            unsafe_allow_html=True,
+        )
+    with rc2:
+        st.markdown(
+            f'<div style="font-size:0.72rem;color:#64748b;'
+            f'margin-bottom:0.2rem;">ESG globe rating</div>'
+            f'<div style="font-size:1.3rem;letter-spacing:2px;">{esg_html}</div>',
+            unsafe_allow_html=True,
+        )
+    eg1, eg2, eg3 = st.columns(3)
+    eg1.metric("Environmental", f'{esg["environmental"]}/10')
+    eg2.metric("Social", f'{esg["social"]}/10')
+    eg3.metric("Governance", f'{esg["governance"]}/10')
+
+    st.divider()
+
+    # (b) Analyst consensus ----------------------------------------------
+    st.markdown(
+        '<div style="font-size:0.8rem;font-weight:700;letter-spacing:0.06em;'
+        'text-transform:uppercase;color:#a78bfa;margin-bottom:0.5rem;">'
+        'Analyst consensus</div>',
+        unsafe_allow_html=True,
+    )
+    an = meta["analyst"]
+    ac1, ac2, ac3 = st.columns(3)
+    ac1.metric("Buy", f'{an["buy"]}%')
+    ac2.metric("Hold", f'{an["hold"]}%')
+    ac3.metric("Sell", f'{an["sell"]}%')
+    st.markdown(
+        f'<div style="width:100%;border-radius:5px;overflow:hidden;'
+        f'margin:0.4rem 0 0.3rem 0;font-size:0;">'
+        f'<span style="display:inline-block;height:8px;width:{an["buy"]}%;'
+        f'background:#0F6E56;"></span>'
+        f'<span style="display:inline-block;height:8px;width:{an["hold"]}%;'
+        f'background:#BA7517;"></span>'
+        f'<span style="display:inline-block;height:8px;width:{an["sell"]}%;'
+        f'background:#E24B4A;"></span>'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
+    st.caption("Based on underlying holdings consensus estimates.")
+
+    st.divider()
+
+    # (c) Key financials table -------------------------------------------
+    st.markdown(
+        '<div style="font-size:0.8rem;font-weight:700;letter-spacing:0.06em;'
+        'text-transform:uppercase;color:#a78bfa;margin-bottom:0.5rem;">'
+        'Key financials</div>',
+        unsafe_allow_html=True,
+    )
+    fin_rows = [
+        {
+            "Metric": f["label"],
+            "Value": f["value"],
+        }
+        for f in meta["financials"]
+    ]
+    st.dataframe(
+        pd.DataFrame(fin_rows),
+        hide_index=True,
+        use_container_width=True,
+    )
+
+
+def _render_hrp_tab(portfolio: dict) -> None:
     weights: dict[str, float] = portfolio["weights"]
     risk_contributions: dict[str, float] = portfolio["risk_contributions"]
-    ucits_used: list[str] = portfolio.get("ucits_tickers_used", [])
     vol: float = portfolio.get("expected_volatility", 0.0)
     exp_ret = portfolio.get("expected_return")
-    sharpe = portfolio.get("sharpe_ratio")
     max_dd = portfolio.get("max_drawdown")
+    sharpe = portfolio.get("sharpe_ratio")
 
-    # ── Cluster breakdown pills ──────────────────────────────────────────────
+    profile_label: str = (
+        st.session_state.get("profile", {}).get("profile_label", "MODERATE").upper()
+    )
+
+    # ── KPI Cards ──────────────────────────────────────────────────────────
+    _kpi_cards([
+        {
+            "label": "Expected Return",
+            "value": f"{exp_ret:.1%}" if exp_ret is not None else "—",
+            "accent": "#0dcfb0", "bg": "rgba(13,207,176,0.13)",
+            "icon": '<polyline points="2,13 7,8 11,11 16,4"/>'
+                    '<polyline points="12,4 16,4 16,8"/>',
+            "hint": "Annualised estimate",
+        },
+        {
+            "label": "Volatility",
+            "value": f"{vol:.1%}",
+            "accent": "#f59e0b", "bg": "rgba(245,158,11,0.13)",
+            "icon": '<polyline points="2,9 5,9 7,3 11,15 13,9 16,9"/>',
+            "hint": "Annualised std. dev.",
+        },
+        {
+            "label": "Sharpe Ratio",
+            "value": f"{sharpe:.2f}" if sharpe is not None else "—",
+            "accent": "#7c5cfc", "bg": "rgba(124,92,252,0.13)",
+            "icon": '<polygon points="9,2 4,10 8,10 7,16 13,8 9,8"/>',
+            "hint": "Return per unit of risk",
+        },
+        {
+            "label": "Max Drawdown",
+            "value": f"{max_dd:.1%}" if max_dd is not None else "—",
+            "accent": "#f87171", "bg": "rgba(248,113,113,0.13)",
+            "icon": '<polyline points="2,4 7,9 11,6 16,13"/>'
+                    '<polyline points="12,13 16,13 16,9"/>',
+            "hint": "Worst peak-to-trough",
+        },
+    ])
+
+    _v_spacer(2.5)
+
+    # ── Section 1: Historical Resilience ───────────────────────────────────
+    _section_header("1", "Historical Resilience")
+    _section_desc(
+        "How the HRP strategy weathered three historical stress periods — the maximum "
+        "peak-to-trough loss in each, compared against the Mean-Variance benchmark. "
+        "These are real walk-forward backtest results; the full equity curves and "
+        "strategy comparison live on the Backtesting page."
+    )
+    _render_resilience_strip(profile_label)
+
+    _v_spacer(2.5)
+
+    # ── Section 2: Portfolio Allocation ────────────────────────────────────
+    _section_header("2", "Portfolio Allocation")
+    _section_desc(
+        "The chart below shows how capital is distributed across the portfolio's assets. "
+        "HRP balances risk — not capital — so assets with higher historical volatility "
+        "receive a proportionally smaller weight. This spreads risk contributions evenly "
+        "across equities, fixed income, commodities, and cash-equivalent positions."
+    )
+
+    # Cluster allocation pills — asset-class breakdown of the current portfolio
     cluster_totals: dict[str, float] = {}
     for ticker, w in weights.items():
         cl = _HRP_TICKER_CLUSTER.get(ticker, "Other")
         cluster_totals[cl] = cluster_totals.get(cl, 0.0) + w
 
+    st.markdown(
+        '<div style="font-size:0.72rem;font-weight:600;letter-spacing:0.1em;'
+        'text-transform:uppercase;color:#64748b;margin-bottom:0.5rem;">'
+        'Current allocation by asset class</div>',
+        unsafe_allow_html=True,
+    )
     pills_html = '<div style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-bottom:1.25rem;">'
     for cl in ["Equity", "Bonds", "Alternatives", "Cash"]:
         pct = cluster_totals.get(cl, 0.0)
@@ -930,145 +2611,632 @@ def _render_hrp_tab(portfolio: dict) -> None:
     pills_html += "</div>"
     st.markdown(pills_html, unsafe_allow_html=True)
 
-    # ── Key metrics row ──────────────────────────────────────────────────────
-    metrics = [("Annual Volatility", f"{vol:.1%}")]
-    if exp_ret is not None:
-        metrics.append(("Exp. Return (hist.)", f"{exp_ret:.1%}"))
-    if sharpe is not None:
-        metrics.append(("Sharpe Ratio", f"{sharpe:.2f}"))
-    if max_dd is not None:
-        metrics.append(("Max Drawdown (hist.)", f"{max_dd:.1%}"))
-
-    m_cols = st.columns(len(metrics))
-    for col, (label, value) in zip(m_cols, metrics):
-        col.metric(label, value)
-
-    st.markdown("---")
-
-    # ── Donut chart + weights table ──────────────────────────────────────────
-    col_donut, col_table = st.columns([1, 1.1])
+    col_donut, col_table = st.columns([1.05, 1], gap="large")
 
     with col_donut:
-        st.markdown("**Portfolio Allocation**")
         try:
             from backend.optimizer.charts import plot_weights_donut
             fig_donut = plot_weights_donut(weights)
             fig_donut = apply_plotly_dark_theme(fig_donut)
+            # Re-assert the donut's own layout: apply_plotly_dark_theme()
+            # overwrites margin (and would clip the bottom colour legend) and
+            # the layout font. The per-slice textfont set in charts.py is not
+            # touched, so the white in-slice labels survive.
             fig_donut.update_layout(
-                title={"text": ""},
-                paper_bgcolor="rgba(0,0,0,0)",
-                plot_bgcolor="rgba(0,0,0,0)",
+                height=360,
+                margin=dict(l=10, r=10, t=12, b=38),
             )
-            st.plotly_chart(fig_donut, use_container_width=True)
+            st.plotly_chart(
+                fig_donut,
+                use_container_width=True,
+                config={"displaylogo": False, "responsive": False},
+                key="hrp_allocation_donut",
+            )
         except Exception as exc:
-            st.caption(f"Chart unavailable: {exc}")
+            st.caption(f"Allocation chart unavailable: {exc}")
 
     with col_table:
-        st.markdown("**Portfolio Weights**")
-        ucits_set = set(ucits_used) | _UCITS_TICKERS
-        rows = []
-        for ticker, w in sorted(weights.items(), key=lambda kv: -kv[1]):
-            rows.append({
-                "Ticker": ticker,
-                "Weight": w,
-                "UCITS": "EU ✓" if ticker in ucits_set else "—",
-            })
-        df = pd.DataFrame(rows)
-        st.dataframe(
-            df,
-            hide_index=True,
-            use_container_width=True,
-            column_config={
-                "Weight": st.column_config.ProgressColumn(
-                    "Weight", format="%.1f%%", min_value=0, max_value=1,
-                ),
-            },
+        _render_allocation_table(weights, risk_contributions)
+
+    with st.expander("What do these tickers mean?"):
+        _render_etf_explorer()
+
+    _v_spacer(2.5)
+
+    # ── Section 3: Risk Contributions ──────────────────────────────────────
+    _section_header("3", "Risk Contributions")
+    _section_desc(
+        "Each bar shows the percentage of total portfolio risk attributed to that asset. "
+        "HRP targets an even spread of risk across positions — no single asset should "
+        "dominate the overall volatility budget."
+    )
+
+    try:
+        from backend.optimizer.charts import plot_risk_contributions
+        fig_risk = plot_risk_contributions(
+            risk_contributions,
+            profile_label=profile_label,
+        )
+        fig_risk = apply_plotly_dark_theme(fig_risk)
+        # The "Risk Contributions" section header above already titles this chart
+        # (outside the dark plot background), so drop the duplicate in-figure title.
+        fig_risk.update_layout(title_text="")
+        st.plotly_chart(fig_risk, use_container_width=True, config={"displaylogo": False})
+    except Exception as exc:
+        st.caption(f"Risk contribution chart unavailable: {exc}")
+
+    _v_spacer(2.5)
+
+    # ── Section 4: How your money is grouped ───────────────────────────────
+    _section_header("4", "How your money is grouped")
+    _section_desc(
+        "Before deciding the weights, HRP sorts the assets into four families that "
+        "tend to behave alike. It then balances risk inside each family and across "
+        "them. For each family you can see its share of the portfolio, how "
+        "diversified it is, and how much it tends to move."
+    )
+
+    _render_cluster_view(portfolio, weights)
+
+    st.caption(
+        "“Diversification” reflects how closely the assets in a family move together — "
+        "well-diversified families spread risk better. “Risk level” reflects how much "
+        "the family tends to swing. The small ρ and vol figures are the underlying "
+        "technical values for the curious."
+    )
+
+
+
+# ---------------------------------------------------------------------------
+# Chat Advisor helpers
+# ---------------------------------------------------------------------------
+
+# Scoped CSS for the native chat (st.chat_message / st.chat_input).
+# Aligned with the app-wide design tokens defined in frontend/style.py.
+_CHAT_CSS = """
+<style>
+/* ── Chat container ──────────────────────────────────────────────────────── */
+.ca-page {
+    margin-top: -0.3rem;
+}
+
+/* ── Status strip: model + validator + active profile ───────────────────── */
+.ca-status {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+.ca-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    background: rgba(10,15,30,0.7);
+    border: 1px solid #1e2640;
+    border-radius: 999px;
+    padding: 0.32rem 0.85rem;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.74rem;
+    font-weight: 500;
+    color: #94a3b8;
+    letter-spacing: 0.02em;
+}
+.ca-pill .ca-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+.ca-pill--profile {
+    color: #a78bfa;
+    border-color: rgba(124,92,252,0.32);
+    background: rgba(124,92,252,0.1);
+}
+.ca-pill--profile .ca-dot {
+    background: #7c5cfc;
+    box-shadow: 0 0 0 3px rgba(124,92,252,0.18);
+}
+.ca-pill--model {
+    color: #93c5fd;
+    border-color: rgba(59,130,246,0.30);
+    background: rgba(59,130,246,0.08);
+}
+.ca-pill--model .ca-dot   { background: #3b82f6; }
+.ca-pill--guard {
+    color: #5eead4;
+    border-color: rgba(13,207,176,0.30);
+    background: rgba(13,207,176,0.08);
+}
+.ca-pill--guard .ca-dot {
+    background: #0dcfb0;
+    box-shadow: 0 0 0 3px rgba(13,207,176,0.15);
+}
+
+/* ── Chat shell ──────────────────────────────────────────────────────────── */
+.ca-shell {
+    background: #0f1628;
+    border: 1px solid #1e2640;
+    border-radius: 14px;
+    overflow: hidden;
+}
+.ca-shell-head {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.85rem 1.1rem;
+    background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 55%, #0d1220 100%);
+    border-bottom: 1px solid #1e2640;
+}
+.ca-shell-head-icon {
+    width: 2rem;
+    height: 2rem;
+    background: rgba(124,92,252,0.15);
+    border: 1px solid rgba(124,92,252,0.3);
+    border-radius: 9px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.95rem;
+    flex-shrink: 0;
+}
+.ca-shell-head-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #f1f5f9;
+    line-height: 1.2;
+}
+.ca-shell-head-sub {
+    font-size: 0.72rem;
+    color: #64748b;
+    letter-spacing: 0.02em;
+    margin-top: 0.1rem;
+}
+
+/* ── Empty state hero ────────────────────────────────────────────────────── */
+.ca-hero {
+    text-align: center;
+    padding: 2.25rem 1.5rem 1rem;
+}
+.ca-hero-orb {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: radial-gradient(
+        circle at 35% 30%,
+        rgba(167,139,250,0.55) 0%,
+        rgba(124,92,252,0.15) 60%,
+        transparent 100%
+    );
+    border: 1px solid rgba(124,92,252,0.4);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 0.85rem;
+    font-size: 1.55rem;
+    box-shadow: 0 0 32px rgba(124,92,252,0.18);
+}
+.ca-hero-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #f1f5f9;
+    letter-spacing: -0.01em;
+    margin-bottom: 0.4rem;
+}
+.ca-hero-sub {
+    font-size: 0.87rem;
+    color: #64748b;
+    max-width: 420px;
+    margin: 0 auto;
+    line-height: 1.6;
+}
+.ca-hero-eyebrow {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.62rem;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #475569;
+    margin: 1.5rem 0 0.6rem;
+}
+
+/* ── Suggestion chips (st.button cards) ─────────────────────────────────── */
+.ca-suggest {
+    padding: 0 1.1rem 1.4rem;
+}
+.ca-suggest .stButton > button {
+    background: rgba(15,22,40,0.7) !important;
+    border: 1px solid #1e2640 !important;
+    border-left: 3px solid rgba(124,92,252,0.3) !important;
+    border-radius: 10px !important;
+    color: #cbd5e1 !important;
+    font-family: 'DM Sans', sans-serif !important;
+    font-size: 0.85rem !important;
+    font-weight: 500 !important;
+    text-align: left !important;
+    white-space: normal !important;
+    line-height: 1.4 !important;
+    min-height: 3.5rem !important;
+    padding: 0.85rem 1rem !important;
+    transition: border-color 0.18s ease, background 0.18s ease,
+                color 0.18s ease, transform 0.18s ease !important;
+}
+.ca-suggest .stButton > button:hover {
+    border-color: rgba(124,92,252,0.55) !important;
+    border-left-color: #7c5cfc !important;
+    background: rgba(124,92,252,0.1) !important;
+    color: #e9d5ff !important;
+    transform: translateY(-1px) !important;
+}
+.ca-suggest .stButton > button p { text-align: left !important; }
+
+/* ── Conversation thread ─────────────────────────────────────────────────── */
+.ca-thread { padding: 1.1rem 1.1rem 0.35rem; }
+
+[data-testid="stChatMessage"] {
+    background: transparent !important;
+    border: none !important;
+    padding: 0.35rem 0 !important;
+    margin-bottom: 0.85rem !important;
+    animation: ca-fade 0.28s ease-out;
+    width: 100% !important;
+    max-width: 100% !important;
+}
+@keyframes ca-fade {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+/* Hide avatar column entirely — distinction is colour-only */
+[data-testid="stChatMessageAvatarUser"],
+[data-testid="stChatMessageAvatarAssistant"],
+[data-testid="stChatMessageAvatarCustom"] {
+    display: none !important;
+}
+
+/* Message bubbles — full width, no avatar gap */
+[data-testid="stChatMessage"] [data-testid="stChatMessageContent"] {
+    background: #131c30 !important;
+    border: 1px solid #1e2640 !important;
+    border-left: 3px solid #1e2640 !important;
+    border-radius: 10px !important;
+    padding: 0.75rem 1.05rem !important;
+    box-shadow: 0 1px 0 rgba(0,0,0,0.15);
+    width: 100% !important;
+    box-sizing: border-box !important;
+    overflow-wrap: break-word !important;
+    word-break: break-word !important;
+}
+/* User message: purple left-border accent (same pattern as selected options) */
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"])
+[data-testid="stChatMessageContent"] {
+    background: rgba(124,92,252,0.08) !important;
+    border-color: rgba(124,92,252,0.22) !important;
+    border-left-color: #7c5cfc !important;
+}
+[data-testid="stChatMessage"] p {
+    font-family: 'DM Sans', sans-serif !important;
+    font-size: 0.9rem !important;
+    line-height: 1.65 !important;
+    color: #cbd5e1 !important;
+    margin-bottom: 0.5rem !important;
+    text-align: justify !important;
+}
+[data-testid="stChatMessage"] p:last-child { margin-bottom: 0 !important; }
+[data-testid="stChatMessage"] h1,
+[data-testid="stChatMessage"] h2,
+[data-testid="stChatMessage"] h3 {
+    font-family: 'Space Grotesk', sans-serif !important;
+    color: #e2e8f0 !important;
+    font-size: 0.95rem !important;
+    margin: 0.4rem 0 0.3rem !important;
+}
+[data-testid="stChatMessage"] strong { color: #e9d5ff !important; }
+[data-testid="stChatMessage"] code {
+    background: rgba(124,92,252,0.12) !important;
+    color: #c4b5fd !important;
+    padding: 0.05rem 0.35rem !important;
+    border-radius: 4px !important;
+    font-size: 0.84rem !important;
+}
+[data-testid="stChatMessage"] table {
+    border-collapse: collapse !important;
+    margin: 0.3rem 0 !important;
+}
+[data-testid="stChatMessage"] th,
+[data-testid="stChatMessage"] td {
+    border: 1px solid #1e2640 !important;
+    padding: 0.35rem 0.7rem !important;
+    font-size: 0.83rem !important;
+    color: #94a3b8 !important;
+}
+[data-testid="stChatMessage"] th {
+    background: rgba(124,92,252,0.08) !important;
+    color: #a78bfa !important;
+    font-family: 'Space Grotesk', sans-serif !important;
+    font-weight: 600 !important;
+}
+
+/* ── Chat input ──────────────────────────────────────────────────────────── */
+[data-testid="stChatInput"] {
+    background: transparent !important;
+    border-top: 1px solid #1e2640 !important;
+    padding-top: 0.6rem !important;
+}
+[data-testid="stChatInput"] > div {
+    background: #0d1220 !important;
+    border: 1px solid #1e2640 !important;
+    border-radius: 12px !important;
+    transition: border-color 0.15s ease !important;
+}
+[data-testid="stChatInput"] > div:focus-within {
+    border-color: rgba(124,92,252,0.55) !important;
+    box-shadow: 0 0 0 3px rgba(124,92,252,0.12) !important;
+}
+[data-testid="stChatInput"] textarea {
+    background: transparent !important;
+    color: #e2e8f0 !important;
+    font-family: 'DM Sans', sans-serif !important;
+    font-size: 0.9rem !important;
+    line-height: 1.55 !important;
+}
+[data-testid="stChatInput"] textarea::placeholder { color: #64748b !important; }
+[data-testid="stChatInput"] button {
+    background: rgba(124,92,252,0.18) !important;
+    border: 1px solid rgba(124,92,252,0.35) !important;
+    border-radius: 9px !important;
+    color: #c4b5fd !important;
+}
+[data-testid="stChatInput"] button:hover {
+    background: rgba(124,92,252,0.3) !important;
+    border-color: #7c5cfc !important;
+}
+
+/* ── Clear chat link button (small, ghost) ──────────────────────────────── */
+.ca-clear .stButton > button {
+    background: transparent !important;
+    border: 1px solid #1e2640 !important;
+    color: #64748b !important;
+    font-family: 'DM Sans', sans-serif !important;
+    font-size: 0.74rem !important;
+    font-weight: 500 !important;
+    padding: 0.3rem 0.75rem !important;
+    border-radius: 7px !important;
+    min-height: 1.9rem !important;
+    height: 1.9rem !important;
+    transition: color 0.15s ease, border-color 0.15s ease !important;
+}
+.ca-clear .stButton > button:hover {
+    border-color: rgba(248,113,113,0.45) !important;
+    color: #fca5a5 !important;
+}
+
+/* ── Info side card ──────────────────────────────────────────────────────── */
+.ca-info {
+    background: #0f1628;
+    border: 1px solid #1e2640;
+    border-radius: 14px;
+    overflow: hidden;
+}
+.ca-info-head {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.85rem 1.05rem;
+    background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 55%, #0d1220 100%);
+    border-bottom: 1px solid #1e2640;
+}
+.ca-info-head-num {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #a78bfa;
+    background: rgba(124,92,252,0.18);
+    border: 1px solid rgba(124,92,252,0.3);
+    border-radius: 6px;
+    min-width: 1.85rem;
+    height: 1.85rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.ca-info-head-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: #f1f5f9;
+}
+.ca-info-body { padding: 1rem 1.1rem 1.1rem; }
+.ca-info-section-label {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.62rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #475569;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+.ca-info-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.45rem 0;
+}
+.ca-info-row + .ca-info-row { border-top: 1px dashed #1a2236; }
+.ca-info-row span.label {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.82rem;
+    color: #cbd5e1;
+}
+.ca-info-divider { margin: 0.9rem 0 0.6rem; border-top: 1px solid #1a2236; }
+
+.ca-info-footer {
+    margin-top: 0.85rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid #1a2236;
+    font-size: 0.72rem;
+    color: #64748b;
+    line-height: 1.55;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.55rem;
+}
+.ca-info-footer svg { flex-shrink: 0; margin-top: 0.12rem; }
+
+/* ── Pipeline strip inside info card ─────────────────────────────────────── */
+.ca-pipeline {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+    margin-top: 0.4rem;
+}
+.ca-pipeline-step {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.67rem;
+    letter-spacing: 0.03em;
+    color: #94a3b8;
+    background: rgba(15,22,40,0.7);
+    border: 1px solid #1e2640;
+    border-radius: 6px;
+    padding: 0.22rem 0.5rem;
+}
+.ca-pipeline-arrow { color: #475569; font-size: 0.75rem; }
+</style>
+"""
+
+# No custom avatars — user vs assistant distinction is conveyed by CSS color.
+_CHAT_AVATARS: dict[str, None] = {"assistant": None, "user": None}
+
+# Example prompts shown in the empty state.
+_CHAT_SUGGESTIONS: list[str] = [
+    "Why is my bond allocation high?",
+    "Explain my risk profile",
+    "What is the EU investor caveat?",
+]
+
+
+def _chat_get_reply(text: str, raw_label: str, profile_key: str) -> str:
+    """
+    Produce a validated advisor reply for a user message.
+
+    Runs the deployed pipeline directly (no FastAPI hop, which does not exist on
+    Streamlit Cloud): input sanitiser -> NarratorClient -> 5-step validator.
+    Never raises — returns a user-facing string for every failure mode.
+    """
+    from backend.llm.input_sanitiser import sanitise
+    from backend.llm.narrator import NarratorError
+
+    san = sanitise(text)
+    if san.blocked:
+        return (
+            "Your question could not be processed — it looked like an unsafe "
+            "instruction. Please rephrase it."
         )
 
-    # ── Risk contribution bar chart — colored by cluster ─────────────────────
-    tickers_sorted = sorted(
-        risk_contributions.keys(),
-        key=lambda t: risk_contributions[t],
-    )
-    bar_colors = [
-        _HRP_CLUSTER_COLOR.get(_HRP_TICKER_CLUSTER.get(t, ""), "#64748b")
-        for t in tickers_sorted
-    ]
-    rc_values = [risk_contributions[t] * 100 for t in tickers_sorted]
-    equal_risk = 100.0 / len(tickers_sorted) if tickers_sorted else 0
-
-    fig_rc = go.Figure()
-    fig_rc.add_trace(go.Bar(
-        x=rc_values,
-        y=tickers_sorted,
-        orientation="h",
-        marker=dict(
-            color=bar_colors,
-            line=dict(color="#0d1220", width=1),
-        ),
-        text=[f"{v:.1f}%" for v in rc_values],
-        textposition="outside",
-        hovertemplate="%{y}: %{x:.1f}%<extra></extra>",
-    ))
-    fig_rc.add_vline(
-        x=equal_risk,
-        line_dash="dot",
-        line_color="#475569",
-        line_width=1.5,
-        annotation_text="1/N",
-        annotation_font_color="#475569",
-        annotation_font_size=10,
-    )
-
-    profile_str = st.session_state.get("profile", {}).get("profile_label", "")
-    fig_rc.update_layout(
-        title=f"Risk Contributions — {profile_str}" if profile_str else "Risk Contributions",
-        xaxis_title="Risk Contribution (%)",
-        xaxis=dict(range=[0, max(rc_values) * 1.25]),
-        height=380,
-        margin=dict(l=8, r=40, t=50, b=40),
-    )
-    fig_rc = apply_plotly_dark_theme(fig_rc)
-    fig_rc.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
-    st.plotly_chart(fig_rc, use_container_width=True)
-
-    # --- Dendrogram ---
     try:
-        from scipy.cluster.hierarchy import linkage
-        from scipy.spatial.distance import squareform
+        narrator = NarratorClient()
+    except NarratorError:
+        return (
+            "⚠️ The chat advisor is not configured: no `ANTHROPIC_API_KEY` was "
+            "found. Add it under **Manage app → Settings → Secrets** on Streamlit "
+            "Cloud, or in a local `.streamlit/secrets.toml`, then reload the page."
+        )
 
-        from backend.optimizer.charts import plot_dendrogram
+    payload = get_mock_payload(profile_key)
+    nresp = narrator.narrate(payload, san.sanitised_input)
 
-        tickers_list = list(weights.keys())
-        n = len(tickers_list)
+    if nresp.injection_blocked:
+        return "Your question could not be processed. Please rephrase it."
+    if nresp.api_error:
+        return (
+            "I could not reach the advisor right now. Please try again in a moment."
+        )
 
-        _CLUSTER_GROUPS = {
-            "CSPX.L": 0, "EFA": 0,
-            "GLD": 1, "VNQ": 1,
-            "AGGH.MI": 2, "TLT": 2, "TIP": 2,
-            "XEON.MI": 3,
-        }
-        corr = np.eye(n)
-        for i in range(n):
-            for j in range(n):
-                if i != j:
-                    ci = _CLUSTER_GROUPS.get(tickers_list[i], -1)
-                    cj = _CLUSTER_GROUPS.get(tickers_list[j], -1)
-                    corr[i, j] = 0.70 if ci == cj else 0.10
+    result = validate(
+        response_text=nresp.raw_text,
+        allowed_numbers=payload.llm_constraints.allowed_numbers,
+        forbidden_phrases=payload.llm_constraints.forbidden_phrases,
+        eu_awareness_required=payload.regulatory_context.profiler_us_centric_caveat,
+    )
+    return result.safe_text
 
-        dist = np.sqrt(0.5 * (1 - corr))
-        np.fill_diagonal(dist, 0.0)
-        condensed = squareform(dist, checks=False)
-        link = linkage(condensed, method="ward")
 
-        st.markdown("**Cluster Structure (Dendrogram)**")
-        fig_dend = plot_dendrogram(link, tickers_list)
-        fig_dend = apply_plotly_dark_theme(fig_dend)
-        fig_dend.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
-        st.plotly_chart(fig_dend, use_container_width=True)
+def _render_chat_info_panel() -> None:
+    """Right-hand panel: scope of the advisor + safety pipeline."""
+    chk = (
+        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" '
+        'stroke="#0dcfb0" stroke-width="2.5" stroke-linecap="round" '
+        'stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>'
+    )
+    xmk = (
+        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" '
+        'stroke="#f87171" stroke-width="2.5" stroke-linecap="round" '
+        'stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/>'
+        '<line x1="6" y1="6" x2="18" y2="18"/></svg>'
+    )
+    shield = (
+        '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" '
+        'stroke="#7c5cfc" stroke-width="2" stroke-linecap="round" '
+        'stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>'
+        '<polyline points="9 12 11 14 15 10"/></svg>'
+    )
 
-    except Exception as exc:
-        st.caption(f"Dendrogram unavailable: {exc}")
+    can_items = [
+        "Portfolio weights",
+        "Risk clusters",
+        "Historical drawdowns",
+        "EU / UCITS caveats",
+    ]
+    cant_items = [
+        "Buy / sell recommendations",
+        "Future return predictions",
+    ]
+    can_rows = "".join(
+        f'<div class="ca-info-row">{chk}<span class="label">{x}</span></div>'
+        for x in can_items
+    )
+    cant_rows = "".join(
+        f'<div class="ca-info-row">{xmk}<span class="label">{x}</span></div>'
+        for x in cant_items
+    )
+
+    pipeline = (
+        '<div class="ca-pipeline">'
+        '<span class="ca-pipeline-step">Sanitise</span>'
+        '<span class="ca-pipeline-arrow">›</span>'
+        '<span class="ca-pipeline-step">Narrate</span>'
+        '<span class="ca-pipeline-arrow">›</span>'
+        '<span class="ca-pipeline-step">Validate</span>'
+        '</div>'
+    )
+
+    st.markdown(
+        '<div class="ca-info">'
+        '<div class="ca-info-head">'
+        '<span class="ca-info-head-num">i</span>'
+        '<span class="ca-info-head-title">Advisor scope</span>'
+        '</div>'
+        '<div class="ca-info-body">'
+        '<div class="ca-info-section-label">Can explain</div>'
+        f'{can_rows}'
+        '<div class="ca-info-divider"></div>'
+        '<div class="ca-info-section-label">Cannot do</div>'
+        f'{cant_rows}'
+        '<div class="ca-info-divider"></div>'
+        '<div class="ca-info-section-label">Safety pipeline</div>'
+        f'{pipeline}'
+        '<div class="ca-info-footer">'
+        f'{shield}'
+        '<span>All responses are grounded in approved data and pass a '
+        '5-step safety validator before display.</span>'
+        '</div>'
+        '</div>'
+        '</div>',
+        unsafe_allow_html=True,
+    )
 
 
 def _render_mv_tab(portfolio: dict, profile_key: str) -> None:
@@ -1079,13 +3247,10 @@ def _render_mv_tab(portfolio: dict, profile_key: str) -> None:
     Phase A: uses mock MV weights + synthetic frontier for illustration.
     Phase B: runs optimize_markowitz() on live prices for real comparison.
     """
+    from backend.optimizer.charts import plot_efficient_frontier
+
     st.subheader("Markowitz Mean-Variance — Benchmark Comparison")
 
-    from backend.optimizer.charts import (
-        plot_efficient_frontier,
-    )
-
-    # ── Try to run live MV optimizer (Phase B) ────────────────────────────
     mv_weights: dict[str, float] | None = None
     mv_vol: float | None = None
     mv_ret: float | None = None
@@ -1094,7 +3259,7 @@ def _render_mv_tab(portfolio: dict, profile_key: str) -> None:
     if portfolio.get("source") == "live":
         try:
             from datetime import date
-            
+
             from backend.data.loader import ValidatedDataLoader
             from backend.data.universe_config import get_primary_tickers
             from backend.optimizer.markowitz import optimize_markowitz
@@ -1114,16 +3279,11 @@ def _render_mv_tab(portfolio: dict, profile_key: str) -> None:
         except Exception as exc:
             st.caption(f"Live MV optimizer unavailable: {exc}. Showing mock comparison.")
 
-    # ── Phase A fallback: use approximate MV mock weights ─────────────────
     if mv_weights is None:
-        # Approximate Max-Sharpe MV weights for illustration
-        # (concentrated in high-Sharpe assets — typical MV corner solution)
         hrp_w = portfolio.get("weights", {})
         mv_weights = {t: 0.0 for t in hrp_w}
-        # MV typically over-weights bonds and under-weights alternatives
         if hrp_w:
             tickers_list = list(hrp_w.keys())
-            # Simple illustration: shift weight toward safe_haven assets
             for t in tickers_list:
                 if t in {"AGGH.MI", "TLT", "TIP"}:
                     mv_weights[t] = min(0.40, hrp_w.get(t, 0.10) * 1.8)
@@ -1133,11 +3293,10 @@ def _render_mv_tab(portfolio: dict, profile_key: str) -> None:
                     mv_weights[t] = hrp_w.get(t, 0.10)
             total = sum(mv_weights.values()) or 1.0
             mv_weights = {t: round(w / total, 4) for t, w in mv_weights.items()}
-        mv_vol = portfolio.get("expected_volatility", 0.08) * 0.92  # MV typically lower vol
-        mv_ret = None   # not estimated in Phase A
+        mv_vol = portfolio.get("expected_volatility", 0.08) * 0.92
+        mv_ret = None
         mv_sharpe = None
 
-    # ── Metrics comparison row ────────────────────────────────────────────
     hrp_vol = portfolio.get("expected_volatility", 0.0)
     hrp_ret = portfolio.get("expected_return")
     hrp_sharpe = portfolio.get("sharpe_ratio")
@@ -1167,12 +3326,9 @@ def _render_mv_tab(portfolio: dict, profile_key: str) -> None:
 
     st.markdown("---")
 
-    # ── Side-by-side weights table ────────────────────────────────────────
     st.markdown("**Weight Comparison — HRP vs Markowitz**")
-
     hrp_weights = portfolio.get("weights", {})
     tickers_sorted = sorted(hrp_weights.keys(), key=lambda t: -hrp_weights.get(t, 0))
-
     comparison_rows = []
     for ticker in tickers_sorted:
         h = hrp_weights.get(ticker, 0.0)
@@ -1184,12 +3340,7 @@ def _render_mv_tab(portfolio: dict, profile_key: str) -> None:
             "Difference": f"{abs(h - m):.1%}",
             "UCITS": "EU" if ticker in _UCITS_TICKERS else "—",
         })
-
-    st.dataframe(
-        pd.DataFrame(comparison_rows),
-        hide_index=True,
-        use_container_width=True,
-    )
+    st.dataframe(pd.DataFrame(comparison_rows), hide_index=True, use_container_width=True)
     st.caption(
         "Markowitz typically produces more concentrated portfolios. "
         "HRP avoids corner solutions by construction."
@@ -1197,16 +3348,10 @@ def _render_mv_tab(portfolio: dict, profile_key: str) -> None:
 
     st.markdown("---")
 
-    # ── Efficient Frontier chart ──────────────────────────────────────────
     st.markdown("**Efficient Frontier — HRP vs Markowitz**")
-
     try:
-        # Synthetic frontier for illustration (Phase A)
-        # Phase B: compute frontier from pypfopt EfficientFrontier parametric sweep
         frontier_vols = list(np.linspace(0.04, 0.20, 30))
-        # Approximate return/risk tradeoff using historical Sharpe ~0.5
         frontier_rets = [v * 0.5 + 0.01 for v in frontier_vols]
-
         fig_frontier = plot_efficient_frontier(
             frontier_vols=frontier_vols,
             frontier_rets=frontier_rets,
@@ -1217,15 +3362,12 @@ def _render_mv_tab(portfolio: dict, profile_key: str) -> None:
         )
         st.plotly_chart(fig_frontier, use_container_width=True)
         if portfolio.get("source") != "live":
-            st.caption("Frontier shown is illustrative (Phase A mock)."
-                       "Enable live data for real frontier."
-                      )
+            st.caption("Frontier shown is illustrative (Phase A mock). Enable live data for real frontier.")
     except Exception as exc:
         st.caption(f"Frontier chart unavailable: {exc}")
 
     st.markdown("---")
 
-    # ── Stress scenarios table (existing P4 code, kept) ───────────────────
     stress = portfolio.get("stress_scenarios")
     if stress is None:
         try:
@@ -1253,18 +3395,13 @@ def _render_mv_tab(portfolio: dict, profile_key: str) -> None:
                 "Benchmark": f"{stress.rates_hike_2022.benchmark_drawdown:.1%}",
             },
         ]
-        st.dataframe(
-            pd.DataFrame(scenario_rows),
-            hide_index=True,
-            use_container_width=True,
-        )
+        st.dataframe(pd.DataFrame(scenario_rows), hide_index=True, use_container_width=True)
         st.caption(
             "Benchmark = equal-weight 60/40 portfolio. "
             "Phase A values are from mock data. "
             "Phase B will use real backtested values from backtest.py."
         )
 
-    # ── Backtest summary (existing P4 code, kept) ─────────────────────────
     backtest = portfolio.get("backtest")
     if backtest is None:
         try:
@@ -1288,89 +3425,132 @@ def _render_mv_tab(portfolio: dict, profile_key: str) -> None:
 
 def render_chat() -> None:
     """
-    Chat Advisor: user types a question, the LLM narrator answers,
-    the validator checks the response, result is shown to the user.
+    Chat Advisor — native Streamlit chat (st.chat_message + st.chat_input).
 
-    3-stage pipeline:
-        Stage 1 -- build Ground Truth JSON from mock payload
-        Stage 2 -- call NarratorClient (Claude API)
-        Stage 3 -- run 5-step validator before showing anything
+    Pipeline per turn: input sanitiser -> Claude narrator -> 5-step validator.
+    The advisor only explains the current Ground Truth payload; it never gives
+    buy/sell advice and cannot invent numbers.
     """
-    page_header("Chat Advisor", "LLM Narrator · Validated responses")
-    render_disclaimer()
-    st.markdown("---")
+    page_header(
+        "Chat Advisor",
+        "LLM Narrator · Validated responses",
+        icon="💬",
+    )
+    st.markdown(_CHAT_CSS, unsafe_allow_html=True)
+    st.markdown('<div class="ca-page">', unsafe_allow_html=True)
 
-    # Read profile from session_state; default to MODERATE if questionnaire not done
     profile_data = st.session_state.get("profile", {})
     raw_label = profile_data.get("profile_label", "MODERATE")
     profile_key = _LABEL_TO_MOCK.get(raw_label, "balanced")
 
-    st.info(f"Active profile: **{raw_label}**")
-
-    # Show the recommendation_id that links this chat to the portfolio loaded
-    # in the Dashboard -- used for the DB audit trail in Phase B
-    rec_id = st.session_state.get("recommendation_id", "")
-    if rec_id and not rec_id.startswith("mock-"):
-        st.caption(f"Linked to portfolio recommendation {rec_id[:12]}...")
-
-    # Load API key from Streamlit secrets or environment variable
+    # Make the Anthropic key from st.secrets visible to NarratorClient (env-based).
     if "ANTHROPIC_API_KEY" not in os.environ:
         try:
             os.environ["ANTHROPIC_API_KEY"] = st.secrets["ANTHROPIC_API_KEY"]
         except Exception:
             pass
 
-    user_message = st.text_input(
-        "Ask about your portfolio...",
-        placeholder="E.g. Why is my bond allocation high?",
+    if "chat_history" not in st.session_state:
+        st.session_state["chat_history"] = []
+    history: list[dict] = st.session_state["chat_history"]
+
+    # Process any pending prompt (submitted via the inline input below or a
+    # suggestion chip) before rendering the thread, so messages appear in order.
+    pending = st.session_state.pop("_pending_prompt", None)
+    if pending:
+        history.append({"role": "user", "content": pending})
+        with st.spinner("Thinking…"):
+            reply = _chat_get_reply(pending, raw_label, profile_key)
+        history.append({"role": "assistant", "content": reply})
+
+    # Status strip: profile + model + validator
+    st.markdown(
+        f'<div class="ca-status">'
+        f'<span class="ca-pill ca-pill--profile"><span class="ca-dot"></span>'
+        f'Active profile · {raw_label}</span>'
+        f'<span class="ca-pill ca-pill--model"><span class="ca-dot"></span>'
+        f'Claude Sonnet 4</span>'
+        f'<span class="ca-pill ca-pill--guard"><span class="ca-dot"></span>'
+        f'Validator · 5 checks</span>'
+        f'</div>',
+        unsafe_allow_html=True,
     )
 
-    if st.button("Ask") and user_message:
-        with st.spinner("Generating response..."):
-            try:
-                # Stage 1: build the Ground Truth JSON for this profile
-                # This is the only data the LLM is allowed to reference
-                payload = get_mock_payload(profile_key)
+    col_chat, col_info = st.columns([5, 2], gap="large")
 
-                # Stage 2: call the LLM narrator
-                # narrator.py assembles the system prompt, injects the GT JSON,
-                # and calls the Claude API
-                narrator = NarratorClient()
-                narrator_response = narrator.narrate(payload, user_message)
+    with col_info:
+        _render_chat_info_panel()
 
-                # Stage 3: run the 5-step validator before showing anything
-                result = validate(
-                    response_text=narrator_response.raw_text,
-                    allowed_numbers=payload.llm_constraints.allowed_numbers,
-                    forbidden_phrases=payload.llm_constraints.forbidden_phrases,
-                    eu_awareness_required=(
-                        payload.regulatory_context.profiler_us_centric_caveat
-                    ),
-                )
+    with col_chat:
+        # Chat shell: gradient header + body
+        st.markdown(
+            '<div class="ca-shell">'
+            '<div class="ca-shell-head">'
+            '<span class="ca-shell-head-icon">✦</span>'
+            '<div>'
+            '<div class="ca-shell-head-title">Conversation</div>'
+            '<div class="ca-shell-head-sub">'
+            'Ask anything about your portfolio · responses validated</div>'
+            '</div>'
+            '</div>',
+            unsafe_allow_html=True,
+        )
 
-                # Display based on what happened at each stage
-                if narrator_response.injection_blocked:
-                    # The input was flagged as a prompt injection attempt
-                    st.warning(
-                        "Your question could not be processed. "
-                        "Please rephrase it more concisely."
-                    )
-                elif narrator_response.api_error:
-                    # The Claude API call failed (timeout, rate limit, etc.)
-                    st.error("Could not reach the AI service. Please try again.")
-                elif not result.passed:
-                    # The validator blocked the response -- show safe fallback
-                    st.warning(result.safe_text)
-                else:
-                    # Clean response -- show the validated narrative
-                    st.markdown(result.safe_text)
-           
-            except NarratorError:
-                # NarratorClient raised at construction -- API key is missing
-                st.error(
-                    "ANTHROPIC_API_KEY is not configured. "
-                    "Add it to .streamlit/secrets.toml or set it as an environment variable."
-                )
+        if not history:
+            st.markdown(
+                '<div class="ca-hero">'
+                '<div class="ca-hero-orb">✦</div>'
+                '<div class="ca-hero-title">'
+                "Hi — I'm your AI Finance Assistant."
+                '</div>'
+                '<div class="ca-hero-sub">'
+                'Ask a question about your portfolio allocation, risk clusters, '
+                'or the EU investor caveat. Every answer is grounded in the '
+                'ground-truth data computed by the backend.'
+                '</div>'
+                '<div class="ca-hero-eyebrow">Try one of these</div>'
+                '</div>',
+                unsafe_allow_html=True,
+            )
+            st.markdown('<div class="ca-suggest">', unsafe_allow_html=True)
+            chip_cols = st.columns(len(_CHAT_SUGGESTIONS))
+            for i, (cc, txt) in enumerate(zip(chip_cols, _CHAT_SUGGESTIONS)):
+                with cc:
+                    if st.button(txt, key=f"chat_suggest_{i}", use_container_width=True):
+                        st.session_state["_pending_prompt"] = txt
+                        st.rerun()
+            st.markdown("</div>", unsafe_allow_html=True)
+        else:
+            st.markdown('<div class="ca-thread">', unsafe_allow_html=True)
+            for msg in history:
+                with st.chat_message(
+                    msg["role"], avatar=_CHAT_AVATARS.get(msg["role"])
+                ):
+                    st.markdown(msg["content"])
+            st.markdown('</div>', unsafe_allow_html=True)
+
+            # Ghost "Clear chat" button below the thread
+            st.markdown('<div class="ca-clear">', unsafe_allow_html=True)
+            _, clr = st.columns([5, 1])
+            with clr:
+                if st.button("Clear", key="ca_clear_btn", use_container_width=True):
+                    st.session_state["chat_history"] = []
+                    st.rerun()
+            st.markdown('</div>', unsafe_allow_html=True)
+
+        # Close .ca-shell
+        st.markdown('</div>', unsafe_allow_html=True)
+
+        # Inline chat input — rendered inside the column so Streamlit keeps it
+        # in normal flow (right below the conversation, above the page's
+        # "Continue exploring" nav) instead of pinning it to the viewport bottom.
+        typed = st.chat_input("Ask about your portfolio…")
+        if typed:
+            st.session_state["_pending_prompt"] = typed
+            st.rerun()
+
+    # Close .ca-page
+    st.markdown('</div>', unsafe_allow_html=True)
 
 
 # ---------------------------------------------------------------------------
@@ -1394,7 +3574,6 @@ _STRATEGY_COLORS: dict[str, str] = {
 
 def render_backtesting() -> None:
     page_header("Backtesting", "Walk-forward simulation · HRP vs MV vs 1/N", icon="📈")
-    render_disclaimer()
 
     profile_data = st.session_state.get("profile", {})
     profile_label = profile_data.get("profile_label", "MODERATE").lower()
@@ -1486,8 +3665,17 @@ def render_backtesting() -> None:
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
         )
         fig = apply_plotly_dark_theme(fig)
-        fig.update_layout(margin=dict(t=56))
-        st.plotly_chart(fig, use_container_width=True)
+        fig.update_layout(
+            margin=dict(t=56),
+            modebar_remove=[
+                "select2d", "lasso2d", "autoScale2d",
+                "hoverClosestCartesian", "hoverCompareCartesian",
+                "toggleSpikelines", "zoomIn2d", "zoomOut2d",
+            ],
+            modebar_add=["resetScale2d"],
+            dragmode="pan",
+        )
+        st.plotly_chart(fig, use_container_width=True, config={"displaylogo": False})
 
         # ── Drawdown chart ───────────────────────────────────────────────────
         _DD_FILL: dict[str, str] = {
@@ -1518,8 +3706,17 @@ def render_backtesting() -> None:
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
         )
         fig_dd = apply_plotly_dark_theme(fig_dd)
-        fig_dd.update_layout(margin=dict(t=56))
-        st.plotly_chart(fig_dd, use_container_width=True)
+        fig_dd.update_layout(
+            margin=dict(t=56),
+            modebar_remove=[
+                "select2d", "lasso2d", "autoScale2d",
+                "hoverClosestCartesian", "hoverCompareCartesian",
+                "toggleSpikelines", "zoomIn2d", "zoomOut2d",
+            ],
+            modebar_add=["resetScale2d"],
+            dragmode="pan",
+        )
+        st.plotly_chart(fig_dd, use_container_width=True, config={"displaylogo": False})
 
     st.caption(
         f"Profile: {profile_label.upper()} · Rebalancing: monthly · TC: 10 bps/rebalance · "
@@ -1545,8 +3742,37 @@ _MOCK_MV_WEIGHTS: dict[str, float] = {
 
 
 def render_compare() -> None:
-    page_header("Compare (MV)", "Deep-dive analysis · HRP vs Markowitz", icon="⚖")
-    render_disclaimer()
+    page_header("Compare Markowitz", "Deep-dive analysis · HRP vs Markowitz", icon="⚖")
+
+    st.markdown(
+        """
+        <div style="background:rgba(30,38,64,0.5);border:1px solid #1e2640;
+        border-radius:10px;padding:0.9rem 1rem;margin-bottom:1.25rem;
+        display:flex;gap:0.875rem;align-items:flex-start;">
+            <div style="width:2rem;height:2rem;flex-shrink:0;
+            background:rgba(248,113,113,0.10);border:1px solid rgba(248,113,113,0.25);
+            border-radius:7px;display:inline-flex;align-items:center;
+            justify-content:center;font-size:0.95rem;">⚖️</div>
+            <div>
+                <div style="font-family:'Space Grotesk',sans-serif;font-size:0.9rem;
+                font-weight:600;color:#e2e8f0;margin-bottom:0.45rem;">
+                    Markowitz Mean-Variance (MV) — classical benchmark
+                </div>
+                <div style="font-size:0.79rem;color:#94a3b8;line-height:1.6;margin-bottom:0.45rem;">
+                    Mean-variance optimization, introduced by Markowitz in 1952, builds portfolios
+                    by maximising expected return for a given level of risk. It remains the standard
+                    academic reference for portfolio construction.
+                </div>
+                <div style="font-size:0.79rem;color:#94a3b8;line-height:1.6;">
+                    In practice, the approach is sensitive to estimation error in returns and
+                    covariances, and tends to produce concentrated allocations &#8212; often called
+                    &#8220;corner solutions&#8221; &#8212; where a few assets dominate.
+                </div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
     profile_data = st.session_state.get("profile", {})
     profile_label = profile_data.get("profile_label", "MODERATE")
@@ -1579,7 +3805,17 @@ def render_compare() -> None:
     st.markdown("---")
 
     # ── 1. Radar chart ────────────────────────────────────────────────────────
-    st.markdown("**Multi-dimensional comparison**")
+    _section_header("1", "Portfolio Quality Comparison")
+    st.markdown(
+        "<p style='color:#94a3b8;font-size:0.82rem;line-height:1.55;margin-bottom:0.5rem;'>"
+        "This chart summarizes the trade-offs between the recommended HRP portfolio and the "
+        "classical Markowitz benchmark. Each dimension is normalized from 0 to 1, where higher "
+        "values indicate a stronger result. The goal is to help users understand whether the HRP "
+        "allocation is more diversified, more defensive, or more robust than the traditional "
+        "mean-variance alternative."
+        "</p>",
+        unsafe_allow_html=True,
+    )
 
     def _hhi(w: dict) -> float:
         return sum(v ** 2 for v in w.values())
@@ -1644,8 +3880,17 @@ def render_compare() -> None:
         margin=dict(l=40, r=40, t=60, b=40),
     )
     fig_radar = apply_plotly_dark_theme(fig_radar)
-    fig_radar.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
-    st.plotly_chart(fig_radar, use_container_width=True)
+    fig_radar.update_layout(
+        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+        modebar_remove=[
+            "select2d", "lasso2d", "autoScale2d",
+            "hoverClosestCartesian", "hoverCompareCartesian",
+            "toggleSpikelines", "zoomIn2d", "zoomOut2d",
+        ],
+        modebar_add=["resetScale2d"],
+        dragmode="pan",
+    )
+    st.plotly_chart(fig_radar, use_container_width=True, config={"displaylogo": False})
     st.caption(
         "All axes normalised to [0, 1]. "
         "Low Risk = 1 − σ (normalised). "
@@ -1656,7 +3901,15 @@ def render_compare() -> None:
 
     # ── 2. Risk contributions ─────────────────────────────────────────────────
     st.markdown("---")
-    st.markdown("**Risk contributions — who drives portfolio risk?**")
+    _section_header("2", "Risk Contributions")
+    st.markdown(
+        "<p style='color:#94a3b8;font-size:0.82rem;line-height:1.55;margin-bottom:0.5rem;'>"
+        "Portfolio weights do not always reveal where risk really comes from. This chart shows "
+        "each ETF's contribution to total portfolio risk and compares whether HRP and Markowitz "
+        "distribute volatility evenly or concentrate it in a few assets."
+        "</p>",
+        unsafe_allow_html=True,
+    )
 
     all_tickers = sorted(
         set(hrp_rc) | set(mv_rc),
@@ -1690,8 +3943,17 @@ def render_compare() -> None:
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
     )
     fig_rc = apply_plotly_dark_theme(fig_rc)
-    fig_rc.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
-    st.plotly_chart(fig_rc, use_container_width=True)
+    fig_rc.update_layout(
+        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+        modebar_remove=[
+            "select2d", "lasso2d", "autoScale2d",
+            "hoverClosestCartesian", "hoverCompareCartesian",
+            "toggleSpikelines", "zoomIn2d", "zoomOut2d",
+        ],
+        modebar_add=["resetScale2d"],
+        dragmode="pan",
+    )
+    st.plotly_chart(fig_rc, use_container_width=True, config={"displaylogo": False})
     st.caption(
         "HRP targets equal risk contributions across assets. "
         "MV concentrates risk in low-volatility assets (bonds), "
@@ -1700,7 +3962,19 @@ def render_compare() -> None:
 
     # ── 3. Correlation heatmap ────────────────────────────────────────────────
     st.markdown("---")
-    st.markdown("**Asset correlation matrix**")
+    _section_header("3", "Asset Correlation Matrix")
+    st.markdown(
+        "<p style='color:#94a3b8;font-size:0.82rem;line-height:1.55;margin-bottom:0.5rem;'>"
+        "Diversification is not only about holding many ETFs, but about combining assets that "
+        "behave differently. This matrix shows the correlation structure of the ETF universe and "
+        "explains why HRP groups some assets together while separating others."
+        "</p>",
+        unsafe_allow_html=True,
+    )
+    st.caption(
+        "How to read it: values in the matrix close to 1 indicate assets moving together, "
+        "while values near 0 or below 0 indicate stronger diversification potential."
+    )
 
     _TICKERS_HM = ["CSPX.L", "EFA", "GLD", "VNQ", "AGGH.MI", "TLT", "TIP", "XEON.MI"]
     _CORR = np.array([
@@ -1738,8 +4012,17 @@ def render_compare() -> None:
     ))
     fig_hm.update_layout(height=420, margin=dict(l=8, r=8, t=8, b=8))
     fig_hm = apply_plotly_dark_theme(fig_hm)
-    fig_hm.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
-    st.plotly_chart(fig_hm, use_container_width=True)
+    fig_hm.update_layout(
+        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+        modebar_remove=[
+            "select2d", "lasso2d", "autoScale2d",
+            "hoverClosestCartesian", "hoverCompareCartesian",
+            "toggleSpikelines", "zoomIn2d", "zoomOut2d",
+        ],
+        modebar_add=["resetScale2d"],
+        dragmode="pan",
+    )
+    st.plotly_chart(fig_hm, use_container_width=True, config={"displaylogo": False})
     st.caption(
         "Correlation matrix used by HRP to build the hierarchical cluster tree. "
         "Negative equity–bond correlation (flight-to-quality) is the key diversification driver. "
@@ -1751,22 +4034,100 @@ def render_compare() -> None:
 # Page 6 -- Settings
 # ---------------------------------------------------------------------------
 
+def _team_img_b64(filename: str) -> str:
+    """Return a base64 data-URI for a team photo, or empty string if missing."""
+    import base64 as _b64
+    path = ASSETS_DIR / "team" / filename
+    if path.exists():
+        return "data:image/png;base64," + _b64.b64encode(path.read_bytes()).decode()
+    return ""
+
+
+def render_team_section() -> None:
+    """Render the Team section on the Settings page."""
+    _TEAM = [
+        {
+            "img": "p1_sabrina.png",
+            "name": "Sabrina Virgillito",
+            "role": "Backend Developer",
+            "resp": "API · database design · data pipeline",
+            "color": "#7c5cfc",
+        },
+        {
+            "img": "p2_emma.png",
+            "name": "Emma Erba",
+            "role": "Quantitative Analyst",
+            "resp": "Portfolio optimization · HRP · risk models",
+            "color": "#0dcfb0",
+        },
+        {
+            "img": "p3_matteo.png",
+            "name": "Matteo Buttiglieri",
+            "role": "ML Engineer",
+            "resp": "ML profiling · model training · evaluation",
+            "color": "#f87171",
+        },
+        {
+            "img": "p4_elena.png",
+            "name": "Elena Trombini",
+            "role": "Frontend / LLM / Docs",
+            "resp": "UI/UX · dashboard · LLM advisor · documentation",
+            "color": "#fbbf24",
+        },
+    ]
+
+    cards_html = (
+        '<div style="display:flex;flex-wrap:wrap;gap:1rem;'
+        'margin-top:0.75rem;justify-content:center;">'
+    )
+    for m in _TEAM:
+        src = _team_img_b64(m["img"])
+        img_tag = (
+            f'<div style="width:100px;height:100px;border-radius:50%;'
+            f'background:#ffffff;border:2px solid {m["color"]}55;'
+            f'overflow:hidden;margin-bottom:0.65rem;flex-shrink:0;">'
+            f'<img src="{src}" alt="{m["name"]}" '
+            f'style="width:100%;height:100%;object-fit:cover;display:block;">'
+            f'</div>'
+            if src else
+            f'<div style="width:100px;height:100px;border-radius:50%;'
+            f'background:#ffffff;border:2px solid {m["color"]}55;'
+            f'display:flex;align-items:center;justify-content:center;'
+            f'font-size:1.5rem;margin-bottom:0.65rem;">👤</div>'
+        )
+        cards_html += (
+            f'<div style="flex:1 1 200px;max-width:260px;'
+            f'background:rgba(30,38,64,0.5);border:1px solid #1e2640;'
+            f'border-top:2px solid {m["color"]};border-radius:12px;'
+            f'padding:1.1rem 1rem;display:flex;flex-direction:column;'
+            f'align-items:center;text-align:center;">'
+            f'{img_tag}'
+            f'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:0.9rem;'
+            f'font-weight:600;color:#e2e8f0;margin-bottom:0.2rem;">{m["name"]}</div>'
+            f'<div style="font-size:0.75rem;font-weight:600;color:{m["color"]};'
+            f'letter-spacing:0.03em;margin-bottom:0.4rem;">{m["role"]}</div>'
+            f'<div style="font-size:0.73rem;color:#64748b;line-height:1.5;">{m["resp"]}</div>'
+            f'</div>'
+        )
+    cards_html += '</div>'
+    st.markdown(cards_html, unsafe_allow_html=True)
+
+
 def render_settings() -> None:
     """Platform configuration and status page."""
     page_header("Settings", "Platform configuration")
-    render_disclaimer()
     st.markdown("---")
 
-    st.markdown("**Data Source**")
-    st.radio(
-        "Default data mode for Portfolio Dashboard",
-        ["Mock data (Phase A — always works)", "Live market data (Phase B — requires network)"],
-        index=0,
-        key="default_data_mode",
+    _section_header("", "Data Source")
+    st.caption(
+        "The Portfolio Dashboard always uses live market data (prices via "
+        "yfinance) and runs the HRP optimizer on the latest available history. "
+        "If the network is briefly unreachable it falls back to a cached "
+        "reference allocation so the app keeps working."
     )
 
     st.markdown("---")
-    st.markdown("**API Status**")
+    _section_header("", "API Status")
     api_key = os.environ.get("ANTHROPIC_API_KEY", "")
     if not api_key:
         try:
@@ -1779,10 +4140,13 @@ def render_settings() -> None:
         st.error("Claude API key not found — Chat Advisor will not work.")
 
     st.markdown("---")
-    st.markdown("**About**")
+    _section_header("", "Team")
+    render_team_section()
+
+    st.markdown("---")
+    _section_header("", "About")
     st.caption("AI-Powered Robo-Advisor Platform · USI Programming in Finance II 2026")
     st.caption("Design v3.1 · HRP + LLM Narrator + EU Awareness")
-    st.caption("Team: P1 Backend · P2 Quant · P3 ML · P4 Frontend/LLM/Docs")
 
 
 # ---------------------------------------------------------------------------

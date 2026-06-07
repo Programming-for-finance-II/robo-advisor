@@ -24,49 +24,119 @@ _TICKER_CLUSTER: dict[str, str] = {
     "XEON.MI": "Cash",
 }
 
+# Short, plain-language names for chart labels. Full names live in the
+# allocation table; here they must stay compact enough for pie slices and
+# bar ticks. The raw ticker is kept in the hover tooltip for reference.
+_TICKER_SHORT_NAME: dict[str, str] = {
+    "CSPX.L":  "US Equity",
+    "EFA":     "Intl Equity",
+    "GLD":     "Gold",
+    "VNQ":     "Real Estate",
+    "AGGH.MI": "Euro Bonds",
+    "TLT":     "US Treasuries",
+    "TIP":     "Inflation Bonds",
+    "XEON.MI": "Euro Cash",
+}
+
+
+def _short_name(ticker: str) -> str:
+    """Plain-language chart label for a ticker, falling back to the ticker."""
+    return _TICKER_SHORT_NAME.get(ticker, ticker)
+
+
+_CLUSTER_ORDER: dict[str, int] = {
+    "Equity": 0,
+    "Alternatives": 1,
+    "Bonds": 2,
+    "Cash": 3,
+}
+
 
 def plot_weights_donut(weights: dict[str, float]) -> go.Figure:
     """Donut chart of portfolio weights coloured by asset cluster.
 
+    Design notes (rework):
+      * Slices are sorted by cluster then descending weight, so same-coloured
+        assets sit together and the ring reads as four clean colour arcs.
+      * Labels live *inside* the slices, horizontally oriented, so they never
+        rotate or spill outside the chart. Slices too small to fit their label
+        simply hide it (``uniformtext`` ``mode="hide"``) — the name is still in
+        the hover tooltip and the colour legend — which removes the crooked /
+        overflowing text and the layout flicker of the previous outside labels.
+      * A center label summarises the holding count; a single-line colour
+        legend sits below.
+
     Args:
-        weights: {ticker: weight} from OptimizationResult. Values should sum to ~1.0.
+        weights: {ticker: weight} from OptimizationResult. Values sum to ~1.0.
 
     Returns:
         Plotly Figure ready for st.plotly_chart().
     """
-    tickers = list(weights.keys())
-    values = [weights[t] for t in tickers]
+    items = sorted(
+        weights.items(),
+        key=lambda kv: (
+            _CLUSTER_ORDER.get(_TICKER_CLUSTER.get(kv[0], ""), 9),
+            -kv[1],
+        ),
+    )
+    tickers = [t for t, _ in items]
+    values = [w for _, w in items]
+    labels = [_short_name(t) for t in tickers]
     colors = [_CLUSTER_COLORS.get(_TICKER_CLUSTER.get(t, ""), "#64748b") for t in tickers]
 
     fig = go.Figure(go.Pie(
-        labels=tickers,
+        labels=labels,
         values=values,
-        hole=0.52,
-        marker=dict(colors=colors, line=dict(color="#0d1220", width=2)),
-        textinfo="label+percent",
-        textfont=dict(size=11),
-        hovertemplate="<b>%{label}</b><br>Weight: %{percent}<extra></extra>",
+        customdata=tickers,
+        hole=0.62,
+        sort=False,
+        direction="clockwise",
+        rotation=0,
+        marker=dict(colors=colors, line=dict(color="#0d1220", width=2.5)),
+        texttemplate="%{label}<br>%{percent}",
+        textposition="inside",
+        insidetextorientation="horizontal",
+        textfont=dict(size=12, color="#ffffff", family="Space Grotesk, sans-serif"),
+        hovertemplate="<b>%{label}</b> (%{customdata})<br>Weight: %{percent}<extra></extra>",
     ))
 
-    cluster_legend = " · ".join(
-        f'<span style="color:{c}">■</span> {cl}'
+    cluster_legend = "&nbsp;&nbsp;&nbsp;".join(
+        f'<span style="color:{c}">●</span> '
+        f'<span style="color:#cbd5e1">{cl}</span>'
         for cl, c in _CLUSTER_COLORS.items()
     )
 
     fig.update_layout(
-        title=dict(text="Portfolio Allocation", font=dict(size=13)),
         showlegend=False,
-        height=320,
-        margin=dict(l=8, r=8, t=40, b=8),
+        height=340,
+        margin=dict(l=10, r=10, t=12, b=38),
+        uniformtext=dict(minsize=10, mode="hide"),
         annotations=[
             dict(
+                text=(
+                    f'<span style="font-size:24px;color:#f1f5f9;font-weight:700;'
+                    f'font-family:Space Grotesk">{len(tickers)}</span>'
+                    f'<br><span style="font-size:10px;color:#64748b;'
+                    f'letter-spacing:0.12em">HOLDINGS</span>'
+                ),
+                x=0.5, y=0.5,
+                xanchor="center", yanchor="middle",
+                showarrow=False,
+                xref="paper", yref="paper",
+            ),
+            dict(
                 text=cluster_legend,
-                x=0.5, y=-0.06,
+                x=0.5, y=-0.04,
                 xanchor="center", yanchor="top",
                 showarrow=False,
-                font=dict(size=10),
+                font=dict(size=11),
                 xref="paper", yref="paper",
-            )
+            ),
+        ],
+        modebar_remove=[
+            "select2d", "lasso2d", "autoScale2d",
+            "hoverClosestCartesian", "hoverCompareCartesian",
+            "toggleSpikelines", "zoomIn2d", "zoomOut2d",
         ],
     )
 
@@ -93,14 +163,17 @@ def plot_risk_contributions(
     """
     tickers = list(risk_contributions.keys())
     values = [round(v * 100, 2) for v in risk_contributions.values()]
+    labels = [_short_name(t) for t in tickers]
 
     fig = go.Figure(go.Bar(
         x=values,
-        y=tickers,
+        y=labels,
         orientation="h",
         marker_color="steelblue",
         text=[f"{v:.1f}%" for v in values],
         textposition="outside",
+        customdata=tickers,
+        hovertemplate="<b>%{y}</b> (%{customdata})<br>Risk: %{x:.1f}%<extra></extra>",
     ))
 
     title = "Risk Contributions"
@@ -114,6 +187,13 @@ def plot_risk_contributions(
         xaxis=dict(range=[0, max(values) * 1.2]),
         height=400,
         margin=dict(l=20, r=40, t=50, b=40),
+        modebar_remove=[
+            "select2d", "lasso2d", "autoScale2d",
+            "hoverClosestCartesian", "hoverCompareCartesian",
+            "toggleSpikelines", "zoomIn2d", "zoomOut2d",
+        ],
+        modebar_add=["resetScale2d"],
+        dragmode="pan",
     )
 
     return fig
@@ -147,7 +227,7 @@ def plot_dendrogram(
             x=x,
             y=y,
             mode="lines",
-            line=dict(color="steelblue", width=1.5),
+            line=dict(color="#7c5cfc", width=2),
             showlegend=False,
         ))
 
@@ -161,6 +241,13 @@ def plot_dendrogram(
         yaxis_title="Distance",
         height=400,
         margin=dict(l=20, r=20, t=50, b=80),
+        modebar_remove=[
+            "select2d", "lasso2d", "autoScale2d",
+            "hoverClosestCartesian", "hoverCompareCartesian",
+            "toggleSpikelines", "zoomIn2d", "zoomOut2d",
+        ],
+        modebar_add=["resetScale2d"],
+        dragmode="pan",
     )
 
     return fig
@@ -226,6 +313,13 @@ def plot_drawdown(
         height=400,
         margin=dict(l=20, r=20, t=50, b=40),
         legend=dict(orientation="h", yanchor="bottom", y=1.02),
+        modebar_remove=[
+            "select2d", "lasso2d", "autoScale2d",
+            "hoverClosestCartesian", "hoverCompareCartesian",
+            "toggleSpikelines", "zoomIn2d", "zoomOut2d",
+        ],
+        modebar_add=["resetScale2d"],
+        dragmode="pan",
     )
 
     return fig
@@ -263,7 +357,7 @@ def plot_efficient_frontier(
         y=[r * 100 for r in frontier_rets],
         mode="lines",
         name="Efficient Frontier",
-        line=dict(color="gray", width=1.5, dash="dot"),
+        line=dict(color="#475569", width=1.5, dash="dash"),
     ))
 
     # MV portfolio marker
@@ -273,9 +367,11 @@ def plot_efficient_frontier(
             y=[mv_ret * 100],
             mode="markers+text",
             name="Markowitz",
-            marker=dict(color="tomato", size=12, symbol="diamond"),
-            text=["MV"],
+            marker=dict(color="#f59e0b", size=13, symbol="diamond",
+                        line=dict(color="#fcd34d", width=1)),
+            text=["Markowitz"],
             textposition="top center",
+            textfont=dict(color="#fcd34d", size=11),
         ))
 
     # HRP portfolio marker
@@ -285,18 +381,27 @@ def plot_efficient_frontier(
         y=y_hrp,
         mode="markers+text",
         name="HRP",
-        marker=dict(color="steelblue", size=12, symbol="circle"),
+        marker=dict(color="#7c5cfc", size=13, symbol="circle",
+                    line=dict(color="#a78bfa", width=1)),
         text=["HRP"],
         textposition="top center",
+        textfont=dict(color="#a78bfa", size=11),
     ))
 
     fig.update_layout(
         title="Efficient Frontier — HRP vs Markowitz",
         xaxis_title="Annualised Volatility (%)",
         yaxis_title="Expected Return (%)",
-        height=450,
+        height=420,
         margin=dict(l=20, r=20, t=50, b=40),
-        legend=dict(orientation="h", yanchor="bottom", y=1.02),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0),
+        modebar_remove=[
+            "select2d", "lasso2d", "autoScale2d",
+            "hoverClosestCartesian", "hoverCompareCartesian",
+            "toggleSpikelines", "zoomIn2d", "zoomOut2d",
+        ],
+        modebar_add=["resetScale2d"],
+        dragmode="pan",
     )
 
     return fig
