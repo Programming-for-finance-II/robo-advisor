@@ -20,6 +20,7 @@ from urllib.parse import unquote_plus
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
@@ -3238,6 +3239,189 @@ def _render_chat_info_panel() -> None:
     )
 
 
+def _render_mv_tab(portfolio: dict, profile_key: str) -> None:
+    """
+    Markowitz tab: HRP vs MV weight comparison, efficient frontier,
+    stress scenario table, backtest summary.
+
+    Phase A: uses mock MV weights + synthetic frontier for illustration.
+    Phase B: runs optimize_markowitz() on live prices for real comparison.
+    """
+    from backend.optimizer.charts import plot_efficient_frontier
+
+    st.subheader("Markowitz Mean-Variance — Benchmark Comparison")
+
+    mv_weights: dict[str, float] | None = None
+    mv_vol: float | None = None
+    mv_ret: float | None = None
+    mv_sharpe: float | None = None
+
+    if portfolio.get("source") == "live":
+        try:
+            from datetime import date
+
+            from backend.data.loader import ValidatedDataLoader
+            from backend.data.universe_config import get_primary_tickers
+            from backend.optimizer.markowitz import optimize_markowitz
+
+            tickers = get_primary_tickers()
+            loader = ValidatedDataLoader()
+            prices, _ = loader.load(
+                tickers=tickers,
+                start=_DATA_START,
+                end=date.today().isoformat(),
+            )
+            mv_result = optimize_markowitz(prices)
+            mv_weights = mv_result["weights"]
+            mv_vol = mv_result["expected_volatility"]
+            mv_ret = mv_result["expected_return"]
+            mv_sharpe = mv_result["sharpe_ratio"]
+        except Exception as exc:
+            st.caption(f"Live MV optimizer unavailable: {exc}. Showing mock comparison.")
+
+    if mv_weights is None:
+        hrp_w = portfolio.get("weights", {})
+        mv_weights = {t: 0.0 for t in hrp_w}
+        if hrp_w:
+            tickers_list = list(hrp_w.keys())
+            for t in tickers_list:
+                if t in {"AGGH.MI", "TLT", "TIP"}:
+                    mv_weights[t] = min(0.40, hrp_w.get(t, 0.10) * 1.8)
+                elif t in {"CSPX.L", "EFA"}:
+                    mv_weights[t] = max(0.03, hrp_w.get(t, 0.20) * 0.7)
+                else:
+                    mv_weights[t] = hrp_w.get(t, 0.10)
+            total = sum(mv_weights.values()) or 1.0
+            mv_weights = {t: round(w / total, 4) for t, w in mv_weights.items()}
+        mv_vol = portfolio.get("expected_volatility", 0.08) * 0.92
+        mv_ret = None
+        mv_sharpe = None
+
+    hrp_vol = portfolio.get("expected_volatility", 0.0)
+    hrp_ret = portfolio.get("expected_return")
+    hrp_sharpe = portfolio.get("sharpe_ratio")
+
+    st.markdown("**Key Metrics — HRP vs Markowitz**")
+    col1, col2, col3 = st.columns(3)
+    col1.metric(
+        "Annual Volatility",
+        f"{hrp_vol:.1%}" if hrp_vol else "—",
+        delta=f"MV: {mv_vol:.1%}" if mv_vol else None,
+        delta_color="inverse",
+    )
+    col2.metric(
+        "Expected Return",
+        f"{hrp_ret:.1%}" if hrp_ret else "HRP: N/A",
+        delta=f"MV: {mv_ret:.1%}" if mv_ret else None,
+    )
+    col3.metric(
+        "Sharpe Ratio",
+        f"{hrp_sharpe:.2f}" if hrp_sharpe else "HRP: N/A",
+        delta=f"MV: {mv_sharpe:.2f}" if mv_sharpe else None,
+    )
+    st.caption(
+        "HRP does not produce a reliable expected return estimate (no μ). "
+        "MV maximises Sharpe explicitly but is sensitive to estimation error."
+    )
+
+    st.markdown("---")
+
+    st.markdown("**Weight Comparison — HRP vs Markowitz**")
+    hrp_weights = portfolio.get("weights", {})
+    tickers_sorted = sorted(hrp_weights.keys(), key=lambda t: -hrp_weights.get(t, 0))
+    comparison_rows = []
+    for ticker in tickers_sorted:
+        h = hrp_weights.get(ticker, 0.0)
+        m = mv_weights.get(ticker, 0.0)
+        comparison_rows.append({
+            "Ticker": ticker,
+            "HRP": f"{h:.1%}",
+            "Markowitz": f"{m:.1%}",
+            "Difference": f"{abs(h - m):.1%}",
+            "UCITS": "EU" if ticker in _UCITS_TICKERS else "—",
+        })
+    st.dataframe(pd.DataFrame(comparison_rows), hide_index=True, use_container_width=True)
+    st.caption(
+        "Markowitz typically produces more concentrated portfolios. "
+        "HRP avoids corner solutions by construction."
+    )
+
+    st.markdown("---")
+
+    st.markdown("**Efficient Frontier — HRP vs Markowitz**")
+    try:
+        frontier_vols = list(np.linspace(0.04, 0.20, 30))
+        frontier_rets = [v * 0.5 + 0.01 for v in frontier_vols]
+        fig_frontier = plot_efficient_frontier(
+            frontier_vols=frontier_vols,
+            frontier_rets=frontier_rets,
+            hrp_vol=hrp_vol or 0.10,
+            hrp_ret=hrp_ret,
+            mv_vol=mv_vol or 0.08,
+            mv_ret=mv_ret,
+        )
+        st.plotly_chart(fig_frontier, use_container_width=True)
+        if portfolio.get("source") != "live":
+            st.caption(
+                "Frontier shown is illustrative (Phase A mock). "
+                "Enable live data for real frontier."
+            )
+    except Exception as exc:
+        st.caption(f"Frontier chart unavailable: {exc}")
+
+    st.markdown("---")
+
+    stress = portfolio.get("stress_scenarios")
+    if stress is None:
+        try:
+            payload = get_mock_payload(profile_key)
+            stress = payload.stress_scenarios
+        except Exception:
+            stress = None
+
+    if stress is not None:
+        st.markdown("**Historical Stress Scenarios — HRP drawdown vs benchmark**")
+        scenario_rows = [
+            {
+                "Scenario": "COVID-19 crash (Mar 2020)",
+                "HRP drawdown": f"{stress.covid_march_2020.portfolio_drawdown:.1%}",
+                "Benchmark": f"{stress.covid_march_2020.benchmark_drawdown:.1%}",
+            },
+            {
+                "Scenario": "Ukraine invasion (Feb 2022)",
+                "HRP drawdown": f"{stress.ukraine_feb_2022.portfolio_drawdown:.1%}",
+                "Benchmark": f"{stress.ukraine_feb_2022.benchmark_drawdown:.1%}",
+            },
+            {
+                "Scenario": "Rate hike cycle (2022)",
+                "HRP drawdown": f"{stress.rates_hike_2022.portfolio_drawdown:.1%}",
+                "Benchmark": f"{stress.rates_hike_2022.benchmark_drawdown:.1%}",
+            },
+        ]
+        st.dataframe(pd.DataFrame(scenario_rows), hide_index=True, use_container_width=True)
+        st.caption(
+            "Benchmark = equal-weight 60/40 portfolio. "
+            "Phase A values are from mock data. "
+            "Phase B will use real backtested values from backtest.py."
+        )
+
+    backtest = portfolio.get("backtest")
+    if backtest is None:
+        try:
+            payload = get_mock_payload(profile_key)
+            backtest = payload.backtest_summary
+        except Exception:
+            backtest = None
+
+    if backtest is not None:
+        st.markdown("**Backtest Summary (mock — Phase A)**")
+        bt_cols = st.columns(4)
+        bt_cols[0].metric("Period", backtest.period)
+        bt_cols[1].metric("CAGR", f"{backtest.cagr:.1%}")
+        bt_cols[2].metric("Sharpe", f"{backtest.sharpe:.2f}")
+        bt_cols[3].metric("Max DD", f"{backtest.max_drawdown:.1%}")
+
+
 # ---------------------------------------------------------------------------
 # Page 3 -- Chat Advisor
 # ---------------------------------------------------------------------------
@@ -3497,8 +3681,6 @@ def render_backtesting() -> None:
         st.plotly_chart(fig, use_container_width=True, config={"displaylogo": False})
 
         # ── Drawdown chart ───────────────────────────────────────────────────
-        import numpy as np
-
         _DD_FILL: dict[str, str] = {
             "HRP": "rgba(124,92,252,0.08)",
             "MV":  "rgba(248,113,113,0.08)",
@@ -3540,7 +3722,7 @@ def render_backtesting() -> None:
         st.plotly_chart(fig_dd, use_container_width=True, config={"displaylogo": False})
 
     st.caption(
-        "Profile: MODERATE · Rebalancing: monthly · TC: 10 bps/rebalance · "
+        f"Profile: {profile_label.upper()} · Rebalancing: monthly · TC: 10 bps/rebalance · "
         "Lookback: 252 trading days"
     )
 
@@ -3595,8 +3777,6 @@ def render_compare() -> None:
         unsafe_allow_html=True,
     )
 
-    import numpy as np
-
     profile_data = st.session_state.get("profile", {})
     profile_label = profile_data.get("profile_label", "MODERATE")
     profile_key = _LABEL_TO_MOCK.get(profile_label, "balanced")
@@ -3604,9 +3784,10 @@ def render_compare() -> None:
     portfolio = st.session_state.get("portfolio_data") or _mock_optimization(profile_key)
     hrp_weights: dict[str, float] = portfolio["weights"]
     hrp_rc: dict[str, float] = portfolio["risk_contributions"]
+    _MAX_DD_FALLBACK = {"CONSERVATIVE": -0.112, "MODERATE": -0.187, "AGGRESSIVE": -0.312}
     hrp_vol: float = portfolio.get("expected_volatility") or 0.094
     hrp_ret: float = portfolio.get("expected_return") or 0.068
-    hrp_max_dd: float = portfolio.get("max_drawdown") or -0.187
+    hrp_max_dd: float = portfolio.get("max_drawdown") or _MAX_DD_FALLBACK.get(profile_label, -0.187)
 
     mv_weights: dict[str, float] = _MOCK_MV_WEIGHTS
     mv_vol: float = hrp_vol * 0.92
