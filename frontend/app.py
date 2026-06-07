@@ -19,6 +19,7 @@ from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
@@ -1033,7 +1034,6 @@ def _render_hrp_tab(portfolio: dict) -> None:
 
     # --- Dendrogram ---
     try:
-        import numpy as np
         from scipy.cluster.hierarchy import linkage
         from scipy.spatial.distance import squareform
 
@@ -1203,7 +1203,6 @@ def _render_mv_tab(portfolio: dict, profile_key: str) -> None:
     try:
         # Synthetic frontier for illustration (Phase A)
         # Phase B: compute frontier from pypfopt EfficientFrontier parametric sweep
-        import numpy as np
         frontier_vols = list(np.linspace(0.04, 0.20, 30))
         # Approximate return/risk tradeoff using historical Sharpe ~0.5
         frontier_rets = [v * 0.5 + 0.01 for v in frontier_vols]
@@ -1491,8 +1490,6 @@ def render_backtesting() -> None:
         st.plotly_chart(fig, use_container_width=True)
 
         # ── Drawdown chart ───────────────────────────────────────────────────
-        import numpy as np
-
         _DD_FILL: dict[str, str] = {
             "HRP": "rgba(124,92,252,0.08)",
             "MV":  "rgba(248,113,113,0.08)",
@@ -1525,7 +1522,7 @@ def render_backtesting() -> None:
         st.plotly_chart(fig_dd, use_container_width=True)
 
     st.caption(
-        "Profile: MODERATE · Rebalancing: monthly · TC: 10 bps/rebalance · "
+        f"Profile: {profile_label.upper()} · Rebalancing: monthly · TC: 10 bps/rebalance · "
         "Lookback: 252 trading days"
     )
 
@@ -1551,8 +1548,6 @@ def render_compare() -> None:
     page_header("Compare (MV)", "Deep-dive analysis · HRP vs Markowitz", icon="⚖")
     render_disclaimer()
 
-    import numpy as np
-
     profile_data = st.session_state.get("profile", {})
     profile_label = profile_data.get("profile_label", "MODERATE")
     profile_key = _LABEL_TO_MOCK.get(profile_label, "balanced")
@@ -1560,9 +1555,10 @@ def render_compare() -> None:
     portfolio = st.session_state.get("portfolio_data") or _mock_optimization(profile_key)
     hrp_weights: dict[str, float] = portfolio["weights"]
     hrp_rc: dict[str, float] = portfolio["risk_contributions"]
+    _MAX_DD_FALLBACK = {"CONSERVATIVE": -0.112, "MODERATE": -0.187, "AGGRESSIVE": -0.312}
     hrp_vol: float = portfolio.get("expected_volatility") or 0.094
     hrp_ret: float = portfolio.get("expected_return") or 0.068
-    hrp_max_dd: float = portfolio.get("max_drawdown") or -0.187
+    hrp_max_dd: float = portfolio.get("max_drawdown") or _MAX_DD_FALLBACK.get(profile_label, -0.187)
 
     mv_weights: dict[str, float] = _MOCK_MV_WEIGHTS
     mv_vol: float = hrp_vol * 0.92
