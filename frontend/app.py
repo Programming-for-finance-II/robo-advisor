@@ -3362,7 +3362,10 @@ def _render_mv_tab(portfolio: dict, profile_key: str) -> None:
         )
         st.plotly_chart(fig_frontier, use_container_width=True)
         if portfolio.get("source") != "live":
-            st.caption("Frontier shown is illustrative (Phase A mock). Enable live data for real frontier.")
+            st.caption(
+                "Frontier shown is illustrative (Phase A mock). "
+                "Enable live data for real frontier."
+            )
     except Exception as exc:
         st.caption(f"Frontier chart unavailable: {exc}")
 
