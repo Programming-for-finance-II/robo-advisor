@@ -3812,28 +3812,17 @@ def render_compare() -> None:
     )
     st.markdown(
         f"""
-        <div style="background:rgba(30,38,64,0.5);border:1px solid #1e2640;
-        border-radius:12px;padding:1.1rem 1.25rem 1.25rem;margin-bottom:1.25rem;">
-            <div style="display:flex;gap:0.9rem;align-items:flex-start;
+        <details class="qs-info-card">
+          <summary>
+            <span class="qs-info-title">Why compare HRP with Markowitz?</span>
+            <span class="qs-info-chevron">▾</span>
+          </summary>
+          <div class="qs-info-body">
+            <div style="font-size:0.82rem;color:#94a3b8;line-height:1.55;
             margin-bottom:1rem;">
-                <div style="width:2.8rem;height:2.8rem;flex-shrink:0;
-                border-radius:10px;background:rgba(124,92,252,0.12);
-                border:1px solid rgba(124,92,252,0.25);color:#a78bfa;
-                display:inline-flex;align-items:center;justify-content:center;">
-                    {_ICON_BULB}
-                </div>
-                <div>
-                    <div style="font-family:'Space Grotesk',sans-serif;
-                    font-size:1rem;font-weight:600;color:#e2e8f0;
-                    margin-bottom:0.3rem;">
-                        Why compare HRP with Markowitz?
-                    </div>
-                    <div style="font-size:0.82rem;color:#94a3b8;line-height:1.55;">
-                        HRP is our default optimizer. Markowitz is shown as the
-                        academic benchmark to explain why HRP is more robust for
-                        this robo-advisor.
-                    </div>
-                </div>
+                HRP is our default optimizer. Markowitz is shown as the
+                academic benchmark to explain why HRP is more robust for
+                this robo-advisor.
             </div>
             <div style="display:grid;
             grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
@@ -3882,7 +3871,8 @@ def render_compare() -> None:
                     HRP = recommendation &middot; Markowitz = comparison
                 </span>
             </div>
-        </div>
+          </div>
+        </details>
         """,
         unsafe_allow_html=True,
     )
