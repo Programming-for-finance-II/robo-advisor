@@ -413,6 +413,24 @@ _ICON_CAP = (
     '<line x1="22" y1="10" x2="22" y2="16"/>'
     "</svg>"
 )
+_ICON_GLOBE = (
+    '<svg width="15" height="15" viewBox="0 0 24 24" fill="none"'
+    ' stroke="currentColor" stroke-width="2"'
+    ' stroke-linecap="round" stroke-linejoin="round">'
+    '<circle cx="12" cy="12" r="10"/>'
+    '<line x1="2" y1="12" x2="22" y2="12"/>'
+    '<path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10'
+    'A15.3 15.3 0 0 1 8 12a15.3 15.3 0 0 1 4-10z"/>'
+    "</svg>"
+)
+_ICON_TREND = (
+    '<svg width="15" height="15" viewBox="0 0 24 24" fill="none"'
+    ' stroke="currentColor" stroke-width="2"'
+    ' stroke-linecap="round" stroke-linejoin="round">'
+    '<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>'
+    '<polyline points="17 6 23 6 23 12"/>'
+    "</svg>"
+)
 
 
 def main() -> None:
@@ -3897,7 +3915,7 @@ def render_compare() -> None:
         r=hrp_scores + [hrp_scores[0]],
         theta=categories + [categories[0]],
         fill="toself",
-        name="HRP",
+        name="HRP (default)",
         line=dict(color="#7c5cfc", width=2),
         fillcolor="rgba(124,92,252,0.15)",
     ))
@@ -3915,9 +3933,10 @@ def render_compare() -> None:
             radialaxis=dict(
                 visible=True,
                 range=[0, 1],
+                tickvals=[0.5, 1.0],
                 color="#475569",
                 gridcolor="#1e2640",
-                tickfont=dict(size=9, color="#475569"),
+                tickfont=dict(size=8, color="#475569"),
             ),
             angularaxis=dict(color="#94a3b8", gridcolor="#1e2640"),
         ),
@@ -3936,7 +3955,48 @@ def render_compare() -> None:
         modebar_add=["resetScale2d"],
         dragmode="pan",
     )
-    st.plotly_chart(fig_radar, use_container_width=True, config={"displaylogo": False})
+    _indicators = [
+        ("#34d399", _ICON_BARS, "Diversification"),
+        ("#94a3b8", _ICON_SHIELD, "Low Risk (Volatility)"),
+        ("#a78bfa", _ICON_TREND, "Return Potential"),
+        ("#f87171", _ICON_SHIELD, "Drawdown Protection"),
+        ("#60a5fa", _ICON_GLOBE, "UCITS Coverage"),
+    ]
+    _ind_rows = "".join(
+        f'<div style="display:flex;align-items:center;gap:0.55rem;'
+        f'padding:0.5rem 0;border-top:1px solid #1e2640;">'
+        f'<span style="width:1.7rem;height:1.7rem;flex-shrink:0;border-radius:7px;'
+        f'display:inline-flex;align-items:center;justify-content:center;'
+        f'background:{color}1a;border:1px solid {color}40;color:{color};">{icon}</span>'
+        f'<span style="flex:1;font-size:0.8rem;color:#cbd5e1;">{label}</span>'
+        f'<span style="font-size:0.72rem;font-weight:600;color:#64748b;">Higher</span>'
+        f'</div>'
+        for color, icon, label in _indicators
+    )
+
+    _col_chart, _col_ind = st.columns([2, 1], gap="medium")
+    with _col_chart:
+        st.plotly_chart(
+            fig_radar, use_container_width=True, config={"displaylogo": False}
+        )
+    with _col_ind:
+        st.markdown(
+            f'<div style="background:rgba(30,38,64,0.4);border:1px solid #1e2640;'
+            f'border-radius:12px;padding:0.9rem 1rem;">'
+            f'<div style="display:flex;align-items:center;'
+            f'justify-content:space-between;margin-bottom:0.3rem;">'
+            f'<span style="font-family:\'Space Grotesk\',sans-serif;font-size:0.82rem;'
+            f'font-weight:600;color:#e2e8f0;">Indicators</span>'
+            f'<span style="font-size:0.66rem;text-transform:uppercase;'
+            f'letter-spacing:0.06em;color:#64748b;">Better</span>'
+            f'</div>'
+            f'{_ind_rows}'
+            f'<div style="font-size:0.68rem;color:#64748b;margin-top:0.6rem;'
+            f'line-height:1.45;">Scores normalised to [0, 1]; 1 = best.</div>'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
+
     st.caption(
         "All axes normalised to [0, 1]. "
         "Low Risk = 1 − σ (normalised). "
