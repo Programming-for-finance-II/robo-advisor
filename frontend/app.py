@@ -1155,7 +1155,6 @@ def render_questionnaire() -> None:
         """
         <details class="qs-info-card">
           <summary>
-            <span class="qs-info-icon">🎓</span>
             <span class="qs-info-title">What is the Grable-Lytton Scale?</span>
             <span class="qs-info-chevron">▾</span>
           </summary>
@@ -3586,23 +3585,20 @@ def render_backtesting() -> None:
     page_header("Backtesting", "Walk-forward simulation · HRP vs MV vs 1/N", icon="📈")
 
     st.markdown(
-        f'<div style="background:rgba(30,38,64,0.5);border:1px solid #1e2640;'
-        f'border-radius:12px;padding:1rem 1.15rem;margin-bottom:1.25rem;'
-        f'display:flex;gap:0.85rem;align-items:flex-start;">'
-        f'<div style="width:2.4rem;height:2.4rem;flex-shrink:0;border-radius:9px;'
-        f'background:rgba(124,92,252,0.12);border:1px solid rgba(124,92,252,0.25);'
-        f'color:#a78bfa;display:inline-flex;align-items:center;'
-        f'justify-content:center;">{_ICON_TREND}</div>'
-        f'<div>'
-        f'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:0.92rem;'
-        f'font-weight:600;color:#e2e8f0;margin-bottom:0.3rem;">'
-        f'What is backtesting?</div>'
-        f'<div style="font-size:0.82rem;color:#94a3b8;line-height:1.6;">'
-        f'Backtesting replays each strategy on real historical prices to see how '
-        f'it would have performed in the past — including during market crashes. '
-        f'Pick a stress scenario below to compare how HRP, Mean-Variance (MV) and '
-        f'an equal-weight (1/N) portfolio held up.</div>'
-        f'</div></div>',
+        """
+        <details class="qs-info-card">
+          <summary>
+            <span class="qs-info-title">What is backtesting?</span>
+            <span class="qs-info-chevron">▾</span>
+          </summary>
+          <div class="qs-info-body">
+            Backtesting replays each strategy on real historical prices to see how
+            it would have performed in the past — including during market crashes.
+            Pick a stress scenario below to compare how HRP, Mean-Variance (MV) and
+            an equal-weight (1/N) portfolio held up.
+          </div>
+        </details>
+        """,
         unsafe_allow_html=True,
     )
 
