@@ -2586,6 +2586,7 @@ def _render_hrp_tab(portfolio: dict) -> None:
     _v_spacer(2.5)
 
     # ── KPI Cards ──────────────────────────────────────────────────────────
+    _section_header("3", "Key Portfolio Metrics")
     _kpi_cards([
         {
             "label": "Expected Return",
@@ -2623,7 +2624,7 @@ def _render_hrp_tab(portfolio: dict) -> None:
     st.markdown("---")
 
     # ── Section 3: Risk Contributions ──────────────────────────────────────
-    _section_header("3", "Risk Contributions")
+    _section_header("4", "Risk Contributions")
     _section_desc(
         "Each bar shows the percentage of total portfolio risk attributed to that asset. "
         "HRP targets an even spread of risk across positions — no single asset should "
@@ -2648,7 +2649,7 @@ def _render_hrp_tab(portfolio: dict) -> None:
     st.markdown("---")
 
     # ── Section 4: Historical Resilience ───────────────────────────────────
-    _section_header("4", "Historical Resilience")
+    _section_header("5", "Historical Resilience")
     _section_desc(
         "How the HRP strategy weathered three historical stress periods — the maximum "
         "peak-to-trough loss in each, compared against the Mean-Variance benchmark. "
