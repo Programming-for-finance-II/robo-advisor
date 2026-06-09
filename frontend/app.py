@@ -378,6 +378,42 @@ _SHIELD_SVG = (
     "</svg>"
 )
 
+# Lucide-style line icons for the Compare Markowitz explanation card.
+_ICON_BULB = (
+    '<svg width="20" height="20" viewBox="0 0 24 24" fill="none"'
+    ' stroke="currentColor" stroke-width="2"'
+    ' stroke-linecap="round" stroke-linejoin="round">'
+    '<path d="M9 18h6"/><path d="M10 22h4"/>'
+    '<path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8'
+    'A6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5.76.76 1.23 1.52 1.41 2.5"/>'
+    "</svg>"
+)
+_ICON_SHIELD = (
+    '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"'
+    ' stroke="currentColor" stroke-width="2"'
+    ' stroke-linecap="round" stroke-linejoin="round">'
+    '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>'
+    "</svg>"
+)
+_ICON_BARS = (
+    '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"'
+    ' stroke="currentColor" stroke-width="2"'
+    ' stroke-linecap="round" stroke-linejoin="round">'
+    '<line x1="12" y1="20" x2="12" y2="10"/>'
+    '<line x1="18" y1="20" x2="18" y2="4"/>'
+    '<line x1="6" y1="20" x2="6" y2="16"/>'
+    "</svg>"
+)
+_ICON_CAP = (
+    '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"'
+    ' stroke="currentColor" stroke-width="2"'
+    ' stroke-linecap="round" stroke-linejoin="round">'
+    '<path d="M22 10 12 5 2 10l10 5 10-5z"/>'
+    '<path d="M6 12v5c0 1 2.5 3 6 3s6-2 6-3v-5"/>'
+    '<line x1="22" y1="10" x2="22" y2="16"/>'
+    "</svg>"
+)
+
 
 def main() -> None:
     # UNIFIED TOP NAVBAR (apple.com style) — replaces separate logo block
@@ -3697,60 +3733,82 @@ _MOCK_MV_WEIGHTS: dict[str, float] = {
 def render_compare() -> None:
     page_header("Compare Markowitz", "Deep-dive analysis · HRP vs Markowitz", icon="⚖")
 
+    _badge = (
+        "width:2.4rem;height:2.4rem;flex-shrink:0;border-radius:50%;"
+        "background:rgba(124,92,252,0.12);border:1px solid rgba(124,92,252,0.25);"
+        "color:#a78bfa;display:inline-flex;align-items:center;justify-content:center;"
+    )
+    _card = (
+        "background:rgba(124,92,252,0.05);border:1px solid rgba(124,92,252,0.18);"
+        "border-radius:10px;padding:0.85rem 0.95rem;display:flex;gap:0.7rem;"
+        "align-items:flex-start;"
+    )
     st.markdown(
-        """
+        f"""
         <div style="background:rgba(30,38,64,0.5);border:1px solid #1e2640;
         border-radius:12px;padding:1.1rem 1.25rem 1.25rem;margin-bottom:1.25rem;">
-            <div style="font-family:'Space Grotesk',sans-serif;font-size:1rem;
-            font-weight:600;color:#e2e8f0;margin-bottom:0.3rem;">
-                Why compare HRP with Markowitz?
-            </div>
-            <div style="font-size:0.82rem;color:#94a3b8;line-height:1.55;
+            <div style="display:flex;gap:0.9rem;align-items:flex-start;
             margin-bottom:1rem;">
-                HRP is our default optimizer. Markowitz is shown as the academic
-                benchmark to explain why HRP is more robust for this robo-advisor.
+                <div style="width:2.8rem;height:2.8rem;flex-shrink:0;
+                border-radius:10px;background:rgba(124,92,252,0.12);
+                border:1px solid rgba(124,92,252,0.25);color:#a78bfa;
+                display:inline-flex;align-items:center;justify-content:center;">
+                    {_ICON_BULB}
+                </div>
+                <div>
+                    <div style="font-family:'Space Grotesk',sans-serif;
+                    font-size:1rem;font-weight:600;color:#e2e8f0;
+                    margin-bottom:0.3rem;">
+                        Why compare HRP with Markowitz?
+                    </div>
+                    <div style="font-size:0.82rem;color:#94a3b8;line-height:1.55;">
+                        HRP is our default optimizer. Markowitz is shown as the
+                        academic benchmark to explain why HRP is more robust for
+                        this robo-advisor.
+                    </div>
+                </div>
             </div>
             <div style="display:grid;
-            grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+            grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
             gap:0.75rem;margin-bottom:1rem;">
-                <div style="background:rgba(124,92,252,0.07);
-                border:1px solid rgba(124,92,252,0.22);border-radius:9px;
-                padding:0.7rem 0.85rem;">
-                    <div style="font-family:'Space Grotesk',sans-serif;
-                    font-size:0.82rem;font-weight:600;color:#a78bfa;
-                    margin-bottom:0.3rem;">HRP is more robust</div>
-                    <div style="font-size:0.76rem;color:#94a3b8;line-height:1.5;">
-                        No covariance matrix inversion. Less sensitive to
-                        estimation errors.
+                <div style="{_card}">
+                    <div style="{_badge}">{_ICON_SHIELD}</div>
+                    <div>
+                        <div style="font-family:'Space Grotesk',sans-serif;
+                        font-size:0.82rem;font-weight:600;color:#e2e8f0;
+                        margin-bottom:0.3rem;">HRP is more robust</div>
+                        <div style="font-size:0.76rem;color:#94a3b8;
+                        line-height:1.5;">No covariance matrix inversion. Less
+                        sensitive to estimation errors.</div>
                     </div>
                 </div>
-                <div style="background:rgba(248,113,113,0.06);
-                border:1px solid rgba(248,113,113,0.22);border-radius:9px;
-                padding:0.7rem 0.85rem;">
-                    <div style="font-family:'Space Grotesk',sans-serif;
-                    font-size:0.82rem;font-weight:600;color:#f87171;
-                    margin-bottom:0.3rem;">Markowitz is the benchmark</div>
-                    <div style="font-size:0.76rem;color:#94a3b8;line-height:1.5;">
-                        Useful to compare diversification, concentration and
-                        stability.
+                <div style="{_card}">
+                    <div style="{_badge}">{_ICON_BARS}</div>
+                    <div>
+                        <div style="font-family:'Space Grotesk',sans-serif;
+                        font-size:0.82rem;font-weight:600;color:#e2e8f0;
+                        margin-bottom:0.3rem;">Markowitz is the benchmark</div>
+                        <div style="font-size:0.76rem;color:#94a3b8;
+                        line-height:1.5;">Useful to compare diversification,
+                        concentration and stability.</div>
                     </div>
                 </div>
-                <div style="background:rgba(148,163,184,0.06);
-                border:1px solid rgba(148,163,184,0.20);border-radius:9px;
-                padding:0.7rem 0.85rem;">
-                    <div style="font-family:'Space Grotesk',sans-serif;
-                    font-size:0.82rem;font-weight:600;color:#cbd5e1;
-                    margin-bottom:0.3rem;">Educational value</div>
-                    <div style="font-size:0.76rem;color:#94a3b8;line-height:1.5;">
-                        Users see why the app recommends HRP, not only the final
-                        weights.
+                <div style="{_card}">
+                    <div style="{_badge}">{_ICON_CAP}</div>
+                    <div>
+                        <div style="font-family:'Space Grotesk',sans-serif;
+                        font-size:0.82rem;font-weight:600;color:#e2e8f0;
+                        margin-bottom:0.3rem;">Educational value</div>
+                        <div style="font-size:0.76rem;color:#94a3b8;
+                        line-height:1.5;">Users see why the app recommends HRP,
+                        not only the final weights.</div>
                     </div>
                 </div>
             </div>
             <div style="text-align:center;">
                 <span style="display:inline-block;
                 font-family:'Space Grotesk',sans-serif;font-size:0.78rem;
-                font-weight:600;color:#e2e8f0;
+                font-weight:600;color:#a78bfa;
                 background:rgba(124,92,252,0.10);
                 border:1px solid rgba(124,92,252,0.28);border-radius:999px;
                 padding:0.4rem 1rem;">
