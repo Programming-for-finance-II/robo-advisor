@@ -4235,8 +4235,67 @@ def render_team_section() -> None:
 
 def render_settings() -> None:
     """Platform configuration and status page."""
-    page_header("Settings", "Platform configuration", icon="⚙️")
-    st.markdown("---")
+    _gear_svg = (
+        '<svg width="44" height="44" viewBox="0 0 24 24" fill="none"'
+        ' stroke="currentColor" stroke-width="1.5"'
+        ' stroke-linecap="round" stroke-linejoin="round">'
+        '<circle cx="12" cy="12" r="3"/>'
+        '<path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83'
+        'l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0'
+        'v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83'
+        '-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4'
+        'h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83'
+        '-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0'
+        'v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83'
+        ' 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4'
+        'h-.09a1.65 1.65 0 0 0-1.51 1z"/>'
+        "</svg>"
+    )
+    _wave_svg = (
+        '<svg style="position:absolute;inset:0;width:100%;height:100%;'
+        'opacity:0.6;" preserveAspectRatio="none" viewBox="0 0 800 220" fill="none">'
+        '<path d="M300 150 C 380 100,460 165,540 120 S 700 80,830 120" '
+        'stroke="#7c5cfc" stroke-opacity="0.28" stroke-width="1"/>'
+        '<path d="M320 128 C 400 88,480 138,560 102 S 720 66,850 102" '
+        'stroke="#a78bfa" stroke-opacity="0.20" stroke-width="1"/>'
+        '<path d="M300 172 C 390 130,470 182,560 140 S 730 102,860 140" '
+        'stroke="#6d5ae0" stroke-opacity="0.22" stroke-width="1"/>'
+        '<path d="M340 108 C 420 76,500 118,580 86 S 740 54,870 86" '
+        'stroke="#8b5cf6" stroke-opacity="0.16" stroke-width="1"/>'
+        '<path d="M360 192 C 440 156,520 200,600 162 S 760 128,880 162" '
+        'stroke="#7c5cfc" stroke-opacity="0.14" stroke-width="1"/>'
+        "</svg>"
+    )
+    st.markdown(
+        f'<div style="position:relative;overflow:hidden;border:1px solid #1e2640;'
+        f'border-radius:16px;padding:2rem 2.25rem;margin-bottom:1.5rem;'
+        f'background:radial-gradient(120% 160% at 88% 50%,'
+        f'rgba(124,92,252,0.16) 0%,rgba(13,18,32,0) 48%),'
+        f'linear-gradient(135deg,#0d1220 0%,#141a30 60%,#0d1220 100%);'
+        f'display:flex;align-items:center;justify-content:space-between;'
+        f'gap:1.5rem;flex-wrap:wrap;">'
+        f'{_wave_svg}'
+        f'<div style="position:relative;z-index:1;">'
+        f'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:0.72rem;'
+        f'font-weight:700;letter-spacing:0.18em;text-transform:uppercase;'
+        f'color:#a78bfa;margin-bottom:0.5rem;">Configuration</div>'
+        f'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:2.4rem;'
+        f'font-weight:700;color:#f1f5f9;letter-spacing:-0.02em;'
+        f'line-height:1.1;">Settings</div>'
+        f'<div style="font-size:0.95rem;color:#94a3b8;margin-top:0.4rem;">'
+        f'Platform configuration</div>'
+        f'</div>'
+        f'<div style="position:relative;z-index:1;width:5rem;height:5rem;'
+        f'flex-shrink:0;border-radius:16px;color:#c4b5fd;'
+        f'background:radial-gradient(circle at 50% 40%,'
+        f'rgba(124,92,252,0.35),rgba(124,92,252,0.06));'
+        f'border:1px solid rgba(124,92,252,0.4);'
+        f'box-shadow:0 0 32px rgba(124,92,252,0.32);'
+        f'display:inline-flex;align-items:center;justify-content:center;">'
+        f'{_gear_svg}</div>'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
 
     _badge = (
         "width:2.4rem;height:2.4rem;flex-shrink:0;border-radius:9px;"
