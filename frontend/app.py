@@ -379,52 +379,6 @@ _SHIELD_SVG = (
 )
 
 
-def render_page_nav(active: str) -> None:
-    """Previous / Next buttons at the foot of every page.
-
-    Lets the user move to the adjacent section (in PAGES order) without
-    scrolling back up to the top navbar. The forward button is highlighted to
-    suggest the natural reading flow; the first and last pages omit the
-    unavailable direction.
-    """
-    try:
-        idx = PAGES.index(active)
-    except ValueError:
-        return
-    prev_page = PAGES[idx - 1] if idx > 0 else None
-    next_page = PAGES[idx + 1] if idx < len(PAGES) - 1 else None
-    if prev_page is None and next_page is None:
-        return
-
-    st.markdown(
-        '<div style="margin-top:2.75rem;padding-top:1rem;'
-        'border-top:1px solid #1a2236;font-size:0.72rem;font-weight:600;'
-        'letter-spacing:0.08em;text-transform:uppercase;color:#475569;'
-        'margin-bottom:0.6rem;">Continue exploring</div>',
-        unsafe_allow_html=True,
-    )
-    col_prev, col_next = st.columns(2)
-    with col_prev:
-        if prev_page and st.button(
-            "← Previous page",
-            key=f"pgnav_prev_{active}",
-            use_container_width=True,
-        ):
-            st.session_state.active_page = prev_page
-            st.query_params["page"] = prev_page
-            st.rerun()
-    with col_next:
-        if next_page and st.button(
-            "Next page →",
-            key=f"pgnav_next_{active}",
-            type="primary",
-            use_container_width=True,
-        ):
-            st.session_state.active_page = next_page
-            st.query_params["page"] = next_page
-            st.rerun()
-
-
 def main() -> None:
     # UNIFIED TOP NAVBAR (apple.com style) — replaces separate logo block
     # and nav row. Only this section was modified. Do not edit elsewhere.
@@ -695,10 +649,6 @@ section[data-testid="stMain"] > div:first-child {{
         render_compare()
     elif active == "Settings":
         render_settings()
-
-    # Bottom-of-page Previous / Next navigation so users don't have to scroll
-    # back to the top navbar to switch sections.
-    render_page_nav(active)
 
     # Single discreet MiFID II footer, shown once at the bottom of every page.
     render_global_footer()
