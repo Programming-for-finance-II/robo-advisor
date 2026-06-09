@@ -2597,7 +2597,8 @@ def _render_hrp_tab(portfolio: dict) -> None:
     with st.expander("What do these tickers mean?"):
         _render_etf_explorer()
 
-    _v_spacer(2.5)
+    _v_spacer(1.5)
+    st.markdown("---")
 
     # ── Section 2: How your money is grouped ───────────────────────────────
     _section_header("2", "How your money is grouped")
@@ -2653,7 +2654,8 @@ def _render_hrp_tab(portfolio: dict) -> None:
         },
     ])
 
-    _v_spacer(2.5)
+    _v_spacer(1.5)
+    st.markdown("---")
 
     # ── Section 3: Risk Contributions ──────────────────────────────────────
     _section_header("3", "Risk Contributions")
@@ -2677,7 +2679,8 @@ def _render_hrp_tab(portfolio: dict) -> None:
     except Exception as exc:
         st.caption(f"Risk contribution chart unavailable: {exc}")
 
-    _v_spacer(2.5)
+    _v_spacer(1.5)
+    st.markdown("---")
 
     # ── Section 4: Historical Resilience ───────────────────────────────────
     _section_header("4", "Historical Resilience")
