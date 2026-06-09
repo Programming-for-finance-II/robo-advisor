@@ -4313,11 +4313,13 @@ def render_settings() -> None:
         "</svg>"
     )
 
+    st.markdown("---")
+
     _section_header("", "Data Source")
     st.markdown(
         f'<div style="background:rgba(30,38,64,0.5);border:1px solid #1e2640;'
         f'border-radius:12px;padding:1rem 1.15rem;display:flex;gap:0.85rem;'
-        f'align-items:flex-start;">'
+        f'align-items:center;">'
         f'<div style="{_badge}">{_db_icon}</div>'
         f'<div style="font-size:0.82rem;color:#94a3b8;line-height:1.6;">'
         f'The Portfolio Dashboard always uses live market data (prices via '
