@@ -94,7 +94,9 @@ def plot_weights_donut(weights: dict[str, float]) -> go.Figure:
         rotation=0,
         marker=dict(colors=colors, line=dict(color="#0d1220", width=2.5)),
         texttemplate="%{text}<br>%{percent}",
-        textposition="inside",
+        # "auto" keeps labels inside roomy slices but pushes them outside the
+        # thin ones, so every percentage stays visible instead of being clipped.
+        textposition="auto",
         insidetextorientation="horizontal",
         textfont=dict(size=12, color="#ffffff", family="Space Grotesk, sans-serif"),
         hovertemplate="<b>%{label}</b> (%{customdata})<br>Weight: %{percent}<extra></extra>",
@@ -163,12 +165,15 @@ def plot_risk_contributions(
     tickers = list(risk_contributions.keys())
     values = [round(v * 100, 2) for v in risk_contributions.values()]
     labels = [_short_name(t) for t in tickers]
+    # Colour each bar by its asset cluster so it matches the corresponding
+    # slice in the allocation donut (same _CLUSTER_COLORS mapping).
+    colors = [_CLUSTER_COLORS.get(_TICKER_CLUSTER.get(t, ""), "#64748b") for t in tickers]
 
     fig = go.Figure(go.Bar(
         x=values,
         y=labels,
         orientation="h",
-        marker_color="steelblue",
+        marker_color=colors,
         text=[f"{v:.1f}%" for v in values],
         textposition="outside",
         customdata=tickers,
