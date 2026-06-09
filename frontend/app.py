@@ -1612,6 +1612,7 @@ def _render_resilience_strip(profile_label: str) -> None:
 
     if st.button("View full backtesting  →", key="hrp_to_backtest"):
         st.session_state.active_page = "Backtesting"
+        st.query_params["page"] = "Backtesting"
         st.rerun()
 
 
