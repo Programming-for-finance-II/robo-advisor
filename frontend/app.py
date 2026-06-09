@@ -533,7 +533,7 @@ section[data-testid="stMain"] > div:first-child {{
 .top-navbar [data-testid="baseButton-primary"]::after,
 .top-navbar .stButton > button[kind="primary"]::after {{ width: 0 !important; }}
 /* ── Responsive nav + content padding ───────────────────────────────── */
-@media (max-width: 1080px) {{
+@media (max-width: 768px) {{
     .top-navbar [data-testid="stHorizontalBlock"] {{
         display: none !important;
     }}
@@ -543,7 +543,7 @@ section[data-testid="stMain"] > div:first-child {{
         display: flex !important;
     }}
 }}
-@media (max-width: 1080px) {{
+@media (max-width: 768px) {{
     section[data-testid="stMain"] > div:first-child {{
         padding-top: 80px !important;
     }}
