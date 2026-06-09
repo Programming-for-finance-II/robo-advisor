@@ -3974,7 +3974,9 @@ def render_compare() -> None:
         for color, icon, label in _indicators
     )
 
-    _col_chart, _col_ind = st.columns([2, 1], gap="medium")
+    _col_chart, _col_ind = st.columns(
+        [2, 1], gap="medium", vertical_alignment="center"
+    )
     with _col_chart:
         st.plotly_chart(
             fig_radar, use_container_width=True, config={"displaylogo": False}
