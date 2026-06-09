@@ -1406,30 +1406,86 @@ def render_portfolio() -> None:
         icon="📊",
     )
 
+    _ic_target = (
+        '<svg width="20" height="20" viewBox="0 0 24 24" fill="none"'
+        ' stroke="currentColor" stroke-width="2" stroke-linecap="round"'
+        ' stroke-linejoin="round"><circle cx="12" cy="12" r="10"/>'
+        '<circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>'
+    )
+    _ic_cluster = (
+        '<svg width="20" height="20" viewBox="0 0 24 24" fill="none"'
+        ' stroke="currentColor" stroke-width="2" stroke-linecap="round"'
+        ' stroke-linejoin="round">'
+        '<path d="M12 6v6"/><path d="m12 12-7 6"/><path d="M12 12v6"/>'
+        '<path d="m12 12 7 6"/>'
+        '<circle cx="12" cy="4" r="2" fill="currentColor" stroke="none"/>'
+        '<circle cx="5" cy="20" r="2" fill="currentColor" stroke="none"/>'
+        '<circle cx="12" cy="20" r="2" fill="currentColor" stroke="none"/>'
+        '<circle cx="19" cy="20" r="2" fill="currentColor" stroke="none"/></svg>'
+    )
+    _ic_pie = (
+        '<svg width="20" height="20" viewBox="0 0 24 24" fill="none"'
+        ' stroke="currentColor" stroke-width="2" stroke-linecap="round"'
+        ' stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/>'
+        '<path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>'
+    )
+    _ic_scatter = (
+        '<svg width="20" height="20" viewBox="0 0 24 24" fill="none"'
+        ' stroke="currentColor" stroke-width="2" stroke-linecap="round"'
+        ' stroke-linejoin="round"><polyline points="4 15 9 10 13 13 20 6"/>'
+        '<circle cx="4" cy="15" r="1.5" fill="currentColor" stroke="none"/>'
+        '<circle cx="9" cy="10" r="1.5" fill="currentColor" stroke="none"/>'
+        '<circle cx="13" cy="13" r="1.5" fill="currentColor" stroke="none"/>'
+        '<circle cx="20" cy="6" r="1.5" fill="currentColor" stroke="none"/></svg>'
+    )
+    _ic_lock = (
+        '<svg width="20" height="20" viewBox="0 0 24 24" fill="none"'
+        ' stroke="currentColor" stroke-width="2" stroke-linecap="round"'
+        ' stroke-linejoin="round"><rect width="18" height="11" x="3" y="11"'
+        ' rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>'
+    )
+    _methods = [
+        (_ic_cluster, "Correlation clustering",
+         "Groups assets by similarity to improve diversification."),
+        (_ic_pie, "Risk-balanced allocation",
+         "Targets equal contribution to total portfolio risk."),
+        (_ic_scatter, "Robust covariance",
+         "Uses Ledoit-Wolf shrinkage for more stable estimates."),
+        (_ic_lock, "Weight constraints",
+         "5–40% per asset and 10–60% per cluster."),
+    ]
+    _circ = (
+        "width:2.6rem;height:2.6rem;flex-shrink:0;border-radius:50%;"
+        "background:rgba(124,92,252,0.12);border:1px solid rgba(124,92,252,0.22);"
+        "color:#a78bfa;display:inline-flex;align-items:center;"
+        "justify-content:center;"
+    )
+    _mcards = "".join(
+        f'<div style="background:rgba(30,38,64,0.4);border:1px solid #1e2640;'
+        f'border-radius:12px;padding:1rem;display:flex;gap:0.8rem;'
+        f'align-items:flex-start;">'
+        f'<div style="{_circ}">{ic}</div>'
+        f'<div><div style="font-family:\'Space Grotesk\',sans-serif;'
+        f'font-size:0.9rem;font-weight:600;color:#e2e8f0;'
+        f'margin-bottom:0.25rem;">{ti}</div>'
+        f'<div style="font-size:0.78rem;color:#94a3b8;line-height:1.5;">'
+        f'{de}</div></div></div>'
+        for ic, ti, de in _methods
+    )
     st.markdown(
-        """
-        <div style="background:rgba(30,38,64,0.5);border:1px solid #1e2640;
-        border-radius:10px;padding:0.9rem 1rem;margin-bottom:1.25rem;
-        display:flex;gap:0.875rem;align-items:flex-start;">
-            <div style="width:2rem;height:2rem;flex-shrink:0;
-            background:rgba(124,92,252,0.12);border:1px solid rgba(124,92,252,0.25);
-            border-radius:7px;display:inline-flex;align-items:center;
-            justify-content:center;font-size:0.95rem;">📐</div>
-            <div>
-                <div style="font-family:'Space Grotesk',sans-serif;font-size:0.9rem;
-                font-weight:600;color:#e2e8f0;margin-bottom:0.25rem;">
-                    Hierarchical Risk Parity (HRP)
-                </div>
-                <div style="font-size:0.79rem;color:#64748b;line-height:1.55;">
-                    HRP (López de Prado, 2016) clusters assets by correlation, then allocates
-                    weights so that each cluster contributes equally to total portfolio risk.
-                    Unlike Markowitz, it requires no expected-return estimates and avoids
-                    corner solutions. Covariance is shrunk via Ledoit-Wolf.
-                    Weights are constrained to 5–40% per asset and 10–60% per cluster.
-                </div>
-            </div>
-        </div>
-        """,
+        f'<div style="margin-bottom:1.25rem;">'
+        f'<div style="display:flex;align-items:center;gap:0.7rem;'
+        f'margin-bottom:0.9rem;">'
+        f'<div style="width:2.4rem;height:2.4rem;flex-shrink:0;border-radius:50%;'
+        f'background:rgba(124,92,252,0.12);border:1px solid rgba(124,92,252,0.22);'
+        f'color:#a78bfa;display:inline-flex;align-items:center;'
+        f'justify-content:center;">{_ic_target}</div>'
+        f'<span style="font-family:\'Space Grotesk\',sans-serif;font-size:1.15rem;'
+        f'font-weight:700;color:#f1f5f9;">HRP Methodology</span></div>'
+        f'<div style="display:grid;'
+        f'grid-template-columns:repeat(auto-fit,minmax(230px,1fr));'
+        f'gap:0.85rem;">{_mcards}</div>'
+        f'</div>',
         unsafe_allow_html=True,
     )
 
