@@ -58,12 +58,10 @@ def plot_weights_donut(weights: dict[str, float]) -> go.Figure:
     Design notes (rework):
       * Slices are sorted by cluster then descending weight, so same-coloured
         assets sit together and the ring reads as four clean colour arcs.
-      * Every slice is labelled with its name and weight. Labels sit *inside*
-        the slice when they fit and are pushed *outside* (horizontally) when
-        they don't — ``textposition="auto"`` decides per slice, so long names
-        on thin slices (Real Estate, US Treasuries, Inflation Bonds) stay
-        readable instead of being hidden. ``automargin`` shrinks the ring just
-        enough to keep the outside labels inside the figure.
+      * Each slice is labelled with the asset *ticker* and its weight. Tickers
+        are short enough to fit *inside* even the thin slices, so every label
+        stays readable without spilling outside the ring. The full plain-
+        language name is kept in the hover tooltip and the allocation table.
       * A center label summarises the holding count; a single-line colour
         legend sits below.
 
@@ -94,10 +92,9 @@ def plot_weights_donut(weights: dict[str, float]) -> go.Figure:
         direction="clockwise",
         rotation=0,
         marker=dict(colors=colors, line=dict(color="#0d1220", width=2.5)),
-        texttemplate="%{label}<br>%{percent}",
-        textposition="auto",
+        texttemplate="%{customdata}<br>%{percent}",
+        textposition="inside",
         insidetextorientation="horizontal",
-        automargin=True,
         textfont=dict(size=12, color="#ffffff", family="Space Grotesk, sans-serif"),
         hovertemplate="<b>%{label}</b> (%{customdata})<br>Weight: %{percent}<extra></extra>",
     ))
