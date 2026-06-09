@@ -3981,19 +3981,31 @@ def render_compare() -> None:
         )
     with _col_ind:
         st.markdown(
-            f'<div style="background:rgba(30,38,64,0.4);border:1px solid #1e2640;'
-            f'border-radius:12px;padding:0.9rem 1rem;">'
-            f'<div style="display:flex;align-items:center;'
-            f'justify-content:space-between;margin-bottom:0.3rem;">'
-            f'<span style="font-family:\'Space Grotesk\',sans-serif;font-size:0.82rem;'
-            f'font-weight:600;color:#e2e8f0;">Indicators</span>'
-            f'<span style="font-size:0.66rem;text-transform:uppercase;'
-            f'letter-spacing:0.06em;color:#64748b;">Better</span>'
+            f'<div style="background:#0f1628;border:1px solid #1e2640;'
+            f'border-radius:14px;overflow:hidden;">'
+            f'<div style="display:flex;align-items:center;gap:0.65rem;'
+            f'padding:0.85rem 1.05rem;background:linear-gradient(135deg,'
+            f'#0f172a 0%,#1e1b4b 55%,#0d1220 100%);'
+            f'border-bottom:1px solid #1e2640;">'
+            f'<span style="font-family:\'Space Grotesk\',sans-serif;'
+            f'font-size:0.78rem;font-weight:700;color:#a78bfa;'
+            f'background:rgba(124,92,252,0.18);'
+            f'border:1px solid rgba(124,92,252,0.3);border-radius:6px;'
+            f'min-width:1.85rem;height:1.85rem;display:inline-flex;'
+            f'align-items:center;justify-content:center;flex-shrink:0;">i</span>'
+            f'<span style="font-family:\'Space Grotesk\',sans-serif;'
+            f'font-size:0.92rem;font-weight:600;color:#f1f5f9;">Indicators</span>'
             f'</div>'
+            f'<div style="padding:0.9rem 1.05rem 1rem;">'
+            f'<div style="display:flex;align-items:center;'
+            f'justify-content:space-between;font-family:\'Space Grotesk\',sans-serif;'
+            f'font-size:0.62rem;letter-spacing:0.14em;text-transform:uppercase;'
+            f'color:#475569;font-weight:600;margin-bottom:0.2rem;">'
+            f'<span>Indicator</span><span>Better</span></div>'
             f'{_ind_rows}'
             f'<div style="font-size:0.68rem;color:#64748b;margin-top:0.6rem;'
             f'line-height:1.45;">Scores normalised to [0, 1]; 1 = best.</div>'
-            f'</div>',
+            f'</div></div>',
             unsafe_allow_html=True,
         )
 
