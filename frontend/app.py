@@ -1473,7 +1473,14 @@ def render_portfolio() -> None:
         for ic, ti, de in _methods
     )
     st.markdown(
-        f'<div style="margin-bottom:1.25rem;">'
+        f'<div style="border:1px solid #1e2640;border-radius:14px;'
+        f'padding:1.25rem 1.5rem;margin-bottom:1.25rem;'
+        f'background:'
+        f'radial-gradient(circle at 1px 1px,rgba(124,92,252,0.10) 1px,'
+        f'transparent 0) 0 0/22px 22px,'
+        f'radial-gradient(130% 150% at 88% 12%,rgba(124,92,252,0.12) 0%,'
+        f'rgba(13,18,32,0) 55%),'
+        f'linear-gradient(135deg,#0d1220 0%,#11162a 60%,#0d1220 100%);">'
         f'<div style="display:flex;align-items:center;gap:0.7rem;'
         f'margin-bottom:0.9rem;">'
         f'<div style="width:2.4rem;height:2.4rem;flex-shrink:0;border-radius:50%;'
