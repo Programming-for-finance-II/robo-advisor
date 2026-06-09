@@ -2471,8 +2471,8 @@ def _render_hrp_tab(portfolio: dict) -> None:
         st.session_state.get("profile", {}).get("profile_label", "MODERATE").upper()
     )
 
-    # ── Section 2: Portfolio Allocation ────────────────────────────────────
-    _section_header("2", "Portfolio Allocation")
+    # ── Section 1: Portfolio Allocation ────────────────────────────────────
+    _section_header("1", "Portfolio Allocation")
     _section_desc(
         "The chart below shows how capital is distributed across the portfolio's assets. "
         "HRP balances risk — not capital — so assets with higher historical volatility "
@@ -2545,8 +2545,8 @@ def _render_hrp_tab(portfolio: dict) -> None:
 
     _v_spacer(2.5)
 
-    # ── Section 4: How your money is grouped ───────────────────────────────
-    _section_header("4", "How your money is grouped")
+    # ── Section 2: How your money is grouped ───────────────────────────────
+    _section_header("2", "How your money is grouped")
     _section_desc(
         "Before deciding the weights, HRP sorts the assets into four families that "
         "tend to behave alike. It then balances risk inside each family and across "
@@ -2625,8 +2625,8 @@ def _render_hrp_tab(portfolio: dict) -> None:
 
     _v_spacer(2.5)
 
-    # ── Section 1: Historical Resilience ───────────────────────────────────
-    _section_header("1", "Historical Resilience")
+    # ── Section 4: Historical Resilience ───────────────────────────────────
+    _section_header("4", "Historical Resilience")
     _section_desc(
         "How the HRP strategy weathered three historical stress periods — the maximum "
         "peak-to-trough loss in each, compared against the Mean-Variance benchmark. "
