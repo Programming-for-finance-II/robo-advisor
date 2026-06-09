@@ -303,78 +303,65 @@ PAGES = [
     "Settings",
 ]
 
-_NAV_SVGS: dict[str, str] = {
-    "Questionnaire": (
-        '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"'
-        ' stroke="currentColor" stroke-width="2"'
-        ' stroke-linecap="round" stroke-linejoin="round">'
-        '<rect x="8" y="2" width="8" height="4" rx="1"/>'
-        '<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6'
-        'a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>'
-        '<line x1="12" y1="11" x2="16" y2="11"/>'
-        '<line x1="12" y1="16" x2="16" y2="16"/>'
-        '<circle cx="8" cy="11" r="1" fill="currentColor" stroke="none"/>'
-        '<circle cx="8" cy="16" r="1" fill="currentColor" stroke="none"/>'
-        "</svg>"
-    ),
-    "Portfolio Dashboard": (
-        '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"'
-        ' stroke="currentColor" stroke-width="2"'
-        ' stroke-linecap="round" stroke-linejoin="round">'
-        '<path d="M21.21 15.89A10 10 0 1 1 8 2.83"/>'
-        '<path d="M22 12A10 10 0 0 0 12 2v10z"/>'
-        "</svg>"
-    ),
-    "Chat Advisor": (
-        '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"'
-        ' stroke="currentColor" stroke-width="2"'
-        ' stroke-linecap="round" stroke-linejoin="round">'
-        '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14'
-        'a2 2 0 0 1 2 2z"/>'
-        "</svg>"
-    ),
-    "Backtesting": (
-        '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"'
-        ' stroke="currentColor" stroke-width="2"'
-        ' stroke-linecap="round" stroke-linejoin="round">'
-        '<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>'
-        '<polyline points="17 6 23 6 23 12"/>'
-        "</svg>"
-    ),
-    "Compare Markowitz": (
-        '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"'
-        ' stroke="currentColor" stroke-width="2"'
-        ' stroke-linecap="round" stroke-linejoin="round">'
-        '<line x1="12" y1="2" x2="12" y2="22"/>'
-        '<path d="M5 7 2 14h6z"/>'
-        '<path d="M19 7 22 14h-6z"/>'
-        '<line x1="5" y1="7" x2="19" y2="7"/>'
-        '<line x1="9" y1="2" x2="15" y2="2"/>'
-        "</svg>"
-    ),
-    "Settings": (
-        '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"'
-        ' stroke="currentColor" stroke-width="2"'
-        ' stroke-linecap="round" stroke-linejoin="round">'
-        '<circle cx="12" cy="12" r="3"/>'
-        '<path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83'
-        'l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0'
-        'v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83'
-        '-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4'
-        'h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83'
-        '-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0'
-        'v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83'
-        ' 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4'
-        'h-.09a1.65 1.65 0 0 0-1.51 1z"/>'
-        "</svg>"
-    ),
-}
-
 _SHIELD_SVG = (
     '<svg width="13" height="13" viewBox="0 0 24 24" fill="none"'
     ' stroke="currentColor" stroke-width="2"'
     ' stroke-linecap="round" stroke-linejoin="round">'
     '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>'
+    "</svg>"
+)
+
+# Lucide-style line icons for the Compare Markowitz explanation card.
+_ICON_BULB = (
+    '<svg width="20" height="20" viewBox="0 0 24 24" fill="none"'
+    ' stroke="currentColor" stroke-width="2"'
+    ' stroke-linecap="round" stroke-linejoin="round">'
+    '<path d="M9 18h6"/><path d="M10 22h4"/>'
+    '<path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8'
+    'A6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5.76.76 1.23 1.52 1.41 2.5"/>'
+    "</svg>"
+)
+_ICON_SHIELD = (
+    '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"'
+    ' stroke="currentColor" stroke-width="2"'
+    ' stroke-linecap="round" stroke-linejoin="round">'
+    '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>'
+    "</svg>"
+)
+_ICON_BARS = (
+    '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"'
+    ' stroke="currentColor" stroke-width="2"'
+    ' stroke-linecap="round" stroke-linejoin="round">'
+    '<line x1="12" y1="20" x2="12" y2="10"/>'
+    '<line x1="18" y1="20" x2="18" y2="4"/>'
+    '<line x1="6" y1="20" x2="6" y2="16"/>'
+    "</svg>"
+)
+_ICON_CAP = (
+    '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"'
+    ' stroke="currentColor" stroke-width="2"'
+    ' stroke-linecap="round" stroke-linejoin="round">'
+    '<path d="M22 10 12 5 2 10l10 5 10-5z"/>'
+    '<path d="M6 12v5c0 1 2.5 3 6 3s6-2 6-3v-5"/>'
+    '<line x1="22" y1="10" x2="22" y2="16"/>'
+    "</svg>"
+)
+_ICON_GLOBE = (
+    '<svg width="15" height="15" viewBox="0 0 24 24" fill="none"'
+    ' stroke="currentColor" stroke-width="2"'
+    ' stroke-linecap="round" stroke-linejoin="round">'
+    '<circle cx="12" cy="12" r="10"/>'
+    '<line x1="2" y1="12" x2="22" y2="12"/>'
+    '<path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10'
+    'A15.3 15.3 0 0 1 8 12a15.3 15.3 0 0 1 4-10z"/>'
+    "</svg>"
+)
+_ICON_TREND = (
+    '<svg width="15" height="15" viewBox="0 0 24 24" fill="none"'
+    ' stroke="currentColor" stroke-width="2"'
+    ' stroke-linecap="round" stroke-linejoin="round">'
+    '<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>'
+    '<polyline points="17 6 23 6 23 12"/>'
     "</svg>"
 )
 
@@ -591,46 +578,24 @@ section[data-testid="stMain"] > div:first-child {{
                 st.query_params["page"] = _page
                 st.rerun()
 
-    # Step 5: JS — move stHorizontalBlock into .top-navbar and inject SVG icons
-    _icon_js_map = "{" + ",".join(
-        f'"{p}": `{_NAV_SVGS[p]}`' for p in PAGES if p in _NAV_SVGS
-    ) + "}"
+    # Step 5: JS — move stHorizontalBlock into .top-navbar (no icon injection)
     import streamlit.components.v1 as _stc
     _stc.html(
-        f"""<script>
-(function () {{
-    var icons = {_icon_js_map};
-    function injectIcons() {{
-        var btns = window.parent.document.querySelectorAll('.top-navbar .stButton > button');
-        btns.forEach(function(btn) {{
-            var label = btn.textContent.trim();
-            if (icons[label] && !btn.querySelector('svg')) {{
-                var wrap = window.parent.document.createElement('span');
-                wrap.style.cssText = 'display:inline-flex;align-items:center;'
-                    + 'gap:6px;pointer-events:none;';
-                wrap.innerHTML = icons[label] + '<span>' + label + '</span>';
-                btn.innerHTML = '';
-                btn.appendChild(wrap);
-            }}
-        }});
-    }}
-    function move() {{
+        """<script>
+(function () {
+    function move() {
         var nav = window.parent.document.querySelector('.top-navbar');
         var block = window.parent.document.querySelector(
             '[data-testid="stHorizontalBlock"]'
         );
-        if (nav && block) {{
-            if (!nav.contains(block)) {{ nav.appendChild(block); }}
-            injectIcons();
-        }} else {{
+        if (nav && block) {
+            if (!nav.contains(block)) { nav.appendChild(block); }
+        } else {
             setTimeout(move, 50);
-        }}
-    }}
+        }
+    }
     move();
-    /* Re-inject after Streamlit rerenders */
-    setTimeout(injectIcons, 400);
-    setTimeout(injectIcons, 900);
-}}());
+}());
 </script>""",
         height=0,
     )
@@ -1101,7 +1066,6 @@ def render_questionnaire() -> None:
         """
         <details class="qs-info-card">
           <summary>
-            <span class="qs-info-icon">🎓</span>
             <span class="qs-info-title">What is the Grable-Lytton Scale?</span>
             <span class="qs-info-chevron">▾</span>
           </summary>
@@ -1353,30 +1317,82 @@ def render_portfolio() -> None:
         icon="📊",
     )
 
+    _ic_cluster = (
+        '<svg width="20" height="20" viewBox="0 0 24 24" fill="none"'
+        ' stroke="currentColor" stroke-width="2" stroke-linecap="round"'
+        ' stroke-linejoin="round">'
+        '<path d="M12 6v6"/><path d="m12 12-7 6"/><path d="M12 12v6"/>'
+        '<path d="m12 12 7 6"/>'
+        '<circle cx="12" cy="4" r="2" fill="currentColor" stroke="none"/>'
+        '<circle cx="5" cy="20" r="2" fill="currentColor" stroke="none"/>'
+        '<circle cx="12" cy="20" r="2" fill="currentColor" stroke="none"/>'
+        '<circle cx="19" cy="20" r="2" fill="currentColor" stroke="none"/></svg>'
+    )
+    _ic_pie = (
+        '<svg width="20" height="20" viewBox="0 0 24 24" fill="none"'
+        ' stroke="currentColor" stroke-width="2" stroke-linecap="round"'
+        ' stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/>'
+        '<path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>'
+    )
+    _ic_scatter = (
+        '<svg width="20" height="20" viewBox="0 0 24 24" fill="none"'
+        ' stroke="currentColor" stroke-width="2" stroke-linecap="round"'
+        ' stroke-linejoin="round"><polyline points="4 15 9 10 13 13 20 6"/>'
+        '<circle cx="4" cy="15" r="1.5" fill="currentColor" stroke="none"/>'
+        '<circle cx="9" cy="10" r="1.5" fill="currentColor" stroke="none"/>'
+        '<circle cx="13" cy="13" r="1.5" fill="currentColor" stroke="none"/>'
+        '<circle cx="20" cy="6" r="1.5" fill="currentColor" stroke="none"/></svg>'
+    )
+    _ic_lock = (
+        '<svg width="20" height="20" viewBox="0 0 24 24" fill="none"'
+        ' stroke="currentColor" stroke-width="2" stroke-linecap="round"'
+        ' stroke-linejoin="round"><rect width="18" height="11" x="3" y="11"'
+        ' rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>'
+    )
+    _methods = [
+        (_ic_cluster, "Correlation clustering",
+         "Groups assets by similarity to improve diversification."),
+        (_ic_pie, "Risk-balanced allocation",
+         "Targets equal contribution to total portfolio risk."),
+        (_ic_scatter, "Robust covariance",
+         "Uses Ledoit-Wolf shrinkage for more stable estimates."),
+        (_ic_lock, "Weight constraints",
+         "5–40% per asset and 10–60% per cluster."),
+    ]
+    _circ = (
+        "width:2.6rem;height:2.6rem;flex-shrink:0;border-radius:50%;"
+        "background:rgba(124,92,252,0.12);border:1px solid rgba(124,92,252,0.22);"
+        "color:#a78bfa;display:inline-flex;align-items:center;"
+        "justify-content:center;"
+    )
+    _mcards = "".join(
+        f'<div style="background:rgba(30,38,64,0.4);border:1px solid #1e2640;'
+        f'border-radius:12px;padding:1rem;display:flex;gap:0.8rem;'
+        f'align-items:flex-start;">'
+        f'<div style="{_circ}">{ic}</div>'
+        f'<div><div style="font-family:\'Space Grotesk\',sans-serif;'
+        f'font-size:0.9rem;font-weight:600;color:#e2e8f0;'
+        f'margin-bottom:0.25rem;">{ti}</div>'
+        f'<div style="font-size:0.78rem;color:#94a3b8;line-height:1.5;">'
+        f'{de}</div></div></div>'
+        for ic, ti, de in _methods
+    )
     st.markdown(
-        """
-        <div style="background:rgba(30,38,64,0.5);border:1px solid #1e2640;
-        border-radius:10px;padding:0.9rem 1rem;margin-bottom:1.25rem;
-        display:flex;gap:0.875rem;align-items:flex-start;">
-            <div style="width:2rem;height:2rem;flex-shrink:0;
-            background:rgba(124,92,252,0.12);border:1px solid rgba(124,92,252,0.25);
-            border-radius:7px;display:inline-flex;align-items:center;
-            justify-content:center;font-size:0.95rem;">📐</div>
-            <div>
-                <div style="font-family:'Space Grotesk',sans-serif;font-size:0.9rem;
-                font-weight:600;color:#e2e8f0;margin-bottom:0.25rem;">
-                    Hierarchical Risk Parity (HRP)
-                </div>
-                <div style="font-size:0.79rem;color:#64748b;line-height:1.55;">
-                    HRP (López de Prado, 2016) clusters assets by correlation, then allocates
-                    weights so that each cluster contributes equally to total portfolio risk.
-                    Unlike Markowitz, it requires no expected-return estimates and avoids
-                    corner solutions. Covariance is shrunk via Ledoit-Wolf.
-                    Weights are constrained to 5–40% per asset and 10–60% per cluster.
-                </div>
-            </div>
-        </div>
-        """,
+        f'<div style="border:1px solid #1e2640;border-radius:14px;'
+        f'padding:1.25rem 1.5rem;margin-bottom:1.25rem;'
+        f'background:'
+        f'radial-gradient(circle at 1px 1px,rgba(124,92,252,0.10) 1px,'
+        f'transparent 0) 0 0/22px 22px,'
+        f'radial-gradient(130% 150% at 88% 12%,rgba(124,92,252,0.12) 0%,'
+        f'rgba(13,18,32,0) 55%),'
+        f'linear-gradient(135deg,#0d1220 0%,#11162a 60%,#0d1220 100%);">'
+        f'<div style="margin-bottom:0.9rem;">'
+        f'<span style="font-family:\'Space Grotesk\',sans-serif;font-size:1.15rem;'
+        f'font-weight:700;color:#f1f5f9;">HRP Methodology</span></div>'
+        f'<div style="display:grid;'
+        f'grid-template-columns:repeat(auto-fit,minmax(230px,1fr));'
+        f'gap:0.85rem;">{_mcards}</div>'
+        f'</div>',
         unsafe_allow_html=True,
     )
 
@@ -1559,6 +1575,7 @@ def _render_resilience_strip(profile_label: str) -> None:
 
     if st.button("View full backtesting  →", key="hrp_to_backtest"):
         st.session_state.active_page = "Backtesting"
+        st.query_params["page"] = "Backtesting"
         st.rerun()
 
 
@@ -2545,7 +2562,8 @@ def _render_hrp_tab(portfolio: dict) -> None:
     with st.expander("🔍 Explore ETFs in detail — price, ESG, analyst ratings"):
         _render_etf_explorer()
 
-    _v_spacer(2.5)
+    _v_spacer(1.5)
+    st.markdown("---")
 
     # ── Section 2: How your money is grouped ───────────────────────────────
     _section_header("2", "How your money is grouped")
@@ -2601,7 +2619,8 @@ def _render_hrp_tab(portfolio: dict) -> None:
         },
     ])
 
-    _v_spacer(2.5)
+    _v_spacer(1.5)
+    st.markdown("---")
 
     # ── Section 3: Risk Contributions ──────────────────────────────────────
     _section_header("3", "Risk Contributions")
@@ -2625,7 +2644,8 @@ def _render_hrp_tab(portfolio: dict) -> None:
     except Exception as exc:
         st.caption(f"Risk contribution chart unavailable: {exc}")
 
-    _v_spacer(2.5)
+    _v_spacer(1.5)
+    st.markdown("---")
 
     # ── Section 4: Historical Resilience ───────────────────────────────────
     _section_header("4", "Historical Resilience")
@@ -3530,6 +3550,24 @@ _STRATEGY_COLORS: dict[str, str] = {
 def render_backtesting() -> None:
     page_header("Backtesting", "Walk-forward simulation · HRP vs MV vs 1/N", icon="📈")
 
+    st.markdown(
+        """
+        <details class="qs-info-card">
+          <summary>
+            <span class="qs-info-title">What is backtesting?</span>
+            <span class="qs-info-chevron">▾</span>
+          </summary>
+          <div class="qs-info-body">
+            Backtesting replays each strategy on real historical prices to see how
+            it would have performed in the past — including during market crashes.
+            Pick a stress scenario below to compare how HRP, Mean-Variance (MV) and
+            an equal-weight (1/N) portfolio held up.
+          </div>
+        </details>
+        """,
+        unsafe_allow_html=True,
+    )
+
     profile_data = st.session_state.get("profile", {})
     profile_label = profile_data.get("profile_label", "MODERATE").lower()
 
@@ -3577,7 +3615,36 @@ def render_backtesting() -> None:
             "Calmar":     f"{m['calmar_ratio']:.2f}",
             "TC (bps)":   f"{m['total_transaction_cost']*10_000:.1f}",
         })
-    st.dataframe(pd.DataFrame(rows), hide_index=True, use_container_width=True)
+    _cols = ["Strategy", "CAGR", "Volatility", "Sharpe", "Max DD", "Calmar", "TC (bps)"]
+    _head = "".join(
+        f'<th style="padding:0.6rem 0.85rem;'
+        f'text-align:{"left" if i == 0 else "right"};'
+        f'font-family:\'Space Grotesk\',sans-serif;font-size:0.7rem;'
+        f'font-weight:700;letter-spacing:0.06em;text-transform:uppercase;'
+        f'color:#a78bfa;white-space:nowrap;">{c}</th>'
+        for i, c in enumerate(_cols)
+    )
+    _body = ""
+    for r in rows:
+        cells = "".join(
+            f'<td style="padding:0.55rem 0.85rem;'
+            f'text-align:{"left" if i == 0 else "right"};font-size:0.82rem;'
+            f'color:{"#e2e8f0" if i == 0 else "#cbd5e1"};'
+            f'font-weight:{"600" if i == 0 else "400"};'
+            f'border-top:1px solid #141a30;white-space:nowrap;">{r[c]}</td>'
+            for i, c in enumerate(_cols)
+        )
+        _body += f"<tr>{cells}</tr>"
+    st.markdown(
+        f'<div style="overflow-x:auto;border:1px solid #1e2640;'
+        f'border-radius:12px;">'
+        f'<table style="width:100%;border-collapse:collapse;">'
+        f'<thead><tr style="background:linear-gradient(135deg,'
+        f'#0f172a 0%,#1e1b4b 55%,#0d1220 100%);'
+        f'border-bottom:1px solid #1e2640;">{_head}</tr></thead>'
+        f"<tbody>{_body}</tbody></table></div>",
+        unsafe_allow_html=True,
+    )
 
     # ── Key metrics for HRP ──────────────────────────────────────────────────
     hrp = summary[selected]["strategies"]["HRP"]
@@ -3699,32 +3766,79 @@ _MOCK_MV_WEIGHTS: dict[str, float] = {
 def render_compare() -> None:
     page_header("Compare Markowitz", "Deep-dive analysis · HRP vs Markowitz", icon="⚖")
 
+    _badge = (
+        "width:2.4rem;height:2.4rem;flex-shrink:0;border-radius:50%;"
+        "background:rgba(124,92,252,0.12);border:1px solid rgba(124,92,252,0.25);"
+        "color:#a78bfa;display:inline-flex;align-items:center;justify-content:center;"
+    )
+    _card = (
+        "background:rgba(124,92,252,0.05);border:1px solid rgba(124,92,252,0.18);"
+        "border-radius:10px;padding:0.85rem 0.95rem;display:flex;gap:0.7rem;"
+        "align-items:flex-start;"
+    )
     st.markdown(
-        """
-        <div style="background:rgba(30,38,64,0.5);border:1px solid #1e2640;
-        border-radius:10px;padding:0.9rem 1rem;margin-bottom:1.25rem;
-        display:flex;gap:0.875rem;align-items:flex-start;">
-            <div style="width:2rem;height:2rem;flex-shrink:0;
-            background:rgba(248,113,113,0.10);border:1px solid rgba(248,113,113,0.25);
-            border-radius:7px;display:inline-flex;align-items:center;
-            justify-content:center;font-size:0.95rem;">⚖️</div>
-            <div>
-                <div style="font-family:'Space Grotesk',sans-serif;font-size:0.9rem;
-                font-weight:600;color:#e2e8f0;margin-bottom:0.45rem;">
-                    Markowitz Mean-Variance (MV) — classical benchmark
+        f"""
+        <details class="qs-info-card">
+          <summary>
+            <span class="qs-info-title">Why compare HRP with Markowitz?</span>
+            <span class="qs-info-chevron">▾</span>
+          </summary>
+          <div class="qs-info-body">
+            <div style="font-size:0.82rem;color:#94a3b8;line-height:1.55;
+            margin-bottom:1rem;">
+                HRP is our default optimizer. Markowitz is shown as the
+                academic benchmark to explain why HRP is more robust for
+                this robo-advisor.
+            </div>
+            <div style="display:grid;
+            grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+            gap:0.75rem;margin-bottom:1rem;">
+                <div style="{_card}">
+                    <div style="{_badge}">{_ICON_SHIELD}</div>
+                    <div>
+                        <div style="font-family:'Space Grotesk',sans-serif;
+                        font-size:0.82rem;font-weight:600;color:#e2e8f0;
+                        margin-bottom:0.3rem;">HRP is more robust</div>
+                        <div style="font-size:0.76rem;color:#94a3b8;
+                        line-height:1.5;">No covariance matrix inversion. Less
+                        sensitive to estimation errors.</div>
+                    </div>
                 </div>
-                <div style="font-size:0.79rem;color:#94a3b8;line-height:1.6;margin-bottom:0.45rem;">
-                    Mean-variance optimization, introduced by Markowitz in 1952, builds portfolios
-                    by maximising expected return for a given level of risk. It remains the standard
-                    academic reference for portfolio construction.
+                <div style="{_card}">
+                    <div style="{_badge}">{_ICON_BARS}</div>
+                    <div>
+                        <div style="font-family:'Space Grotesk',sans-serif;
+                        font-size:0.82rem;font-weight:600;color:#e2e8f0;
+                        margin-bottom:0.3rem;">Markowitz is the benchmark</div>
+                        <div style="font-size:0.76rem;color:#94a3b8;
+                        line-height:1.5;">Useful to compare diversification,
+                        concentration and stability.</div>
+                    </div>
                 </div>
-                <div style="font-size:0.79rem;color:#94a3b8;line-height:1.6;">
-                    In practice, the approach is sensitive to estimation error in returns and
-                    covariances, and tends to produce concentrated allocations &#8212; often called
-                    &#8220;corner solutions&#8221; &#8212; where a few assets dominate.
+                <div style="{_card}">
+                    <div style="{_badge}">{_ICON_CAP}</div>
+                    <div>
+                        <div style="font-family:'Space Grotesk',sans-serif;
+                        font-size:0.82rem;font-weight:600;color:#e2e8f0;
+                        margin-bottom:0.3rem;">Educational value</div>
+                        <div style="font-size:0.76rem;color:#94a3b8;
+                        line-height:1.5;">Users see why the app recommends HRP,
+                        not only the final weights.</div>
+                    </div>
                 </div>
             </div>
-        </div>
+            <div style="text-align:center;">
+                <span style="display:inline-block;
+                font-family:'Space Grotesk',sans-serif;font-size:0.78rem;
+                font-weight:600;color:#a78bfa;
+                background:rgba(124,92,252,0.10);
+                border:1px solid rgba(124,92,252,0.28);border-radius:999px;
+                padding:0.4rem 1rem;">
+                    HRP = recommendation &middot; Markowitz = comparison
+                </span>
+            </div>
+          </div>
+        </details>
         """,
         unsafe_allow_html=True,
     )
@@ -3806,7 +3920,7 @@ def render_compare() -> None:
         r=hrp_scores + [hrp_scores[0]],
         theta=categories + [categories[0]],
         fill="toself",
-        name="HRP",
+        name="HRP (default)",
         line=dict(color="#7c5cfc", width=2),
         fillcolor="rgba(124,92,252,0.15)",
     ))
@@ -3824,9 +3938,10 @@ def render_compare() -> None:
             radialaxis=dict(
                 visible=True,
                 range=[0, 1],
+                tickvals=[0.5, 1.0],
                 color="#475569",
                 gridcolor="#1e2640",
-                tickfont=dict(size=9, color="#475569"),
+                tickfont=dict(size=8, color="#475569"),
             ),
             angularaxis=dict(color="#94a3b8", gridcolor="#1e2640"),
         ),
@@ -3845,13 +3960,68 @@ def render_compare() -> None:
         modebar_add=["resetScale2d"],
         dragmode="pan",
     )
-    st.plotly_chart(fig_radar, use_container_width=True, config={"displaylogo": False})
+    _indicators = [
+        ("#34d399", _ICON_BARS, "Diversification"),
+        ("#94a3b8", _ICON_SHIELD, "Low Risk (Volatility)"),
+        ("#a78bfa", _ICON_TREND, "Return Potential"),
+        ("#f87171", _ICON_SHIELD, "Drawdown Protection"),
+        ("#60a5fa", _ICON_GLOBE, "UCITS Coverage"),
+    ]
+    _ind_rows = "".join(
+        f'<div style="display:flex;align-items:center;gap:0.55rem;'
+        f'padding:0.5rem 0;border-top:1px solid #1e2640;">'
+        f'<span style="width:1.7rem;height:1.7rem;flex-shrink:0;border-radius:7px;'
+        f'display:inline-flex;align-items:center;justify-content:center;'
+        f'background:{color}1a;border:1px solid {color}40;color:{color};">{icon}</span>'
+        f'<span style="flex:1;font-size:0.8rem;color:#cbd5e1;">{label}</span>'
+        f'<span style="font-size:0.72rem;font-weight:600;color:#64748b;">Higher</span>'
+        f'</div>'
+        for color, icon, label in _indicators
+    )
+
+    _col_chart, _col_ind = st.columns(
+        [2, 1], gap="medium", vertical_alignment="center"
+    )
+    with _col_chart:
+        st.plotly_chart(
+            fig_radar, use_container_width=True, config={"displaylogo": False}
+        )
+    with _col_ind:
+        st.markdown(
+            f'<div style="background:#0f1628;border:1px solid #1e2640;'
+            f'border-radius:14px;overflow:hidden;">'
+            f'<div style="display:flex;align-items:center;gap:0.65rem;'
+            f'padding:0.85rem 1.05rem;background:linear-gradient(135deg,'
+            f'#0f172a 0%,#1e1b4b 55%,#0d1220 100%);'
+            f'border-bottom:1px solid #1e2640;">'
+            f'<span style="font-family:\'Space Grotesk\',sans-serif;'
+            f'font-size:0.78rem;font-weight:700;color:#a78bfa;'
+            f'background:rgba(124,92,252,0.18);'
+            f'border:1px solid rgba(124,92,252,0.3);border-radius:6px;'
+            f'min-width:1.85rem;height:1.85rem;display:inline-flex;'
+            f'align-items:center;justify-content:center;flex-shrink:0;">i</span>'
+            f'<span style="font-family:\'Space Grotesk\',sans-serif;'
+            f'font-size:0.92rem;font-weight:600;color:#f1f5f9;">Indicators</span>'
+            f'</div>'
+            f'<div style="padding:0.9rem 1.05rem 1rem;">'
+            f'<div style="display:flex;align-items:center;'
+            f'justify-content:space-between;font-family:\'Space Grotesk\',sans-serif;'
+            f'font-size:0.62rem;letter-spacing:0.14em;text-transform:uppercase;'
+            f'color:#475569;font-weight:600;margin-bottom:0.2rem;">'
+            f'<span>Indicator</span><span>Better</span></div>'
+            f'{_ind_rows}'
+            f'<div style="font-size:0.68rem;color:#64748b;margin-top:0.6rem;'
+            f'line-height:1.45;">Scores normalised to [0, 1]; 1 = best.</div>'
+            f'</div></div>',
+            unsafe_allow_html=True,
+        )
+
     st.caption(
         "All axes normalised to [0, 1]. "
         "Low Risk = 1 − σ (normalised). "
         "Diversification = 1 − HHI (Herfindahl index). "
         "Drawdown Protection = 1 − |max DD|. "
-        "Phase A: volatility and return from mock data."
+        "Figures shown are illustrative."
     )
 
     # ── 2. Risk contributions ─────────────────────────────────────────────────
@@ -3981,7 +4151,7 @@ def render_compare() -> None:
     st.caption(
         "Correlation matrix used by HRP to build the hierarchical cluster tree. "
         "Negative equity–bond correlation (flight-to-quality) is the key diversification driver. "
-        "Phase A: stylised static matrix. Phase B: computed from 2-year rolling prices."
+        "The matrix shown is a stylised illustration."
     )
 
 
@@ -4070,15 +4240,99 @@ def render_team_section() -> None:
 
 def render_settings() -> None:
     """Platform configuration and status page."""
-    page_header("Settings", "Platform configuration")
+    _gear_svg = (
+        '<svg width="44" height="44" viewBox="0 0 24 24" fill="none"'
+        ' stroke="currentColor" stroke-width="1.5"'
+        ' stroke-linecap="round" stroke-linejoin="round">'
+        '<circle cx="12" cy="12" r="3"/>'
+        '<path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83'
+        'l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0'
+        'v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83'
+        '-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4'
+        'h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83'
+        '-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0'
+        'v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83'
+        ' 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4'
+        'h-.09a1.65 1.65 0 0 0-1.51 1z"/>'
+        "</svg>"
+    )
+    _wave_svg = (
+        '<svg style="position:absolute;inset:0;width:100%;height:100%;'
+        'opacity:0.6;" preserveAspectRatio="none" viewBox="0 0 800 220" fill="none">'
+        '<path d="M300 150 C 380 100,460 165,540 120 S 700 80,830 120" '
+        'stroke="#7c5cfc" stroke-opacity="0.28" stroke-width="1"/>'
+        '<path d="M320 128 C 400 88,480 138,560 102 S 720 66,850 102" '
+        'stroke="#a78bfa" stroke-opacity="0.20" stroke-width="1"/>'
+        '<path d="M300 172 C 390 130,470 182,560 140 S 730 102,860 140" '
+        'stroke="#6d5ae0" stroke-opacity="0.22" stroke-width="1"/>'
+        '<path d="M340 108 C 420 76,500 118,580 86 S 740 54,870 86" '
+        'stroke="#8b5cf6" stroke-opacity="0.16" stroke-width="1"/>'
+        '<path d="M360 192 C 440 156,520 200,600 162 S 760 128,880 162" '
+        'stroke="#7c5cfc" stroke-opacity="0.14" stroke-width="1"/>'
+        "</svg>"
+    )
+    st.markdown(
+        f'<div style="position:relative;overflow:hidden;border:1px solid #1e2640;'
+        f'border-radius:16px;padding:2rem 2.25rem;margin-bottom:1.5rem;'
+        f'background:radial-gradient(120% 160% at 88% 50%,'
+        f'rgba(124,92,252,0.16) 0%,rgba(13,18,32,0) 48%),'
+        f'linear-gradient(135deg,#0d1220 0%,#141a30 60%,#0d1220 100%);'
+        f'display:flex;align-items:center;justify-content:space-between;'
+        f'gap:1.5rem;flex-wrap:wrap;">'
+        f'{_wave_svg}'
+        f'<div style="position:relative;z-index:1;">'
+        f'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:0.72rem;'
+        f'font-weight:700;letter-spacing:0.18em;text-transform:uppercase;'
+        f'color:#a78bfa;margin-bottom:0.5rem;">Configuration</div>'
+        f'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:2.4rem;'
+        f'font-weight:700;color:#f1f5f9;letter-spacing:-0.02em;'
+        f'line-height:1.1;">Settings</div>'
+        f'<div style="font-size:0.95rem;color:#94a3b8;margin-top:0.4rem;">'
+        f'Platform configuration</div>'
+        f'</div>'
+        f'<div style="position:relative;z-index:1;width:5rem;height:5rem;'
+        f'flex-shrink:0;border-radius:16px;color:#c4b5fd;'
+        f'background:radial-gradient(circle at 50% 40%,'
+        f'rgba(124,92,252,0.35),rgba(124,92,252,0.06));'
+        f'border:1px solid rgba(124,92,252,0.4);'
+        f'box-shadow:0 0 32px rgba(124,92,252,0.32);'
+        f'display:inline-flex;align-items:center;justify-content:center;">'
+        f'{_gear_svg}</div>'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
+
+    _badge = (
+        "width:2.4rem;height:2.4rem;flex-shrink:0;border-radius:9px;"
+        "background:rgba(124,92,252,0.12);border:1px solid rgba(124,92,252,0.25);"
+        "color:#a78bfa;display:inline-flex;align-items:center;"
+        "justify-content:center;"
+    )
+    _db_icon = (
+        '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"'
+        ' stroke="currentColor" stroke-width="2"'
+        ' stroke-linecap="round" stroke-linejoin="round">'
+        '<ellipse cx="12" cy="5" rx="9" ry="3"/>'
+        '<path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>'
+        '<path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>'
+        "</svg>"
+    )
+
     st.markdown("---")
 
     _section_header("", "Data Source")
-    st.caption(
-        "The Portfolio Dashboard always uses live market data (prices via "
-        "yfinance) and runs the HRP optimizer on the latest available history. "
-        "If the network is briefly unreachable it falls back to a cached "
-        "reference allocation so the app keeps working."
+    st.markdown(
+        f'<div style="background:rgba(30,38,64,0.5);border:1px solid #1e2640;'
+        f'border-radius:12px;padding:1rem 1.15rem;display:flex;gap:0.85rem;'
+        f'align-items:center;">'
+        f'<div style="{_badge}">{_db_icon}</div>'
+        f'<div style="font-size:0.82rem;color:#94a3b8;line-height:1.6;">'
+        f'The Portfolio Dashboard always uses live market data (prices via '
+        f'yfinance) and runs the HRP optimizer on the latest available history. '
+        f'If the network is briefly unreachable it falls back to a cached '
+        f'reference allocation so the app keeps working.</div>'
+        f'</div>',
+        unsafe_allow_html=True,
     )
 
     st.markdown("---")
@@ -4100,8 +4354,25 @@ def render_settings() -> None:
 
     st.markdown("---")
     _section_header("", "About")
-    st.caption("AI-Powered Robo-Advisor Platform · USI Programming in Finance II 2026")
-    st.caption("Design v3.1 · HRP + LLM Narrator + EU Awareness")
+    st.markdown(
+        '<div style="background:rgba(30,38,64,0.5);border:1px solid #1e2640;'
+        'border-radius:12px;padding:1rem 1.15rem;display:flex;gap:0.85rem;'
+        'align-items:center;">'
+        '<div style="width:2.4rem;height:2.4rem;flex-shrink:0;border-radius:9px;'
+        'background:linear-gradient(135deg,#7c5cfc 0%,#5b3fd1 100%);'
+        'display:inline-flex;align-items:center;justify-content:center;'
+        'font-family:\'Space Grotesk\',sans-serif;font-size:1.1rem;'
+        'font-weight:700;color:#ffffff;">R</div>'
+        '<div>'
+        '<div style="font-family:\'Space Grotesk\',sans-serif;font-size:0.88rem;'
+        'font-weight:600;color:#e2e8f0;margin-bottom:0.2rem;">'
+        'AI-Powered Robo-Advisor Platform</div>'
+        '<div style="font-size:0.76rem;color:#64748b;line-height:1.55;">'
+        'USI Programming in Finance II · 2026<br>'
+        'Design v3.1 · HRP + LLM Narrator + EU Awareness</div>'
+        '</div></div>',
+        unsafe_allow_html=True,
+    )
 
 
 # ---------------------------------------------------------------------------
