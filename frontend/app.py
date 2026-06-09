@@ -1317,12 +1317,6 @@ def render_portfolio() -> None:
         icon="📊",
     )
 
-    _ic_target = (
-        '<svg width="20" height="20" viewBox="0 0 24 24" fill="none"'
-        ' stroke="currentColor" stroke-width="2" stroke-linecap="round"'
-        ' stroke-linejoin="round"><circle cx="12" cy="12" r="10"/>'
-        '<circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>'
-    )
     _ic_cluster = (
         '<svg width="20" height="20" viewBox="0 0 24 24" fill="none"'
         ' stroke="currentColor" stroke-width="2" stroke-linecap="round"'
@@ -1392,12 +1386,7 @@ def render_portfolio() -> None:
         f'radial-gradient(130% 150% at 88% 12%,rgba(124,92,252,0.12) 0%,'
         f'rgba(13,18,32,0) 55%),'
         f'linear-gradient(135deg,#0d1220 0%,#11162a 60%,#0d1220 100%);">'
-        f'<div style="display:flex;align-items:center;gap:0.7rem;'
-        f'margin-bottom:0.9rem;">'
-        f'<div style="width:2.4rem;height:2.4rem;flex-shrink:0;border-radius:50%;'
-        f'background:rgba(124,92,252,0.12);border:1px solid rgba(124,92,252,0.22);'
-        f'color:#a78bfa;display:inline-flex;align-items:center;'
-        f'justify-content:center;">{_ic_target}</div>'
+        f'<div style="margin-bottom:0.9rem;">'
         f'<span style="font-family:\'Space Grotesk\',sans-serif;font-size:1.15rem;'
         f'font-weight:700;color:#f1f5f9;">HRP Methodology</span></div>'
         f'<div style="display:grid;'
