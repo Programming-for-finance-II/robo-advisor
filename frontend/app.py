@@ -1741,7 +1741,7 @@ def _render_allocation_table(
         '<div style="flex:1.5;font-size:0.72rem;font-weight:600;letter-spacing:0.08em;'
         'text-transform:uppercase;color:#475569;">Weight</div>'
         '<div style="flex:0.8;font-size:0.72rem;font-weight:600;letter-spacing:0.08em;'
-        'text-transform:uppercase;color:#475569;text-align:right;">Risk</div>'
+        'text-transform:uppercase;color:#475569;text-align:right;">Risk Contr.</div>'
         '</div>'
     )
 
@@ -2540,7 +2540,7 @@ def _render_hrp_tab(portfolio: dict) -> None:
     with col_table:
         _render_allocation_table(weights, risk_contributions)
 
-    with st.expander("What do these tickers mean?"):
+    with st.expander("🔍 Explore ETFs in detail — price, ESG, analyst ratings"):
         _render_etf_explorer()
 
     _v_spacer(2.5)
