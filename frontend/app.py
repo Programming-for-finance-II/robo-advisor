@@ -4235,15 +4235,38 @@ def render_team_section() -> None:
 
 def render_settings() -> None:
     """Platform configuration and status page."""
-    page_header("Settings", "Platform configuration")
+    page_header("Settings", "Platform configuration", icon="⚙️")
     st.markdown("---")
 
+    _badge = (
+        "width:2.4rem;height:2.4rem;flex-shrink:0;border-radius:9px;"
+        "background:rgba(124,92,252,0.12);border:1px solid rgba(124,92,252,0.25);"
+        "color:#a78bfa;display:inline-flex;align-items:center;"
+        "justify-content:center;"
+    )
+    _db_icon = (
+        '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"'
+        ' stroke="currentColor" stroke-width="2"'
+        ' stroke-linecap="round" stroke-linejoin="round">'
+        '<ellipse cx="12" cy="5" rx="9" ry="3"/>'
+        '<path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>'
+        '<path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>'
+        "</svg>"
+    )
+
     _section_header("", "Data Source")
-    st.caption(
-        "The Portfolio Dashboard always uses live market data (prices via "
-        "yfinance) and runs the HRP optimizer on the latest available history. "
-        "If the network is briefly unreachable it falls back to a cached "
-        "reference allocation so the app keeps working."
+    st.markdown(
+        f'<div style="background:rgba(30,38,64,0.5);border:1px solid #1e2640;'
+        f'border-radius:12px;padding:1rem 1.15rem;display:flex;gap:0.85rem;'
+        f'align-items:flex-start;">'
+        f'<div style="{_badge}">{_db_icon}</div>'
+        f'<div style="font-size:0.82rem;color:#94a3b8;line-height:1.6;">'
+        f'The Portfolio Dashboard always uses live market data (prices via '
+        f'yfinance) and runs the HRP optimizer on the latest available history. '
+        f'If the network is briefly unreachable it falls back to a cached '
+        f'reference allocation so the app keeps working.</div>'
+        f'</div>',
+        unsafe_allow_html=True,
     )
 
     st.markdown("---")
@@ -4265,8 +4288,25 @@ def render_settings() -> None:
 
     st.markdown("---")
     _section_header("", "About")
-    st.caption("AI-Powered Robo-Advisor Platform · USI Programming in Finance II 2026")
-    st.caption("Design v3.1 · HRP + LLM Narrator + EU Awareness")
+    st.markdown(
+        '<div style="background:rgba(30,38,64,0.5);border:1px solid #1e2640;'
+        'border-radius:12px;padding:1rem 1.15rem;display:flex;gap:0.85rem;'
+        'align-items:center;">'
+        '<div style="width:2.4rem;height:2.4rem;flex-shrink:0;border-radius:9px;'
+        'background:linear-gradient(135deg,#7c5cfc 0%,#5b3fd1 100%);'
+        'display:inline-flex;align-items:center;justify-content:center;'
+        'font-family:\'Space Grotesk\',sans-serif;font-size:1.1rem;'
+        'font-weight:700;color:#ffffff;">R</div>'
+        '<div>'
+        '<div style="font-family:\'Space Grotesk\',sans-serif;font-size:0.88rem;'
+        'font-weight:600;color:#e2e8f0;margin-bottom:0.2rem;">'
+        'AI-Powered Robo-Advisor Platform</div>'
+        '<div style="font-size:0.76rem;color:#64748b;line-height:1.55;">'
+        'USI Programming in Finance II · 2026<br>'
+        'Design v3.1 · HRP + LLM Narrator + EU Awareness</div>'
+        '</div></div>',
+        unsafe_allow_html=True,
+    )
 
 
 # ---------------------------------------------------------------------------
