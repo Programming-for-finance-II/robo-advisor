@@ -303,73 +303,6 @@ PAGES = [
     "Settings",
 ]
 
-_NAV_SVGS: dict[str, str] = {
-    "Questionnaire": (
-        '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"'
-        ' stroke="currentColor" stroke-width="2"'
-        ' stroke-linecap="round" stroke-linejoin="round">'
-        '<rect x="8" y="2" width="8" height="4" rx="1"/>'
-        '<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6'
-        'a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>'
-        '<line x1="12" y1="11" x2="16" y2="11"/>'
-        '<line x1="12" y1="16" x2="16" y2="16"/>'
-        '<circle cx="8" cy="11" r="1" fill="currentColor" stroke="none"/>'
-        '<circle cx="8" cy="16" r="1" fill="currentColor" stroke="none"/>'
-        "</svg>"
-    ),
-    "Portfolio Dashboard": (
-        '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"'
-        ' stroke="currentColor" stroke-width="2"'
-        ' stroke-linecap="round" stroke-linejoin="round">'
-        '<path d="M21.21 15.89A10 10 0 1 1 8 2.83"/>'
-        '<path d="M22 12A10 10 0 0 0 12 2v10z"/>'
-        "</svg>"
-    ),
-    "Chat Advisor": (
-        '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"'
-        ' stroke="currentColor" stroke-width="2"'
-        ' stroke-linecap="round" stroke-linejoin="round">'
-        '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14'
-        'a2 2 0 0 1 2 2z"/>'
-        "</svg>"
-    ),
-    "Backtesting": (
-        '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"'
-        ' stroke="currentColor" stroke-width="2"'
-        ' stroke-linecap="round" stroke-linejoin="round">'
-        '<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>'
-        '<polyline points="17 6 23 6 23 12"/>'
-        "</svg>"
-    ),
-    "Compare Markowitz": (
-        '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"'
-        ' stroke="currentColor" stroke-width="2"'
-        ' stroke-linecap="round" stroke-linejoin="round">'
-        '<line x1="12" y1="2" x2="12" y2="22"/>'
-        '<path d="M5 7 2 14h6z"/>'
-        '<path d="M19 7 22 14h-6z"/>'
-        '<line x1="5" y1="7" x2="19" y2="7"/>'
-        '<line x1="9" y1="2" x2="15" y2="2"/>'
-        "</svg>"
-    ),
-    "Settings": (
-        '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"'
-        ' stroke="currentColor" stroke-width="2"'
-        ' stroke-linecap="round" stroke-linejoin="round">'
-        '<circle cx="12" cy="12" r="3"/>'
-        '<path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83'
-        'l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0'
-        'v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83'
-        '-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4'
-        'h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83'
-        '-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0'
-        'v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83'
-        ' 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4'
-        'h-.09a1.65 1.65 0 0 0-1.51 1z"/>'
-        "</svg>"
-    ),
-}
-
 _SHIELD_SVG = (
     '<svg width="13" height="13" viewBox="0 0 24 24" fill="none"'
     ' stroke="currentColor" stroke-width="2"'
@@ -645,46 +578,24 @@ section[data-testid="stMain"] > div:first-child {{
                 st.query_params["page"] = _page
                 st.rerun()
 
-    # Step 5: JS — move stHorizontalBlock into .top-navbar and inject SVG icons
-    _icon_js_map = "{" + ",".join(
-        f'"{p}": `{_NAV_SVGS[p]}`' for p in PAGES if p in _NAV_SVGS
-    ) + "}"
+    # Step 5: JS — move stHorizontalBlock into .top-navbar (no icon injection)
     import streamlit.components.v1 as _stc
     _stc.html(
-        f"""<script>
-(function () {{
-    var icons = {_icon_js_map};
-    function injectIcons() {{
-        var btns = window.parent.document.querySelectorAll('.top-navbar .stButton > button');
-        btns.forEach(function(btn) {{
-            var label = btn.textContent.trim();
-            if (icons[label] && !btn.querySelector('svg')) {{
-                var wrap = window.parent.document.createElement('span');
-                wrap.style.cssText = 'display:inline-flex;align-items:center;'
-                    + 'gap:6px;pointer-events:none;';
-                wrap.innerHTML = icons[label] + '<span>' + label + '</span>';
-                btn.innerHTML = '';
-                btn.appendChild(wrap);
-            }}
-        }});
-    }}
-    function move() {{
+        """<script>
+(function () {
+    function move() {
         var nav = window.parent.document.querySelector('.top-navbar');
         var block = window.parent.document.querySelector(
             '[data-testid="stHorizontalBlock"]'
         );
-        if (nav && block) {{
-            if (!nav.contains(block)) {{ nav.appendChild(block); }}
-            injectIcons();
-        }} else {{
+        if (nav && block) {
+            if (!nav.contains(block)) { nav.appendChild(block); }
+        } else {
             setTimeout(move, 50);
-        }}
-    }}
+        }
+    }
     move();
-    /* Re-inject after Streamlit rerenders */
-    setTimeout(injectIcons, 400);
-    setTimeout(injectIcons, 900);
-}}());
+}());
 </script>""",
         height=0,
     )
