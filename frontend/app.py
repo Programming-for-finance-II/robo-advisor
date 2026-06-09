@@ -2540,6 +2540,8 @@ def _render_hrp_tab(portfolio: dict) -> None:
     with col_table:
         _render_allocation_table(weights, risk_contributions)
 
+    _v_spacer(1.5)
+
     with st.expander("🔍 Explore ETFs in detail — price, ESG, analyst ratings"):
         _render_etf_explorer()
 
