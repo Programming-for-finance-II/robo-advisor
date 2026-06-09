@@ -4016,7 +4016,7 @@ def render_compare() -> None:
         "Low Risk = 1 − σ (normalised). "
         "Diversification = 1 − HHI (Herfindahl index). "
         "Drawdown Protection = 1 − |max DD|. "
-        "Phase A: volatility and return from mock data."
+        "Figures shown are illustrative."
     )
 
     # ── 2. Risk contributions ─────────────────────────────────────────────────
@@ -4146,7 +4146,7 @@ def render_compare() -> None:
     st.caption(
         "Correlation matrix used by HRP to build the hierarchical cluster tree. "
         "Negative equity–bond correlation (flight-to-quality) is the key diversification driver. "
-        "Phase A: stylised static matrix. Phase B: computed from 2-year rolling prices."
+        "The matrix shown is a stylised illustration."
     )
 
 
