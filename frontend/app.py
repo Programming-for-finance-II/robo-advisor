@@ -3649,7 +3649,36 @@ def render_backtesting() -> None:
             "Calmar":     f"{m['calmar_ratio']:.2f}",
             "TC (bps)":   f"{m['total_transaction_cost']*10_000:.1f}",
         })
-    st.dataframe(pd.DataFrame(rows), hide_index=True, use_container_width=True)
+    _cols = ["Strategy", "CAGR", "Volatility", "Sharpe", "Max DD", "Calmar", "TC (bps)"]
+    _head = "".join(
+        f'<th style="padding:0.6rem 0.85rem;'
+        f'text-align:{"left" if i == 0 else "right"};'
+        f'font-family:\'Space Grotesk\',sans-serif;font-size:0.7rem;'
+        f'font-weight:700;letter-spacing:0.06em;text-transform:uppercase;'
+        f'color:#a78bfa;white-space:nowrap;">{c}</th>'
+        for i, c in enumerate(_cols)
+    )
+    _body = ""
+    for r in rows:
+        cells = "".join(
+            f'<td style="padding:0.55rem 0.85rem;'
+            f'text-align:{"left" if i == 0 else "right"};font-size:0.82rem;'
+            f'color:{"#e2e8f0" if i == 0 else "#cbd5e1"};'
+            f'font-weight:{"600" if i == 0 else "400"};'
+            f'border-top:1px solid #141a30;white-space:nowrap;">{r[c]}</td>'
+            for i, c in enumerate(_cols)
+        )
+        _body += f"<tr>{cells}</tr>"
+    st.markdown(
+        f'<div style="overflow-x:auto;border:1px solid #1e2640;'
+        f'border-radius:12px;">'
+        f'<table style="width:100%;border-collapse:collapse;">'
+        f'<thead><tr style="background:linear-gradient(135deg,'
+        f'#0f172a 0%,#1e1b4b 55%,#0d1220 100%);'
+        f'border-bottom:1px solid #1e2640;">{_head}</tr></thead>'
+        f"<tbody>{_body}</tbody></table></div>",
+        unsafe_allow_html=True,
+    )
 
     # ── Key metrics for HRP ──────────────────────────────────────────────────
     hrp = summary[selected]["strategies"]["HRP"]
