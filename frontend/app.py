@@ -2471,54 +2471,6 @@ def _render_hrp_tab(portfolio: dict) -> None:
         st.session_state.get("profile", {}).get("profile_label", "MODERATE").upper()
     )
 
-    # ── KPI Cards ──────────────────────────────────────────────────────────
-    _kpi_cards([
-        {
-            "label": "Expected Return",
-            "value": f"{exp_ret:.1%}" if exp_ret is not None else "—",
-            "accent": "#0dcfb0", "bg": "rgba(13,207,176,0.13)",
-            "icon": '<polyline points="2,13 7,8 11,11 16,4"/>'
-                    '<polyline points="12,4 16,4 16,8"/>',
-            "hint": "Annualised estimate",
-        },
-        {
-            "label": "Volatility",
-            "value": f"{vol:.1%}",
-            "accent": "#f59e0b", "bg": "rgba(245,158,11,0.13)",
-            "icon": '<polyline points="2,9 5,9 7,3 11,15 13,9 16,9"/>',
-            "hint": "Annualised std. dev.",
-        },
-        {
-            "label": "Sharpe Ratio",
-            "value": f"{sharpe:.2f}" if sharpe is not None else "—",
-            "accent": "#7c5cfc", "bg": "rgba(124,92,252,0.13)",
-            "icon": '<polygon points="9,2 4,10 8,10 7,16 13,8 9,8"/>',
-            "hint": "Return per unit of risk",
-        },
-        {
-            "label": "Max Drawdown",
-            "value": f"{max_dd:.1%}" if max_dd is not None else "—",
-            "accent": "#f87171", "bg": "rgba(248,113,113,0.13)",
-            "icon": '<polyline points="2,4 7,9 11,6 16,13"/>'
-                    '<polyline points="12,13 16,13 16,9"/>',
-            "hint": "Worst peak-to-trough",
-        },
-    ])
-
-    _v_spacer(2.5)
-
-    # ── Section 1: Historical Resilience ───────────────────────────────────
-    _section_header("1", "Historical Resilience")
-    _section_desc(
-        "How the HRP strategy weathered three historical stress periods — the maximum "
-        "peak-to-trough loss in each, compared against the Mean-Variance benchmark. "
-        "These are real walk-forward backtest results; the full equity curves and "
-        "strategy comparison live on the Backtesting page."
-    )
-    _render_resilience_strip(profile_label)
-
-    _v_spacer(2.5)
-
     # ── Section 2: Portfolio Allocation ────────────────────────────────────
     _section_header("2", "Portfolio Allocation")
     _section_desc(
@@ -2593,6 +2545,62 @@ def _render_hrp_tab(portfolio: dict) -> None:
 
     _v_spacer(2.5)
 
+    # ── Section 4: How your money is grouped ───────────────────────────────
+    _section_header("4", "How your money is grouped")
+    _section_desc(
+        "Before deciding the weights, HRP sorts the assets into four families that "
+        "tend to behave alike. It then balances risk inside each family and across "
+        "them. For each family you can see its share of the portfolio, how "
+        "diversified it is, and how much it tends to move."
+    )
+
+    _render_cluster_view(portfolio, weights)
+
+    st.caption(
+        "“Diversification” reflects how closely the assets in a family move together — "
+        "well-diversified families spread risk better. “Risk level” reflects how much "
+        "the family tends to swing. The small ρ and vol figures are the underlying "
+        "technical values for the curious."
+    )
+
+    _v_spacer(2.5)
+
+    # ── KPI Cards ──────────────────────────────────────────────────────────
+    _kpi_cards([
+        {
+            "label": "Expected Return",
+            "value": f"{exp_ret:.1%}" if exp_ret is not None else "—",
+            "accent": "#0dcfb0", "bg": "rgba(13,207,176,0.13)",
+            "icon": '<polyline points="2,13 7,8 11,11 16,4"/>'
+                    '<polyline points="12,4 16,4 16,8"/>',
+            "hint": "Annualised estimate",
+        },
+        {
+            "label": "Volatility",
+            "value": f"{vol:.1%}",
+            "accent": "#f59e0b", "bg": "rgba(245,158,11,0.13)",
+            "icon": '<polyline points="2,9 5,9 7,3 11,15 13,9 16,9"/>',
+            "hint": "Annualised std. dev.",
+        },
+        {
+            "label": "Sharpe Ratio",
+            "value": f"{sharpe:.2f}" if sharpe is not None else "—",
+            "accent": "#7c5cfc", "bg": "rgba(124,92,252,0.13)",
+            "icon": '<polygon points="9,2 4,10 8,10 7,16 13,8 9,8"/>',
+            "hint": "Return per unit of risk",
+        },
+        {
+            "label": "Max Drawdown",
+            "value": f"{max_dd:.1%}" if max_dd is not None else "—",
+            "accent": "#f87171", "bg": "rgba(248,113,113,0.13)",
+            "icon": '<polyline points="2,4 7,9 11,6 16,13"/>'
+                    '<polyline points="12,13 16,13 16,9"/>',
+            "hint": "Worst peak-to-trough",
+        },
+    ])
+
+    _v_spacer(2.5)
+
     # ── Section 3: Risk Contributions ──────────────────────────────────────
     _section_header("3", "Risk Contributions")
     _section_desc(
@@ -2617,23 +2625,15 @@ def _render_hrp_tab(portfolio: dict) -> None:
 
     _v_spacer(2.5)
 
-    # ── Section 4: How your money is grouped ───────────────────────────────
-    _section_header("4", "How your money is grouped")
+    # ── Section 1: Historical Resilience ───────────────────────────────────
+    _section_header("1", "Historical Resilience")
     _section_desc(
-        "Before deciding the weights, HRP sorts the assets into four families that "
-        "tend to behave alike. It then balances risk inside each family and across "
-        "them. For each family you can see its share of the portfolio, how "
-        "diversified it is, and how much it tends to move."
+        "How the HRP strategy weathered three historical stress periods — the maximum "
+        "peak-to-trough loss in each, compared against the Mean-Variance benchmark. "
+        "These are real walk-forward backtest results; the full equity curves and "
+        "strategy comparison live on the Backtesting page."
     )
-
-    _render_cluster_view(portfolio, weights)
-
-    st.caption(
-        "“Diversification” reflects how closely the assets in a family move together — "
-        "well-diversified families spread risk better. “Risk level” reflects how much "
-        "the family tends to swing. The small ρ and vol figures are the underlying "
-        "technical values for the curious."
-    )
+    _render_resilience_strip(profile_label)
 
 
 
