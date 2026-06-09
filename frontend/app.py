@@ -3700,27 +3700,62 @@ def render_compare() -> None:
     st.markdown(
         """
         <div style="background:rgba(30,38,64,0.5);border:1px solid #1e2640;
-        border-radius:10px;padding:0.9rem 1rem;margin-bottom:1.25rem;
-        display:flex;gap:0.875rem;align-items:flex-start;">
-            <div style="width:2rem;height:2rem;flex-shrink:0;
-            background:rgba(248,113,113,0.10);border:1px solid rgba(248,113,113,0.25);
-            border-radius:7px;display:inline-flex;align-items:center;
-            justify-content:center;font-size:0.95rem;">⚖️</div>
-            <div>
-                <div style="font-family:'Space Grotesk',sans-serif;font-size:0.9rem;
-                font-weight:600;color:#e2e8f0;margin-bottom:0.45rem;">
-                    Markowitz Mean-Variance (MV) — classical benchmark
+        border-radius:12px;padding:1.1rem 1.25rem 1.25rem;margin-bottom:1.25rem;">
+            <div style="font-family:'Space Grotesk',sans-serif;font-size:1rem;
+            font-weight:600;color:#e2e8f0;margin-bottom:0.3rem;">
+                Why compare HRP with Markowitz?
+            </div>
+            <div style="font-size:0.82rem;color:#94a3b8;line-height:1.55;
+            margin-bottom:1rem;">
+                HRP is our default optimizer. Markowitz is shown as the academic
+                benchmark to explain why HRP is more robust for this robo-advisor.
+            </div>
+            <div style="display:grid;
+            grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+            gap:0.75rem;margin-bottom:1rem;">
+                <div style="background:rgba(124,92,252,0.07);
+                border:1px solid rgba(124,92,252,0.22);border-radius:9px;
+                padding:0.7rem 0.85rem;">
+                    <div style="font-family:'Space Grotesk',sans-serif;
+                    font-size:0.82rem;font-weight:600;color:#a78bfa;
+                    margin-bottom:0.3rem;">HRP is more robust</div>
+                    <div style="font-size:0.76rem;color:#94a3b8;line-height:1.5;">
+                        No covariance matrix inversion. Less sensitive to
+                        estimation errors.
+                    </div>
                 </div>
-                <div style="font-size:0.79rem;color:#94a3b8;line-height:1.6;margin-bottom:0.45rem;">
-                    Mean-variance optimization, introduced by Markowitz in 1952, builds portfolios
-                    by maximising expected return for a given level of risk. It remains the standard
-                    academic reference for portfolio construction.
+                <div style="background:rgba(248,113,113,0.06);
+                border:1px solid rgba(248,113,113,0.22);border-radius:9px;
+                padding:0.7rem 0.85rem;">
+                    <div style="font-family:'Space Grotesk',sans-serif;
+                    font-size:0.82rem;font-weight:600;color:#f87171;
+                    margin-bottom:0.3rem;">Markowitz is the benchmark</div>
+                    <div style="font-size:0.76rem;color:#94a3b8;line-height:1.5;">
+                        Useful to compare diversification, concentration and
+                        stability.
+                    </div>
                 </div>
-                <div style="font-size:0.79rem;color:#94a3b8;line-height:1.6;">
-                    In practice, the approach is sensitive to estimation error in returns and
-                    covariances, and tends to produce concentrated allocations &#8212; often called
-                    &#8220;corner solutions&#8221; &#8212; where a few assets dominate.
+                <div style="background:rgba(148,163,184,0.06);
+                border:1px solid rgba(148,163,184,0.20);border-radius:9px;
+                padding:0.7rem 0.85rem;">
+                    <div style="font-family:'Space Grotesk',sans-serif;
+                    font-size:0.82rem;font-weight:600;color:#cbd5e1;
+                    margin-bottom:0.3rem;">Educational value</div>
+                    <div style="font-size:0.76rem;color:#94a3b8;line-height:1.5;">
+                        Users see why the app recommends HRP, not only the final
+                        weights.
+                    </div>
                 </div>
+            </div>
+            <div style="text-align:center;">
+                <span style="display:inline-block;
+                font-family:'Space Grotesk',sans-serif;font-size:0.78rem;
+                font-weight:600;color:#e2e8f0;
+                background:rgba(124,92,252,0.10);
+                border:1px solid rgba(124,92,252,0.28);border-radius:999px;
+                padding:0.4rem 1rem;">
+                    HRP = recommendation &middot; Markowitz = comparison
+                </span>
             </div>
         </div>
         """,
