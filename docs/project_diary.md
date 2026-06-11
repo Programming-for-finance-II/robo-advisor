@@ -2056,6 +2056,515 @@ It is Wednesday evening — `regime_detector.py` was planned for today and remai
 - **Deprecated Plotly API (`titlefont`)**: useful for the "AI Tools / Lessons Learned" section — a concrete API-deprecation debugging example
 - **`ProgressColumn` in Streamlit**: an interesting technical choice — it uses native Streamlit functionality to create comparative bars without external JS libraries, to cite as an example of deliberate "scope/complexity" awareness
 
+
+---
+
+# 31 May 2026 — Week 4 (Sunday)
+
+## P1 — Backend / Data Engineering
+
+**Estimated duration:** not specified
+
+### What I did
+
+- Analyzed 4 reference screenshots (Fineco mobile app) showing the three-panel structure of a ticker card: price chart, instrument info, financial data (Morningstar, ESG, EPS, Financials, analyst consensus)
+- Designed and produced an interactive HTML/JS draft of the ETF explorer applied to the 8 ETFs of the HRP v3.1 portfolio:
+  - First version: included a search bar + 8 ticker pills
+  - Second version (final): removed the search bar — with only 8 fixed tickers it is unnecessary; only the pill selectors remain
+- Wrote the optimized implementation prompt for the modification to `frontend/app.py`:
+  - Precise target: the "What do these tickers mean?" section in the Portfolio Dashboard
+  - Surgical instructions: touch only that section, nothing else in the file
+  - Included the complete static `ETF_METADATA` dictionary for all 8 tickers (full name, issuer, category, TER, AUM, description, key stats per ETF type, Morningstar rating, ESG breakdown, analyst consensus, financial data with trend arrays)
+  - Included `CLUSTER_COLORS`, `_sparkline()` helper, `session_state` logic
+  - Specified Plotly modebar constraints (zoom/pan/reset/download/fullscreen only)
+  - Mandatory `@st.cache_data(ttl=3600)` cache for yfinance
+  - Lint constraint: `ruff check frontend/app.py` must exit 0
+  - Test constraint: `pytest --tb=short -q` must remain green
+- Committed the ETF explorer implementation directly to `main` (no other team member was touching that section; branch protection not active for direct commits)
+- Also applied targeted modifications to `backend/optimizer/charts.py` for Plotly modebar standardization: restricted all 4 existing charts to the 5 permitted buttons only
+
+### How I did it
+
+- Analyzed the reference structure (3-panel Fineco layout) and adapted it for ETFs and bonds: replaced non-applicable equity metrics (EPS, P/E) with ETF-specific equivalents (YTM/duration for bonds, P/FFO for REITs, gold spot for GLD, ESTER rate for XEON.MI)
+- Rapid iteration on an interactive HTML/JS draft to validate layout and logic before writing the production code
+- ETF data extracted from `universe_config.py` (already in the repo) + additional static data (TER, AUM, key stats) defined as constants — deliberate choice to avoid dependencies on paid external APIs
+- Direct commit to `main` instead of a PR because the section was untouched by any other team member at that moment
+
+### Difficulties
+
+- No significant technical blockers during the session
+- An automated review reminder suggested a P4 review, but it was unnecessary given no one else was working on that section — overhead clarified and removed
+- The three-panel reference structure (Fineco) is designed for equity stocks with EPS, revenue, EBITDA — adapted for ETFs and bonds by replacing non-applicable metrics
+
+### Achievements / Key decisions
+
+- ETF Explorer live on `main`: the "What do these tickers mean?" section in the Portfolio Dashboard now shows a 3-panel explorer with a real yfinance chart, instrument description, and complete financial data
+- Plotly modebar standardized across all project charts: all charts now expose only zoom/pan/reset/download/fullscreen — UX consistency across the whole app
+- `ETF_METADATA` as single source of truth for UI: all static data for the 8 ETFs centralized in a module-level dictionary in `app.py`, not inline in the rendering function — facilitates future modifications
+- Mandatory yfinance cache: the `@st.cache_data(ttl=3600)` pattern avoids the classic Streamlit issue of re-executing the download on every user interaction
+
+### Next steps
+
+- Review the diff on GitHub manually to verify the section replacement in `app.py` was executed correctly
+- Test the ETF explorer locally or on Streamlit Cloud after deploy: 8 pills correctly select the ticker, chart loads real yfinance data, time-range selector (2h to YTD) slices correctly, ESG/analyst/financials sections render without errors
+- Verify that `ruff check frontend/app.py` and `pytest --tb=short -q` are still green after the commit (CI check on GitHub Actions)
+- Confirm that `agent_pr.yml` is configured and tested — still the critical W4 task for the professor's criterion 5
+
+### Notes for the academic PDF
+
+- The ETF explorer is a good example of educational UX: it shows the user not only the portfolio weights but also what each instrument represents, why it was chosen, and how it has performed historically — reinforces the narrative of the robo-advisor as a transparent and educational tool (relevant for Section 1 — Introduction and Section 7 — Lessons Learned)
+- The decision to use static data for TER/AUM/Morningstar/ESG (instead of paid APIs) is a documentable limitation: fundamental ETF data (Morningstar ratings, ESG scores, analyst consensus) are hardcoded as static constants to avoid dependencies on commercial APIs unavailable in an academic context. A production system would use providers such as Refinitiv, Bloomberg or MSCI ESG Research — goes in Section 6 (Limitations)
+- The `@st.cache_data` pattern for yfinance is a concrete example of frontend performance optimization — mentionable in Section 7 (Lessons Learned, implementation choices)
+
+---
+
+# 2 June 2026 — Week 4 (Tuesday)
+
+## P4 — Frontend / LLM / Docs
+
+**Estimated duration:** not specified
+
+### What I did
+
+**1. Page header icons**
+- Added `icon` parameter to the **Investor Profile Questionnaire** page header and to **Portfolio Dashboard**, aligning them visually with Compare Markowitz which already had an icon
+- The `page_header()` function in `style.py` already supported the parameter — it was enough to pass it
+
+**2. Clean publication of the icons commit**
+- The `feature/p4-premium-streamlit-theme` branch was 31 commits ahead of origin, with work from the whole team — cherry-pick operation to isolate only the icons commit
+- Workflow adopted:
+  - `git stash` to save uncommitted work
+  - Created clean branch `fix/header-icons-clean` from `origin/feature/p4-premium-streamlit-theme`
+  - Cherry-picked only the icons commit
+  - Push and opened PR #115 → merged into `main`
+
+**3. Premium navbar (branch: `feature/p4-premium-streamlit-theme`)**
+- Logo enlarged from 28px to 42px, container from 44px to 62px with purple border and glow
+- Navbar height: 60px → 76px, darker navy background
+- Brand name font: 16px → 19px
+- Active page button transformed into a solid purple pill (instead of transparent grey)
+- SVG icons (already defined in `_NAV_SVGS`) injected into navigation buttons via JS injection
+
+**4. PR management**
+- PR #114: opened by mistake from the full team branch → closed
+- PR #115: `fix/header-icons-clean → main` → merged
+- PR #116: duplicate → closed
+- PR #117: `fix/navbar-branding-polish → main` → opened and updated, ruff E501 fix applied
+
+**5. New transparent logo**
+- Replaced `logo.png` with `roboadvisor_robot_transparent.png`
+- Original file was RGB without alpha channel (black background visible in dark mode)
+- Converted to RGBA removing white/black pixels with Pillow
+- Committed and pushed on PR #117
+
+### How I did it
+
+- Git from terminal: `git stash`, `git checkout -b`, `git cherry-pick`, `git push`
+- Pillow (Python) for PNG RGB → RGBA conversion with background removal
+- CSS injection via `style.py` + JS for SVG icons in navbar buttons
+- Ruff for linting fix (E501 line too long) before pushing on PR #117
+- Applied cherry-pick strategy to isolate the icons fix on a clean branch and diagnose branch conflicts
+
+### Difficulties
+
+- `feature/p4-premium-streamlit-theme` with 31 team commits not isolable without cherry-pick → resolved with cherry-pick on a clean branch
+- PR #114 opened by mistake with the full team diff → closed manually
+- PR #116 duplicate → closed
+- Original logo without alpha channel → visible dark background in dark mode → resolved with Pillow conversion
+- Ruff E501 fix required before PR #117 merge
+
+### Achievements / Key decisions
+
+- PR #115 merged into `main`: page header icons now consistent across all main pages
+- Cherry-pick workflow documented and usable as reference for future isolated fixes on shared branches
+- Premium navbar completed and in review (PR #117): significant visual impact for the final demo
+- Transparent logo: aesthetic issue resolved, now compatible with dark theme
+- Consolidated pattern: always separate point fixes (icons, logo) from ongoing work on shared branches — cherry-pick + clean branch
+
+### Next steps
+
+- Wait for review and merge of PR #117 (`fix/navbar-branding-polish`)
+- Verify that the premium navbar does not introduce regressions on other pages (manual end-to-end test)
+- Finalize `AGENTS.md` with PR agent URL and diff description as evidence (professor's criterion 5)
+- Finalize `README.md`: installation with `uv`, usage examples with sample output, API docs for 3 endpoints
+- Compile final LaTeX PDF once P2/P3 sections are integrated
+- Participate in the team release v1.0 review
+- Final proofread of PDF and submission on iCorsi
+
+### Notes for the academic PDF
+
+- The cherry-pick strategy to isolate contributions on shared branches is citable in the Lessons Learned section as a concrete example of advanced Git workflow in a multi-person team
+- The logo conversion with Pillow (RGB → RGBA) is a minor but concrete example of attention to visual quality and dark-mode consistency — citable in the Frontend/UX section
+- The management of duplicate/erroneous PRs (#114, #116) documents the real complexity of collaboration on shared branches in a 4-person team — honest and credible in Lessons Learned
+- The CSS injection for SVG icons in navbar buttons (via JS in `style.py`) is a non-standard pattern in Streamlit — worth a technical note in the Frontend section as an example of advanced customization beyond the framework's limits
+
+---
+
+# 3 June 2026 — Week 4 (Wednesday)
+
+## P4 — Frontend / LLM / Docs
+
+**Estimated duration:** not specified
+**Branch:** `p4/fix-main-ui-polish`
+
+### What I did
+
+**Compare Markowitz — educational UX**
+- Added introductory text below the page title; subsequently moved inside the benchmark card as the first paragraph
+- Rewrote the benchmark card: cleaner and more neutral text in two paragraphs, removed the sentence "Phase A values are mock", removed the defensive tone against HRP
+- Replaced bold markdown titles (`**text**`) with `_section_header()` — same component as the Portfolio Dashboard (purple bar, large font), numbered 1/2/3
+- Corrected section order: title → explanation → chart in each section
+- Added explanatory paragraphs before the radar chart, the risk contributions chart, and the correlation matrix
+- Added a "How to read it" block below the Asset Correlation Matrix (separate from the bar chart explanation of the previous section)
+
+**Settings — Team section**
+- Added a Team section between API Status and About with four responsive cards (photo, name, role, responsibilities)
+- Images loaded as base64 from `frontend/assets/team/`; compatible with local and Streamlit Cloud
+- Removed white/grey background from PNG images with PIL+numpy → transparent alpha channel
+- Photo size increased from 72×72 to 100×100px, white background added behind robot images
+- Cards centered with `justify-content: center` on the flex container
+- Removed the "Team: P1 Backend · P2 Quant…" row from the About section (now redundant)
+- Settings titles (Data Source, API Status, Team, About) now use `_section_header()` without a number, consistent with the rest of the UI
+
+**Technical fixes**
+- Ruff E501 in CI: line too long split to stay under 100 characters
+- `_section_header()` made generic: number now optional (empty string = no numeric prefix)
+
+### How I did it
+
+- Verified UX alignment and consistency with the canonical design throughout the session
+- VS Code for direct editing of Streamlit files
+- PIL + numpy for image processing (background removal, transparency)
+- Base64 encoding for image embedding compatible with Streamlit Cloud
+- Ruff for CI linting
+
+### Difficulties
+
+- Team PNG images had non-uniform white/grey backgrounds — not removable with simple chroma key; resolved with PIL+numpy (threshold on alpha channel)
+- `_section_header()` originally required the number as mandatory — a small refactor was needed to make it optional without breaking existing calls
+
+### Achievements / Key decisions
+
+- **Compare Markowitz** is now a coherent educational page: clear narrative flow, no defensive tone, UI components uniform with the rest of the project
+- **Settings/Team** completes the page: the team is visible in the app, useful for the final demo
+- `_section_header()` is now a fully reusable component without magic strings for the number — small refactor with positive impact on the codebase
+- Branch `p4/fix-main-ui-polish` ready for PR toward `main`
+
+### Next steps
+
+- Commit on branch `p4/fix-main-ui-polish` and open Pull Request on GitHub toward `main`, requesting review from P1
+- W4 remaining priorities:
+  - LaTeX PDF — Section 4 (LLM Narrator): narrator pattern, Ground Truth JSON, validator 4-step, EU Awareness Rule 9
+  - LaTeX PDF — Section Frontend / UX / EU Awareness: dashboard, HRP vs Markowitz tab, EU Investor Note, UCITS badge, stress banner
+  - `AGENTS.md` final: add PR URL and diff description as evidence for Criterion 5
+  - `README.md`: complete installation with `uv`, usage examples with sample output
+  - End-to-end manual test of the full app before submission
+
+### Notes for the academic PDF
+
+- The choice to use `_section_header()` as a unified component for all UI titles (with and without numbering) is documentable in the Frontend/UX section as an example of a coherent internal design system — even small, it demonstrates design awareness
+- Image management via base64 (instead of absolute paths) is the correct solution for Streamlit Cloud; worth a note in Lessons Learned as an example of an infrastructure constraint addressed proactively
+- The tone refactoring in the benchmark card (from defensive to neutral/educational) reflects the project design choice to position the tool as an educational instrument, not a recommendation system — aligned with the mandatory disclaimer and EU Awareness Rule 9
+
+---
+
+# 4 June 2026 — Week 4 (Thursday)
+
+## P1 — Backend / Data Engineering (session 1)
+
+**Estimated duration:** ~2 hours
+
+### What I did
+
+**Backend — `backend/api/main.py`**
+- Added `GET /profile/latest` endpoint: given a `session_token` in the header, resolves the `user_id` from the `users` table and returns the latest saved profile from the `recommendations` table. Protected with `verify_api_key`, no rate limit (lightweight GET)
+- Wrote the `session_token → user_id` lookup from scratch because no existing endpoint handled it: `/optimize` was writing `user_id="anonymous"` as a fixed value
+
+**Frontend — `frontend/app.py`**
+- Refactored the questionnaire page to support 3 distinct states:
+  1. **first-time** — empty form, to be filled in
+  2. **read-only** — profile already present: form hidden, answer summary, "Reassess my profile" button
+  3. **reassessment** — form reopened pre-populated with previous answers; on submit saves and returns to read-only
+- Added `session_token` in the URL as a query parameter (`?sid=...`) so it survives a tab refresh
+- Created dedicated SQLite table `questionnaire_profiles` (managed directly by the frontend, without touching `backend/data/`): append-only, saves the profile on every submit and reloads it on page reload
+- Removed the "View my Portfolio Dashboard →" button from the read-only state (visible only after having just calculated the profile in the current session)
+
+**Git**
+- All work on branch `feature/questionnaire-persistence` (3 commits)
+- Merged to `main` with manual resolution of a layout conflict: preserved both the new 3-state architecture and the UI changes already present on `main`
+- Final separate commit for the button removal
+- All pushed to `main`
+
+### How I did it
+
+- Identified that the `recommendations` table was not usable for saving questionnaire answers alone: it has dozens of `NOT NULL` columns designed for the optimizer output (HRP weights, market data hash, risk metrics) — filling them with dummy values would have polluted the audit trail
+- Chose to create a separate `questionnaire_profiles` table, lightweight and dedicated to the questionnaire only, managed with a direct import from Streamlit (without HTTP calls to FastAPI)
+- `GET /profile/latest` implemented as best-effort in the frontend: if FastAPI is unreachable (e.g. Streamlit Cloud where only Streamlit runs), the call degrades silently and the questionnaire uses only `session_state` + local table
+
+### Difficulties
+
+- The initial spec assumed that a `session_token → user_id` lookup pattern already existed in the backend — it did not. Implemented from scratch following the SQLite pattern already used in `snapshots.py`
+- The spec assumed the frontend made HTTP calls to the backend — this had never been the case: everything uses direct imports. Adapted accordingly
+- The `recommendations` table has many `NOT NULL` optimizer fields that blocked inserts when trying to use it for questionnaire-only saves — issue discovered during testing
+- Merge conflict on `main` at the time of merge: resolved manually preserving both sets of changes
+
+### Achievements / Key decisions
+
+- Questionnaire persistence fully operational end-to-end: fill → submit → row written to DB → page reload → profile restored in read-only
+- Persistence behavior: works as long as the URL remains the same (the `session_token` is in the query parameter `?sid=...`). If the tab is closed and a new one opened without copying the URL, the `session_token` changes and the questionnaire restarts — as if it were a new user
+- Clean architecture: `questionnaire_profiles` is separate from `recommendations`, the optimizer audit trail remains intact
+- All 3 questionnaire states verified both in headless tests and in the real browser
+- `ruff` clean. The 2 failures in `test_advice_pipeline` are a pre-existing issue (file-lock on Windows), identical on `main` before this session — not introduced by this work
+- Known limitation: on Streamlit Cloud the disk is ephemeral — at every redeploy or cold start the local SQLite file is deleted and persistence resets. For guaranteed cross-deploy persistence, an external DB (e.g. Supabase, Railway PostgreSQL) combined with a stable user identification system (e.g. cookie) would be needed. Discussed and not implemented — conscious decision to avoid increasing infrastructure complexity close to the submission deadline
+
+### Next steps
+
+- Decide whether to delete the `feature/questionnaire-persistence` branch (now merged into `main`)
+- Evaluate whether the Streamlit Cloud persistence limitation is acceptable for the professor's demo or whether adding an external DB is worthwhile
+- If true cross-deploy persistence is desired: add Supabase (free tier) as a SQLite replacement backend — estimated 2-3 hours of work
+
+### Notes for the academic PDF
+
+- The choice to separate `questionnaire_profiles` from `recommendations` is a design decision documentable in Lessons Learned: separation of concerns between "user profile" (input) and "optimized recommendation" (output audit)
+- The Streamlit Cloud persistence limitation (ephemeral disk) is a concrete example of an infrastructure trade-off to cite in the Limitations section
+- The silent degradation pattern (best-effort HTTP call → fallback to direct import) is an example of robust design for constrained deployment environments
+
+---
+
+## P1 — Backend / Data Engineering (session 2)
+
+**Estimated duration:** ~1.5 hours
+
+### What I did
+
+- Developed and applied targeted implementation prompts to convert the sidebar navigation into an apple.com-style top navigation bar
+- Iterated 6 times to resolve emerging issues step by step:
+  1. First iteration: top bar with brand and nav as two separate objects
+  2. Alignment fix: brand overlapping the first nav item ("Questionnaire")
+  3. Structural fix: brand and nav unified in a single HTML block
+  4. Navigation fix: links were opening a new tab instead of staying in the same window
+  5. Responsive fix: nav was wrapping to a second row instead of disappearing
+  6. Breakpoint fix: clipping at half-button → hide everything at 1080px
+- Final solution implemented in `frontend/app.py`:
+  - Brand (logo + name) in fixed `st.markdown()` HTML on the left
+  - Nav buttons via `st.columns()` + `st.button()` moved in the DOM inside `.top-navbar` via JavaScript
+  - Navigation via `st.query_params["page"]` + `st.rerun()` — native Streamlit pattern, no `window.parent` or iframe hack
+  - Responsive behavior: below 1080px all nav links disappear (`display: none`), above 1080px all visible — no wrap, no partial clipping
+  - CSS: `backdrop-filter: blur(20px)`, `position: fixed`, `z-index: 1000`, `flex-wrap: nowrap`, font 13px, hover opacity transition
+
+### How I did it
+
+- Visual analysis of screenshots to diagnose each problem
+- Direct reading of `frontend/app.py` to understand the exact structure before each implementation step
+- Targeted prompts with explicit constraints on what NOT to modify for each step
+- Root cause diagnosis before writing each fix:
+  - iframe problem → abandoned `window.parent.location.href`
+  - wrap problem → `flex-wrap: nowrap` + fixed breakpoint
+  - partial clipping → `display: none` on the entire block
+
+### Difficulties
+
+- **Streamlit dual structure**: brand HTML and nav buttons are two distinct objects in the DOM — `position: fixed` CSS does not unify them automatically. Resolved with JS that moves `stHorizontalBlock` inside `.top-navbar`
+- **Broken navigation**: `window.parent.goToPage` does not work because `st.components.v1.html()` is in a sandboxed iframe that cannot navigate the parent. Resolved with `st.query_params` + native `st.rerun()`
+- **Responsive clipping**: `overflow: hidden` was cutting buttons in half. Resolved with a fixed breakpoint at 1080px and `display: none` on the entire nav block — all-or-nothing behavior
+- **Fragile MutationObserver**: the JS adding the CSS class on each Streamlit rerun was unreliable. Abandoned in favor of pure CSS
+
+### Achievements / Key decisions
+
+- Apple-style top navbar working on Streamlit Cloud
+- In-window navigation confirmed (same tab, no new tab)
+- Responsive behavior: below 1080px only logo + app name visible
+- Sticky bar: remains fixed while the user scrolls
+- Logo and app name preserved exactly as they were
+- No other part of the code modified (only navbar section in `app.py`)
+- Technical decision: abandoned pure HTML `<a href>` approach for navigation — incompatible with Streamlit's iframe model. Chose native pattern `st.button()` + `st.query_params` + `st.rerun()`
+
+### Next steps
+
+- Open PR `feature/p4-top-navbar` → `main` on GitHub
+- Request review from P4 (Elena) — `app.py` is her frontend territory
+- Verify CI green before merge
+- P1 remaining open in W4:
+  - `agent_pr.yml` GitHub Action (CRITICAL — mandatory criterion 5)
+  - `test_ucits_fallback.py` (≥3 test cases)
+  - `pytest --cov` → target ≥80% coverage
+  - `docker-compose.yml` for local reproducibility
+  - Final `README.md`
+  - Git tag `v1.0` + GitHub Release
+
+### Notes for the academic PDF
+
+- The navbar was implemented without external frontend libraries — only CSS injected via `st.markdown(unsafe_allow_html=True)` and minimal JS for the DOM move. Demonstrates the limitations of the Streamlit Cloud iframe model compared to a traditional web app
+- The `st.query_params` + `st.rerun()` pattern is the canonical Streamlit solution for multi-page routing in a single-file app — worth mentioning in Lessons Learned as a conscious choice compared to `st.navigation()` (available only from Streamlit 1.36+)
+- The incremental approach (6 progressive fixes) is a good example of screenshot-driven frontend debugging — documentable as a frontend development methodology
+
+---
+
+## P1 — Backend / Data Engineering (session 3)
+
+**Estimated duration:** ~2 hours
+
+### What I did
+
+- Clarified the state of Phase A and Phase B of the profiler: identified that Phase B (GBM on SCF 2022, `HistGradientBoostingClassifier`) is implemented by P3 but not yet confirmed as wired in the `/profile` endpoint; Phase A (rule-based Grable-Lytton) is the one active in production
+- Visually verified the functioning of the backtest chart (HRP Portfolio vs 60/40 Benchmark, base 100) — chart live and data correct
+- Identified and resolved a bug on the backtest chart: zoom-out did not show data outside the initial 6M window. Root cause: hardcoded X range or `autorange=False`. Fix applied: `autorange=True`, `rangeselector` with all buttons 1M/3M/6M/1Y/3Y/All, removed hardcoded `xaxis_range`
+- Standardized the Plotly toolbar across **all application charts** (`charts.py` + `frontend/app.py`): retained only zoom in/out, pan, download plot, reset axes, full screen. Removed all other controls. Set `dragmode="pan"` as default. Added `displaylogo=False` on all `st.plotly_chart()` calls
+- Identified and resolved a layout issue on `plot_risk_contributions()`: title squeezed at the top, bars too compressed, chart not airy. Fix applied: top margin brought to 80px, dynamic height based on number of assets (`max(400, n_assets * 55 + 120)`), `bargap=0.35`, title with `font size=16` and `pad`
+
+### How I did it
+
+- Visual analysis of live app screenshots to identify UI problems
+- Incremental approach: one problem → targeted fix with explicit constraints ("do not touch other code") → visual verification → commit
+- Consulted the project memory (W3) to locate exact files before writing fixes (`charts.py` owner P2, `app.py` owner P4)
+
+### Difficulties
+
+- Initial uncertainty about which Phase was active in the profiler (A or B): requires confirmation by examining `main.py` imports — not yet verified directly on the repo
+- The `plot_risk_contributions()` chart had bars clipped on the right (EFA and CSPX.L outside the viewport): likely the right margin `r` was also insufficient, covered by the general margin fix
+
+### Achievements / Key decisions
+
+- **Backtest chart zoom-out working**: the user can now freely navigate the full available history without being blocked in the initial window
+- **Plotly toolbar standardized across the entire app**: consistent UX on all charts, controls reduced to the minimum useful for a financial app (pan as default = correct behavior for time series)
+- **Risk Contributions chart improved**: more airy layout and visually aligned with the other charts — important for the final presentation to the professor
+- Technical decision: `dragmode="pan"` as default on all charts (more appropriate for financial charts than zoom-box)
+
+### Next steps
+
+- Verify that PRs with the fixes are merged into `main` and that CI is green
+- Visually confirm in the deployed app that all charts show the correct toolbar
+- Verify Phase B wire status: open `backend/api/main.py` and check which profiler is actually imported and called in the `/profile` endpoint
+- Complete remaining W4 tasks (P1 priorities): `test_ucits_fallback.py` (≥3 cases), `docker-compose.yml`, final README.md, `pytest --cov` ≥80%, git tag `v1.0`
+
+### Notes for the academic PDF
+
+- The standardization of the Plotly toolbar and the `risk_contributions` layout fix are conscious UX decisions: choosing which controls to expose to the final user is a design choice documentable in the Frontend/UX section of the PDF
+- The backtest chart with free navigation over the full history demonstrates that real yfinance data is loaded correctly for the complete time window — useful to cite in the "Solution Completeness" section (Criterion 2)
+- The Phase A / Phase B distinction in the profiler (rule-based vs GBM) and the fallback mechanism for `confidence < 0.65` are architectures worth mentioning in the ML section of the PDF (P3 writes, but P1 exposes the endpoint)
+
+---
+
+# 9 June 2026 — Week 4 (Tuesday)
+
+## P1 — Backend / Data Engineering
+
+**Estimated duration:** not specified
+**Focus:** Frontend polish — Portfolio Dashboard
+
+### What I did
+
+- **Removed the "Continue Exploring" section** from the dashboard: these were two navigation buttons (Previous page / Next page) labelled "CONTINUE EXPLORING" that added no value and cluttered the layout
+- **Reordered Portfolio Dashboard sections**: the previous order did not follow a logical progression for the user. New order: (1) Portfolio Allocation, (2) How your money is grouped, (3) Key Portfolio Metrics (KPI cards), (4) Risk Contributions, (5) Historical Resilience. Section numbering updated accordingly
+- **Updated donut chart slice labels** (Portfolio Allocation section): slices previously showed the category name (e.g. "Euro Cash"). Now they show the ticker and weight directly (e.g. "XEON.MI / 25%"), more immediately useful for users familiar with ticker symbols
+- **Added a title to the KPI cards section**: the section with Expected Return / Volatility / Sharpe Ratio / Max Drawdown had no title. Added "3. Key Portfolio Metrics" for consistency with the other numbered sections
+- **Renamed "RISK" column to "RISK CONTR."** in the Portfolio Allocation table: the previous label was ambiguous (risk contribution? volatility?). "RISK CONTR." clarifies it is the percentage risk contribution of each asset to the portfolio
+- **Updated the ETF Explorer expander label**: from "What do these tickers mean?" to "Explore ETFs in detail — price, ESG, analyst ratings". The previous label suggested a simple glossary; the new one communicates that the expander contains a rich feature (price chart, Morningstar rating, ESG scores, analyst consensus for all 8 ETFs)
+- **Added vertical space** between the donut chart and the ETF Explorer expander for improved readability and visual separation of the two areas
+- **Attempted to lower the navbar breakpoint** from 1080px to 768px to fix the navbar disappearing at mid-screen window width. The CSS change was applied but the problem persists. The correct solution would be a hamburger menu that below a certain width replaces the horizontal navbar with a vertical menu, but the implementation in Streamlit would require JavaScript injected via `st.components.v1.html`, which is fragile and incompatible with Streamlit's re-render cycle. Problem documented and consciously left open
+
+### How I did it
+
+- Targeted edits applied directly on `frontend/app.py`. Each change was isolated: no change touched logic, data, or other sections outside the declared target. `ruff check` and `streamlit run` verification performed after each change
+
+### Difficulties
+
+- **Non-responsive navbar**: the CSS breakpoint at 1080px (then lowered to 768px) does not solve the problem on intermediate-width windows. The cause is structural: Streamlit does not natively support complex responsive layouts. A hamburger menu would be the correct UX solution but is too fragile to implement in Streamlit given the re-render mechanism. Problem consciously left open — the app is intended for use on a laptop at full screen
+
+### Achievements / Key decisions
+
+- Portfolio Dashboard visually complete: definitive section structure, clear labels, donut chart with direct tickers, ETF Explorer well-positioned and with a communicative label
+- Conscious decision not to implement the hamburger menu in Streamlit: documented for the academic PDF in the Limitations section
+- The ETF Explorer (price chart + Morningstar + ESG + analyst consensus for 8 ETFs) is a valuable feature that deserves visibility in the professor's demo
+
+### Next steps
+
+- Verify that real data is correctly wired (risk contributions balanced — Intl Equity at 26.4% is anomalous for HRP, could be mock data still active)
+- `test_ucits_fallback.py` (≥3 test cases) — still open
+- `pytest --cov` target ≥80% coverage
+- Functional `docker-compose.yml` locally
+- Final `README.md`
+- Git tag `v1.0` + GitHub Release
+
+### Notes for the academic PDF
+
+- **Navbar and responsiveness**: Streamlit is not a general-purpose UI framework. The sticky navbar was implemented with `st.columns()` + custom CSS on `data-testid` selectors. Responsiveness below 1080px is not stably solvable without external JavaScript — limitation documented and accepted for the academic context (demo on a laptop at full screen)
+- **ETF Explorer**: the section is a concrete example of how real market data (yfinance) can be integrated into an educational UI — price chart with selectable timeframe, TER, AUM, ESG scores, analyst consensus. Deserves mention in the "Solution Completeness" section of the PDF
+
+---
+
+## P4 — Frontend / LLM / Docs
+
+**Estimated duration:** not specified
+**Branch:** `fix/p4-compare-markowitz-explanation`
+
+### What I did
+
+**Compare Markowitz — `frontend/app.py`**
+- Replaced long academic paragraph with a compact collapsible card "Why compare HRP with Markowitz?" (3 mini-cards + final pill), questionnaire style
+- Radar chart: legend restyled (HRP default / Markowitz MV), reduced radial ticks to eliminate overlaps
+- Added "Indicators" card next to the radar with a description of each axis ("Higher is better"), "Advisor scope" style header
+- Vertically centered the Indicators card relative to the radar
+- Removed "Phase A/B" jargon from captions
+
+**Portfolio Dashboard**
+- HRP paragraph replaced with "HRP Methodology" section with 4 mini-cards (Correlation clustering · Risk-balanced allocation · Robust covariance · Weight constraints)
+- Panel with dotted background + purple glow
+- Added separator lines between items 2, 3, 4
+- Removed target icon next to the title
+
+**Backtesting**
+- Added collapsible section "What is backtesting?" before the stress scenario selector
+- "Strategy comparison" table header restyled with purple gradient consistent with the palette
+
+**Settings**
+- Added missing icon + premium hero banner (eyebrow + title + decorated background + illuminated gear)
+- Data Source and About sections transformed into elegant cards; added separator + centering
+
+**Questionnaire**
+- Removed the graduation cap icon from the card header
+
+**Bug fixes (functional)**
+1. **"View full backtesting" navigation**: the button was not navigating because it updated only `active_page` but not the `page` query param (re-read on rerun). Fixed: both updated → navigation working
+2. **Intermittent navbar icons**: removed icons injected via `setTimeout` (fragile timing); navbar now stable with text only. Also removed dead code `_NAV_SVGS` (~90 lines)
+
+### How I did it
+
+- Each change implemented incrementally on `frontend/app.py`
+- 19 single commits, all attributed to `elenatrombini <ele.trombini@gmail.com>` (corrected initial commits that showed `eletrombini-ctrl` using `git config` at repo level)
+- Lint check with `ruff check frontend/app.py` after each logical unit — passed
+- Tests with `pytest tests/test_charts.py` → 34 passed
+- PR pushed on branch `fix/p4-compare-markowitz-explanation` — not yet merged
+
+### Difficulties
+
+- Incorrect commit attribution in first pushes (`eletrombini-ctrl` instead of `elenatrombini`) → resolved with `git config user.name` / `user.email` at repo level
+- Navbar icons via `setTimeout` unreliable → chose to remove them entirely instead of increasing the delay (more robust and maintainable solution)
+
+### Achievements / Key decisions
+
+- **19 commits pushed** on `fix/p4-compare-markowitz-explanation`; PR ready for review
+- Backtesting navigation bug resolved (was a real functional bug, not just aesthetic)
+- Navbar stabilized: removed ~90 lines of dead code
+- No internal jargon ("Phase A/B", internal references, algorithm names) remaining in the UI
+- All constraints respected in all touched files
+- All tests green; linting clean
+
+### Next steps
+
+- **Merge PR** `fix/p4-compare-markowitz-explanation` → `main` (request review from P1)
+- Visually verify end-to-end after merge (in particular: backtesting navigation, navbar, radar chart)
+- Apply `PLOTLY_DARK` dict to Plotly charts for consistency with the dark palette (task remaining open from the previous session)
+- Complete/integrate LaTeX sections: "Frontend / UX / EU Awareness" and "LLM Narrator + Validator" if not yet closed
+- Participate in release v1.0 review
+
+### Notes for the academic PDF
+
+- The navigation bug (`active_page` vs query param `page`) is a good example for the Frontend/UX section: demonstrates understanding of the Streamlit re-run cycle, not just styling
+- The choice to remove `setTimeout` icons (rather than increasing the delay) is citable as a robustness-oriented decision — coding style criterion (criterion 4)
+- The 4 mini-cards "HRP Methodology" in the Portfolio Dashboard make the section educationally more solid: the system explains the method it uses — consistent with the "educational" profile of the robo-advisor
+- The collapsible card "What is backtesting?" is a UX element that lowers the barrier for non-technical users — citable in the UX section as attention to product accessibility
+
 ---
 
 # Deliverable Status Summary — per Week and per Role
