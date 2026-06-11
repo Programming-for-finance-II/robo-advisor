@@ -1297,6 +1297,162 @@ def render_questionnaire() -> None:
 # Page 2 -- Portfolio Dashboard
 # ---------------------------------------------------------------------------
 
+# Scoped CSS for the "profile required" gate empty-state. Injected once per
+# gate render (only one gate shows at a time). Prefixed `pg-` to avoid clashes.
+_GATE_CSS = """
+<style>
+@keyframes pg-orb-glow {
+    0%,100% { box-shadow: 0 0 34px rgba(124,92,252,0.30),
+                          inset 0 0 18px rgba(124,92,252,0.18); }
+    50%     { box-shadow: 0 0 54px rgba(124,92,252,0.55),
+                          inset 0 0 24px rgba(124,92,252,0.30); }
+}
+@keyframes pg-float {
+    0%,100% { transform: translateY(0); }
+    50%     { transform: translateY(-6px); }
+}
+@keyframes pg-rise {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+.pg-wrap {
+    position: relative;
+    max-width: 50rem;
+    margin: 1.25rem auto 0;
+    padding: 3rem 2.5rem 2.5rem;
+    text-align: center;
+    border-radius: 22px;
+    border: 1px solid rgba(124,92,252,0.22);
+    background:
+        radial-gradient(120% 90% at 50% -10%, rgba(124,92,252,0.16) 0%, transparent 55%),
+        linear-gradient(180deg, #111a2e 0%, #0c1322 100%);
+    overflow: hidden;
+    animation: pg-rise 0.5s cubic-bezier(0.16,1,0.3,1);
+}
+/* faint dot-grid texture */
+.pg-wrap::before {
+    content: "";
+    position: absolute; inset: 0;
+    background-image: radial-gradient(rgba(148,163,184,0.07) 1px, transparent 1px);
+    background-size: 22px 22px;
+    -webkit-mask-image: radial-gradient(120% 80% at 50% 0%, #000 30%, transparent 75%);
+    mask-image: radial-gradient(120% 80% at 50% 0%, #000 30%, transparent 75%);
+    pointer-events: none;
+}
+.pg-inner { position: relative; z-index: 1; }
+.pg-orb {
+    width: 84px; height: 84px; margin: 0 auto 1.4rem;
+    border-radius: 24px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2.4rem; line-height: 1;
+    background: radial-gradient(circle at 34% 28%,
+        rgba(167,139,250,0.55) 0%, rgba(124,92,252,0.14) 62%, transparent 100%);
+    border: 1.5px solid rgba(124,92,252,0.45);
+    animation: pg-orb-glow 3.4s ease-in-out infinite,
+               pg-float 5s ease-in-out infinite;
+}
+.pg-eyebrow {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.68rem; font-weight: 700;
+    letter-spacing: 0.22em; text-transform: uppercase;
+    color: #a78bfa; margin-bottom: 0.7rem;
+}
+.pg-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.75rem; font-weight: 700;
+    color: #f5f7fb; letter-spacing: -0.02em; line-height: 1.2;
+    margin-bottom: 0.8rem;
+}
+.pg-body {
+    font-size: 0.96rem; color: #9aa7bd; line-height: 1.7;
+    max-width: 33rem; margin: 0 auto 1.9rem;
+}
+/* 3-step flow */
+.pg-steps {
+    display: flex; align-items: stretch; justify-content: center;
+    gap: 0.5rem; flex-wrap: wrap; margin: 0 auto 1.9rem; max-width: 38rem;
+}
+.pg-step {
+    flex: 1 1 0; min-width: 8.5rem;
+    background: rgba(15,22,40,0.66);
+    border: 1px solid #1e2640; border-radius: 13px;
+    padding: 1rem 0.85rem;
+    display: flex; flex-direction: column; align-items: center; gap: 0.45rem;
+}
+.pg-step-num {
+    width: 1.7rem; height: 1.7rem; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-family: 'Space Grotesk', sans-serif; font-size: 0.78rem; font-weight: 700;
+    color: #c4b5fd; background: rgba(124,92,252,0.16);
+    border: 1px solid rgba(124,92,252,0.4);
+}
+.pg-step--active .pg-step-num {
+    color: #0b1020; background: linear-gradient(135deg,#a78bfa,#7c5cfc);
+    border-color: transparent;
+}
+.pg-step-label {
+    font-family: 'Space Grotesk', sans-serif; font-size: 0.84rem;
+    font-weight: 600; color: #e2e8f0;
+}
+.pg-step-sub { font-size: 0.72rem; color: #64748b; line-height: 1.4; }
+.pg-step-arrow {
+    display: flex; align-items: center; color: #3b475e;
+    font-size: 1.1rem; flex: 0 0 auto;
+}
+.pg-chips {
+    display: flex; align-items: center; justify-content: center;
+    gap: 0.5rem; flex-wrap: wrap;
+}
+.pg-chip {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    font-size: 0.74rem; font-weight: 500; color: #94a3b8;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid #1e2640; border-radius: 999px;
+    padding: 0.32rem 0.8rem;
+}
+.pg-chip svg { flex-shrink: 0; }
+/* CTA button (Streamlit button wrapped in .pg-cta) */
+.pg-cta { max-width: 22rem; margin: 1.6rem auto 0; }
+.pg-cta .stButton > button {
+    background: linear-gradient(135deg,
+        rgba(124,92,252,0.96) 0%, rgba(109,40,217,0.96) 100%) !important;
+    border: none !important; color: #fff !important;
+    font-family: 'Space Grotesk', sans-serif !important;
+    font-weight: 600 !important; font-size: 0.95rem !important;
+    border-radius: 11px !important; padding: 0.7rem 1rem !important;
+    box-shadow: 0 6px 22px rgba(124,92,252,0.4),
+        inset 0 1px 0 rgba(255,255,255,0.18) !important;
+    transition: transform 0.18s cubic-bezier(0.16,1,0.3,1),
+        box-shadow 0.18s ease !important;
+}
+.pg-cta .stButton > button:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 10px 30px rgba(124,92,252,0.55),
+        inset 0 1px 0 rgba(255,255,255,0.22) !important;
+}
+</style>
+"""
+
+# Small inline icons for the feature chips.
+_PG_ICON_CLOCK = (
+    '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#a78bfa"'
+    ' stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
+    '<circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>'
+)
+_PG_ICON_LIST = (
+    '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#a78bfa"'
+    ' stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
+    '<line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/>'
+    '<line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/>'
+    '<line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>'
+)
+_PG_ICON_SHIELD = (
+    '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#a78bfa"'
+    ' stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
+    '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>'
+)
+
+
 def _render_profile_required_gate(
     title: str,
     subtitle: str,
@@ -1304,24 +1460,53 @@ def _render_profile_required_gate(
     body: str,
     key: str,
 ) -> None:
-    """Empty-state shown when a page needs a risk profile that doesn't exist yet."""
+    """Empty-state shown when a page needs a risk profile that doesn't exist yet.
+
+    Renders a premium "locked" hero: a glowing orb with the page icon, a short
+    explanation of *why* the page is gated, a 3-step preview of the flow
+    (questionnaire → profile → this page) and a styled call-to-action that
+    routes to the questionnaire.
+    """
     page_header(title, subtitle, icon=icon)
+    st.markdown(_GATE_CSS, unsafe_allow_html=True)
+
+    # The page the user is trying to reach becomes step 3's label.
+    dest = title
 
     st.markdown(
-        '<div style="background:#0f1628;border:1px solid #1e2640;border-radius:16px;'
-        'padding:2.5rem 2rem;text-align:center;max-width:46rem;margin:1rem auto;">'
-        '<div style="width:3.5rem;height:3.5rem;border-radius:14px;margin:0 auto 1.1rem;'
-        'background:rgba(124,92,252,0.12);border:1px solid rgba(124,92,252,0.3);'
-        'display:flex;align-items:center;justify-content:center;font-size:1.7rem;">🧭</div>'
-        '<div style="font-family:\'Space Grotesk\',sans-serif;font-size:1.4rem;'
-        'font-weight:700;color:#f1f5f9;margin-bottom:0.6rem;">'
-        'Complete your questionnaire first</div>'
-        f'<div style="font-size:0.95rem;color:#94a3b8;line-height:1.7;'
-        f'max-width:34rem;margin:0 auto 0.5rem;">{body}</div>'
-        '</div>',
+        '<div class="pg-wrap"><div class="pg-inner">'
+        f'<div class="pg-orb">{icon}</div>'
+        '<div class="pg-eyebrow">Personalised · profile required</div>'
+        '<div class="pg-title">Complete your questionnaire first</div>'
+        f'<div class="pg-body">{body}</div>'
+        # ── 3-step flow ──────────────────────────────────────────────
+        '<div class="pg-steps">'
+        '<div class="pg-step pg-step--active">'
+        '<span class="pg-step-num">1</span>'
+        '<span class="pg-step-label">Questionnaire</span>'
+        '<span class="pg-step-sub">10 quick questions</span></div>'
+        '<div class="pg-step-arrow">→</div>'
+        '<div class="pg-step">'
+        '<span class="pg-step-num">2</span>'
+        '<span class="pg-step-label">Risk profile</span>'
+        '<span class="pg-step-sub">Scored & explained</span></div>'
+        '<div class="pg-step-arrow">→</div>'
+        '<div class="pg-step">'
+        '<span class="pg-step-num">3</span>'
+        f'<span class="pg-step-label">{dest}</span>'
+        '<span class="pg-step-sub">Unlocked for you</span></div>'
+        '</div>'
+        # ── feature chips ────────────────────────────────────────────
+        '<div class="pg-chips">'
+        f'<span class="pg-chip">{_PG_ICON_CLOCK}About 2 minutes</span>'
+        f'<span class="pg-chip">{_PG_ICON_LIST}10 questions</span>'
+        f'<span class="pg-chip">{_PG_ICON_SHIELD}Grable–Lytton scale</span>'
+        '</div>'
+        '</div></div>',
         unsafe_allow_html=True,
     )
 
+    st.markdown('<div class="pg-cta">', unsafe_allow_html=True)
     _, col_btn, _ = st.columns([1, 2, 1])
     with col_btn:
         if st.button(
@@ -1333,6 +1518,7 @@ def _render_profile_required_gate(
             st.session_state.active_page = "Questionnaire"
             st.query_params["page"] = "Questionnaire"
             st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
 
 
 def render_portfolio() -> None:
@@ -2717,241 +2903,235 @@ def _render_hrp_tab(portfolio: dict) -> None:
 # Aligned with the app-wide design tokens defined in frontend/style.py.
 _CHAT_CSS = """
 <style>
-/* ── Chat container ──────────────────────────────────────────────────────── */
-.ca-page {
-    margin-top: -0.3rem;
-}
+/* ════════════════════════════════════════════════════════════════════════
+   Chat Advisor — visual system (redesign). Matches the profile-gate language:
+   glowing orbs, Space Grotesk display, purple/teal accents, dot texture.
+   ════════════════════════════════════════════════════════════════════════ */
+.ca-page { margin-top: -0.3rem; }
 
-/* ── Status strip: model + validator + active profile ───────────────────── */
-.ca-status {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.5rem;
-    margin-bottom: 1rem;
-}
-.ca-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.45rem;
-    background: rgba(10,15,30,0.7);
-    border: 1px solid #1e2640;
-    border-radius: 999px;
-    padding: 0.32rem 0.85rem;
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 0.74rem;
-    font-weight: 500;
-    color: #94a3b8;
-    letter-spacing: 0.02em;
-}
-.ca-pill .ca-dot {
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    flex-shrink: 0;
-}
-.ca-pill--profile {
-    color: #a78bfa;
-    border-color: rgba(124,92,252,0.32);
-    background: rgba(124,92,252,0.1);
-}
-.ca-pill--profile .ca-dot {
-    background: #7c5cfc;
-    box-shadow: 0 0 0 3px rgba(124,92,252,0.18);
-}
-.ca-pill--model {
-    color: #93c5fd;
-    border-color: rgba(59,130,246,0.30);
-    background: rgba(59,130,246,0.08);
-}
-.ca-pill--model .ca-dot   { background: #3b82f6; }
-.ca-pill--guard {
-    color: #5eead4;
-    border-color: rgba(13,207,176,0.30);
-    background: rgba(13,207,176,0.08);
-}
-.ca-pill--guard .ca-dot {
-    background: #0dcfb0;
-    box-shadow: 0 0 0 3px rgba(13,207,176,0.15);
-}
-
-/* ── Chat shell ──────────────────────────────────────────────────────────── */
-.ca-shell {
-    background: #0f1628;
-    border: 1px solid #1e2640;
-    border-radius: 14px;
-    overflow: hidden;
-}
-.ca-shell-head {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.85rem 1.1rem;
-    background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 55%, #0d1220 100%);
-    border-bottom: 1px solid #1e2640;
-}
-.ca-shell-head-icon {
-    width: 2rem;
-    height: 2rem;
-    background: rgba(124,92,252,0.15);
-    border: 1px solid rgba(124,92,252,0.3);
-    border-radius: 9px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.95rem;
-    flex-shrink: 0;
-}
-.ca-shell-head-title {
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 0.95rem;
-    font-weight: 600;
-    color: #f1f5f9;
-    line-height: 1.2;
-}
-.ca-shell-head-sub {
-    font-size: 0.72rem;
-    color: #64748b;
-    letter-spacing: 0.02em;
-    margin-top: 0.1rem;
-}
-
-/* ── Empty state hero ────────────────────────────────────────────────────── */
-.ca-hero {
-    text-align: center;
-    padding: 2.25rem 1.5rem 1rem;
-}
-.ca-hero-orb {
-    width: 64px;
-    height: 64px;
-    border-radius: 50%;
-    background: radial-gradient(
-        circle at 35% 30%,
-        rgba(167,139,250,0.55) 0%,
-        rgba(124,92,252,0.15) 60%,
-        transparent 100%
-    );
-    border: 1px solid rgba(124,92,252,0.4);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 0.85rem;
-    font-size: 1.55rem;
-    box-shadow: 0 0 32px rgba(124,92,252,0.18);
-}
-.ca-hero-title {
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: #f1f5f9;
-    letter-spacing: -0.01em;
-    margin-bottom: 0.4rem;
-}
-.ca-hero-sub {
-    font-size: 0.87rem;
-    color: #64748b;
-    max-width: 420px;
-    margin: 0 auto;
-    line-height: 1.6;
-}
-.ca-hero-eyebrow {
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 0.62rem;
-    font-weight: 600;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    color: #475569;
-    margin: 1.5rem 0 0.6rem;
-}
-
-/* ── Suggestion chips (st.button cards) ─────────────────────────────────── */
-.ca-suggest {
-    padding: 0 1.1rem 1.4rem;
-}
-.ca-suggest .stButton > button {
-    background: rgba(15,22,40,0.7) !important;
-    border: 1px solid #1e2640 !important;
-    border-left: 3px solid rgba(124,92,252,0.3) !important;
-    border-radius: 10px !important;
-    color: #cbd5e1 !important;
-    font-family: 'DM Sans', sans-serif !important;
-    font-size: 0.85rem !important;
-    font-weight: 500 !important;
-    text-align: left !important;
-    white-space: normal !important;
-    line-height: 1.4 !important;
-    min-height: 3.5rem !important;
-    padding: 0.85rem 1rem !important;
-    transition: border-color 0.18s ease, background 0.18s ease,
-                color 0.18s ease, transform 0.18s ease !important;
-}
-.ca-suggest .stButton > button:hover {
-    border-color: rgba(124,92,252,0.55) !important;
-    border-left-color: #7c5cfc !important;
-    background: rgba(124,92,252,0.1) !important;
-    color: #e9d5ff !important;
-    transform: translateY(-1px) !important;
-}
-.ca-suggest .stButton > button p { text-align: left !important; }
-
-/* ── Conversation thread ─────────────────────────────────────────────────── */
-.ca-thread { padding: 1.1rem 1.1rem 0.35rem; }
-
-[data-testid="stChatMessage"] {
-    background: transparent !important;
-    border: none !important;
-    padding: 0.35rem 0 !important;
-    margin-bottom: 0.85rem !important;
-    animation: ca-fade 0.28s ease-out;
-    width: 100% !important;
-    max-width: 100% !important;
-}
 @keyframes ca-fade {
     from { opacity: 0; transform: translateY(4px); }
     to   { opacity: 1; transform: translateY(0); }
 }
-/* Hide avatar column entirely — distinction is colour-only */
-[data-testid="stChatMessageAvatarUser"],
-[data-testid="stChatMessageAvatarAssistant"],
-[data-testid="stChatMessageAvatarCustom"] {
-    display: none !important;
+@keyframes ca-pulse {
+    0%,100% { box-shadow: 0 0 0 0 rgba(13,207,176,0.55); }
+    50%     { box-shadow: 0 0 0 4px rgba(13,207,176,0); }
+}
+@keyframes ca-orb {
+    0%,100% { box-shadow: 0 0 22px rgba(124,92,252,0.35); }
+    50%     { box-shadow: 0 0 40px rgba(124,92,252,0.6); }
 }
 
-/* Message bubbles — full width, no avatar gap */
+/* ── Status strip: profile / model / validator ──────────────────────────── */
+.ca-status {
+    display: flex; flex-wrap: wrap; align-items: center;
+    gap: 0.5rem; margin-bottom: 1rem;
+}
+.ca-pill {
+    display: inline-flex; align-items: center; gap: 0.45rem;
+    background: rgba(10,15,30,0.7);
+    border: 1px solid #1e2640; border-radius: 999px;
+    padding: 0.32rem 0.85rem;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.74rem; font-weight: 500;
+    color: #94a3b8; letter-spacing: 0.02em;
+}
+.ca-pill .ca-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.ca-pill--profile {
+    color: #a78bfa; border-color: rgba(124,92,252,0.32);
+    background: rgba(124,92,252,0.1);
+}
+.ca-pill--profile .ca-dot {
+    background: #7c5cfc; box-shadow: 0 0 0 3px rgba(124,92,252,0.18);
+}
+.ca-pill--model {
+    color: #93c5fd; border-color: rgba(59,130,246,0.30);
+    background: rgba(59,130,246,0.08);
+}
+.ca-pill--model .ca-dot { background: #3b82f6; }
+.ca-pill--guard {
+    color: #5eead4; border-color: rgba(13,207,176,0.30);
+    background: rgba(13,207,176,0.08);
+}
+.ca-pill--guard .ca-dot {
+    background: #0dcfb0; box-shadow: 0 0 0 3px rgba(13,207,176,0.15);
+}
+
+/* ── Chat shell ─────────────────────────────────────────────────────────── */
+.ca-shell {
+    background:
+        radial-gradient(120% 60% at 50% -8%, rgba(124,92,252,0.10) 0%, transparent 60%),
+        #0f1628;
+    border: 1px solid #1e2640; border-radius: 16px; overflow: hidden;
+}
+.ca-shell-head {
+    display: flex; align-items: center; gap: 0.85rem;
+    padding: 0.95rem 1.15rem;
+    background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 55%, #0d1220 100%);
+    border-bottom: 1px solid #1e2640; position: relative;
+}
+.ca-id-orb {
+    position: relative; flex-shrink: 0;
+    width: 2.6rem; height: 2.6rem; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 1.15rem; color: #e9d5ff;
+    background: radial-gradient(circle at 34% 28%,
+        rgba(167,139,250,0.6) 0%, rgba(124,92,252,0.16) 62%, transparent 100%);
+    border: 1.5px solid rgba(124,92,252,0.45);
+    animation: ca-orb 3.4s ease-in-out infinite;
+}
+.ca-id-status {
+    position: absolute; right: -1px; bottom: -1px;
+    width: 0.72rem; height: 0.72rem; border-radius: 50%;
+    background: #0dcfb0; border: 2px solid #0d1220;
+    animation: ca-pulse 2.2s ease-in-out infinite;
+}
+.ca-id-meta { display: flex; flex-direction: column; min-width: 0; }
+.ca-id-name {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.98rem; font-weight: 700;
+    color: #f5f7fb; line-height: 1.2; letter-spacing: -0.01em;
+}
+.ca-id-sub {
+    font-size: 0.74rem; color: #8a97ad;
+    margin-top: 0.12rem; letter-spacing: 0.01em;
+}
+.ca-id-badge {
+    margin-left: auto;
+    display: inline-flex; align-items: center; gap: 0.35rem;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.68rem; font-weight: 600; color: #5eead4;
+    background: rgba(13,207,176,0.08);
+    border: 1px solid rgba(13,207,176,0.28); border-radius: 999px;
+    padding: 0.28rem 0.7rem; white-space: nowrap;
+}
+.ca-id-badge svg { flex-shrink: 0; }
+
+/* ── Empty-state hero ───────────────────────────────────────────────────── */
+.ca-hero { text-align: center; padding: 2.4rem 1.5rem 0.5rem; }
+.ca-hero-orb {
+    width: 68px; height: 68px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%,
+        rgba(167,139,250,0.55) 0%, rgba(124,92,252,0.15) 60%, transparent 100%);
+    border: 1px solid rgba(124,92,252,0.4);
+    display: inline-flex; align-items: center; justify-content: center;
+    margin-bottom: 0.9rem; font-size: 1.6rem;
+    animation: ca-orb 3.6s ease-in-out infinite;
+}
+.ca-hero-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.3rem; font-weight: 700;
+    color: #f5f7fb; letter-spacing: -0.01em; margin-bottom: 0.45rem;
+}
+.ca-hero-sub {
+    font-size: 0.88rem; color: #8a97ad;
+    max-width: 430px; margin: 0 auto; line-height: 1.6;
+}
+.ca-hero-eyebrow {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.62rem; font-weight: 600;
+    letter-spacing: 0.18em; text-transform: uppercase;
+    color: #566179; margin: 1.6rem 0 0.7rem;
+}
+
+/* ── Suggestion cards (st.button styled as cards) ───────────────────────── */
+.ca-suggest { padding: 0 1.15rem 1.5rem; }
+.ca-suggest .stButton > button {
+    position: relative;
+    background: rgba(15,22,40,0.66) !important;
+    border: 1px solid #1e2640 !important;
+    border-radius: 12px !important;
+    color: #cbd5e1 !important;
+    font-family: 'DM Sans', sans-serif !important;
+    font-size: 0.86rem !important; font-weight: 500 !important;
+    text-align: left !important; white-space: normal !important;
+    line-height: 1.45 !important; min-height: 3.6rem !important;
+    padding: 0.8rem 1rem 0.8rem 2.1rem !important;
+    transition: border-color 0.18s ease, background 0.18s ease,
+                transform 0.18s ease, color 0.18s ease !important;
+}
+.ca-suggest .stButton > button::before {
+    content: "›";
+    position: absolute; left: 0.95rem; top: 50%;
+    transform: translateY(-50%);
+    color: #7c5cfc; font-size: 1.1rem; font-weight: 700;
+    transition: transform 0.18s ease, color 0.18s ease;
+}
+.ca-suggest .stButton > button:hover {
+    border-color: rgba(124,92,252,0.5) !important;
+    background: rgba(124,92,252,0.1) !important;
+    color: #e9d5ff !important; transform: translateY(-2px) !important;
+}
+.ca-suggest .stButton > button:hover::before {
+    transform: translateY(-50%) translateX(3px); color: #a78bfa;
+}
+.ca-suggest .stButton > button p { text-align: left !important; }
+
+/* ── Conversation thread ────────────────────────────────────────────────── */
+.ca-thread { padding: 1.15rem 1.15rem 0.4rem; }
+[data-testid="stChatMessage"] {
+    background: transparent !important; border: none !important;
+    padding: 0.3rem 0 !important; margin-bottom: 0.7rem !important;
+    animation: ca-fade 0.28s ease-out;
+    width: 100% !important; max-width: 100% !important;
+}
+[data-testid="stChatMessageAvatarUser"],
+[data-testid="stChatMessageAvatarAssistant"],
+[data-testid="stChatMessageAvatarCustom"] { display: none !important; }
+
 [data-testid="stChatMessage"] [data-testid="stChatMessageContent"] {
     background: #131c30 !important;
     border: 1px solid #1e2640 !important;
-    border-left: 3px solid #1e2640 !important;
-    border-radius: 10px !important;
-    padding: 0.75rem 1.05rem !important;
-    box-shadow: 0 1px 0 rgba(0,0,0,0.15);
-    width: 100% !important;
-    box-sizing: border-box !important;
-    overflow-wrap: break-word !important;
-    word-break: break-word !important;
+    border-radius: 12px !important;
+    padding: 0.8rem 1.05rem 0.8rem 1.1rem !important;
+    width: 100% !important; box-sizing: border-box !important;
+    overflow-wrap: break-word !important; word-break: break-word !important;
 }
-/* User message: purple left-border accent (same pattern as selected options) */
+/* Assistant bubble: subtle gradient + teal accent + label */
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarAssistant"])
+[data-testid="stChatMessageContent"] {
+    background: linear-gradient(135deg,
+        rgba(19,28,48,0.95), rgba(15,22,40,0.95)) !important;
+    border-left: 3px solid #0dcfb0 !important;
+}
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarAssistant"])
+[data-testid="stChatMessageContent"]::before {
+    content: "✦ Assistant"; display: block;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.66rem; font-weight: 600;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    color: #5eead4; margin-bottom: 0.4rem; opacity: 0.9;
+}
+/* User bubble: purple accent + label */
 [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"])
 [data-testid="stChatMessageContent"] {
-    background: rgba(124,92,252,0.08) !important;
-    border-color: rgba(124,92,252,0.22) !important;
-    border-left-color: #7c5cfc !important;
+    background: rgba(124,92,252,0.1) !important;
+    border-color: rgba(124,92,252,0.24) !important;
+    border-left: 3px solid #7c5cfc !important;
+}
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"])
+[data-testid="stChatMessageContent"]::before {
+    content: "You"; display: block;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.66rem; font-weight: 600;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    color: #a78bfa; margin-bottom: 0.4rem; opacity: 0.9;
 }
 [data-testid="stChatMessage"] p {
     font-family: 'DM Sans', sans-serif !important;
-    font-size: 0.9rem !important;
-    line-height: 1.65 !important;
-    color: #cbd5e1 !important;
-    margin-bottom: 0.5rem !important;
-    text-align: justify !important;
+    font-size: 0.9rem !important; line-height: 1.65 !important;
+    color: #cdd6e3 !important; margin-bottom: 0.5rem !important;
+    text-align: left !important;
 }
 [data-testid="stChatMessage"] p:last-child { margin-bottom: 0 !important; }
+[data-testid="stChatMessage"] em {
+    color: #5b6678 !important; font-size: 0.78rem !important;
+}
 [data-testid="stChatMessage"] h1,
 [data-testid="stChatMessage"] h2,
 [data-testid="stChatMessage"] h3 {
     font-family: 'Space Grotesk', sans-serif !important;
-    color: #e2e8f0 !important;
-    font-size: 0.95rem !important;
+    color: #e2e8f0 !important; font-size: 0.95rem !important;
     margin: 0.4rem 0 0.3rem !important;
 }
 [data-testid="stChatMessage"] strong { color: #e9d5ff !important; }
@@ -2959,19 +3139,16 @@ _CHAT_CSS = """
     background: rgba(124,92,252,0.12) !important;
     color: #c4b5fd !important;
     padding: 0.05rem 0.35rem !important;
-    border-radius: 4px !important;
-    font-size: 0.84rem !important;
+    border-radius: 4px !important; font-size: 0.84rem !important;
 }
 [data-testid="stChatMessage"] table {
-    border-collapse: collapse !important;
-    margin: 0.3rem 0 !important;
+    border-collapse: collapse !important; margin: 0.3rem 0 !important;
 }
 [data-testid="stChatMessage"] th,
 [data-testid="stChatMessage"] td {
     border: 1px solid #1e2640 !important;
     padding: 0.35rem 0.7rem !important;
-    font-size: 0.83rem !important;
-    color: #94a3b8 !important;
+    font-size: 0.83rem !important; color: #94a3b8 !important;
 }
 [data-testid="stChatMessage"] th {
     background: rgba(124,92,252,0.08) !important;
@@ -2980,7 +3157,7 @@ _CHAT_CSS = """
     font-weight: 600 !important;
 }
 
-/* ── Chat input ──────────────────────────────────────────────────────────── */
+/* ── Chat input ─────────────────────────────────────────────────────────── */
 [data-testid="stChatInput"] {
     background: transparent !important;
     border-top: 1px solid #1e2640 !important;
@@ -2997,132 +3174,91 @@ _CHAT_CSS = """
     box-shadow: 0 0 0 3px rgba(124,92,252,0.12) !important;
 }
 [data-testid="stChatInput"] textarea {
-    background: transparent !important;
-    color: #e2e8f0 !important;
+    background: transparent !important; color: #e2e8f0 !important;
     font-family: 'DM Sans', sans-serif !important;
-    font-size: 0.9rem !important;
-    line-height: 1.55 !important;
+    font-size: 0.9rem !important; line-height: 1.55 !important;
 }
 [data-testid="stChatInput"] textarea::placeholder { color: #64748b !important; }
 [data-testid="stChatInput"] button {
     background: rgba(124,92,252,0.18) !important;
     border: 1px solid rgba(124,92,252,0.35) !important;
-    border-radius: 9px !important;
-    color: #c4b5fd !important;
+    border-radius: 9px !important; color: #c4b5fd !important;
 }
 [data-testid="stChatInput"] button:hover {
     background: rgba(124,92,252,0.3) !important;
     border-color: #7c5cfc !important;
 }
 
-/* ── Clear chat link button (small, ghost) ──────────────────────────────── */
+/* ── Clear chat (ghost) ─────────────────────────────────────────────────── */
 .ca-clear .stButton > button {
     background: transparent !important;
-    border: 1px solid #1e2640 !important;
-    color: #64748b !important;
+    border: 1px solid #1e2640 !important; color: #64748b !important;
     font-family: 'DM Sans', sans-serif !important;
-    font-size: 0.74rem !important;
-    font-weight: 500 !important;
-    padding: 0.3rem 0.75rem !important;
-    border-radius: 7px !important;
-    min-height: 1.9rem !important;
-    height: 1.9rem !important;
+    font-size: 0.74rem !important; font-weight: 500 !important;
+    padding: 0.3rem 0.75rem !important; border-radius: 7px !important;
+    min-height: 1.9rem !important; height: 1.9rem !important;
     transition: color 0.15s ease, border-color 0.15s ease !important;
 }
 .ca-clear .stButton > button:hover {
-    border-color: rgba(248,113,113,0.45) !important;
-    color: #fca5a5 !important;
+    border-color: rgba(248,113,113,0.45) !important; color: #fca5a5 !important;
 }
 
-/* ── Info side card ──────────────────────────────────────────────────────── */
+/* ── Info side card ─────────────────────────────────────────────────────── */
 .ca-info {
-    background: #0f1628;
-    border: 1px solid #1e2640;
-    border-radius: 14px;
-    overflow: hidden;
+    background: #0f1628; border: 1px solid #1e2640;
+    border-radius: 14px; overflow: hidden;
+    position: sticky; top: 92px;
 }
 .ca-info-head {
-    display: flex;
-    align-items: center;
-    gap: 0.65rem;
+    display: flex; align-items: center; gap: 0.65rem;
     padding: 0.85rem 1.05rem;
     background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 55%, #0d1220 100%);
     border-bottom: 1px solid #1e2640;
 }
 .ca-info-head-num {
     font-family: 'Space Grotesk', sans-serif;
-    font-size: 0.78rem;
-    font-weight: 700;
-    color: #a78bfa;
+    font-size: 0.78rem; font-weight: 700; color: #a78bfa;
     background: rgba(124,92,252,0.18);
-    border: 1px solid rgba(124,92,252,0.3);
-    border-radius: 6px;
-    min-width: 1.85rem;
-    height: 1.85rem;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
+    border: 1px solid rgba(124,92,252,0.3); border-radius: 6px;
+    min-width: 1.85rem; height: 1.85rem;
+    display: inline-flex; align-items: center; justify-content: center;
     flex-shrink: 0;
 }
 .ca-info-head-title {
     font-family: 'Space Grotesk', sans-serif;
-    font-size: 0.92rem;
-    font-weight: 600;
-    color: #f1f5f9;
+    font-size: 0.92rem; font-weight: 600; color: #f1f5f9;
 }
 .ca-info-body { padding: 1rem 1.1rem 1.1rem; }
 .ca-info-section-label {
     font-family: 'Space Grotesk', sans-serif;
-    font-size: 0.62rem;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: #475569;
-    font-weight: 600;
-    margin-bottom: 0.5rem;
+    font-size: 0.62rem; letter-spacing: 0.14em;
+    text-transform: uppercase; color: #475569;
+    font-weight: 600; margin-bottom: 0.5rem;
 }
 .ca-info-row {
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    padding: 0.45rem 0;
+    display: flex; align-items: center; gap: 0.6rem; padding: 0.45rem 0;
 }
 .ca-info-row + .ca-info-row { border-top: 1px dashed #1a2236; }
 .ca-info-row span.label {
-    font-family: 'DM Sans', sans-serif;
-    font-size: 0.82rem;
-    color: #cbd5e1;
+    font-family: 'DM Sans', sans-serif; font-size: 0.82rem; color: #cbd5e1;
 }
 .ca-info-divider { margin: 0.9rem 0 0.6rem; border-top: 1px solid #1a2236; }
-
 .ca-info-footer {
-    margin-top: 0.85rem;
-    padding-top: 0.75rem;
+    margin-top: 0.85rem; padding-top: 0.75rem;
     border-top: 1px solid #1a2236;
-    font-size: 0.72rem;
-    color: #64748b;
-    line-height: 1.55;
-    display: flex;
-    align-items: flex-start;
-    gap: 0.55rem;
+    font-size: 0.72rem; color: #64748b; line-height: 1.55;
+    display: flex; align-items: flex-start; gap: 0.55rem;
 }
 .ca-info-footer svg { flex-shrink: 0; margin-top: 0.12rem; }
-
-/* ── Pipeline strip inside info card ─────────────────────────────────────── */
 .ca-pipeline {
-    display: flex;
-    align-items: center;
-    gap: 0.35rem;
-    flex-wrap: wrap;
-    margin-top: 0.4rem;
+    display: flex; align-items: center; gap: 0.35rem;
+    flex-wrap: wrap; margin-top: 0.4rem;
 }
 .ca-pipeline-step {
     font-family: 'Space Grotesk', sans-serif;
-    font-size: 0.67rem;
-    letter-spacing: 0.03em;
-    color: #94a3b8;
+    font-size: 0.67rem; letter-spacing: 0.03em; color: #94a3b8;
     background: rgba(15,22,40,0.7);
-    border: 1px solid #1e2640;
-    border-radius: 6px;
+    border: 1px solid #1e2640; border-radius: 6px;
     padding: 0.22rem 0.5rem;
 }
 .ca-pipeline-arrow { color: #475569; font-size: 0.75rem; }
@@ -3132,12 +3268,113 @@ _CHAT_CSS = """
 # No custom avatars — user vs assistant distinction is conveyed by CSS color.
 _CHAT_AVATARS: dict[str, None] = {"assistant": None, "user": None}
 
-# Example prompts shown in the empty state.
+# Example prompts shown in the empty state. A leading emoji gives each card a
+# small visual anchor (the chevron is added in CSS via ::before).
 _CHAT_SUGGESTIONS: list[str] = [
-    "Why is my bond allocation high?",
-    "Explain my risk profile",
-    "What is the EU investor caveat?",
+    "💬  Explain my risk profile in plain English",
+    "📊  Why is my portfolio split this way?",
+    "🛡️  How would it hold up in a market crash?",
+    "🇪🇺  What's the EU investor caveat about?",
 ]
+
+
+def _build_chat_payload(profile_key: str):
+    """Ground the chat in the SAME portfolio the user sees on the dashboard.
+
+    Starts from the mock Ground Truth payload for the user's profile, then —
+    when a live HRP optimisation is cached in this session — overrides the
+    weights, headline risk metrics and cluster structure with those live
+    numbers and rebuilds the `allowed_numbers` whitelist so the validator
+    accepts them. This keeps the advisor's figures consistent with the
+    Portfolio Dashboard instead of quoting static mock values.
+
+    Falls back to the untouched mock payload on any error or when no live
+    data is available, so the chat can never break because of this.
+    """
+    base = get_mock_payload(profile_key)
+
+    live = st.session_state.get("portfolio_data")
+    if not live or live.get("source") != "live" or not live.get("weights"):
+        return base
+
+    try:
+        from backend.schemas.ground_truth import (
+            GroundTruthPayload,
+            LLMConstraints,
+            Portfolio,
+            RiskMetrics,
+            build_allowed_numbers,
+        )
+
+        # Normalise live weights so they validate (must sum to 1.0).
+        raw = {t: float(w) for t, w in live["weights"].items() if w is not None}
+        total = sum(raw.values()) or 1.0
+        weights = {t: round(w / total, 4) for t, w in raw.items()}
+        # Fix any rounding residue on the largest holding.
+        drift = round(1.0 - sum(weights.values()), 4)
+        if weights and abs(drift) >= 0.0001:
+            top = max(weights, key=weights.get)
+            weights[top] = round(weights[top] + drift, 4)
+
+        ucits = live.get("ucits_tickers_used") or base.portfolio.ucits_tickers_used
+        portfolio = Portfolio(
+            weights=weights,
+            guardrail_applied=False,
+            clipped_assets=[],
+            clip_note=None,
+            ucits_tickers_used=[t for t in ucits if t in weights],
+            fallback_tickers_applied=live.get("fallback_tickers_applied", []),
+        )
+
+        # Headline risk metrics from the live run; keep mock VaR/CVaR (not
+        # computed live) so those fields stay populated and plausible.
+        mdd = live.get("max_drawdown")
+        risk = RiskMetrics(
+            expected_annual_return=live.get("expected_return"),
+            annual_volatility=live.get("expected_volatility")
+            or base.risk_metrics.annual_volatility,
+            sharpe_ratio=live.get("sharpe_ratio"),
+            max_drawdown_historical=(
+                mdd if isinstance(mdd, (int, float)) and mdd <= 0
+                else base.risk_metrics.max_drawdown_historical
+            ),
+            var_95_daily=base.risk_metrics.var_95_daily,
+            cvar_95_daily=base.risk_metrics.cvar_95_daily,
+        )
+
+        cluster_structure = live.get("cluster_structure") or base.cluster_structure
+
+        # Rebuild the allowed-number whitelist from the overridden payload.
+        partial = {
+            "metadata": base.metadata.model_dump(),
+            "profiler": base.profiler.model_dump(),
+            "portfolio": portfolio.model_dump(),
+            "risk_metrics": risk.model_dump(),
+            "cluster_structure": cluster_structure.model_dump(),
+            "stress_scenarios": base.stress_scenarios.model_dump(),
+            "backtest_summary": base.backtest_summary.model_dump(),
+            "regulatory_context": base.regulatory_context.model_dump(),
+        }
+        constraints = LLMConstraints(
+            allowed_numbers=build_allowed_numbers(partial),
+            forbidden_phrases=base.llm_constraints.forbidden_phrases,
+            disclaimer_required=True,
+        )
+
+        return GroundTruthPayload(
+            metadata=base.metadata,
+            profiler=base.profiler,
+            portfolio=portfolio,
+            risk_metrics=risk,
+            cluster_structure=cluster_structure,
+            stress_scenarios=base.stress_scenarios,
+            backtest_summary=base.backtest_summary,
+            llm_constraints=constraints,
+            regulatory_context=base.regulatory_context,
+        )
+    except Exception:
+        # Any mismatch in live data shape must never break the chat.
+        return base
 
 
 def _chat_get_reply(text: str, raw_label: str, profile_key: str) -> str:
@@ -3167,7 +3404,7 @@ def _chat_get_reply(text: str, raw_label: str, profile_key: str) -> str:
             "Cloud, or in a local `.streamlit/secrets.toml`, then reload the page."
         )
 
-    payload = get_mock_payload(profile_key)
+    payload = _build_chat_payload(profile_key)
     nresp = narrator.narrate(payload, san.sanitised_input)
 
     if nresp.injection_blocked:
@@ -3518,16 +3755,22 @@ def render_chat() -> None:
         _render_chat_info_panel()
 
     with col_chat:
-        # Chat shell: gradient header + body
+        # Chat shell: assistant-identity header + body
+        _check_svg = (
+            '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" '
+            'stroke="#0dcfb0" stroke-width="3" stroke-linecap="round" '
+            'stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>'
+        )
         st.markdown(
             '<div class="ca-shell">'
             '<div class="ca-shell-head">'
-            '<span class="ca-shell-head-icon">✦</span>'
-            '<div>'
-            '<div class="ca-shell-head-title">Conversation</div>'
-            '<div class="ca-shell-head-sub">'
-            'Ask anything about your portfolio · responses validated</div>'
+            '<div class="ca-id-orb">✦<span class="ca-id-status"></span></div>'
+            '<div class="ca-id-meta">'
+            '<span class="ca-id-name">RoboAdvisor Assistant</span>'
+            '<span class="ca-id-sub">Grounded in your portfolio · here to explain, '
+            'never to advise</span>'
             '</div>'
+            f'<span class="ca-id-badge">{_check_svg}Validated</span>'
             '</div>',
             unsafe_allow_html=True,
         )
@@ -3537,24 +3780,32 @@ def render_chat() -> None:
                 '<div class="ca-hero">'
                 '<div class="ca-hero-orb">✦</div>'
                 '<div class="ca-hero-title">'
-                "Hi — I'm your AI Finance Assistant."
+                "Hi — ask me anything about your portfolio."
                 '</div>'
                 '<div class="ca-hero-sub">'
-                'Ask a question about your portfolio allocation, risk clusters, '
-                'or the EU investor caveat. Every answer is grounded in the '
-                'ground-truth data computed by the backend.'
+                "I'll explain your allocation, your risk, and how your portfolio "
+                'behaved through past crises — in plain English, using only the '
+                "real numbers behind your dashboard."
                 '</div>'
                 '<div class="ca-hero-eyebrow">Try one of these</div>'
                 '</div>',
                 unsafe_allow_html=True,
             )
             st.markdown('<div class="ca-suggest">', unsafe_allow_html=True)
-            chip_cols = st.columns(len(_CHAT_SUGGESTIONS))
-            for i, (cc, txt) in enumerate(zip(chip_cols, _CHAT_SUGGESTIONS)):
-                with cc:
-                    if st.button(txt, key=f"chat_suggest_{i}", use_container_width=True):
-                        st.session_state["_pending_prompt"] = txt
-                        st.rerun()
+            # 2-per-row grid so the four prompts stay comfortably readable.
+            for row_start in range(0, len(_CHAT_SUGGESTIONS), 2):
+                row = _CHAT_SUGGESTIONS[row_start:row_start + 2]
+                cols = st.columns(len(row))
+                for j, (cc, txt) in enumerate(zip(cols, row)):
+                    with cc:
+                        if st.button(
+                            txt,
+                            key=f"chat_suggest_{row_start + j}",
+                            use_container_width=True,
+                        ):
+                            # Strip the leading emoji before sending to the LLM.
+                            st.session_state["_pending_prompt"] = txt.split("  ", 1)[-1]
+                            st.rerun()
             st.markdown("</div>", unsafe_allow_html=True)
         else:
             st.markdown('<div class="ca-thread">', unsafe_allow_html=True)
