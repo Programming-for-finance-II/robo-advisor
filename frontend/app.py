@@ -1460,6 +1460,46 @@ def render_questionnaire() -> None:
 # Page 2 -- Portfolio Dashboard
 # ---------------------------------------------------------------------------
 
+def _render_profile_required_gate() -> None:
+    """Empty-state shown on the dashboard when no risk profile exists yet.
+
+    The portfolio is meaningless without a profile, so instead of defaulting to
+    a MODERATE allocation we prompt the user to complete the questionnaire and
+    offer a one-click route to it.
+    """
+    page_header("Portfolio Dashboard", "Personalised to your risk profile", icon="📊")
+
+    st.markdown(
+        '<div style="background:#0f1628;border:1px solid #1e2640;border-radius:16px;'
+        'padding:2.5rem 2rem;text-align:center;max-width:46rem;margin:1rem auto;">'
+        '<div style="width:3.5rem;height:3.5rem;border-radius:14px;margin:0 auto 1.1rem;'
+        'background:rgba(124,92,252,0.12);border:1px solid rgba(124,92,252,0.3);'
+        'display:flex;align-items:center;justify-content:center;font-size:1.7rem;">🧭</div>'
+        '<div style="font-family:\'Space Grotesk\',sans-serif;font-size:1.4rem;'
+        'font-weight:700;color:#f1f5f9;margin-bottom:0.6rem;">'
+        'Complete your questionnaire first</div>'
+        '<div style="font-size:0.95rem;color:#94a3b8;line-height:1.7;'
+        'max-width:34rem;margin:0 auto 0.5rem;">'
+        'Your portfolio — the allocation, the statistics and the analysis — is built '
+        'entirely from your risk profile. Answer the 10-question questionnaire and your '
+        'personalised dashboard will appear here.</div>'
+        '</div>',
+        unsafe_allow_html=True,
+    )
+
+    _, col_btn, _ = st.columns([1, 2, 1])
+    with col_btn:
+        if st.button(
+            "Start the questionnaire  →",
+            key="gate_to_questionnaire",
+            type="primary",
+            use_container_width=True,
+        ):
+            st.session_state.active_page = "Questionnaire"
+            st.query_params["page"] = "Questionnaire"
+            st.rerun()
+
+
 def render_portfolio() -> None:
     """
     Portfolio Dashboard with two tabs: HRP and Markowitz benchmark.
@@ -1468,6 +1508,15 @@ def render_portfolio() -> None:
         Phase A (default): mock payload from backend/schemas/mock_data.py
         Phase B (live toggle on): ValidatedDataLoader + HRP + regime detector
     """
+    # Gate: the dashboard is meaningless without a risk profile. Restore any
+    # profile saved for this browser session first (survives a page reload);
+    # if there still isn't one, prompt the questionnaire instead of defaulting
+    # to a MODERATE allocation.
+    _restore_persisted_profile()
+    if not st.session_state.get("profile"):
+        _render_profile_required_gate()
+        return
+
     # Read profile first so we can use it in the header
     profile_data = st.session_state.get("profile", {})
     profile_label = profile_data.get("profile_label", "MODERATE")
