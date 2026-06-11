@@ -1460,14 +1460,21 @@ def render_questionnaire() -> None:
 # Page 2 -- Portfolio Dashboard
 # ---------------------------------------------------------------------------
 
-def _render_profile_required_gate() -> None:
-    """Empty-state shown on the dashboard when no risk profile exists yet.
+def _render_profile_required_gate(
+    title: str,
+    subtitle: str,
+    icon: str,
+    body: str,
+    key: str,
+) -> None:
+    """Empty-state shown when a page needs a risk profile that doesn't exist yet.
 
-    The portfolio is meaningless without a profile, so instead of defaulting to
-    a MODERATE allocation we prompt the user to complete the questionnaire and
-    offer a one-click route to it.
+    These pages are personalised to the investor's profile, so instead of
+    defaulting to a MODERATE allocation we prompt the user to complete the
+    questionnaire and offer a one-click route to it. Shared by the Portfolio
+    Dashboard, Compare and Chat Advisor pages.
     """
-    page_header("Portfolio Dashboard", "Personalised to your risk profile", icon="📊")
+    page_header(title, subtitle, icon=icon)
 
     st.markdown(
         '<div style="background:#0f1628;border:1px solid #1e2640;border-radius:16px;'
@@ -1478,11 +1485,8 @@ def _render_profile_required_gate() -> None:
         '<div style="font-family:\'Space Grotesk\',sans-serif;font-size:1.4rem;'
         'font-weight:700;color:#f1f5f9;margin-bottom:0.6rem;">'
         'Complete your questionnaire first</div>'
-        '<div style="font-size:0.95rem;color:#94a3b8;line-height:1.7;'
-        'max-width:34rem;margin:0 auto 0.5rem;">'
-        'Your portfolio — the allocation, the statistics and the analysis — is built '
-        'entirely from your risk profile. Answer the 10-question questionnaire and your '
-        'personalised dashboard will appear here.</div>'
+        f'<div style="font-size:0.95rem;color:#94a3b8;line-height:1.7;'
+        f'max-width:34rem;margin:0 auto 0.5rem;">{body}</div>'
         '</div>',
         unsafe_allow_html=True,
     )
@@ -1491,7 +1495,7 @@ def _render_profile_required_gate() -> None:
     with col_btn:
         if st.button(
             "Start the questionnaire  →",
-            key="gate_to_questionnaire",
+            key=key,
             type="primary",
             use_container_width=True,
         ):
@@ -1514,7 +1518,13 @@ def render_portfolio() -> None:
     # to a MODERATE allocation.
     _restore_persisted_profile()
     if not st.session_state.get("profile"):
-        _render_profile_required_gate()
+        _render_profile_required_gate(
+            "Portfolio Dashboard", "Personalised to your risk profile", "📊",
+            "Your portfolio — the allocation, the statistics and the analysis — is "
+            "built entirely from your risk profile. Answer the 10-question "
+            "questionnaire and your personalised dashboard will appear here.",
+            key="gate_dashboard_to_questionnaire",
+        )
         return
 
     # Read profile first so we can use it in the header
@@ -3410,6 +3420,19 @@ def render_chat() -> None:
     The advisor only explains the current Ground Truth payload; it never gives
     buy/sell advice and cannot invent numbers.
     """
+    # Gate: the advisor explains your personalised portfolio, so it needs a
+    # profile first. Restore any saved one, otherwise prompt the questionnaire.
+    _restore_persisted_profile()
+    if not st.session_state.get("profile"):
+        _render_profile_required_gate(
+            "Chat Advisor", "Ask about your portfolio", "💬",
+            "The advisor answers questions about your own personalised portfolio, so "
+            "it needs your risk profile first. Complete the questionnaire and you can "
+            "start chatting about your allocation here.",
+            key="gate_chat_to_questionnaire",
+        )
+        return
+
     page_header(
         "Chat Advisor",
         "LLM Narrator · Validated responses",
@@ -3769,6 +3792,19 @@ def _reference_comparison(profile_key: str) -> dict:
 
 
 def render_compare() -> None:
+    # Gate: section 2 compares the user's own live portfolio, so a profile is
+    # required. Restore any saved one, otherwise prompt the questionnaire.
+    _restore_persisted_profile()
+    if not st.session_state.get("profile"):
+        _render_profile_required_gate(
+            "Compare Markowitz", "How your portfolio is built", "⚖",
+            "This page compares your own personalised portfolio against the classic "
+            "Markowitz method, so it needs your risk profile first. Complete the "
+            "questionnaire and the comparison will appear here.",
+            key="gate_compare_to_questionnaire",
+        )
+        return
+
     page_header(
         "Compare Markowitz",
         "How your portfolio is built — and why not the textbook way",
