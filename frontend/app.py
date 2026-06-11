@@ -3575,6 +3575,19 @@ _STRATEGY_COLORS: dict[str, str] = {
 
 
 def render_backtesting() -> None:
+    # Gate: backtest results are profile-specific; a profile is required.
+    # Restore any saved one, otherwise prompt the questionnaire.
+    _restore_persisted_profile()
+    if not st.session_state.get("profile"):
+        _render_profile_required_gate(
+            "Backtesting", "Walk-forward simulation · HRP vs MV vs 1/N", "📈",
+            "The backtesting results are tailored to your risk profile (Conservative, "
+            "Moderate or Aggressive). Complete the questionnaire and the historical "
+            "stress-scenario analysis will appear here.",
+            key="gate_backtest_to_questionnaire",
+        )
+        return
+
     page_header("Backtesting", "Walk-forward simulation · HRP vs MV vs 1/N", icon="📈")
 
     profile_data = st.session_state.get("profile", {})
