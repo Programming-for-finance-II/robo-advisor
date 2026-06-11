@@ -30,8 +30,10 @@ from backend.llm.narrator import NarratorClient
 from backend.llm.validator import validate
 from backend.schemas.mock_data import get_mock_payload
 from frontend.style import (
-    apply_plotly_dark_theme,
+    apply_plotly_theme,
+    get_theme_tokens,
     inject_css,
+    is_light,
     page_header,
     render_eu_note,
     render_global_footer,
@@ -46,6 +48,8 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="collapsed",
 )
+if "theme" not in st.session_state:
+    st.session_state["theme"] = "dark"
 inject_css()
 
 # ---------------------------------------------------------------------------
@@ -944,8 +948,11 @@ def _render_profile_result_card(result: dict, show_dashboard_button: bool = True
             "bar_gradient": "linear-gradient(90deg,#f87171,#fbbf24)",
         },
     }
+    t = get_theme_tokens()
     rm = _RESULT_META.get(result["profile_label"], _RESULT_META["MODERATE"])
     score_pct = result["score"] / 30 * 100  # max possible = 10 × 3 = 30
+    _chip_bg = t["accent_soft"] if is_light() else "rgba(255,255,255,0.06)"
+    _metric_bg = t["bg_surface_alt"] if is_light() else "rgba(0,0,0,0.25)"
 
     # ── top drivers text ────────────────────────────────────────────────
     driver_labels = {
@@ -956,18 +963,18 @@ def _render_profile_result_card(result: dict, show_dashboard_button: bool = True
     }
     top3 = result.get("top_drivers", [])[:3]
     drivers_chips = "".join(
-        '<span style="background:rgba(255,255,255,0.06);border:1px solid #2d3a52;'
-        'border-radius:7px;padding:0.3rem 0.75rem;font-size:0.85rem;'
-        'font-weight:500;color:#94a3b8;">'
+        f'<span style="background:{_chip_bg};border:1px solid {t["border"]};'
+        f'border-radius:7px;padding:0.3rem 0.75rem;font-size:0.85rem;'
+        f'font-weight:500;color:{t["text_secondary"]};">'
         + driver_labels.get(d["feature"], d["feature"]) + "</span>"
         for d in top3
     )
     # Pre-build the optional drivers block — avoids nested f-string inside the card
     drivers_block = (
-        '<div style="font-size:0.75rem;font-weight:600;letter-spacing:0.1em;'
-        'text-transform:uppercase;color:#64748b;margin-bottom:0.55rem;">'
-        'Top scoring factors</div>'
-        '<div style="display:flex;flex-wrap:wrap;gap:0.5rem;">'
+        f'<div style="font-size:0.75rem;font-weight:600;letter-spacing:0.1em;'
+        f'text-transform:uppercase;color:{t["text_muted"]};margin-bottom:0.55rem;">'
+        f'Top scoring factors</div>'
+        f'<div style="display:flex;flex-wrap:wrap;gap:0.5rem;">'
         + drivers_chips + "</div>"
     ) if top3 else ""
 
@@ -989,36 +996,37 @@ def _render_profile_result_card(result: dict, show_dashboard_button: bool = True
         f'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:2.2rem;'
         f'font-weight:700;color:{rm["color"]};letter-spacing:-0.02em;line-height:1.1;">'
         f'{rm["label"]}</div>'
-        f'<div style="font-size:0.9rem;color:#64748b;margin-top:0.4rem;">{rm["desc"]}</div>'
+        f'<div style="font-size:0.9rem;color:{t["text_muted"]};'
+        f'margin-top:0.4rem;">{rm["desc"]}</div>'
         f'</div></div>'
 
         # ── metrics row ──────────────────────────────────────────────────
         f'<div style="display:flex;gap:0.75rem;flex-wrap:wrap;margin-bottom:1.25rem;">'
 
         # score card
-        f'<div style="flex:1;min-width:120px;background:rgba(0,0,0,0.25);'
-        f'border:1px solid #1e2640;border-radius:10px;padding:0.75rem 1.1rem;">'
+        f'<div style="flex:1;min-width:120px;background:{_metric_bg};'
+        f'border:1px solid {t["border"]};border-radius:10px;padding:0.75rem 1.1rem;">'
         f'<div style="font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;'
-        f'color:#475569;margin-bottom:0.35rem;">Score</div>'
+        f'color:{t["text_muted"]};margin-bottom:0.35rem;">Score</div>'
         f'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:1.7rem;'
-        f'font-weight:700;color:#f1f5f9;line-height:1;">'
+        f'font-weight:700;color:{t["text_primary"]};line-height:1;">'
         f'{result["score"]}'
-        f'<span style="font-size:0.85rem;color:#475569;font-weight:400;">/30</span></div>'
+        f'<span style="font-size:0.85rem;color:{t["text_muted"]};font-weight:400;">/30</span></div>'
         f'<div style="margin-top:0.55rem;height:5px;border-radius:3px;'
-        f'background:#1e2640;overflow:hidden;">'
+        f'background:{t["border"]};overflow:hidden;">'
         f'<div style="height:100%;width:{score_pct:.0f}%;'
         f'background:{rm["bar_gradient"]};border-radius:3px;"></div>'
         f'</div></div>'
 
         # confidence card
-        f'<div style="flex:1;min-width:120px;background:rgba(0,0,0,0.25);'
-        f'border:1px solid #1e2640;border-radius:10px;padding:0.75rem 1.1rem;">'
+        f'<div style="flex:1;min-width:120px;background:{_metric_bg};'
+        f'border:1px solid {t["border"]};border-radius:10px;padding:0.75rem 1.1rem;">'
         f'<div style="font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;'
-        f'color:#475569;margin-bottom:0.35rem;">Model Confidence</div>'
+        f'color:{t["text_muted"]};margin-bottom:0.35rem;">Model Confidence</div>'
         f'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:1.7rem;'
         f'font-weight:700;color:{rm["color"]};line-height:1;">{conf_pct}%</div>'
         f'<div style="margin-top:0.55rem;height:5px;border-radius:3px;'
-        f'background:#1e2640;overflow:hidden;">'
+        f'background:{t["border"]};overflow:hidden;">'
         f'<div style="height:100%;width:{conf_pct}%;'
         f'background:{rm["bar_gradient"]};border-radius:3px;"></div>'
         f'</div></div>'
@@ -1160,20 +1168,25 @@ def render_questionnaire() -> None:
     # align-items:flex-start + margin-top:1.4rem on connectors keeps the
     # gradient lines perfectly centred on the circles (circle height = 2.8rem,
     # centre = 1.4rem from top) regardless of the label below each circle.
+    tk = get_theme_tokens()
+    _step_bg = "#f1f4fa" if is_light() else "rgba(15,23,42,0.55)"
+    _c_blue = "#2563eb" if is_light() else "#60a5fa"
+    _c_purple = "#6d4deb" if is_light() else "#a78bfa"
+    _c_amber = "#b45309" if is_light() else "#fbbf24"
     st.markdown(
-        """
+        f"""
         <div style="display:flex;align-items:flex-start;
             padding:1rem 1.5rem;margin:0 0 1.25rem 0;
-            background:rgba(15,23,42,0.55);
-            border:1px solid #1e2640;border-radius:12px;">
+            background:{_step_bg};
+            border:1px solid {tk["border"]};border-radius:12px;">
 
           <div style="display:flex;flex-direction:column;align-items:center;gap:0.4rem;">
             <div style="width:2.8rem;height:2.8rem;border-radius:50%;
               background:rgba(59,130,246,0.15);border:2px solid #3b82f6;
               display:flex;align-items:center;justify-content:center;
               font-family:'Space Grotesk',sans-serif;
-              font-size:0.88rem;font-weight:700;color:#60a5fa;">01</div>
-            <div style="font-size:0.75rem;font-weight:500;color:#60a5fa;
+              font-size:0.88rem;font-weight:700;color:{_c_blue};">01</div>
+            <div style="font-size:0.75rem;font-weight:500;color:{_c_blue};
               white-space:nowrap;">Financial</div>
           </div>
 
@@ -1186,8 +1199,8 @@ def render_questionnaire() -> None:
               background:rgba(124,92,252,0.15);border:2px solid #7c5cfc;
               display:flex;align-items:center;justify-content:center;
               font-family:'Space Grotesk',sans-serif;
-              font-size:0.88rem;font-weight:700;color:#a78bfa;">02</div>
-            <div style="font-size:0.75rem;font-weight:500;color:#a78bfa;
+              font-size:0.88rem;font-weight:700;color:{_c_purple};">02</div>
+            <div style="font-size:0.75rem;font-weight:500;color:{_c_purple};
               white-space:nowrap;">Behaviour</div>
           </div>
 
@@ -1200,8 +1213,8 @@ def render_questionnaire() -> None:
               background:rgba(245,158,11,0.15);border:2px solid #f59e0b;
               display:flex;align-items:center;justify-content:center;
               font-family:'Space Grotesk',sans-serif;
-              font-size:0.88rem;font-weight:700;color:#fbbf24;">03</div>
-            <div style="font-size:0.75rem;font-weight:500;color:#fbbf24;
+              font-size:0.88rem;font-weight:700;color:{_c_amber};">03</div>
+            <div style="font-size:0.75rem;font-weight:500;color:{_c_amber};
               white-space:nowrap;">Reaction</div>
           </div>
 
@@ -1306,6 +1319,7 @@ def render_portfolio() -> None:
         Phase B (live toggle on): ValidatedDataLoader + HRP + regime detector
     """
     # Read profile first so we can use it in the header
+    t = get_theme_tokens()
     profile_data = st.session_state.get("profile", {})
     profile_label = profile_data.get("profile_label", "MODERATE")
     confidence = profile_data.get("confidence", None)
@@ -1360,35 +1374,44 @@ def render_portfolio() -> None:
          "5–40% per asset and 10–60% per cluster."),
     ]
     _circ = (
-        "width:2.6rem;height:2.6rem;flex-shrink:0;border-radius:50%;"
-        "background:rgba(124,92,252,0.12);border:1px solid rgba(124,92,252,0.22);"
-        "color:#a78bfa;display:inline-flex;align-items:center;"
-        "justify-content:center;"
+        f"width:2.6rem;height:2.6rem;flex-shrink:0;border-radius:50%;"
+        f"background:{t['accent_soft']};border:1px solid {t['accent_border']};"
+        f"color:{t['accent_text']};display:inline-flex;align-items:center;"
+        f"justify-content:center;"
     )
+    _mcard_bg = t["bg_surface"] if is_light() else "rgba(30,38,64,0.4)"
     _mcards = "".join(
-        f'<div style="background:rgba(30,38,64,0.4);border:1px solid #1e2640;'
+        f'<div style="background:{_mcard_bg};border:1px solid {t["border"]};'
         f'border-radius:12px;padding:1rem;display:flex;gap:0.8rem;'
         f'align-items:flex-start;">'
         f'<div style="{_circ}">{ic}</div>'
         f'<div><div style="font-family:\'Space Grotesk\',sans-serif;'
-        f'font-size:0.9rem;font-weight:600;color:#e2e8f0;'
+        f'font-size:0.9rem;font-weight:600;color:{t["text_primary"]};'
         f'margin-bottom:0.25rem;">{ti}</div>'
-        f'<div style="font-size:0.78rem;color:#94a3b8;line-height:1.5;">'
+        f'<div style="font-size:0.78rem;color:{t["text_secondary"]};line-height:1.5;">'
         f'{de}</div></div></div>'
         for ic, ti, de in _methods
     )
+    _method_panel_bg = (
+        "radial-gradient(circle at 1px 1px,rgba(124,77,255,0.08) 1px,"
+        "transparent 0) 0 0/22px 22px,"
+        "radial-gradient(130% 150% at 88% 12%,rgba(124,77,255,0.08) 0%,"
+        "rgba(246,247,251,0) 55%),"
+        "linear-gradient(135deg,#ffffff 0%,#f1f4fa 60%,#ffffff 100%)"
+        if is_light() else
+        "radial-gradient(circle at 1px 1px,rgba(124,92,252,0.10) 1px,"
+        "transparent 0) 0 0/22px 22px,"
+        "radial-gradient(130% 150% at 88% 12%,rgba(124,92,252,0.12) 0%,"
+        "rgba(13,18,32,0) 55%),"
+        "linear-gradient(135deg,#0d1220 0%,#11162a 60%,#0d1220 100%)"
+    )
     st.markdown(
-        f'<div style="border:1px solid #1e2640;border-radius:14px;'
+        f'<div style="border:1px solid {t["border"]};border-radius:14px;'
         f'padding:1.25rem 1.5rem;margin-bottom:1.25rem;'
-        f'background:'
-        f'radial-gradient(circle at 1px 1px,rgba(124,92,252,0.10) 1px,'
-        f'transparent 0) 0 0/22px 22px,'
-        f'radial-gradient(130% 150% at 88% 12%,rgba(124,92,252,0.12) 0%,'
-        f'rgba(13,18,32,0) 55%),'
-        f'linear-gradient(135deg,#0d1220 0%,#11162a 60%,#0d1220 100%);">'
+        f'background:{_method_panel_bg};">'
         f'<div style="margin-bottom:0.9rem;">'
         f'<span style="font-family:\'Space Grotesk\',sans-serif;font-size:1.15rem;'
-        f'font-weight:700;color:#f1f5f9;">HRP Methodology</span></div>'
+        f'font-weight:700;color:{t["text_primary"]};">HRP Methodology</span></div>'
         f'<div style="display:grid;'
         f'grid-template-columns:repeat(auto-fit,minmax(230px,1fr));'
         f'gap:0.85rem;">{_mcards}</div>'
@@ -1455,7 +1478,8 @@ def render_portfolio() -> None:
         f'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:1.05rem;'
         f'font-weight:700;color:{color};letter-spacing:0.03em;margin-bottom:0.25rem;">'
         f'{pm["label"]} Investor</div>'
-        f'<div style="font-size:0.82rem;color:#94a3b8;margin-bottom:0.5rem;line-height:1.5;">'
+        f'<div style="font-size:0.82rem;color:{t["text_secondary"]};'
+        f'margin-bottom:0.5rem;line-height:1.5;">'
         f'{pm["desc"]}{conf_inline}</div>'
         f'<div style="display:flex;flex-wrap:wrap;gap:0.35rem;">{badges_html}</div>'
         f'</div>'
@@ -1487,17 +1511,17 @@ def render_portfolio() -> None:
     # Discreet data-source status line (no toggle — live is always preferred).
     if portfolio.get("source") == "live":
         st.markdown(
-            '<div style="font-size:0.8rem;color:#64748b;margin:-0.2rem 0 0.3rem;">'
-            '<span style="color:#0dcfb0;">●</span> Live market data · prices via yfinance'
-            '</div>',
+            f'<div style="font-size:0.8rem;color:{t["text_muted"]};margin:-0.2rem 0 0.3rem;">'
+            f'<span style="color:#0dcfb0;">●</span> Live market data · prices via yfinance'
+            f'</div>',
             unsafe_allow_html=True,
         )
     else:
         st.markdown(
-            '<div style="font-size:0.8rem;color:#64748b;margin:-0.2rem 0 0.3rem;">'
-            '<span style="color:#f59e0b;">●</span> Reference allocation · '
-            'live prices momentarily unavailable'
-            '</div>',
+            f'<div style="font-size:0.8rem;color:{t["text_muted"]};margin:-0.2rem 0 0.3rem;">'
+            f'<span style="color:#f59e0b;">●</span> Reference allocation · '
+            f'live prices momentarily unavailable'
+            f'</div>',
             unsafe_allow_html=True,
         )
 
@@ -1545,6 +1569,7 @@ def _render_resilience_strip(profile_label: str) -> None:
         "rate_hike_2022": "Rate Hike 2022",
     }
 
+    t = get_theme_tokens()
     cards_html = '<div style="display:flex;gap:0.75rem;margin-bottom:1rem;">'
     for key, short in _SHORT.items():
         scen = summary.get(key)
@@ -1558,13 +1583,13 @@ def _render_resilience_strip(profile_label: str) -> None:
         delta_color = "#0dcfb0" if better else "#f87171"
         delta_sign = "+" if better else ""
         cards_html += (
-            f'<div style="flex:1;background:#0f1628;border:1px solid #1e2640;'
-            f'border-radius:12px;padding:0.9rem 1rem;">'
+            f'<div style="flex:1;background:{t["bg_card"]};border:1px solid {t["border"]};'
+            f'border-radius:12px;padding:0.9rem 1rem;box-shadow:{t["shadow"]};">'
             f'<div style="font-size:0.72rem;font-weight:600;letter-spacing:0.08em;'
-            f'text-transform:uppercase;color:#64748b;margin-bottom:0.5rem;">{short}</div>'
+            f'text-transform:uppercase;color:{t["text_muted"]};margin-bottom:0.5rem;">{short}</div>'
             f'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:1.5rem;'
-            f'font-weight:700;color:#e2e8f0;line-height:1;">{hrp_dd*100:.1f}%</div>'
-            f'<div style="font-size:0.74rem;color:#475569;margin-top:0.35rem;">'
+            f'font-weight:700;color:{t["text_primary"]};line-height:1;">{hrp_dd*100:.1f}%</div>'
+            f'<div style="font-size:0.74rem;color:{t["text_muted"]};margin-top:0.35rem;">'
             f'HRP max drawdown</div>'
             f'<div style="font-size:0.72rem;color:{delta_color};font-weight:600;'
             f'margin-top:0.45rem;">{delta_sign}{improvement:.1f} pp vs MV</div>'
@@ -1588,6 +1613,7 @@ def _render_cluster_view(portfolio: dict, weights: dict[str, float]) -> None:
     correlation, cluster volatility — comes from cluster_structure when present,
     with a graceful fallback for the live path.
     """
+    t = get_theme_tokens()
     cs = portfolio.get("cluster_structure")
 
     # name, attribute, colour, plain-language description, member fallback
@@ -1644,18 +1670,18 @@ def _render_cluster_view(portfolio: dict, weights: dict[str, float]) -> None:
 
         # Member chips use the plain asset name, ticker kept as a small tag.
         chips = "".join(
-            f'<span style="display:inline-block;background:rgba(148,163,184,0.08);'
-            f'border:1px solid #1e2640;border-radius:6px;padding:0.12rem 0.5rem;'
-            f'font-size:0.74rem;color:#94a3b8;margin:0 0.3rem 0.3rem 0;">'
+            f'<span style="display:inline-block;background:{t["bg_surface_alt"]};'
+            f'border:1px solid {t["border"]};border-radius:6px;padding:0.12rem 0.5rem;'
+            f'font-size:0.74rem;color:{t["text_secondary"]};margin:0 0.3rem 0.3rem 0;">'
             f'{_TICKER_DISPLAY_NAME.get(m, m)}</span>'
             for m in members
         )
 
         st.markdown(
-            f'<div style="background:#0f1628;border:1px solid #1e2640;'
+            f'<div style="background:{t["bg_card"]};border:1px solid {t["border"]};'
             f'border-left:4px solid {color};border-radius:12px;'
             f'padding:1rem 1.2rem;margin-bottom:0.75rem;display:flex;'
-            f'align-items:flex-start;gap:1.25rem;flex-wrap:wrap;">'
+            f'align-items:flex-start;gap:1.25rem;flex-wrap:wrap;box-shadow:{t["shadow"]};">'
             # Left: name + description + chips
             f'<div style="flex:2.4;min-width:240px;">'
             f'<div style="display:flex;align-items:center;gap:0.5rem;'
@@ -1664,30 +1690,30 @@ def _render_cluster_view(portfolio: dict, weights: dict[str, float]) -> None:
             f'background:{color};flex-shrink:0;"></span>'
             f'<span style="font-family:\'Space Grotesk\',sans-serif;'
             f'font-size:1.02rem;font-weight:600;color:{color};">{name}</span></div>'
-            f'<div style="font-size:0.86rem;color:#94a3b8;line-height:1.55;'
+            f'<div style="font-size:0.86rem;color:{t["text_secondary"]};line-height:1.55;'
             f'margin-bottom:0.6rem;">{desc}</div>'
             f'<div>{chips}</div></div>'
             # Middle: diversification + risk, plain words with the number small
             f'<div style="flex:1.5;min-width:170px;">'
             f'<div style="font-size:0.72rem;font-weight:600;letter-spacing:0.06em;'
-            f'text-transform:uppercase;color:#475569;margin-bottom:0.15rem;">'
+            f'text-transform:uppercase;color:{t["text_muted"]};margin-bottom:0.15rem;">'
             f'Diversification</div>'
             f'<div style="font-size:0.95rem;font-weight:600;color:{div_color};'
             f'margin-bottom:0.7rem;">{div_label}'
-            f'<span style="font-size:0.74rem;color:#5b6678;font-weight:400;'
+            f'<span style="font-size:0.74rem;color:{t["text_muted"]};font-weight:400;'
             f'margin-left:0.4rem;">{corr_note}</span></div>'
             f'<div style="font-size:0.72rem;font-weight:600;letter-spacing:0.06em;'
-            f'text-transform:uppercase;color:#475569;margin-bottom:0.15rem;">'
+            f'text-transform:uppercase;color:{t["text_muted"]};margin-bottom:0.15rem;">'
             f'Risk level</div>'
             f'<div style="font-size:0.95rem;font-weight:600;color:{risk_color};">'
             f'{risk_label}'
-            f'<span style="font-size:0.74rem;color:#5b6678;font-weight:400;'
+            f'<span style="font-size:0.74rem;color:{t["text_muted"]};font-weight:400;'
             f'margin-left:0.4rem;">{vol_note}</span></div></div>'
             # Right: weight
             f'<div style="flex:0.9;min-width:110px;text-align:right;">'
             f'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:1.75rem;'
-            f'font-weight:700;color:#e2e8f0;line-height:1;">{weight*100:.0f}%</div>'
-            f'<div style="font-size:0.72rem;color:#475569;text-transform:uppercase;'
+            f'font-weight:700;color:{t["text_primary"]};line-height:1;">{weight*100:.0f}%</div>'
+            f'<div style="font-size:0.72rem;color:{t["text_muted"]};text-transform:uppercase;'
             f'letter-spacing:0.06em;margin-top:0.25rem;">of portfolio</div></div>'
             f'</div>',
             unsafe_allow_html=True,
@@ -1747,19 +1773,21 @@ def _render_allocation_table(
     risk contribution. Replaces the ticker-first st.dataframe (which also
     carried a UCITS column) so a non-specialist can read it at a glance.
     """
+    t = get_theme_tokens()
+    _bar_track = t["bg_surface_alt"] if is_light() else "#161d30"
     items = sorted(weights.items(), key=lambda kv: -kv[1])
     max_w = max((w for _, w in items), default=1.0) or 1.0
 
     header = (
-        '<div style="display:flex;align-items:center;padding:0 0.4rem 0.6rem;'
-        'border-bottom:1px solid #1e2640;margin-bottom:0.1rem;">'
-        '<div style="flex:1.7;font-size:0.72rem;font-weight:600;letter-spacing:0.08em;'
-        'text-transform:uppercase;color:#475569;">Asset</div>'
-        '<div style="flex:1.5;font-size:0.72rem;font-weight:600;letter-spacing:0.08em;'
-        'text-transform:uppercase;color:#475569;">Weight</div>'
-        '<div style="flex:0.8;font-size:0.72rem;font-weight:600;letter-spacing:0.08em;'
-        'text-transform:uppercase;color:#475569;text-align:right;">Risk Contr.</div>'
-        '</div>'
+        f'<div style="display:flex;align-items:center;padding:0 0.4rem 0.6rem;'
+        f'border-bottom:1px solid {t["border"]};margin-bottom:0.1rem;">'
+        f'<div style="flex:1.7;font-size:0.72rem;font-weight:600;letter-spacing:0.08em;'
+        f'text-transform:uppercase;color:{t["text_muted"]};">Asset</div>'
+        f'<div style="flex:1.5;font-size:0.72rem;font-weight:600;letter-spacing:0.08em;'
+        f'text-transform:uppercase;color:{t["text_muted"]};">Weight</div>'
+        f'<div style="flex:0.8;font-size:0.72rem;font-weight:600;letter-spacing:0.08em;'
+        f'text-transform:uppercase;color:{t["text_muted"]};text-align:right;">Risk Contr.</div>'
+        f'</div>'
     )
 
     body = ""
@@ -1770,38 +1798,38 @@ def _render_allocation_table(
         rc = risk_contributions.get(ticker, 0.0)
         bar_pct = max(4.0, w / max_w * 100.0)
         body += (
-            '<div style="display:flex;align-items:center;padding:0.62rem 0.4rem;'
-            'border-bottom:1px solid #141b2e;">'
+            f'<div style="display:flex;align-items:center;padding:0.62rem 0.4rem;'
+            f'border-bottom:1px solid {t["border_soft"]};">'
             # Asset name + ticker subtitle
-            '<div style="flex:1.7;display:flex;align-items:center;gap:0.6rem;">'
+            f'<div style="flex:1.7;display:flex;align-items:center;gap:0.6rem;">'
             f'<span style="width:9px;height:9px;border-radius:50%;background:{color};'
-            'flex-shrink:0;"></span>'
-            '<div style="min-width:0;">'
-            f'<div style="font-size:0.9rem;font-weight:600;color:#e2e8f0;'
+            f'flex-shrink:0;"></span>'
+            f'<div style="min-width:0;">'
+            f'<div style="font-size:0.9rem;font-weight:600;color:{t["text_primary"]};'
             f'line-height:1.25;">{name}</div>'
-            f'<div style="font-size:0.72rem;color:#5b6678;letter-spacing:0.02em;'
+            f'<div style="font-size:0.72rem;color:{t["text_muted"]};letter-spacing:0.02em;'
             f'font-family:\'Space Grotesk\',sans-serif;">{ticker}</div>'
-            '</div></div>'
+            f'</div></div>'
             # Weight bar + value
-            '<div style="flex:1.5;display:flex;align-items:center;gap:0.55rem;'
-            'padding-right:0.8rem;">'
-            '<div style="flex:1;height:7px;background:#161d30;border-radius:4px;'
-            'overflow:hidden;">'
+            f'<div style="flex:1.5;display:flex;align-items:center;gap:0.55rem;'
+            f'padding-right:0.8rem;">'
+            f'<div style="flex:1;height:7px;background:{_bar_track};border-radius:4px;'
+            f'overflow:hidden;">'
             f'<div style="width:{bar_pct:.1f}%;height:100%;background:{color};'
-            'border-radius:4px;"></div></div>'
-            f'<span style="font-size:0.9rem;font-weight:600;color:#e2e8f0;'
+            f'border-radius:4px;"></div></div>'
+            f'<span style="font-size:0.9rem;font-weight:600;color:{t["text_primary"]};'
             f'font-family:\'Space Grotesk\',sans-serif;min-width:3rem;'
             f'text-align:right;">{w*100:.1f}%</span>'
-            '</div>'
+            f'</div>'
             # Risk contribution
-            f'<div style="flex:0.8;font-size:0.85rem;color:#94a3b8;text-align:right;'
+            f'<div style="flex:0.8;font-size:0.85rem;color:{t["text_secondary"]};text-align:right;'
             f'font-family:\'Space Grotesk\',sans-serif;">{rc*100:.1f}%</div>'
-            '</div>'
+            f'</div>'
         )
 
     st.markdown(
-        '<div style="background:#0f1628;border:1px solid #1e2640;border-radius:12px;'
-        'padding:0.9rem 1rem;">' + header + body + '</div>',
+        f'<div style="background:{t["bg_card"]};border:1px solid {t["border"]};border-radius:12px;'
+        f'padding:0.9rem 1rem;box-shadow:{t["shadow"]};">' + header + body + '</div>',
         unsafe_allow_html=True,
     )
 
@@ -2085,11 +2113,13 @@ ETF_METADATA: dict[str, dict] = {
 
 
 def _section_header(number: str, title: str) -> None:
+    t = get_theme_tokens()
     prefix = f"{number}. " if number else ""
     st.markdown(
-        f'<div style="border-left:3px solid #7c5cfc;padding-left:0.9rem;margin-bottom:0.8rem;">'
+        f'<div style="border-left:3px solid {t["accent"]};'
+        f'padding-left:0.9rem;margin-bottom:0.8rem;">'
         f'<div style="font-family:\'Space Grotesk\',sans-serif;'
-        f'font-size:1.2rem;font-weight:700;color:#f1f5f9;letter-spacing:-0.01em;">'
+        f'font-size:1.2rem;font-weight:700;color:{t["text_primary"]};letter-spacing:-0.01em;">'
         f'{prefix}{title}</div>'
         f'</div>',
         unsafe_allow_html=True,
@@ -2097,8 +2127,9 @@ def _section_header(number: str, title: str) -> None:
 
 
 def _section_desc(text: str) -> None:
+    t = get_theme_tokens()
     st.markdown(
-        f'<div style="font-size:0.95rem;color:#94a3b8;line-height:1.6;'
+        f'<div style="font-size:0.95rem;color:{t["text_secondary"]};line-height:1.6;'
         f'margin-bottom:1.35rem;max-width:62rem;">{text}</div>',
         unsafe_allow_html=True,
     )
@@ -2118,15 +2149,19 @@ def _kpi_cards(items: list[dict]) -> None:
 
     Each item dict: {label, value, accent, bg, icon (inner SVG markup), hint}.
     """
+    t = get_theme_tokens()
+    card_bg = (
+        t["bg_surface"] if is_light()
+        else "linear-gradient(160deg,rgba(30,38,64,0.55),rgba(17,24,39,0.55))"
+    )
     cards = ""
     for it in items:
         accent = it["accent"]
         cards += (
             f'<div style="flex:1 1 140px;min-width:140px;'
-            f'background:linear-gradient(160deg,rgba(30,38,64,0.55),'
-            f'rgba(17,24,39,0.55));border:1px solid #1e2640;'
+            f'background:{card_bg};border:1px solid {t["border"]};'
             f'border-top:2px solid {accent};border-radius:14px;'
-            f'padding:1rem 1.1rem;box-shadow:0 2px 14px rgba(0,0,0,0.25);">'
+            f'padding:1rem 1.1rem;box-shadow:{t["shadow"]};">'
             f'<div style="width:2.1rem;height:2.1rem;border-radius:9px;'
             f'background:{it["bg"]};border:1px solid {accent}55;'
             f'display:flex;align-items:center;justify-content:center;'
@@ -2135,12 +2170,12 @@ def _kpi_cards(items: list[dict]) -> None:
             f'stroke="{accent}" stroke-width="1.8" stroke-linecap="round" '
             f'stroke-linejoin="round">{it["icon"]}</svg></div>'
             f'<div style="font-size:0.7rem;font-weight:600;letter-spacing:0.08em;'
-            f'text-transform:uppercase;color:#64748b;margin-bottom:0.3rem;">'
+            f'text-transform:uppercase;color:{t["text_muted"]};margin-bottom:0.3rem;">'
             f'{it["label"]}</div>'
             f'<div style="font-family:\'Space Grotesk\',sans-serif;'
-            f'font-size:1.6rem;font-weight:700;color:#f1f5f9;line-height:1;">'
+            f'font-size:1.6rem;font-weight:700;color:{t["text_primary"]};line-height:1;">'
             f'{it["value"]}</div>'
-            f'<div style="font-size:0.7rem;color:#64748b;margin-top:0.35rem;">'
+            f'<div style="font-size:0.7rem;color:{t["text_muted"]};margin-top:0.35rem;">'
             f'{it["hint"]}</div></div>'
         )
     st.markdown(
@@ -2207,6 +2242,7 @@ def _render_etf_explorer() -> None:
     """
     from backend.data.universe_config import ETF_UNIVERSE
 
+    thm = get_theme_tokens()
     tickers = [e.primary_ticker for e in ETF_UNIVERSE]
     cluster_by_ticker = {e.primary_ticker: e.cluster for e in ETF_UNIVERSE}
     etf_by_ticker = {e.primary_ticker: e for e in ETF_UNIVERSE}
@@ -2222,11 +2258,14 @@ def _render_etf_explorer() -> None:
     # ── Panel 1: ticker selector pills ───────────────────────────────────
     # Per-pill CSS: cluster-coloured dot + active (navy) / inactive (grey).
     # Streamlit tags each keyed widget's container with `st-key-<key>`.
+    _pill_bg = "#f1f4fa" if is_light() else "rgba(255,255,255,0.05)"
+    _pill_border = "#D8DEE9" if is_light() else "rgba(255,255,255,0.10)"
+    _pill_color = "#334155" if is_light() else "#94a3b8"
     css_rules = [
         'div[class*="st-key-pill_"] button {'
-        ' background: rgba(255,255,255,0.05) !important;'
-        ' border: 1px solid rgba(255,255,255,0.10) !important;'
-        ' color: #94a3b8 !important; border-radius: 18px !important;'
+        f' background: {_pill_bg} !important;'
+        f' border: 1px solid {_pill_border} !important;'
+        f' color: {_pill_color} !important; border-radius: 18px !important;'
         " font-family: 'Space Grotesk', sans-serif !important;"
         ' font-size: 0.8rem !important; font-weight: 600 !important;'
         ' padding: 0.3rem 0.4rem !important; box-shadow: none !important; }',
@@ -2316,7 +2355,8 @@ def _render_etf_explorer() -> None:
                 ),
                 yaxis=dict(
                     side="right", showgrid=True,
-                    gridcolor="rgba(255,255,255,0.05)", color="#64748b",
+                    gridcolor="#e2e8f0" if is_light() else "rgba(255,255,255,0.05)",
+                    color="#64748b",
                     range=[y_lo - y_pad, y_hi + y_pad], fixedrange=False,
                 ),
                 modebar_remove=[
@@ -2339,11 +2379,11 @@ def _render_etf_explorer() -> None:
 
     pr_str = f"{period_return:+.2f}%" if period_return is not None else "—"
     st.markdown(
-        f'<div style="font-size:0.8rem;color:#94a3b8;margin:0.25rem 0 0.5rem 0;">'
-        f'Period return: <span style="color:#f1f5f9;font-weight:600;">{pr_str}</span>'
-        f' &nbsp;|&nbsp; TER: <span style="color:#f1f5f9;font-weight:600;">'
+        f'<div style="font-size:0.8rem;color:{thm["text_secondary"]};margin:0.25rem 0 0.5rem 0;">'
+        f'Period return: <span style="color:{thm["text_primary"]};font-weight:600;">{pr_str}</span>'
+        f' &nbsp;|&nbsp; TER: <span style="color:{thm["text_primary"]};font-weight:600;">'
         f'{meta["ter"]}</span>'
-        f' &nbsp;|&nbsp; AUM: <span style="color:#f1f5f9;font-weight:600;">'
+        f' &nbsp;|&nbsp; AUM: <span style="color:{thm["text_primary"]};font-weight:600;">'
         f'{meta["aum"]}</span></div>',
         unsafe_allow_html=True,
     )
@@ -2354,26 +2394,26 @@ def _render_etf_explorer() -> None:
     _section_header("2", "What this ETF holds")
     stats_rows = "".join(
         f'<div style="display:flex;justify-content:space-between;gap:1rem;'
-        f'padding:0.4rem 0;border-bottom:1px solid rgba(255,255,255,0.05);">'
-        f'<span style="font-size:0.78rem;color:#64748b;">{k}</span>'
-        f'<span style="font-size:0.78rem;color:#e2e8f0;font-weight:600;">{v}</span>'
+        f'padding:0.4rem 0;border-bottom:1px solid {thm["border_soft"]};">'
+        f'<span style="font-size:0.78rem;color:{thm["text_muted"]};">{k}</span>'
+        f'<span style="font-size:0.78rem;color:{thm["text_primary"]};font-weight:600;">{v}</span>'
         f'</div>'
         for k, v in meta["key_stats"].items()
     )
     ucits_tag = "UCITS-eligible" if etf.is_ucits else "US-listed (non-UCITS)"
     st.markdown(
-        f'<div style="background:rgba(124,92,252,0.05);'
-        f'border:1px solid rgba(124,92,252,0.18);border-radius:12px;'
+        f'<div style="background:{thm["accent_soft"]};'
+        f'border:1px solid {thm["accent_border"]};border-radius:12px;'
         f'padding:1.1rem 1.25rem;">'
         f'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:1.05rem;'
-        f'font-weight:700;color:#f1f5f9;">{meta["full_name"]}</div>'
-        f'<div style="font-size:0.74rem;color:#64748b;margin:0.3rem 0 0.85rem 0;">'
+        f'font-weight:700;color:{thm["text_primary"]};">{meta["full_name"]}</div>'
+        f'<div style="font-size:0.74rem;color:{thm["text_muted"]};margin:0.3rem 0 0.85rem 0;">'
         f'{meta["issuer"]} &middot; {meta["category"]} &middot; '
         f'Inception {meta["inception"]} &middot; {meta["distribution"]} &middot; '
         f'{etf.currency} &middot; {ucits_tag}</div>'
-        f'<div style="font-size:0.84rem;color:#cbd5e1;line-height:1.6;'
+        f'<div style="font-size:0.84rem;color:{thm["text_secondary"]};line-height:1.6;'
         f'margin-bottom:0.6rem;">{meta["description"]}</div>'
-        f'<div style="font-size:0.8rem;color:#7c8aa0;font-style:italic;'
+        f'<div style="font-size:0.8rem;color:{thm["text_muted"]};font-style:italic;'
         f'line-height:1.55;margin-bottom:1rem;">Universe rationale: '
         f'{etf.rationale}</div>'
         f'<div style="display:grid;grid-template-columns:1fr 1fr;'
@@ -2389,9 +2429,9 @@ def _render_etf_explorer() -> None:
 
     # (a) Morningstar & ESG ----------------------------------------------
     st.markdown(
-        '<div style="font-size:0.8rem;font-weight:700;letter-spacing:0.06em;'
-        'text-transform:uppercase;color:#a78bfa;margin-bottom:0.5rem;">'
-        'Morningstar &amp; ESG</div>',
+        f'<div style="font-size:0.8rem;font-weight:700;letter-spacing:0.06em;'
+        f'text-transform:uppercase;color:{thm["accent_text"]};margin-bottom:0.5rem;">'
+        f'Morningstar &amp; ESG</div>',
         unsafe_allow_html=True,
     )
     ms = meta["morningstar"]
@@ -2429,9 +2469,9 @@ def _render_etf_explorer() -> None:
 
     # (b) Analyst consensus ----------------------------------------------
     st.markdown(
-        '<div style="font-size:0.8rem;font-weight:700;letter-spacing:0.06em;'
-        'text-transform:uppercase;color:#a78bfa;margin-bottom:0.5rem;">'
-        'Analyst consensus</div>',
+        f'<div style="font-size:0.8rem;font-weight:700;letter-spacing:0.06em;'
+        f'text-transform:uppercase;color:{thm["accent_text"]};margin-bottom:0.5rem;">'
+        f'Analyst consensus</div>',
         unsafe_allow_html=True,
     )
     an = meta["analyst"]
@@ -2457,9 +2497,9 @@ def _render_etf_explorer() -> None:
 
     # (c) Key financials table -------------------------------------------
     st.markdown(
-        '<div style="font-size:0.8rem;font-weight:700;letter-spacing:0.06em;'
-        'text-transform:uppercase;color:#a78bfa;margin-bottom:0.5rem;">'
-        'Key financials</div>',
+        f'<div style="font-size:0.8rem;font-weight:700;letter-spacing:0.06em;'
+        f'text-transform:uppercase;color:{thm["accent_text"]};margin-bottom:0.5rem;">'
+        f'Key financials</div>',
         unsafe_allow_html=True,
     )
     fin_rows = [
@@ -2536,8 +2576,8 @@ def _render_hrp_tab(portfolio: dict) -> None:
         try:
             from backend.optimizer.charts import plot_weights_donut
             fig_donut = plot_weights_donut(weights)
-            fig_donut = apply_plotly_dark_theme(fig_donut)
-            # Re-assert the donut's own layout: apply_plotly_dark_theme()
+            fig_donut = apply_plotly_theme(fig_donut)
+            # Re-assert the donut's own layout: apply_plotly_theme()
             # overwrites margin (and would clip the bottom colour legend) and
             # the layout font. The per-slice textfont set in charts.py is not
             # touched, so the white in-slice labels survive.
@@ -2637,7 +2677,7 @@ def _render_hrp_tab(portfolio: dict) -> None:
             risk_contributions,
             profile_label=profile_label,
         )
-        fig_risk = apply_plotly_dark_theme(fig_risk)
+        fig_risk = apply_plotly_theme(fig_risk)
         # The "Risk Contributions" section header above already titles this chart
         # (outside the dark plot background), so drop the duplicate in-figure title.
         fig_risk.update_layout(title_text="")
@@ -3080,6 +3120,64 @@ _CHAT_CSS = """
 </style>
 """
 
+# Light-theme override for the chat page. Appended AFTER _CHAT_CSS (so it wins by
+# source order) only when the light theme is active — flips the dark surfaces,
+# borders, and near-white text to readable light-mode values.
+_CHAT_CSS_LIGHT = """
+<style>
+.ca-pill { background: #f1f4fa; border-color: #D8DEE9; color: #334155; }
+.ca-shell { background: #ffffff; border-color: #D8DEE9;
+    box-shadow: 0 4px 16px rgba(15,23,42,0.06); }
+.ca-shell-head {
+    background: linear-gradient(135deg, #f8fafc 0%, #ede9fe 55%, #f1f4fa 100%);
+    border-bottom-color: #ddd6fe; }
+.ca-shell-head-title { color: #111827; }
+.ca-shell-head-sub { color: #64748B; }
+.ca-hero-title { color: #111827; }
+.ca-hero-sub { color: #64748B; }
+.ca-hero-eyebrow { color: #94a3b8; }
+.ca-suggest .stButton > button {
+    background: #f8fafc !important; border-color: #D8DEE9 !important;
+    color: #334155 !important; }
+.ca-suggest .stButton > button:hover {
+    background: #EEE8FF !important; color: #6d4deb !important; }
+[data-testid="stChatMessage"] [data-testid="stChatMessageContent"] {
+    background: #ffffff !important; border-color: #D8DEE9 !important;
+    border-left-color: #D8DEE9 !important; }
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"])
+[data-testid="stChatMessageContent"] {
+    background: #EEE8FF !important; border-color: rgba(124,77,255,0.25) !important;
+    border-left-color: #7C4DFF !important; }
+[data-testid="stChatMessage"] p { color: #334155 !important; }
+[data-testid="stChatMessage"] h1,
+[data-testid="stChatMessage"] h2,
+[data-testid="stChatMessage"] h3 { color: #111827 !important; }
+[data-testid="stChatMessage"] strong { color: #6d4deb !important; }
+[data-testid="stChatMessage"] th,
+[data-testid="stChatMessage"] td { border-color: #D8DEE9 !important; color: #334155 !important; }
+[data-testid="stChatMessage"] th { color: #6d4deb !important; }
+[data-testid="stChatInput"] { border-top-color: #D8DEE9 !important; }
+[data-testid="stChatInput"] > div {
+    background: #ffffff !important; border-color: #D8DEE9 !important; }
+[data-testid="stChatInput"] textarea { color: #111827 !important; }
+[data-testid="stChatInput"] textarea::placeholder { color: #94a3b8 !important; }
+.ca-clear .stButton > button { border-color: #D8DEE9 !important; color: #64748B !important; }
+.ca-info { background: #ffffff; border-color: #D8DEE9; }
+.ca-info-head {
+    background: linear-gradient(135deg, #f8fafc 0%, #ede9fe 55%, #f1f4fa 100%);
+    border-bottom-color: #ddd6fe; }
+.ca-info-head-title { color: #111827; }
+.ca-info-section-label { color: #94a3b8; }
+.ca-info-row + .ca-info-row { border-top-color: #E5E9F0; }
+.ca-info-row span.label { color: #334155; }
+.ca-info-divider { border-top-color: #E5E9F0; }
+.ca-info-footer { border-top-color: #E5E9F0; color: #64748B; }
+.ca-pipeline-step {
+    color: #334155; background: #f1f4fa; border-color: #D8DEE9; }
+.ca-pipeline-arrow { color: #94a3b8; }
+</style>
+"""
+
 # No custom avatars — user vs assistant distinction is conveyed by CSS color.
 _CHAT_AVATARS: dict[str, None] = {"assistant": None, "user": None}
 
@@ -3333,6 +3431,7 @@ def _render_mv_tab(portfolio: dict, profile_key: str) -> None:
             mv_vol=mv_vol or 0.08,
             mv_ret=mv_ret,
         )
+        fig_frontier = apply_plotly_theme(fig_frontier)
         st.plotly_chart(fig_frontier, use_container_width=True)
         if portfolio.get("source") != "live":
             st.caption(
@@ -3413,6 +3512,8 @@ def render_chat() -> None:
         icon="💬",
     )
     st.markdown(_CHAT_CSS, unsafe_allow_html=True)
+    if is_light():
+        st.markdown(_CHAT_CSS_LIGHT, unsafe_allow_html=True)
     st.markdown('<div class="ca-page">', unsafe_allow_html=True)
 
     profile_data = st.session_state.get("profile", {})
@@ -3549,6 +3650,7 @@ _STRATEGY_COLORS: dict[str, str] = {
 
 
 def render_backtesting() -> None:
+    t = get_theme_tokens()
     page_header("Backtesting", "Walk-forward simulation · HRP vs MV vs 1/N", icon="📈")
 
     st.markdown(
@@ -3622,7 +3724,7 @@ def render_backtesting() -> None:
         f'text-align:{"left" if i == 0 else "right"};'
         f'font-family:\'Space Grotesk\',sans-serif;font-size:0.7rem;'
         f'font-weight:700;letter-spacing:0.06em;text-transform:uppercase;'
-        f'color:#a78bfa;white-space:nowrap;">{c}</th>'
+        f'color:{t["accent_text"]};white-space:nowrap;">{c}</th>'
         for i, c in enumerate(_cols)
     )
     _body = ""
@@ -3630,19 +3732,23 @@ def render_backtesting() -> None:
         cells = "".join(
             f'<td style="padding:0.55rem 0.85rem;'
             f'text-align:{"left" if i == 0 else "right"};font-size:0.82rem;'
-            f'color:{"#e2e8f0" if i == 0 else "#cbd5e1"};'
+            f'color:{t["text_primary"] if i == 0 else t["text_secondary"]};'
             f'font-weight:{"600" if i == 0 else "400"};'
-            f'border-top:1px solid #141a30;white-space:nowrap;">{r[c]}</td>'
+            f'border-top:1px solid {t["border_soft"]};white-space:nowrap;">{r[c]}</td>'
             for i, c in enumerate(_cols)
         )
         _body += f"<tr>{cells}</tr>"
+    _head_bg = (
+        "linear-gradient(135deg,#f8fafc 0%,#ede9fe 55%,#f1f4fa 100%)"
+        if is_light() else
+        "linear-gradient(135deg,#0f172a 0%,#1e1b4b 55%,#0d1220 100%)"
+    )
     st.markdown(
-        f'<div style="overflow-x:auto;border:1px solid #1e2640;'
+        f'<div style="overflow-x:auto;border:1px solid {t["border"]};'
         f'border-radius:12px;">'
         f'<table style="width:100%;border-collapse:collapse;">'
-        f'<thead><tr style="background:linear-gradient(135deg,'
-        f'#0f172a 0%,#1e1b4b 55%,#0d1220 100%);'
-        f'border-bottom:1px solid #1e2640;">{_head}</tr></thead>'
+        f'<thead><tr style="background:{_head_bg};'
+        f'border-bottom:1px solid {t["border"]};">{_head}</tr></thead>'
         f"<tbody>{_body}</tbody></table></div>",
         unsafe_allow_html=True,
     )
@@ -3687,7 +3793,7 @@ def render_backtesting() -> None:
             height=400,
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
         )
-        fig = apply_plotly_dark_theme(fig)
+        fig = apply_plotly_theme(fig)
         fig.update_layout(
             margin=dict(t=56),
             modebar_remove=[
@@ -3728,7 +3834,7 @@ def render_backtesting() -> None:
             height=320,
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
         )
-        fig_dd = apply_plotly_dark_theme(fig_dd)
+        fig_dd = apply_plotly_theme(fig_dd)
         fig_dd.update_layout(
             margin=dict(t=56),
             modebar_remove=[
@@ -3765,17 +3871,18 @@ _MOCK_MV_WEIGHTS: dict[str, float] = {
 
 
 def render_compare() -> None:
+    thm = get_theme_tokens()
     page_header("Compare Markowitz", "Deep-dive analysis · HRP vs Markowitz", icon="⚖")
 
     _badge = (
-        "width:2.4rem;height:2.4rem;flex-shrink:0;border-radius:50%;"
-        "background:rgba(124,92,252,0.12);border:1px solid rgba(124,92,252,0.25);"
-        "color:#a78bfa;display:inline-flex;align-items:center;justify-content:center;"
+        f"width:2.4rem;height:2.4rem;flex-shrink:0;border-radius:50%;"
+        f"background:{thm['accent_soft']};border:1px solid {thm['accent_border']};"
+        f"color:{thm['accent_text']};display:inline-flex;align-items:center;justify-content:center;"
     )
     _card = (
-        "background:rgba(124,92,252,0.05);border:1px solid rgba(124,92,252,0.18);"
-        "border-radius:10px;padding:0.85rem 0.95rem;display:flex;gap:0.7rem;"
-        "align-items:flex-start;"
+        f"background:{thm['accent_soft']};border:1px solid {thm['accent_border']};"
+        f"border-radius:10px;padding:0.85rem 0.95rem;display:flex;gap:0.7rem;"
+        f"align-items:flex-start;"
     )
     st.markdown(
         f"""
@@ -3785,7 +3892,7 @@ def render_compare() -> None:
             <span class="qs-info-chevron">▾</span>
           </summary>
           <div class="qs-info-body">
-            <div style="font-size:0.82rem;color:#94a3b8;line-height:1.55;
+            <div style="font-size:0.82rem;color:{thm["text_secondary"]};line-height:1.55;
             margin-bottom:1rem;">
                 HRP is our default optimizer. Markowitz is shown as the
                 academic benchmark to explain why HRP is more robust for
@@ -3798,9 +3905,9 @@ def render_compare() -> None:
                     <div style="{_badge}">{_ICON_SHIELD}</div>
                     <div>
                         <div style="font-family:'Space Grotesk',sans-serif;
-                        font-size:0.82rem;font-weight:600;color:#e2e8f0;
+                        font-size:0.82rem;font-weight:600;color:{thm["text_primary"]};
                         margin-bottom:0.3rem;">HRP is more robust</div>
-                        <div style="font-size:0.76rem;color:#94a3b8;
+                        <div style="font-size:0.76rem;color:{thm["text_secondary"]};
                         line-height:1.5;">No covariance matrix inversion. Less
                         sensitive to estimation errors.</div>
                     </div>
@@ -3809,9 +3916,9 @@ def render_compare() -> None:
                     <div style="{_badge}">{_ICON_BARS}</div>
                     <div>
                         <div style="font-family:'Space Grotesk',sans-serif;
-                        font-size:0.82rem;font-weight:600;color:#e2e8f0;
+                        font-size:0.82rem;font-weight:600;color:{thm["text_primary"]};
                         margin-bottom:0.3rem;">Markowitz is the benchmark</div>
-                        <div style="font-size:0.76rem;color:#94a3b8;
+                        <div style="font-size:0.76rem;color:{thm["text_secondary"]};
                         line-height:1.5;">Useful to compare diversification,
                         concentration and stability.</div>
                     </div>
@@ -3820,9 +3927,9 @@ def render_compare() -> None:
                     <div style="{_badge}">{_ICON_CAP}</div>
                     <div>
                         <div style="font-family:'Space Grotesk',sans-serif;
-                        font-size:0.82rem;font-weight:600;color:#e2e8f0;
+                        font-size:0.82rem;font-weight:600;color:{thm["text_primary"]};
                         margin-bottom:0.3rem;">Educational value</div>
-                        <div style="font-size:0.76rem;color:#94a3b8;
+                        <div style="font-size:0.76rem;color:{thm["text_secondary"]};
                         line-height:1.5;">Users see why the app recommends HRP,
                         not only the final weights.</div>
                     </div>
@@ -3831,7 +3938,7 @@ def render_compare() -> None:
             <div style="text-align:center;">
                 <span style="display:inline-block;
                 font-family:'Space Grotesk',sans-serif;font-size:0.78rem;
-                font-weight:600;color:#a78bfa;
+                font-weight:600;color:{thm["accent_text"]};
                 background:rgba(124,92,252,0.10);
                 border:1px solid rgba(124,92,252,0.28);border-radius:999px;
                 padding:0.4rem 1rem;">
@@ -3877,7 +3984,8 @@ def render_compare() -> None:
     # ── 1. Radar chart ────────────────────────────────────────────────────────
     _section_header("1", "Portfolio Quality Comparison")
     st.markdown(
-        "<p style='color:#94a3b8;font-size:0.82rem;line-height:1.55;margin-bottom:0.5rem;'>"
+        f"<p style='color:{thm['text_secondary']};font-size:0.82rem;"
+        "line-height:1.55;margin-bottom:0.5rem;'>"
         "This chart summarizes the trade-offs between the recommended HRP portfolio and the "
         "classical Markowitz benchmark. Each dimension is normalized from 0 to 1, where higher "
         "values indicate a stronger result. The goal is to help users understand whether the HRP "
@@ -3950,9 +4058,14 @@ def render_compare() -> None:
         height=440,
         margin=dict(l=40, r=40, t=60, b=40),
     )
-    fig_radar = apply_plotly_dark_theme(fig_radar)
+    fig_radar = apply_plotly_theme(fig_radar)
+    _grid = "#e2e8f0" if is_light() else "#1e2640"
     fig_radar.update_layout(
         paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+        polar=dict(
+            radialaxis=dict(gridcolor=_grid),
+            angularaxis=dict(gridcolor=_grid),
+        ),
         modebar_remove=[
             "select2d", "lasso2d", "autoScale2d",
             "hoverClosestCartesian", "hoverCompareCartesian",
@@ -3970,12 +4083,12 @@ def render_compare() -> None:
     ]
     _ind_rows = "".join(
         f'<div style="display:flex;align-items:center;gap:0.55rem;'
-        f'padding:0.5rem 0;border-top:1px solid #1e2640;">'
+        f'padding:0.5rem 0;border-top:1px solid {thm["border"]};">'
         f'<span style="width:1.7rem;height:1.7rem;flex-shrink:0;border-radius:7px;'
         f'display:inline-flex;align-items:center;justify-content:center;'
         f'background:{color}1a;border:1px solid {color}40;color:{color};">{icon}</span>'
-        f'<span style="flex:1;font-size:0.8rem;color:#cbd5e1;">{label}</span>'
-        f'<span style="font-size:0.72rem;font-weight:600;color:#64748b;">Higher</span>'
+        f'<span style="flex:1;font-size:0.8rem;color:{thm["text_secondary"]};">{label}</span>'
+        f'<span style="font-size:0.72rem;font-weight:600;color:{thm["text_muted"]};">Higher</span>'
         f'</div>'
         for color, icon, label in _indicators
     )
@@ -3988,30 +4101,34 @@ def render_compare() -> None:
             fig_radar, use_container_width=True, config={"displaylogo": False}
         )
     with _col_ind:
+        _ind_head_bg = (
+            "linear-gradient(135deg,#f8fafc 0%,#ede9fe 55%,#f1f4fa 100%)"
+            if is_light() else
+            "linear-gradient(135deg,#0f172a 0%,#1e1b4b 55%,#0d1220 100%)"
+        )
         st.markdown(
-            f'<div style="background:#0f1628;border:1px solid #1e2640;'
-            f'border-radius:14px;overflow:hidden;">'
+            f'<div style="background:{thm["bg_card"]};border:1px solid {thm["border"]};'
+            f'border-radius:14px;overflow:hidden;box-shadow:{thm["shadow"]};">'
             f'<div style="display:flex;align-items:center;gap:0.65rem;'
-            f'padding:0.85rem 1.05rem;background:linear-gradient(135deg,'
-            f'#0f172a 0%,#1e1b4b 55%,#0d1220 100%);'
-            f'border-bottom:1px solid #1e2640;">'
+            f'padding:0.85rem 1.05rem;background:{_ind_head_bg};'
+            f'border-bottom:1px solid {thm["border"]};">'
             f'<span style="font-family:\'Space Grotesk\',sans-serif;'
-            f'font-size:0.78rem;font-weight:700;color:#a78bfa;'
+            f'font-size:0.78rem;font-weight:700;color:{thm["accent_text"]};'
             f'background:rgba(124,92,252,0.18);'
             f'border:1px solid rgba(124,92,252,0.3);border-radius:6px;'
             f'min-width:1.85rem;height:1.85rem;display:inline-flex;'
             f'align-items:center;justify-content:center;flex-shrink:0;">i</span>'
             f'<span style="font-family:\'Space Grotesk\',sans-serif;'
-            f'font-size:0.92rem;font-weight:600;color:#f1f5f9;">Indicators</span>'
+            f'font-size:0.92rem;font-weight:600;color:{thm["text_primary"]};">Indicators</span>'
             f'</div>'
             f'<div style="padding:0.9rem 1.05rem 1rem;">'
             f'<div style="display:flex;align-items:center;'
             f'justify-content:space-between;font-family:\'Space Grotesk\',sans-serif;'
             f'font-size:0.62rem;letter-spacing:0.14em;text-transform:uppercase;'
-            f'color:#475569;font-weight:600;margin-bottom:0.2rem;">'
+            f'color:{thm["text_muted"]};font-weight:600;margin-bottom:0.2rem;">'
             f'<span>Indicator</span><span>Better</span></div>'
             f'{_ind_rows}'
-            f'<div style="font-size:0.68rem;color:#64748b;margin-top:0.6rem;'
+            f'<div style="font-size:0.68rem;color:{thm["text_muted"]};margin-top:0.6rem;'
             f'line-height:1.45;">Scores normalised to [0, 1]; 1 = best.</div>'
             f'</div></div>',
             unsafe_allow_html=True,
@@ -4029,7 +4146,8 @@ def render_compare() -> None:
     st.markdown("---")
     _section_header("2", "Risk Contributions")
     st.markdown(
-        "<p style='color:#94a3b8;font-size:0.82rem;line-height:1.55;margin-bottom:0.5rem;'>"
+        f"<p style='color:{thm['text_secondary']};font-size:0.82rem;"
+        "line-height:1.55;margin-bottom:0.5rem;'>"
         "Portfolio weights do not always reveal where risk really comes from. This chart shows "
         "each ETF's contribution to total portfolio risk and compares whether HRP and Markowitz "
         "distribute volatility evenly or concentrate it in a few assets."
@@ -4068,7 +4186,7 @@ def render_compare() -> None:
         margin=dict(l=8, r=24, t=24, b=40),
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
     )
-    fig_rc = apply_plotly_dark_theme(fig_rc)
+    fig_rc = apply_plotly_theme(fig_rc)
     fig_rc.update_layout(
         paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
         modebar_remove=[
@@ -4090,7 +4208,8 @@ def render_compare() -> None:
     st.markdown("---")
     _section_header("3", "Asset Correlation Matrix")
     st.markdown(
-        "<p style='color:#94a3b8;font-size:0.82rem;line-height:1.55;margin-bottom:0.5rem;'>"
+        f"<p style='color:{thm['text_secondary']};font-size:0.82rem;"
+        "line-height:1.55;margin-bottom:0.5rem;'>"
         "Diversification is not only about holding many ETFs, but about combining assets that "
         "behave differently. This matrix shows the correlation structure of the ETF universe and "
         "explains why HRP groups some assets together while separating others."
@@ -4120,7 +4239,7 @@ def render_compare() -> None:
         y=_TICKERS_HM,
         colorscale=[
             [0.00, "#f87171"],
-            [0.50, "#111827"],
+            [0.50, "#f1f4fa" if is_light() else "#111827"],
             [1.00, "#7c5cfc"],
         ],
         zmin=-1,
@@ -4137,7 +4256,7 @@ def render_compare() -> None:
         ),
     ))
     fig_hm.update_layout(height=420, margin=dict(l=8, r=8, t=8, b=8))
-    fig_hm = apply_plotly_dark_theme(fig_hm)
+    fig_hm = apply_plotly_theme(fig_hm)
     fig_hm.update_layout(
         paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
         modebar_remove=[
@@ -4202,6 +4321,7 @@ def render_team_section() -> None:
         },
     ]
 
+    t = get_theme_tokens()
     cards_html = (
         '<div style="display:flex;flex-wrap:wrap;gap:1rem;'
         'margin-top:0.75rem;justify-content:center;">'
@@ -4223,16 +4343,17 @@ def render_team_section() -> None:
         )
         cards_html += (
             f'<div style="flex:1 1 200px;max-width:260px;'
-            f'background:rgba(30,38,64,0.5);border:1px solid #1e2640;'
+            f'background:{t["bg_card"]};border:1px solid {t["border"]};'
             f'border-top:2px solid {m["color"]};border-radius:12px;'
             f'padding:1.1rem 1rem;display:flex;flex-direction:column;'
-            f'align-items:center;text-align:center;">'
+            f'align-items:center;text-align:center;box-shadow:{t["shadow"]};">'
             f'{img_tag}'
             f'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:0.9rem;'
-            f'font-weight:600;color:#e2e8f0;margin-bottom:0.2rem;">{m["name"]}</div>'
+            f'font-weight:600;color:{t["text_primary"]};margin-bottom:0.2rem;">{m["name"]}</div>'
             f'<div style="font-size:0.75rem;font-weight:600;color:{m["color"]};'
             f'letter-spacing:0.03em;margin-bottom:0.4rem;">{m["role"]}</div>'
-            f'<div style="font-size:0.73rem;color:#64748b;line-height:1.5;">{m["resp"]}</div>'
+            f'<div style="font-size:0.73rem;color:{t["text_muted"]};'
+            f'line-height:1.5;">{m["resp"]}</div>'
             f'</div>'
         )
     cards_html += '</div>'
@@ -4272,27 +4393,33 @@ def render_settings() -> None:
         'stroke="#7c5cfc" stroke-opacity="0.14" stroke-width="1"/>'
         "</svg>"
     )
+    t = get_theme_tokens()
+    hero_bg = (
+        "radial-gradient(120% 160% at 88% 50%,rgba(124,77,255,0.12) 0%,"
+        "rgba(246,247,251,0) 48%),linear-gradient(135deg,#ffffff 0%,#f1f4fa 60%,#ffffff 100%)"
+        if is_light() else
+        "radial-gradient(120% 160% at 88% 50%,rgba(124,92,252,0.16) 0%,"
+        "rgba(13,18,32,0) 48%),linear-gradient(135deg,#0d1220 0%,#141a30 60%,#0d1220 100%)"
+    )
     st.markdown(
-        f'<div style="position:relative;overflow:hidden;border:1px solid #1e2640;'
+        f'<div style="position:relative;overflow:hidden;border:1px solid {t["border"]};'
         f'border-radius:16px;padding:2rem 2.25rem;margin-bottom:1.5rem;'
-        f'background:radial-gradient(120% 160% at 88% 50%,'
-        f'rgba(124,92,252,0.16) 0%,rgba(13,18,32,0) 48%),'
-        f'linear-gradient(135deg,#0d1220 0%,#141a30 60%,#0d1220 100%);'
+        f'background:{hero_bg};box-shadow:{t["shadow"]};'
         f'display:flex;align-items:center;justify-content:space-between;'
         f'gap:1.5rem;flex-wrap:wrap;">'
         f'{_wave_svg}'
         f'<div style="position:relative;z-index:1;">'
         f'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:0.72rem;'
         f'font-weight:700;letter-spacing:0.18em;text-transform:uppercase;'
-        f'color:#a78bfa;margin-bottom:0.5rem;">Configuration</div>'
+        f'color:{t["accent_text"]};margin-bottom:0.5rem;">Configuration</div>'
         f'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:2.4rem;'
-        f'font-weight:700;color:#f1f5f9;letter-spacing:-0.02em;'
+        f'font-weight:700;color:{t["text_primary"]};letter-spacing:-0.02em;'
         f'line-height:1.1;">Settings</div>'
-        f'<div style="font-size:0.95rem;color:#94a3b8;margin-top:0.4rem;">'
+        f'<div style="font-size:0.95rem;color:{t["text_secondary"]};margin-top:0.4rem;">'
         f'Platform configuration</div>'
         f'</div>'
         f'<div style="position:relative;z-index:1;width:5rem;height:5rem;'
-        f'flex-shrink:0;border-radius:16px;color:#c4b5fd;'
+        f'flex-shrink:0;border-radius:16px;color:{t["accent"]};'
         f'background:radial-gradient(circle at 50% 40%,'
         f'rgba(124,92,252,0.35),rgba(124,92,252,0.06));'
         f'border:1px solid rgba(124,92,252,0.4);'
@@ -4304,10 +4431,10 @@ def render_settings() -> None:
     )
 
     _badge = (
-        "width:2.4rem;height:2.4rem;flex-shrink:0;border-radius:9px;"
-        "background:rgba(124,92,252,0.12);border:1px solid rgba(124,92,252,0.25);"
-        "color:#a78bfa;display:inline-flex;align-items:center;"
-        "justify-content:center;"
+        f"width:2.4rem;height:2.4rem;flex-shrink:0;border-radius:9px;"
+        f"background:{t['accent_soft']};border:1px solid {t['accent_border']};"
+        f"color:{t['accent_text']};display:inline-flex;align-items:center;"
+        f"justify-content:center;"
     )
     _db_icon = (
         '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"'
@@ -4321,13 +4448,30 @@ def render_settings() -> None:
 
     st.markdown("---")
 
+    _section_header("", "Appearance")
+    current_theme = st.session_state.get("theme", "dark")
+    col_theme, _ = st.columns([2, 3])
+    with col_theme:
+        theme_choice = st.radio(
+            "Color mode",
+            options=["Dark", "Light"],
+            index=0 if current_theme == "dark" else 1,
+            horizontal=True,
+            label_visibility="collapsed",
+        )
+    if (theme_choice == "Light") != (current_theme == "light"):
+        st.session_state["theme"] = "light" if theme_choice == "Light" else "dark"
+        st.rerun()
+
+    st.markdown("---")
+
     _section_header("", "Data Source")
     st.markdown(
-        f'<div style="background:rgba(30,38,64,0.5);border:1px solid #1e2640;'
+        f'<div style="background:{t["bg_card"]};border:1px solid {t["border"]};'
         f'border-radius:12px;padding:1rem 1.15rem;display:flex;gap:0.85rem;'
-        f'align-items:center;">'
+        f'align-items:center;box-shadow:{t["shadow"]};">'
         f'<div style="{_badge}">{_db_icon}</div>'
-        f'<div style="font-size:0.82rem;color:#94a3b8;line-height:1.6;">'
+        f'<div style="font-size:0.82rem;color:{t["text_secondary"]};line-height:1.6;">'
         f'The Portfolio Dashboard always uses live market data (prices via '
         f'yfinance) and runs the HRP optimizer on the latest available history. '
         f'If the network is briefly unreachable it falls back to a cached '
@@ -4356,22 +4500,22 @@ def render_settings() -> None:
     st.markdown("---")
     _section_header("", "About")
     st.markdown(
-        '<div style="background:rgba(30,38,64,0.5);border:1px solid #1e2640;'
-        'border-radius:12px;padding:1rem 1.15rem;display:flex;gap:0.85rem;'
-        'align-items:center;">'
-        '<div style="width:2.4rem;height:2.4rem;flex-shrink:0;border-radius:9px;'
-        'background:linear-gradient(135deg,#7c5cfc 0%,#5b3fd1 100%);'
-        'display:inline-flex;align-items:center;justify-content:center;'
-        'font-family:\'Space Grotesk\',sans-serif;font-size:1.1rem;'
-        'font-weight:700;color:#ffffff;">R</div>'
-        '<div>'
-        '<div style="font-family:\'Space Grotesk\',sans-serif;font-size:0.88rem;'
-        'font-weight:600;color:#e2e8f0;margin-bottom:0.2rem;">'
-        'AI-Powered Robo-Advisor Platform</div>'
-        '<div style="font-size:0.76rem;color:#64748b;line-height:1.55;">'
-        'USI Programming in Finance II · 2026<br>'
-        'Design v3.1 · HRP + LLM Narrator + EU Awareness</div>'
-        '</div></div>',
+        f'<div style="background:{t["bg_card"]};border:1px solid {t["border"]};'
+        f'border-radius:12px;padding:1rem 1.15rem;display:flex;gap:0.85rem;'
+        f'align-items:center;box-shadow:{t["shadow"]};">'
+        f'<div style="width:2.4rem;height:2.4rem;flex-shrink:0;border-radius:9px;'
+        f'background:linear-gradient(135deg,#7c5cfc 0%,#5b3fd1 100%);'
+        f'display:inline-flex;align-items:center;justify-content:center;'
+        f'font-family:\'Space Grotesk\',sans-serif;font-size:1.1rem;'
+        f'font-weight:700;color:#ffffff;">R</div>'
+        f'<div>'
+        f'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:0.88rem;'
+        f'font-weight:600;color:{t["text_primary"]};margin-bottom:0.2rem;">'
+        f'AI-Powered Robo-Advisor Platform</div>'
+        f'<div style="font-size:0.76rem;color:{t["text_muted"]};line-height:1.55;">'
+        f'USI Programming in Finance II · 2026<br>'
+        f'Design v3.1 · HRP + LLM Narrator + EU Awareness</div>'
+        f'</div></div>',
         unsafe_allow_html=True,
     )
 
