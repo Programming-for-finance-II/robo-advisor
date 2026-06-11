@@ -29,8 +29,10 @@ from backend.llm.prompts.system_prompt import MANDATORY_DISCLAIMER
 
 NUMBER_TOLERANCE: float = 0.02          # 2% relative tolerance
 SAFE_FALLBACK_MESSAGE: str = (
-    "I cannot provide a detailed response at this time. "
-    "Please consult a qualified financial advisor for personalised advice.\n\n"
+    "I want to get this right, so I'd rather not answer than give you a figure I "
+    "can't tie back to your portfolio's actual data. Could you try asking about a "
+    "specific part — your allocation, your risk and drawdowns, how the clusters "
+    "work, or the EU investor caveat? I'll gladly walk you through it.\n\n"
     + MANDATORY_DISCLAIMER
 )
 
@@ -44,17 +46,29 @@ EU_AWARENESS_NOTE: str = (
     "may exhibit systematically different risk preferences."
 )
 
+# Post-generation injection markers. These are scanned against the NARRATOR'S
+# OWN OUTPUT to catch a model that echoed an injection back. They must be
+# high-signal phrases that do NOT occur in ordinary financial narration.
+#
+# Deliberately NARROWER than the input sanitiser's blocklist: phrases such as
+# "act as", "override" and "disregard" are perfectly normal in finance writing
+# ("gold acts as a hedge", "bonds act as a buffer", "this overrides the floor",
+# "disregard short-term noise"). Scanning model output for them produced false
+# positives that silently replaced valid answers with the generic fallback, so
+# they are intentionally excluded here. The input sanitiser still blocks them on
+# the way in, where a short user question containing them is genuinely suspect.
 _INJECTION_PATTERNS_SEMANTIC: tuple[str, ...] = (
     "ignore previous",
     "ignore above",
-    "disregard",
+    "ignore all previous",
     "new instruction",
     "forget your rules",
-    "act as",
+    "forget everything",
     "jailbreak",
     "pretend you are",
+    "pretend to be",
     "you are now",
-    "override",
+    "system prompt",
     "system:",
     "assistant:",
 )
