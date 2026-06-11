@@ -1,4 +1,4 @@
-# Project Diary (Diario di Bordo)
+# Project Diary
 
 Consolidated session logs, ordered by date and grouped by day, then by role (P1, P2, P3, P4) within each day.
 
@@ -113,9 +113,9 @@ Consolidated session logs, ordered by date and grouped by day, then by role (P1,
 
 ### Achievements / Key decisions
 
-- ✅ `/profile` endpoint live on `main`, green CI
-- ✅ 9 integration tests in `test_api.py`, green CI
-- ✅ ADR-005 written and merged — W2 academic documentation completed
+- `/profile` endpoint live on `main`, green CI
+- 9 integration tests in `test_api.py`, green CI
+- ADR-005 written and merged — W2 academic documentation completed
 - Decision: `/optimize` stub not committed — Emma handles `hrp.py` directly, P1 wires the endpoint as soon as `run_hrp()` is available
 - Pattern used: "stub first, wire later" documented in the `main.py` comment for the professor
 
@@ -151,7 +151,7 @@ Consolidated session logs, ordered by date and grouped by day, then by role (P1,
 - Fixed CI: removed unused `Optional` (ruff F401), corrected import order (ruff I001)
 - Updated `test_optimizer.py`: replaced the obsolete W1 test (`NotImplementedError`) with a functional W2 test
 - Opened PR `feature/p2-hrp-optimizer-1` toward `main` with reviewer Sabrina15072002
-- Green CI ✅
+- Green CI
 
 ### How I did it
 
@@ -229,7 +229,7 @@ Consolidated session logs, ordered by date and grouped by day, then by role (P1,
 
 - `docs/ground_truth_schema.md` is now the **readable interface contract** between backend (P1/P2/P3) and frontend/LLM (P4) — every component consuming the GT payload has a documented reference
 - Schema doc and Pydantic model verified as aligned
-- W2 Mon–Tue **docs** task completed ✅
+- W2 Mon–Tue **docs** task completed
 - `README.md` updated with a License section
 
 ### Next steps
@@ -288,10 +288,10 @@ Consolidated session logs, ordered by date and grouped by day, then by role (P1,
 
 ### Achievements / Key decisions
 
-- ✅ `/optimize` endpoint live on `main` — complete pipeline: HTTP → DataLoader → HRP → DB
-- ✅ DB audit trail working end-to-end (was planned Fri-Sun W2, done on Tuesday)
-- ✅ ADR-003 merged — W3 documentation brought forward
-- ✅ P3 PR review approved with the pyproject.toml fix
+- `/optimize` endpoint live on `main` — complete pipeline: HTTP → DataLoader → HRP → DB
+- DB audit trail working end-to-end (was planned Fri-Sun W2, done on Tuesday)
+- ADR-003 merged — W3 documentation brought forward
+- P3 PR review approved with the pyproject.toml fix
 - Decision: a DB failure does not block the `/optimize` response — the user always receives the portfolio, the DB is best-effort
 - P2 divergences documented and flagged via issue — to be resolved in W3
 
@@ -583,7 +583,7 @@ Consolidated session logs, ordered by date and grouped by day, then by role (P1,
 
 - The choice to create the skeleton in W2 (instead of W4) is documentable in the Lessons Learned section as an example of proactive dependency management: documentation was not left to the last minute
 - The structure of Section 4 — clean separation between "narrator" and "calculator" — is the central architectural choice of the entire LLM layer; worth a dedicated subsection in the Lessons Learned section as well as in Section 4 itself
-- The 4 citations in `references.bib` cover the two ★ Advanced algorithmic choices (HRP, Ledoit-Wolf) and the two regulatory constraints (SCF US-centrism, MiFID II) — direct alignment with criteria 1 and 3 of the professor
+- The 4 citations in `references.bib` cover the two Advanced algorithmic choices (HRP, Ledoit-Wolf) and the two regulatory constraints (SCF US-centrism, MiFID II) — direct alignment with criteria 1 and 3 of the professor
 
 ---
 
@@ -741,10 +741,10 @@ Consolidated session logs, ordered by date and grouped by day, then by role (P1,
 
 ### Achievements / Key decisions
 
-- ✅ `/advice` endpoint live in `main` — unblocks P4 for the chat page
-- ✅ API key header auth implemented on all protected endpoints
-- ✅ 4 green integration tests for `/advice`
-- ✅ 93 total green tests in CI
+- `/advice` endpoint live in `main` — unblocks P4 for the chat page
+- API key header auth implemented on all protected endpoints
+- 4 green integration tests for `/advice`
+- 93 total green tests in CI
 - Decision: use `get_mock_payload()` instead of reconstructing `GroundTruthPayload` from scratch — more robust and maintainable in W3, to be replaced with real data in W4
 - Decision: `_PROFILE_LABEL_MAP` to translate `MODERATE→balanced`, `CONSERVATIVE→conservative`, `AGGRESSIVE→aggressive`
 
@@ -752,7 +752,7 @@ Consolidated session logs, ordered by date and grouped by day, then by role (P1,
 
 - `input_sanitiser.py` — advanced rate limiting on `/advice`, max 500 chars, keyword blocking (Wed)
 - End-to-end integration test pipeline `/profile` → `/optimize` → `/advice` (Wed-Thu)
-- Working `agent_pr.yml` — mandatory Criterion 5, to be done by Friday (⚠ high priority)
+- Working `agent_pr.yml` — mandatory Criterion 5, to be done by Friday (high priority)
 - DB hardening — `validator_flags` and `retry_count` logged correctly (Fri)
 - Verify the status of `ADR-003-cloud-deploy.md` — merged or to be finalized?
 
@@ -811,10 +811,10 @@ Consolidated session logs, ordered by date and grouped by day, then by role (P1,
 
 ### Achievements / Key decisions
 
-- ✅ **Criterion 5 completed** — `agent_pr.yml` working, PR #43 opened by the AI agent
-- ✅ PR #43 URL: https://github.com/Programming-for-finance-II/robo-advisor/pull/43
-- ✅ `input_sanitiser.py` — Layer 1 defence wired into `/advice`
-- ✅ `ADR-003-cloud-deploy.md` — W3 academic deliverable completed
+- **Criterion 5 completed** — `agent_pr.yml` working, PR #43 opened by the AI agent
+- PR #43 URL: https://github.com/Programming-for-finance-II/robo-advisor/pull/43
+- `input_sanitiser.py` — Layer 1 defence wired into `/advice`
+- `ADR-003-cloud-deploy.md` — W3 academic deliverable completed
 - Decision: PAT with 90-day validity (expires August 2026) — covers the professor's grading
 - Decision: PR #43 left open intentionally as evidence for AGENTS.md
 
@@ -885,7 +885,7 @@ Consolidated session logs, ordered by date and grouped by day, then by role (P1,
 - Wiring `narrator.py` + `validator.py` into the FastAPI `POST /advice` endpoint
 - Chat Advisor page in `frontend/app.py` connected to the backend
 - Update the `AGENTS.md` Evidence Log with this week's PR
-- **⚠️ Urgent action:** contact P1 about `agent_pr.yml` — the AI-agent PR is mandatory for Criterion 5, deadline next Thursday
+- **Urgent action:** contact P1 about `agent_pr.yml` — the AI-agent PR is mandatory for Criterion 5, deadline next Thursday
 
 ### Notes for the academic PDF
 
@@ -935,7 +935,7 @@ Consolidated session logs, ordered by date and grouped by day, then by role (P1,
 
 ### Next steps
 
-⚠️ It is Wednesday evening — `regime_detector.py` was planned for today and remains to be done. To be completed by Thursday morning because P4 needs it for the Stress Banner.
+It is Wednesday evening — `regime_detector.py` was planned for today and remains to be done. To be completed by Thursday morning because P4 needs it for the Stress Banner.
 
 - **Immediate priority (Thursday)**: implement `backend/optimizer/regime_detector.py` — VIX > 30 threshold logic, cluster-level ERC fallback, `regime` flag in output, coordination with P4
 - **As soon as possible**: run `download_backtest_data.py` locally and verify the three CSVs. Debug any yfinance problems on XEON.MI and AGGH.MI
@@ -1157,7 +1157,7 @@ Consolidated session logs, ordered by date and grouped by day, then by role (P1,
 
 ### Next steps (W4 — from Monday 18 May)
 
-- `render_portfolio()` in `app.py`: replace the hardcoded mock weights with data from `get_mock_payload()`, add UCITS badges (🇪🇺), risk contribution chart, conditional stress banner
+- `render_portfolio()` in `app.py`: replace the hardcoded mock weights with data from `get_mock_payload()`, add UCITS badges (EU), risk contribution chart, conditional stress banner
 - HRP vs Markowitz tab: connect real data from the mock payload
 - LaTeX PDF: complete Section 4 (LLM Narrator), Section 6 (Limitations), Section 7 (Lessons Learned), integrate the P2/P3 sections
 - README.md: add usage examples with sample output
@@ -1298,9 +1298,9 @@ Consolidated session logs, ordered by date and grouped by day, then by role (P1,
   - `Dockerfile` — base Python 3.11-slim, install via `uv`, expose 8501
   - `docker-compose.yml` — `app` service with a persistent SQLite volume, `.env` support
 - **`tests/test_ucits_fallback.py` written and green CI** (branch `feature/p1-testing`, PR opened, review requested from Matteo):
-  - `test_fallback_triggers_on_empty_dataframe` ✓
-  - `test_fallback_tickers_applied_in_report` ✓
-  - `test_fallback_recorded_in_db` ✓ (requires inserting a `users` row with `session_token` to satisfy the FK constraint)
+  - `test_fallback_triggers_on_empty_dataframe`
+  - `test_fallback_tickers_applied_in_report`
+  - `test_fallback_recorded_in_db` (requires inserting a `users` row with `session_token` to satisfy the FK constraint)
   - 3 rounds of lint/CI fixes: unused imports F401, `uuid` redefined F811, FK constraint schema
 - **Wired the `/backtest` and `/compare` endpoints** in `backend/api/main.py` (branch `feature/p1-endpoints-w4`, PR opened, review requested from Emma):
   - `/backtest` calls `run_all_scenarios()` from `backtest.py`, returns metrics only (no equity curve) for 3 scenarios, rate limit 5/min
@@ -2035,11 +2035,11 @@ Consolidated session logs, ordered by date and grouped by day, then by role (P1,
 
 ### Achievements / Key decisions
 
-- ✅ **UI Section 4 completely premium**: categorical chips + two-column layout + integrated interpretation panel — raises the perceived quality of the final demo
-- ✅ **EU Investor Note** is now a true expandable card with regulatory details — satisfies the EU Awareness requirement in a visually prominent and academically defensible way
-- ✅ **Markowitz delta bug fixed**: the HRP vs Markowitz comparison tab is now correct and readable — important for the academic section and the demo
-- ✅ **Ticker glossary**: adds educational context to the allocation table, useful for non-expert users and consistent with the "educational disclaimer" positioning required by the canonical design
-- ✅ **Dark theme applied uniformly**: `apply_plotly_dark_theme()` now also covers the Efficient Frontier chart in the Markowitz tab — complete visual consistency
+- **UI Section 4 completely premium**: categorical chips + two-column layout + integrated interpretation panel — raises the perceived quality of the final demo
+- **EU Investor Note** is now a true expandable card with regulatory details — satisfies the EU Awareness requirement in a visually prominent and academically defensible way
+- **Markowitz delta bug fixed**: the HRP vs Markowitz comparison tab is now correct and readable — important for the academic section and the demo
+- **Ticker glossary**: adds educational context to the allocation table, useful for non-expert users and consistent with the "educational disclaimer" positioning required by the canonical design
+- **Dark theme applied uniformly**: `apply_plotly_dark_theme()` now also covers the Efficient Frontier chart in the Markowitz tab — complete visual consistency
 
 ### Next steps
 
@@ -2060,40 +2060,40 @@ Consolidated session logs, ordered by date and grouped by day, then by role (P1,
 
 # Deliverable Status Summary — per Week and per Role
 
-> Drawn from the individual session logs and the consolidated team-memory documents (W1–W3). ✅ = delivered / merged, 🔄 = in progress / partial, ⏳ = planned for a later week.
+> Drawn from the individual session logs and the consolidated team-memory documents (W1–W3). Status: Done = delivered / merged; In progress = partial; Planned = scheduled for a later week.
 
 ## P1 — Backend / Data Engineering (Sabrina)
 
 | Week | Deliverables | Status |
 |---|---|---|
-| **W1** (27 Apr–3 May) | `ci.yml` (lint + pytest), `schema.sql` v3.1, `ValidatedDataLoader` + `DataQualityReport`, `snapshots.py`, `test_data_loader.py`, branch protection on `main` | ✅ |
-| **W2** (4–10 May) | `schema.sql` EN labels, FastAPI `/profile` + 9 integration tests, `/optimize` wired (HRP + DataLoader + DB audit), `ADR-005-db-schema.md`, `ADR-003-cloud-deploy.md` (brought forward) | ✅ |
-| **W3** (11–17 May) | `/advice` endpoint (3-stage LLM pipeline), `X-API-Key` auth on all protected endpoints, `agent_pr.yml` + PR #43 (Criterion 5), `input_sanitiser.py` (Layer 1), `test_advice_pipeline.py`, ADR-003 merged | ✅ |
-| **W4** (18–24 May) | Public repo (secrets audit), Streamlit Cloud deploy live, `Dockerfile` + `docker-compose.yml` + `requirements.txt`, `/backtest` + `/compare` wired (5/5 endpoints live), `test_ucits_fallback.py`, CI coverage (77%→81% team-wide), final `README.md`, v1.0 tag | ✅ |
+| **W1** (27 Apr–3 May) | `ci.yml` (lint + pytest), `schema.sql` v3.1, `ValidatedDataLoader` + `DataQualityReport`, `snapshots.py`, `test_data_loader.py`, branch protection on `main` | Done |
+| **W2** (4–10 May) | `schema.sql` EN labels, FastAPI `/profile` + 9 integration tests, `/optimize` wired (HRP + DataLoader + DB audit), `ADR-005-db-schema.md`, `ADR-003-cloud-deploy.md` (brought forward) | Done |
+| **W3** (11–17 May) | `/advice` endpoint (3-stage LLM pipeline), `X-API-Key` auth on all protected endpoints, `agent_pr.yml` + PR #43 (Criterion 5), `input_sanitiser.py` (Layer 1), `test_advice_pipeline.py`, ADR-003 merged | Done |
+| **W4** (18–24 May) | Public repo (secrets audit), Streamlit Cloud deploy live, `Dockerfile` + `docker-compose.yml` + `requirements.txt`, `/backtest` + `/compare` wired (5/5 endpoints live), `test_ucits_fallback.py`, CI coverage (77%→81% team-wide), final `README.md`, v1.0 tag | Done |
 
 ## P2 — Quant / Portfolio Optimization (Emma)
 
 | Week | Deliverables | Status |
 |---|---|---|
-| **W1** (27 Apr–3 May) | `universe_config.py` (8 ETFs, 4 clusters, ≥3 UCITS), `OptimizationResult` TypedDict, `compute_covariance` stub + 3 structural tests | ✅ |
-| **W2** (4–10 May) | `hrp.py` complete (Ledoit-Wolf, Ward, recursive bisection, profile tilt, box constraints), volatility double-annualization fix, `Optional[float]` contract, single source of truth on box constraints, 9 tests total | ✅ |
-| **W3** (11–17 May) | `backtest.py` (3 scenarios + 1/N + TC), `download_backtest_data.py`, `test_backtest.py` (9 tests), `regime_detector.py` (correlation OR VIX, ERC fallback), `charts.py` (4 Plotly functions), `ADR-006-regime-detector.md` | ✅ |
-| **W4** (18–24 May) | Code review of `markowitz.py` (3 fixes), `test_charts.py` + `test_risk_metrics.py` (100% coverage, project at 81%), LaTeX §3 + 5 bib entries + `ADR-007-ledoit-wolf-shrinkage.md`, `_render_mv_tab`, §5 backtest tables with real numbers | ✅ |
+| **W1** (27 Apr–3 May) | `universe_config.py` (8 ETFs, 4 clusters, ≥3 UCITS), `OptimizationResult` TypedDict, `compute_covariance` stub + 3 structural tests | Done |
+| **W2** (4–10 May) | `hrp.py` complete (Ledoit-Wolf, Ward, recursive bisection, profile tilt, box constraints), volatility double-annualization fix, `Optional[float]` contract, single source of truth on box constraints, 9 tests total | Done |
+| **W3** (11–17 May) | `backtest.py` (3 scenarios + 1/N + TC), `download_backtest_data.py`, `test_backtest.py` (9 tests), `regime_detector.py` (correlation OR VIX, ERC fallback), `charts.py` (4 Plotly functions), `ADR-006-regime-detector.md` | Done |
+| **W4** (18–24 May) | Code review of `markowitz.py` (3 fixes), `test_charts.py` + `test_risk_metrics.py` (100% coverage, project at 81%), LaTeX §3 + 5 bib entries + `ADR-007-ledoit-wolf-shrinkage.md`, `_render_mv_tab`, §5 backtest tables with real numbers | Done |
 
 ## P3 — ML / Risk Profiling (Matteo)
 
 | Week | Deliverables | Status |
 |---|---|---|
-| **W1** (27 Apr–3 May) | `questionnaire_schema.md` (Grable & Lytton, 10 questions, Q7 MiFID II override), `rule_based.py` (Phase A profiler), `scf_pipeline.py` scaffold, `ADR-002-scf-preprocessing.md`, SCF 2022 empirical verification | ✅ |
-| **W2** (4–10 May) | `clustering.py` (K-Means on SCF 2022, K=3, silhouette), `build_pipeline()` bug fix (demographic features in parquet), `test_profiler.py`, `scf_labeled.parquet` ready for GBM | ✅ |
-| **W3** (11–17 May) | `classifier.py` Phase B (HistGBM + SHAP + LR baseline, CV 94.0%), `regime_detector.py` scaffold, 43 tests passed | ✅ |
-| **W4** (18–24 May) | Code cleanup (`build_pipeline` 5-tuple, named constants, NumPy docstrings), `ADR-005-scf-implicate-choice.md` (PR #95), LaTeX Section 2 (ML Risk Profiler) | ✅ |
+| **W1** (27 Apr–3 May) | `questionnaire_schema.md` (Grable & Lytton, 10 questions, Q7 MiFID II override), `rule_based.py` (Phase A profiler), `scf_pipeline.py` scaffold, `ADR-002-scf-preprocessing.md`, SCF 2022 empirical verification | Done |
+| **W2** (4–10 May) | `clustering.py` (K-Means on SCF 2022, K=3, silhouette), `build_pipeline()` bug fix (demographic features in parquet), `test_profiler.py`, `scf_labeled.parquet` ready for GBM | Done |
+| **W3** (11–17 May) | `classifier.py` Phase B (HistGBM + SHAP + LR baseline, CV 94.0%), `regime_detector.py` scaffold, 43 tests passed | Done |
+| **W4** (18–24 May) | Code cleanup (`build_pipeline` 5-tuple, named constants, NumPy docstrings), `ADR-005-scf-implicate-choice.md` (PR #95), LaTeX Section 2 (ML Risk Profiler) | Done |
 
 ## P4 — Frontend / LLM / Docs (Elena)
 
 | Week | Deliverables | Status |
 |---|---|---|
-| **W1** (27 Apr–3 May) | `AGENTS.md`, `frontend/app.py` scaffold (4 pages), `README.md`, `docs/architecture.md`, `backend/schemas/ground_truth.py` (Pydantic v2) + `mock_data.py`, `ADR-001-hrp-over-markowitz.md` | ✅ |
-| **W2** (4–10 May) | `ground_truth_schema.md`, `system_prompt.py` (9 rules), `narrator.py` (`NarratorClient`, stateless, temp=0.0), 10-question Grable-Lytton Streamlit questionnaire, `validator.py` 4-step (27 tests), `report.tex` skeleton + `references.bib` | ✅ |
-| **W3** (11–17 May) | Validator Step 5 (EU Awareness Rule 9, 34→37 tests, 11 EU cases), `ADR-004-llm-narrator-validator.md`, Chat Advisor wired (3-stage pipeline), `docs/user_guide.md` (437 lines), AGENTS.md Evidence Log (PR #43) | ✅ |
-| **W4** (18–24 May) | README AI Tools section, premium dark Streamlit theme (`style.py`, palette), portfolio dashboard (dendrogram, MV tab, UCITS badges, stress banner, ticker glossary, EU Note card), Settings page, `st.button` navigation, LaTeX sections 1/4/6/7/8, final AGENTS.md | ✅ |
+| **W1** (27 Apr–3 May) | `AGENTS.md`, `frontend/app.py` scaffold (4 pages), `README.md`, `docs/architecture.md`, `backend/schemas/ground_truth.py` (Pydantic v2) + `mock_data.py`, `ADR-001-hrp-over-markowitz.md` | Done |
+| **W2** (4–10 May) | `ground_truth_schema.md`, `system_prompt.py` (9 rules), `narrator.py` (`NarratorClient`, stateless, temp=0.0), 10-question Grable-Lytton Streamlit questionnaire, `validator.py` 4-step (27 tests), `report.tex` skeleton + `references.bib` | Done |
+| **W3** (11–17 May) | Validator Step 5 (EU Awareness Rule 9, 34→37 tests, 11 EU cases), `ADR-004-llm-narrator-validator.md`, Chat Advisor wired (3-stage pipeline), `docs/user_guide.md` (437 lines), AGENTS.md Evidence Log (PR #43) | Done |
+| **W4** (18–24 May) | README AI Tools section, premium dark Streamlit theme (`style.py`, palette), portfolio dashboard (dendrogram, MV tab, UCITS badges, stress banner, ticker glossary, EU Note card), Settings page, `st.button` navigation, LaTeX sections 1/4/6/7/8, final AGENTS.md | Done |
