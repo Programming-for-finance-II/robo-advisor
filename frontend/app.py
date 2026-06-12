@@ -4351,31 +4351,78 @@ def render_backtesting() -> None:
     if detail is not None:
         _section_header("3", "How it played out over time")
         st.caption(
-            "The value of each strategy over the scenario (top), and how far it fell "
-            "from its previous peak (bottom) — the result of the mixes shown above."
+            "Both panels share the same timeline. The top shows what €10,000 would "
+            "have been worth; the bottom shows how far each strategy had fallen from "
+            "its previous peak — the result of the mixes shown above."
         )
-        fig = go.Figure()
+
+        # One figure, two stacked panels on a shared x-axis so "the value dropped
+        # here" lines up vertically with "the drawdown was deepest here". The
+        # equity panel is shown as the growth of a €10,000 investment, which reads
+        # more intuitively than an abstract "start = 1.0" index.
+        from plotly.subplots import make_subplots
+        _START = 10_000
+        # Lighter fills + bolder lines: the two drawdown areas overlap heavily, so
+        # a high fill opacity muddied the colours where they cross.
+        _DD_FILL: dict[str, str] = {
+            "HRP": "rgba(124,92,252,0.18)",
+            "MV":  "rgba(248,113,113,0.18)",
+            "1/N": "rgba(148,163,184,0.18)",
+        }
+        fig = make_subplots(
+            rows=2, cols=1, shared_xaxes=True, vertical_spacing=0.08,
+            row_heights=[0.62, 0.38],
+            subplot_titles=("Value of €10,000 invested", "Drawdown from peak (%)"),
+        )
+        # Pin the subplot-title colour to a theme-aware token so it stays readable
+        # in both dark and light mode (make_subplots' default near-white would wash
+        # out on the light surface).
+        for _ann in fig.layout.annotations:
+            _ann.font.update(color=t["text_secondary"], size=13)
+        # Per-strategy stats reused for the takeaway below the chart.
+        _perf: dict[str, dict[str, float]] = {}
         for strat in _BACKTEST_STRATEGIES:
             ec = detail["strategies"][strat]["equity_curve"]
+            dates = [e["date"] for e in ec]
+            vals = np.array([e["portfolio_value"] for e in ec])
+            euro = vals * _START
+            rolling_max = np.maximum.accumulate(vals)
+            dd = (vals - rolling_max) / rolling_max * 100
+            _label = _STRATEGY_LABELS.get(strat, strat)
+            _color = _STRATEGY_COLORS.get(strat, "#64748b")
+            _perf[strat] = {"final_ret": float(vals[-1] - 1.0),
+                            "max_dd": float(dd.min())}
+            # Equity panel (row 1) — carries the legend.
             fig.add_trace(go.Scatter(
-                x=[e["date"] for e in ec],
-                y=[e["portfolio_value"] for e in ec],
-                mode="lines",
-                name=_STRATEGY_LABELS.get(strat, strat),
-                line=dict(color=_STRATEGY_COLORS.get(strat, "#64748b"), width=2),
-                hovertemplate="%{y:.3f}<extra>%{fullData.name}</extra>",
-            ))
-        fig.add_hline(y=1.0, line_dash="dot", line_color="#475569", line_width=1)
+                x=dates, y=euro.tolist(), mode="lines", name=_label,
+                legendgroup=strat,
+                line=dict(color=_color, width=2),
+                hovertemplate="€%{y:,.0f}<extra>%{fullData.name}</extra>",
+            ), row=1, col=1)
+            # Drawdown panel (row 2) — same legend group, hidden from the legend
+            # so each strategy appears once and toggles both panels together.
+            fig.add_trace(go.Scatter(
+                x=dates, y=dd.tolist(), mode="lines", name=_label,
+                legendgroup=strat, showlegend=False,
+                line=dict(color=_color, width=2.2),
+                fill="tozeroy", fillcolor=_DD_FILL.get(strat, "rgba(0,0,0,0)"),
+                hovertemplate="%{y:.1f}%<extra>%{fullData.name}</extra>",
+            ), row=2, col=1)
+        # Break-even reference: the starting €10,000 line.
+        fig.add_hline(y=_START, line_dash="dot", line_color="#475569",
+                      line_width=1, row=1, col=1)
+        fig.update_yaxes(title_text="Value (€)", tickprefix="€", row=1, col=1)
+        fig.update_yaxes(title_text="Drawdown (%)", row=2, col=1)
+        fig.update_xaxes(title_text="Date", row=2, col=1)
         fig.update_layout(
-            title=f"Equity Curve — {_SCENARIO_LABELS[selected]}",
-            xaxis_title="Date",
-            yaxis_title="Portfolio value (start = 1.0)",
-            height=400,
-            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+            height=560,
+            hovermode="x unified",
+            legend=dict(orientation="h", yanchor="bottom", y=1.04,
+                        xanchor="right", x=1),
         )
         fig = apply_plotly_theme(fig)
         fig.update_layout(
-            margin=dict(t=56),
+            margin=dict(t=64),
             modebar_remove=[
                 "select2d", "lasso2d", "autoScale2d",
                 "hoverClosestCartesian", "hoverCompareCartesian",
@@ -4386,49 +4433,39 @@ def render_backtesting() -> None:
         )
         st.plotly_chart(fig, use_container_width=True, config={"displaylogo": False})
 
-        # ── Drawdown chart ───────────────────────────────────────────────────
-        # Lighter fills + bolder lines: the two areas overlap heavily, so a high
-        # fill opacity muddied the colours where they cross. The crisp line still
-        # reads the curve; the soft fill just hints at the shaded area below it.
-        _DD_FILL: dict[str, str] = {
-            "HRP": "rgba(124,92,252,0.18)",
-            "MV":  "rgba(248,113,113,0.18)",
-            "1/N": "rgba(148,163,184,0.18)",
-        }
-        fig_dd = go.Figure()
-        for strat in _BACKTEST_STRATEGIES:
-            ec = detail["strategies"][strat]["equity_curve"]
-            vals = np.array([e["portfolio_value"] for e in ec])
-            dates_dd = [e["date"] for e in ec]
-            rolling_max = np.maximum.accumulate(vals)
-            dd = (vals - rolling_max) / rolling_max * 100
-            fig_dd.add_trace(go.Scatter(
-                x=dates_dd, y=dd.tolist(),
-                mode="lines", name=_STRATEGY_LABELS.get(strat, strat),
-                line=dict(color=_STRATEGY_COLORS.get(strat, "#64748b"), width=2.2),
-                fill="tozeroy",
-                fillcolor=_DD_FILL.get(strat, "rgba(0,0,0,0)"),
-                hovertemplate="%{y:.1f}%<extra>%{fullData.name}</extra>",
-            ))
-        fig_dd.update_layout(
-            title="Drawdown (%)",
-            xaxis_title="Date",
-            yaxis_title="Drawdown (%)",
-            height=320,
-            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+        # ── Narrative takeaway ───────────────────────────────────────────────
+        # Plain-language closer, consistent with sections 1 and 2: contrast the
+        # gentler vs deeper ride and where each strategy ended the scenario.
+        _shallow = max(_perf, key=lambda s: _perf[s]["max_dd"])  # closest to 0
+        _deep = min(_perf, key=lambda s: _perf[s]["max_dd"])
+        _sh_name = _STRATEGY_LABELS.get(_shallow, _shallow)
+        _dp_name = _STRATEGY_LABELS.get(_deep, _deep)
+        if _shallow == _deep:
+            _ride = (
+                f"Both strategies fell about the same — a worst drop of "
+                f"{_perf[_shallow]['max_dd']:.1f}% from their peak."
+            )
+        else:
+            _ride = (
+                f"<strong>{_sh_name}</strong> had the gentler ride: its worst drop "
+                f"was {_perf[_shallow]['max_dd']:.1f}% from peak, versus "
+                f"{_perf[_deep]['max_dd']:.1f}% for <strong>{_dp_name}</strong> — "
+                f"and a deeper hole needs a bigger gain just to get back to even."
+            )
+        _ends = " ".join(
+            f"{_STRATEGY_LABELS.get(s, s)} ended the scenario "
+            f"{_perf[s]['final_ret']:+.1%}."
+            for s in _BACKTEST_STRATEGIES
         )
-        fig_dd = apply_plotly_theme(fig_dd)
-        fig_dd.update_layout(
-            margin=dict(t=56),
-            modebar_remove=[
-                "select2d", "lasso2d", "autoScale2d",
-                "hoverClosestCartesian", "hoverCompareCartesian",
-                "toggleSpikelines", "zoomIn2d", "zoomOut2d",
-            ],
-            modebar_add=["resetScale2d"],
-            dragmode="pan",
+        _tw3_bg = "rgba(124,77,255,0.05)" if is_light() else "rgba(124,92,252,0.05)"
+        _tw3_border = "rgba(124,77,255,0.18)" if is_light() else "rgba(124,92,252,0.18)"
+        st.markdown(
+            f'<div style="background:{_tw3_bg};border:1px solid {_tw3_border};'
+            f'border-radius:10px;padding:0.8rem 1rem;margin-top:0.6rem;'
+            f'font-size:0.88rem;line-height:1.55;color:{t["text_secondary"]};">'
+            f'{_ride} {_ends}</div>',
+            unsafe_allow_html=True,
         )
-        st.plotly_chart(fig_dd, use_container_width=True, config={"displaylogo": False})
 
     st.caption(
         f"Profile: {profile_label.upper()} · Rebalancing: monthly · TC: 10 bps/rebalance · "
