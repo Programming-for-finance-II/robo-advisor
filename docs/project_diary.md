@@ -2567,6 +2567,86 @@ It is Wednesday evening — `regime_detector.py` was planned for today and remai
 
 ---
 
+# 12 June 2026 — Week 4 (Thursday)
+
+## P4 — Frontend / LLM / Docs
+
+**Estimated duration:** ~2 hours
+**Focus:** Post-submission polish — centralized theme system and Light mode
+
+### What I did
+
+1. **Centralized theme system** (`6b51996`)
+   - Implemented `get_theme_tokens()` and `is_light()` in `style.py`: semantic tokens for backgrounds, text, borders, accent, shadows
+   - Added `LIGHT_CSS` and `apply_plotly_theme()` for the Plotly charts
+   - Dark/Light toggle on the Settings page with instant switching (no restart)
+
+2. **Navbar, cards and radios** (`7fd5d20`)
+   - Light translucent navbar with shadow
+   - Cards with borders and shadows consistent with the theme
+   - Radio buttons: removed black dots in light mode
+
+3. **Full polish** (`b769d0e`)
+   - Contrast for buttons, tabs, pills, segmented controls
+   - Plotly axis text legible in both themes
+   - Removed black boxes in the chat input
+   - Extended tokens: button, input, chart, divider
+
+4. **Questionnaire** (`fd7c8b5`)
+   - "Financial Situation" container visually reinforced
+   - Questions separated by spacing and dividers
+   - Removed the "cube cards" around the radio options (they looked cluttered)
+
+5. **On-request refinements**
+   - Chart axis titles legible in light mode
+   - Compare emoji: `⚖` → `🆚` (`9fae6b4`)
+   - Chat sparkle: `✨` in light mode, `✦` in dark mode (`11a8229`, `babec13`)
+   - Table rows more visible in light mode
+   - Full-width ETF descriptions (`132e0e3`)
+
+6. **Merge with `main`** (`ea29a5e`)
+   - Resolved 3 conflicts keeping Matteo's (P1) Chat Advisor redesign + profile gate
+   - Re-integrated the theme tokens where they had been overwritten
+
+7. **"Complete your questionnaire first" gate in light theme** (`36f0adb`)
+   - Light override for the block screen — it had remained with a dark background
+
+### How I did it
+
+- Token-first approach: all color constants centralized in `style.py`, no hardcoded colors in the pages
+- Live visual testing across all pages (Questionnaire, Profile, Portfolio, Chat Advisor) in both modes
+- `uv run ruff check frontend/app.py --fix` after every significant change
+- `pytest` — 230 passed / 6 skipped at the end of the session
+- Git: 8+ atomic commits with descriptive messages, branch `feature/p4-theme-light` aligned with `main`
+
+### Difficulties
+
+- Merge conflicts with Matteo's (P1) parallel work: resolved keeping both contributions, theme tokens re-integrated manually at the conflict points
+- Some Plotly colors do not automatically inherit the custom CSS — solved with `apply_plotly_theme()`, which passes the tokens directly to the Plotly layouts
+
+### Achievements / Key decisions
+
+- **Dark mode completely unchanged**: no regression on the existing theme
+- **Light mode complete and consistent** across all pages and all components (navbar, cards, charts, chat, tables, questionnaire, gate screen)
+- `ruff` clean, `pytest` green — no functional regression
+- Branch aligned with `main` and ready for the final merge
+- ~1260 lines added between `app.py` and `style.py`
+
+### Next steps
+
+- **Optional**: dedicated light overrides for the Chat Advisor header redesigned by Matteo (`ca-id-*`) — the area does not yet have explicit light tokens
+- Merge the branch into the final `main` before submission
+- End-to-end test with both themes on the deployed app (Streamlit Cloud / Railway)
+- Verify that the theme toggle is documented in the README / user guide for the professor
+
+### Notes for the academic PDF
+
+- The centralized theme system (`get_theme_tokens()` + semantic tokens) is a concrete example of **separation of concerns** in the frontend: styling logic is separated from page logic. Citable in the Frontend/UX section as a deliberate architectural choice
+- The handling of merge conflicts with P1's work is documentable in the **Lessons Learned** section as an example of agentic coordination in a distributed team: keeping both contributions without losing anyone's work requires an explicit merge strategy
+- `apply_plotly_theme()` as a bridge between custom CSS properties and Plotly layout parameters is a non-obvious solution — worth a mention in the Frontend section as a technical integration across different libraries
+
+---
+
 # Deliverable Status Summary — per Week and per Role
 
 > Drawn from the individual session logs and the consolidated team-memory documents (W1–W3). Status: Done = delivered / merged; In progress = partial; Planned = scheduled for a later week.
