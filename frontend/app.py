@@ -2983,7 +2983,13 @@ def _render_hrp_tab(portfolio: dict) -> None:
     with col_donut:
         try:
             from backend.optimizer.charts import plot_weights_donut
-            fig_donut = plot_weights_donut(weights, dark=not is_light())
+            # Defensive against a hot-reloaded/stale charts module that predates
+            # the `dark` parameter: fall back to the positional call so the chart
+            # never errors out mid-deploy.
+            try:
+                fig_donut = plot_weights_donut(weights, dark=not is_light())
+            except TypeError:
+                fig_donut = plot_weights_donut(weights)
             fig_donut = apply_plotly_theme(fig_donut)
             # Re-assert the donut's own layout: apply_plotly_theme()
             # overwrites margin (and would clip the bottom colour legend) and
