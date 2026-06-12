@@ -2943,7 +2943,7 @@ def _render_hrp_tab(portfolio: dict) -> None:
     pills_html += "</div>"
     st.markdown(pills_html, unsafe_allow_html=True)
 
-    col_donut, col_table = st.columns([1.05, 1], gap="large")
+    col_donut, col_table = st.columns([1.05, 1], gap="large", vertical_alignment="center")
 
     with col_donut:
         try:
@@ -2953,10 +2953,14 @@ def _render_hrp_tab(portfolio: dict) -> None:
             # Re-assert the donut's own layout: apply_plotly_theme()
             # overwrites margin (and would clip the bottom colour legend) and
             # the layout font. The per-slice textfont set in charts.py is not
-            # touched, so the white in-slice labels survive.
+            # touched, so the white in-slice labels survive. The paper/plot
+            # backgrounds are cleared to transparent so the donut sits directly
+            # on the page with no dark panel behind it.
             fig_donut.update_layout(
-                height=360,
-                margin=dict(l=10, r=10, t=12, b=38),
+                height=420,
+                margin=dict(l=10, r=10, t=30, b=72),
+                paper_bgcolor="rgba(0,0,0,0)",
+                plot_bgcolor="rgba(0,0,0,0)",
             )
             st.plotly_chart(
                 fig_donut,
