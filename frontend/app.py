@@ -4478,7 +4478,28 @@ def render_compare() -> None:
     profile_label = profile_data.get("profile_label", "MODERATE")
     profile_key = _LABEL_TO_MOCK.get(profile_label, "balanced")
 
-    portfolio = st.session_state.get("portfolio_data") or _mock_optimization(profile_key)
+    # The compare page is self-sufficient: it loads live market data the same way
+    # the Dashboard does (cached per profile in session_state), instead of relying
+    # on the Dashboard having been visited first. We also force a single live retry
+    # when the cached portfolio predates the Markowitz wiring (live but no MV
+    # figures), so a stale session upgrades itself without a manual restart.
+    portfolio = st.session_state.get("portfolio_data", {})
+    _cached_label = st.session_state.get("portfolio_profile", "")
+    _stale_mv = (
+        portfolio.get("source") == "live"
+        and "mv_risk_contributions" not in portfolio
+        and not st.session_state.get("_compare_mv_retry")
+    )
+    if not portfolio or _cached_label != profile_label or _stale_mv:
+        st.session_state["_compare_mv_retry"] = True
+        with st.spinner("Fetching live market data…"):
+            try:
+                portfolio = _run_live_optimization(profile_label)
+            except Exception:
+                portfolio = _mock_optimization(profile_key)
+            st.session_state["portfolio_data"] = portfolio
+            st.session_state["portfolio_profile"] = profile_label
+            st.session_state["recommendation_id"] = portfolio["recommendation_id"]
     hrp_weights: dict[str, float] = portfolio["weights"]
     hrp_rc: dict[str, float] = portfolio["risk_contributions"]
     _MAX_DD_FALLBACK = {"CONSERVATIVE": -0.112, "MODERATE": -0.187, "AGGRESSIVE": -0.312}
