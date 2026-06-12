@@ -25,6 +25,19 @@ _DARK_TOKENS = {
     "accent_border": "rgba(124,92,252,0.25)",
     "shadow": "0 2px 14px rgba(0,0,0,0.25)",
     "shadow_lg": "0 8px 28px rgba(0,0,0,0.35)",
+    "button_bg": "transparent",
+    "button_border": "#1e2640",
+    "button_text": "#94a3b8",
+    "button_bg_hover": "rgba(124,92,252,0.07)",
+    "button_border_hover": "#7c5cfc",
+    "input_bg": "#0d1220",
+    "input_border": "#1e2640",
+    "input_text": "#e2e8f0",
+    "input_placeholder": "#64748b",
+    "chart_font": "#94a3b8",
+    "chart_grid": "#1e2640",
+    "divider": "#1e2640",
+    "question_block_bg": "transparent",
 }
 
 _LIGHT_TOKENS = {
@@ -45,6 +58,19 @@ _LIGHT_TOKENS = {
     "accent_border": "rgba(124,77,255,0.3)",
     "shadow": "0 4px 16px rgba(15,23,42,0.06)",
     "shadow_lg": "0 12px 32px rgba(15,23,42,0.10)",
+    "button_bg": "#FFFFFF",
+    "button_border": "#CBD5E1",
+    "button_text": "#334155",
+    "button_bg_hover": "#F8FAFC",
+    "button_border_hover": "#94A3B8",
+    "input_bg": "#FFFFFF",
+    "input_border": "#CBD5E1",
+    "input_text": "#111827",
+    "input_placeholder": "#94A3B8",
+    "chart_font": "#334155",
+    "chart_grid": "#E2E8F0",
+    "divider": "#E5EAF3",
+    "question_block_bg": "#F8FAFC",
 }
 
 
@@ -915,12 +941,15 @@ section[data-testid="stSidebar"],
 }
 .stTabs [data-baseweb="tab"] {
     background: transparent !important;
-    color: #94a3b8 !important;
+    color: #475569 !important;
     font-size: 0.82rem !important;
     font-weight: 500 !important;
     letter-spacing: 0.05em !important;
     text-transform: uppercase !important;
     border-bottom: 2px solid transparent !important;
+}
+.stTabs [data-baseweb="tab"]:hover {
+    color: #6d4deb !important;
 }
 .stTabs [aria-selected="true"] {
     color: #6d4deb !important;
@@ -929,16 +958,75 @@ section[data-testid="stSidebar"],
 
 /* ── Buttons ──────────────────────────────────────────────────────────────── */
 .stButton > button {
-    background: transparent !important;
-    border: 1px solid #e2e8f0 !important;
-    color: #475569 !important;
+    background: #FFFFFF !important;
+    border: 1px solid #CBD5E1 !important;
+    color: #334155 !important;
     border-radius: 8px !important;
     font-size: 0.75rem !important;
+    font-weight: 600 !important;
+    box-shadow: 0 1px 2px rgba(15,23,42,0.04) !important;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease !important;
+}
+.stButton > button:hover {
+    background: #F8FAFC !important;
+    border-color: #94A3B8 !important;
+    color: #1e293b !important;
 }
 .stButton > button[kind="primary"] {
-    background: rgba(124,92,252,0.1) !important;
-    border-color: #7c5cfc !important;
-    color: #6d4deb !important;
+    background: #EEE8FF !important;
+    border-color: #7C4DFF !important;
+    color: #5B34D6 !important;
+}
+.stButton > button[kind="primary"]:hover {
+    background: #e3d9ff !important;
+    border-color: #6d28d9 !important;
+    color: #4c1d95 !important;
+}
+
+/* ── Segmented control (Backtesting scenario tabs) ───────────────────────── */
+[data-testid="stButtonGroup"] [data-testid="stBaseButton-segmented_control"] {
+    background: #FFFFFF !important;
+    border: 1px solid #CBD5E1 !important;
+    color: #334155 !important;
+    font-weight: 600 !important;
+}
+[data-testid="stButtonGroup"] [data-testid="stBaseButton-segmented_control"]:hover {
+    background: #F8FAFC !important;
+    border-color: #94A3B8 !important;
+    color: #1e293b !important;
+}
+[data-testid="stButtonGroup"]
+[data-testid="stBaseButton-segmented_controlActive"] {
+    background: #EEE8FF !important;
+    border: 1px solid #7C4DFF !important;
+    color: #5B34D6 !important;
+    font-weight: 600 !important;
+}
+
+/* ── Text inputs / textareas (Chat composer, number/text fields) ─────────── */
+[data-testid="stTextInput"] input,
+[data-testid="stTextArea"] textarea,
+[data-testid="stNumberInput"] input,
+[data-baseweb="input"],
+[data-baseweb="textarea"] {
+    background: #FFFFFF !important;
+    border-color: #CBD5E1 !important;
+    color: #111827 !important;
+}
+[data-testid="stTextInput"] div[data-baseweb="input"],
+[data-testid="stNumberInput"] div[data-baseweb="input"],
+[data-testid="stTextArea"] div[data-baseweb="textarea"] {
+    background: #FFFFFF !important;
+    border-color: #CBD5E1 !important;
+}
+[data-testid="stTextInput"] input::placeholder,
+[data-testid="stTextArea"] textarea::placeholder {
+    color: #94A3B8 !important;
+}
+[data-testid="stTextInput"] div[data-baseweb="input"]:focus-within,
+[data-testid="stTextArea"] div[data-baseweb="textarea"]:focus-within {
+    border-color: #7C4DFF !important;
+    box-shadow: 0 0 0 3px rgba(124,77,255,0.12) !important;
 }
 
 hr { border-color: #e2e8f0 !important; }
@@ -998,15 +1086,28 @@ hr { border-color: #e2e8f0 !important; }
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    margin: 2.25rem 0 0.6rem 0;
-    padding-top: 1.4rem;
+    margin: 2.5rem 0 0.6rem 0;
+    padding-top: 1.6rem;
     padding-left: 0.25rem;
-    border-top: 1px solid #E5EAF3;
+    border-top: 1px solid #DCE3EE;
 }
 .qs-q-row:first-of-type {
     margin-top: 0.75rem;
     padding-top: 0;
     border-top: none;
+}
+/* Group each question's answer options on a soft inset panel so it reads as a
+   distinct block under its question (the bordered-card option styling does not
+   match this Streamlit build's DOM, so we group at the radio container level). */
+[data-testid="stForm"] [data-testid="stRadio"] {
+    background: #F8FAFC !important;
+    border: 1px solid #E5EAF3 !important;
+    border-radius: 10px !important;
+    padding: 0.55rem 0.9rem !important;
+    margin-bottom: 0.5rem !important;
+}
+[data-testid="stForm"] [data-testid="stRadio"] [role="radiogroup"] {
+    gap: 0.15rem !important;
 }
 .qs-q-badge {
     font-family: 'Space Grotesk', sans-serif;
@@ -1459,8 +1560,8 @@ PLOTLY_DARK = {
 PLOTLY_LIGHT = {
     "template": "plotly_white",
     "paper_bgcolor": "#ffffff",
-    "plot_bgcolor": "#f8fafc",
-    "font": {"family": "DM Sans", "color": "#475569", "size": 11},
+    "plot_bgcolor": "#ffffff",
+    "font": {"family": "DM Sans", "color": "#334155", "size": 11},
     "colorway": ["#7c5cfc", "#0dcfb0", "#3b82f6", "#f59e0b", "#f87171"],
     "margin": {"l": 8, "r": 8, "t": 24, "b": 8},
 }
@@ -1475,11 +1576,48 @@ def apply_plotly_dark_theme(fig):
 
 
 def apply_plotly_theme(fig):
-    """Apply dark or light theme to a Plotly figure based on session state."""
+    """Apply dark or light theme to a Plotly figure based on session state.
+
+    Beyond background and gridlines, this also forces a dark, readable colour on
+    every text element (title, axis titles, tick labels, legend, annotations,
+    hover labels) so nothing renders washed-out on the light surface.
+    """
     if st.session_state.get("theme", "dark") == "light":
         fig.update_layout(**PLOTLY_LIGHT)
-        fig.update_xaxes(gridcolor="#e2e8f0", linecolor="#e2e8f0")
-        fig.update_yaxes(gridcolor="#e2e8f0", linecolor="#e2e8f0")
+        fig.update_layout(
+            legend_font_color="#334155",
+            hoverlabel=dict(
+                bgcolor="#ffffff",
+                bordercolor="#cbd5e1",
+                font=dict(color="#111827", family="DM Sans"),
+            ),
+        )
+        # Only recolour the title when one actually exists — passing a title
+        # font without text makes Plotly render the literal string "undefined".
+        if fig.layout.title is not None and fig.layout.title.text:
+            fig.update_layout(title_font_color="#111827")
+        # Axis `color` already drives tick labels, line, AND axis-title text, so
+        # we avoid `title_font_color` (which would invent an empty axis title).
+        fig.update_xaxes(
+            gridcolor="#e2e8f0", linecolor="#cbd5e1",
+            color="#334155", tickfont_color="#334155", zerolinecolor="#e2e8f0",
+        )
+        fig.update_yaxes(
+            gridcolor="#e2e8f0", linecolor="#cbd5e1",
+            color="#334155", tickfont_color="#334155", zerolinecolor="#e2e8f0",
+        )
+        # Annotations carry their own font colour; relax any near-white values.
+        for ann in fig.layout.annotations:
+            if ann.font is not None and ann.font.color in (
+                None, "#94a3b8", "#cbd5e1", "#e2e8f0", "#f1f5f9", "white", "#ffffff",
+            ):
+                ann.font.color = "#334155"
+        # Polar charts (radar) keep their own axis styling
+        if fig.layout.polar is not None:
+            fig.update_polars(
+                radialaxis=dict(gridcolor="#e2e8f0", color="#334155"),
+                angularaxis=dict(gridcolor="#e2e8f0", color="#334155"),
+            )
     else:
         fig.update_layout(**PLOTLY_DARK)
         fig.update_xaxes(gridcolor="#1e2640", linecolor="#1e2640")

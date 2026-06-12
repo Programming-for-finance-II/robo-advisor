@@ -3181,10 +3181,16 @@ _CHAT_CSS_LIGHT = """
 [data-testid="stChatMessage"] td { border-color: #D8DEE9 !important; color: #334155 !important; }
 [data-testid="stChatMessage"] th { color: #6d4deb !important; }
 [data-testid="stChatInput"] { border-top-color: #D8DEE9 !important; }
-[data-testid="stChatInput"] > div {
+[data-testid="stChatInput"] > div,
+[data-testid="stChatInput"] [data-baseweb="base-input"],
+[data-testid="stChatInput"] [data-baseweb="textarea"] {
     background: #ffffff !important; border-color: #D8DEE9 !important; }
-[data-testid="stChatInput"] textarea { color: #111827 !important; }
+[data-testid="stChatInput"] textarea {
+    background: #ffffff !important; color: #111827 !important; }
 [data-testid="stChatInput"] textarea::placeholder { color: #94a3b8 !important; }
+[data-testid="stChatInput"]:focus-within > div {
+    border-color: #7C4DFF !important;
+    box-shadow: 0 0 0 3px rgba(124,77,255,0.12) !important; }
 .ca-clear .stButton > button { border-color: #D8DEE9 !important; color: #64748B !important; }
 .ca-info { background: #ffffff; border-color: #D8DEE9; }
 .ca-info-head {
