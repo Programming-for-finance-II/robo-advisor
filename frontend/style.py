@@ -1540,29 +1540,42 @@ def render_stress_banner() -> None:
     st.markdown(STRESS_BANNER_HTML, unsafe_allow_html=True)
 
 
-def page_header(title: str, subtitle: str = "", icon: str = "") -> None:
-    """Render a styled page header with Space Grotesk font and optional icon."""
+def page_header(
+    title: str,
+    subtitle: str = "",
+    eyebrow: str = "",
+    icon: str = "",  # deprecated — kept for backward compatibility, no longer rendered
+) -> None:
+    """Render a styled page header: an accent bar, an optional uppercase eyebrow
+    (kicker) and the title, with an optional subtitle.
+
+    The previous emoji-in-a-box icon has been replaced by a typographic,
+    editorial header. The ``icon`` argument is accepted but ignored so existing
+    callers keep working.
+    """
     t = get_theme_tokens()
+
+    eyebrow_html = (
+        f'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:0.7rem;'
+        f'font-weight:700;letter-spacing:0.16em;text-transform:uppercase;'
+        f'color:{t["accent_text"]};margin-bottom:0.45rem;">{eyebrow}</div>'
+        if eyebrow else ""
+    )
     sub_html = (
         f'<div style="font-size:0.95rem;color:{t["text_secondary"]};margin-top:7px;'
         f'letter-spacing:0.01em;font-weight:400;">{subtitle}</div>'
         if subtitle else ""
     )
-    icon_html = (
-        f'<div style="'
-        f'width:2.8rem;height:2.8rem;'
-        f'background:{t["accent_soft"]};'
-        f'border:1px solid {t["accent_border"]};'
-        f'border-radius:10px;'
-        f'display:inline-flex;align-items:center;justify-content:center;'
-        f'font-size:1.2rem;flex-shrink:0;">{icon}</div>'
-        if icon else ""
+    # Vertical gradient accent bar (purple -> teal) on the left of the block.
+    bar = (
+        f'<div style="width:4px;flex-shrink:0;border-radius:99px;'
+        f'background:linear-gradient(180deg,{t["accent"]} 0%,#0dcfb0 100%);"></div>'
     )
-    layout = "display:flex;align-items:center;gap:1rem;" if icon else ""
     st.markdown(
-        f'<div style="{layout}margin-bottom:1.5rem;">'
-        f'{icon_html}'
+        f'<div style="display:flex;align-items:stretch;gap:1rem;margin-bottom:1.5rem;">'
+        f'{bar}'
         f'<div>'
+        f'{eyebrow_html}'
         f'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:2.0rem;'
         f'font-weight:700;color:{t["text_primary"]};letter-spacing:-0.02em;line-height:1.15;">'
         f'{title}</div>{sub_html}'
