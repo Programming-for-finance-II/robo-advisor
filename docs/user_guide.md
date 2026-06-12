@@ -21,10 +21,13 @@
 3. [Step 1 — Risk Profiling Questionnaire](#step-1--risk-profiling-questionnaire)
 4. [Step 2 — Profile Result](#step-2--profile-result)
 5. [Step 3 — Portfolio Dashboard](#step-3--portfolio-dashboard)
-6. [Step 4 — Chat Advisor](#step-4--chat-advisor)
-7. [EU Investor Awareness](#eu-investor-awareness)
-8. [Known Limitations](#known-limitations)
-9. [API Reference (for developers)](#api-reference-for-developers)
+6. [Step 4 — Compare Markowitz](#step-4--compare-markowitz)
+7. [Step 5 — Chat Advisor](#step-5--chat-advisor)
+8. [Step 6 — Backtesting](#step-6--backtesting)
+9. [Step 7 — Settings](#step-7--settings)
+10. [EU Investor Awareness](#eu-investor-awareness)
+11. [Known Limitations](#known-limitations)
+12. [API Reference (for developers)](#api-reference-for-developers)
 
 ---
 
@@ -93,7 +96,7 @@ export ANTHROPIC_API_KEY="sk-ant-..."
 
 ## Step 1 — Risk Profiling Questionnaire
 
-**Navigation:** sidebar → *Questionnaire*
+**Navigation:** top navigation bar → *Questionnaire*
 
 ### What it does
 
@@ -162,30 +165,24 @@ SHAP TreeExplainer values over the trained gradient boosting model.
 
 ## Step 3 — Portfolio Dashboard
 
-**Navigation:** sidebar → *Portfolio Dashboard*
+**Navigation:** top navigation bar → *Portfolio Dashboard*
 
 ### What it shows
 
-The dashboard displays the portfolio recommended for your risk profile. It reads your
-profile from session state (or falls back to MODERATE if you navigate here directly without
-completing the questionnaire first).
+The dashboard displays the HRP-optimised portfolio recommended for your risk profile. It reads
+your profile from session state (or falls back to MODERATE if you navigate here directly
+without completing the questionnaire first).
 
-The page is divided into two tabs:
+The page shows a single HRP portfolio view:
 
-#### HRP Portfolio tab
-
-Shows the Hierarchical Risk Parity portfolio:
-
-- **Portfolio weights** — allocation per ETF ticker
+- **Allocation donut chart** — weights per ETF, coloured by cluster
 - **Active profile and confidence** — your investor classification
-- Risk contribution bar chart, dendrogram, and full metrics table
+- **Key metrics** — volatility, max drawdown, Sharpe ratio
+- **Risk contribution bar chart** — each asset's share of total portfolio risk, coloured by cluster
+- **ETF Explorer** — price chart, TER/AUM, ESG scores and analyst consensus for all 8 ETFs
+- **Crisis resilience strip** — summary of HRP drawdowns across historical stress scenarios
 
-#### Markowitz Benchmark tab
-
-Shows the Mean-Variance (Markowitz) benchmark for educational comparison.
-This tab makes the diversification benefit of HRP visible: HRP does not
-require an estimate of expected returns and avoids the corner solutions
-typical of unconstrained Markowitz.
+The Markowitz benchmark comparison has its own dedicated page: **Compare Markowitz**.
 
 ### EU Investor Note
 
@@ -207,9 +204,31 @@ A yellow warning banner is shown above all financial outputs on every page:
 
 ---
 
-## Step 4 — Chat Advisor
+## Step 4 — Compare Markowitz
 
-**Navigation:** sidebar → *Chat Advisor*
+**Navigation:** top navigation bar → *Compare Markowitz*
+
+### What it does
+
+A deep-dive analytical comparison of your HRP portfolio against the classic
+Mean-Variance (Markowitz) benchmark, across three sections:
+
+1. **Key metrics scorecard** — side-by-side table of volatility, Sharpe ratio, max drawdown
+   and other metrics for both methods, with a one-line data-driven verdict (which strategy
+   won on Sharpe and which lost least).
+2. **Risk contributions** — grouped bar chart showing each asset's share of total portfolio
+   risk under HRP vs Markowitz; highlights the concentration typical of mean-variance.
+3. **Correlation heatmap** — 8×8 asset correlation matrix for the full ETF universe; the
+   negative equity–bond correlation is the main diversification driver.
+
+A collapsible card explains the academic motivation for comparing the two methods
+(HRP: López de Prado 2016; Markowitz: 1952).
+
+---
+
+## Step 5 — Chat Advisor
+
+**Navigation:** top navigation bar → *Chat Advisor*
 
 ### What it does
 
@@ -277,6 +296,52 @@ The Questionnaire and Portfolio Dashboard pages remain fully functional without 
 
 ---
 
+## Step 6 — Backtesting
+
+**Navigation:** top navigation bar → *Backtesting*
+
+### What it does
+
+Replays HRP, Mean-Variance, and equal-weight (1/N) strategies on real historical prices
+across seven historical episodes, so you can see how each strategy would have behaved
+in past market crises and recovery phases.
+
+| Episode | Period | Type |
+|---|---|---|
+| Global Financial Crisis | Jan 2008 – Jun 2009 | Subprime crisis |
+| Eurozone Debt Crisis | Jan 2011 – Dec 2011 | Sovereign debt crisis |
+| Rate-Fear Selloff | Jan 2018 – Dec 2018 | Moderate stress |
+| COVID-19 Crash | Jan 2020 – Dec 2020 | Pandemic shock |
+| Post-COVID Bull | Jan 2021 – Dec 2021 | Recovery / positive regime |
+| Ukraine Invasion Shock | Feb 2022 – Jun 2022 | Geopolitical shock |
+| Rate Hike Cycle | Jan 2022 – Dec 2022 | Monetary tightening |
+
+### How to use it
+
+1. Use the **Stress scenario** dropdown to select an episode.
+2. The page shows the **total return** over the scenario window for each strategy,
+   a metrics table (volatility, Sharpe, max drawdown), equity curve and drawdown charts,
+   and allocation donuts showing the average mix each strategy held.
+3. A **winner callout** highlights which strategy had the best Sharpe and the smallest drawdown.
+
+> **Note:** The three UCITS primary tickers lack price history for the earlier windows;
+> the engine substitutes US-listed proxies (SPY, AGG, BIL) with the same cluster constraints
+> applied. The proxy tickers are labelled in grey with an explanatory note.
+
+---
+
+## Step 7 — Settings
+
+**Navigation:** top navigation bar → *Settings*
+
+### What it does
+
+- **Dark / Light theme toggle** — switches the entire app theme instantly, no restart required.
+- **Data source and about** — displays the current data source (yfinance / live vs reference)
+  and project information.
+
+---
+
 ## EU Investor Awareness
 
 This platform explicitly addresses the geographic gap between its US-trained model and
@@ -334,7 +399,7 @@ The Validator blocks any response that does not satisfy this rule.
 
 ## API Reference (for developers)
 
-The backend exposes three endpoints via FastAPI.
+The backend exposes six endpoints via FastAPI.
 Interactive documentation available at `http://localhost:8000/docs`.
 
 ### `POST /profile`

@@ -230,16 +230,20 @@ The app has six pages, reachable from the top navigation bar:
      for all 8 ETFs
 
 3. **Compare Markowitz** — a deep-dive page comparing HRP against the
-   Mean-Variance benchmark: radar chart across key indicators and a
-   weight-divergence breakdown, with a collapsible explainer of why the two
-   methods are compared.
+   Mean-Variance benchmark across three sections: a side-by-side metrics
+   scorecard with a one-line data-driven verdict, a risk-contribution
+   breakdown showing how each asset's share of total risk differs between
+   the two methods, and an asset-correlation heatmap. A collapsible card
+   explains the academic context of the comparison.
 
 4. **Chat Advisor** — ask natural-language questions about your portfolio.
    Answers go through a 3-stage safety pipeline (input sanitiser → narrator →
    5-step validator) and always include an educational disclaimer.
 
-5. **Backtesting** — replay each strategy on real historical prices across stress
-   scenarios (GFC 2008, COVID 2020, rate hike 2022), comparing HRP vs
+5. **Backtesting** — replay each strategy on real historical prices across
+   seven historical episodes (GFC 2008, Eurozone Debt Crisis 2011,
+   Rate-Fear Selloff 2018, COVID-19 Crash 2020, Post-COVID Bull 2021,
+   Ukraine Invasion Shock 2022, Rate Hike Cycle 2022), comparing HRP vs
    Mean-Variance (MV) vs equal-weight (1/N).
 
 6. **Settings** — switch between **Dark and Light theme** (instant, no restart),
@@ -428,7 +432,7 @@ Full project documentation (LaTeX PDF, 5–8 pages) submitted on iCorsi includes
 - Mathematical derivation of HRP (López de Prado, 2016)
 - ML pipeline: SCF preprocessing, clustering, GBM + SHAP
 - LLM Narrator architecture: Ground Truth JSON, 5-step Validator, EU Awareness
-- Backtest results: GFC 2008, COVID 2020, rate hike 2022
+- Backtest results: seven historical episodes (GFC 2008, Eurozone 2011, Selloff 2018, COVID 2020, Bull 2021, Ukraine 2022, Rate Hike 2022)
 - Limitations and failure modes
 - Lessons learned from the agentic development process
 

@@ -51,8 +51,9 @@ POST /optimize
         ├──► profile-specific tilt
         ├──► asset and cluster guardrails
         └──► regime detector
-                 └── if average pairwise correlation > 0.75:
-                         fallback to ERC-style allocation
+                 └── if avg pairwise correlation > 0.75 or VIX > 30:
+                         flag HIGH_STRESS → show warning banner
+                         (ERC fallback available, not auto-applied)
         │
         ▼
 Ground Truth JSON
@@ -68,12 +69,13 @@ LLM Narrator
         └── regulatory_context for EU Awareness
         │
         ▼
-4-step Validator
+5-step Validator
         │
         ├── forbidden phrases check
         ├── number hallucination check
         ├── disclaimer check
-        └── semantic / EU Awareness consistency
+        ├── prompt injection detection
+        └── EU Awareness (Rule 9) consistency
         │
         ▼
 Validated response

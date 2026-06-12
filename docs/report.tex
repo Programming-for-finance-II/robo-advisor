@@ -53,6 +53,8 @@ The platform is a Streamlit web application backed by a FastAPI service, with a 
 
 Source code and Architecture Decision Records: \url{https://github.com/Programming-for-finance-II/robo-advisor}
 
+The repository also contains two supplementary documents submitted alongside this report: \texttt{docs/development\_plan.pdf} (project plan, timeline and role allocation) and \texttt{docs/project\_diary.pdf} (full session-by-session development diary, covering every work session from 27 April to 12 June 2026 across all four roles).
+
 % ─────────────────────────────────────────────────────────────
 \section{Backend and Data Infrastructure (P1)}
 % ─────────────────────────────────────────────────────────────
@@ -129,10 +131,10 @@ HRP \parencite{LopezdePrado2016} was selected over MVO for three structural reas
 \[
   \alpha_L = 1 - \frac{V_L}{V_L + V_R}, \qquad V_k = \mathbf{w}_k^\top \hat{\Sigma}_k\,\mathbf{w}_k
 \]
-Raw weights are tilted by risk profile: Conservative blends toward Minimum Variance; Aggressive toward Equal Risk Contribution \parencite{Maillard2010}; Balanced uses raw HRP weights.
+Raw weights are tilted by risk profile: Conservative blends toward Minimum Variance; Aggressive toward a volatility-proportional target (weights proportional to asset volatility — the $\mu$-free, risk-seeking symmetric opposite of minimum variance); Moderate uses raw HRP weights. Equal Risk Contribution \parencite{Maillard2010} was considered for the Aggressive tilt but rejected because ERC is a risk-\emph{balancing} construction that empirically converged toward minimum variance, inverting the intended ordering (ADR-008).
 
 \subsection{Ledoit--Wolf Shrinkage and Constraints}
-The Ledoit--Wolf shrinkage estimator \parencite{LedoitWolf2004} $\hat{\Sigma} = (1-\alpha)S + \alpha\mu_S I$ is applied before clustering to stabilise the distance matrix. Box constraints clip weights to $[5\%, 40\%]$ per asset and $[10\%, 60\%]$ per cluster; weights are renormalised after clipping.
+The Ledoit--Wolf shrinkage estimator \parencite{LedoitWolf2004} $\hat{\Sigma} = (1-\alpha)S + \alpha\mu_S I$ is applied before clustering to stabilise the distance matrix. Box constraints are applied per profile via Strategic Asset Allocation bands: the Moderate profile uses $[5\%, 40\%]$ per asset; the Aggressive profile widens the equity cluster floor to $45\%$ and caps cash at $10\%$; the Conservative profile enforces a safe-haven floor of $25\%$ and caps equity at $25\%$ (ADR-008). Weights are renormalised after clipping via an iterative projection.
 
 \subsection{Market Regime Detection}
 A dual-trigger detector flags \texttt{HIGH\_STRESS} when $\bar{\rho}_{\mathrm{LW}} > 0.75$ or $\mathrm{VIX} > 30$ (ADR-006). When triggered, the frontend surfaces a warning banner cautioning that diversification benefits are reduced in the prevailing regime. A cluster-level Equal Risk Contribution allocation (\texttt{get\_erc\_cluster\_weights}) is implemented as the defensive response for this regime; wiring it into the automatic serving path is left as future work.
@@ -164,7 +166,7 @@ Layer~1 sanitises user input before the API call: inputs exceeding 500 character
 \section{Backtest Results}
 % ─────────────────────────────────────────────────────────────
 
-Three historical stress scenarios are evaluated using US proxy tickers with 10\,bps transaction costs per rebalance.
+Seven historical episodes are evaluated for the MODERATE profile: five crises (Global Financial Crisis~2008, Eurozone debt crisis~2011, COVID-19 crash~2020, Ukraine invasion shock~2022, rate-hike cycle~2022), one moderate-stress year (rate-fear selloff~2018), and one positive regime (post-COVID bull~2021). Each backtest rebalances monthly on a 252-day lookback with 10\,bps of transaction costs per rebalance. The three UCITS primaries lack price history for the earlier windows, so the engine substitutes US-listed proxies (\texttt{SPY}, \texttt{AGG}, \texttt{BIL}); cluster box constraints are applied to these proxies under their primaries' clusters, so the profile cap on cash binds throughout the historical window (an earlier version mismatched the constraint keys to the proxy tickers, silently leaving $\sim$40\,\% in cash and understating drawdowns).
 
 \begin{table}[H]
 \centering\small
@@ -173,22 +175,38 @@ Three historical stress scenarios are evaluated using US proxy tickers with 10\,
 \toprule
 Scenario & Model & Ann.\ Return & Volatility & Sharpe & Max DD \\
 \midrule
-GFC (2008)       & HRP   & $-0.1\%$ & $8.6\%$  & $-0.01$ & $-11.9\%$ \\
-                 & MV    & $-5.7\%$ & $10.7\%$ & $-0.53$ & $-18.0\%$ \\
-                 & $1/N$ & $-5.1\%$ & $18.4\%$ & $-0.28$ & $-25.1\%$ \\
+GFC (2008)       & HRP   & $-5.4\%$  & $16.0\%$ & $-0.33$ & $-22.3\%$ \\
+                 & MV    & $-9.3\%$  & $11.8\%$ & $-0.78$ & $-21.5\%$ \\
+                 & $1/N$ & $-4.9\%$  & $16.6\%$ & $-0.29$ & $-23.2\%$ \\
 \midrule
-COVID-19 (2020)  & HRP   & $+6.4\%$ & $7.7\%$  & $0.83$  & $-10.1\%$ \\
-                 & MV    & $+7.2\%$ & $13.8\%$ & $0.52$  & $-15.5\%$ \\
-                 & $1/N$ & $+11.9\%$ & $13.3\%$ & $0.90$  & $-19.1\%$ \\% corrected
+Eurozone (2011)  & HRP   & $+5.7\%$  & $6.0\%$  & $+0.95$ & $-4.0\%$  \\
+                 & MV    & $+9.3\%$  & $8.1\%$  & $+1.15$ & $-6.9\%$  \\
+                 & $1/N$ & $+7.8\%$  & $8.8\%$  & $+0.89$ & $-5.5\%$  \\
 \midrule
-Rate Hike (2022) & HRP   & $-8.9\%$ & $7.6\%$  & $-1.17$ & $-13.0\%$ \\
-                 & MV    & $-13.1\%$ & $10.4\%$ & $-1.27$ & $-16.3\%$ \\
-                 & $1/N$ & $-13.7\%$ & $11.3\%$ & $-1.21$ & $-19.1\%$ \\
+Selloff (2018)   & HRP   & $-2.3\%$  & $4.2\%$  & $-0.55$ & $-4.8\%$  \\
+                 & MV    & $-3.7\%$  & $8.6\%$  & $-0.43$ & $-7.1\%$  \\
+                 & $1/N$ & $-3.4\%$  & $5.7\%$  & $-0.60$ & $-6.7\%$  \\
+\midrule
+COVID-19 (2020)  & HRP   & $+7.5\%$  & $9.7\%$  & $+0.77$ & $-13.9\%$ \\
+                 & MV    & $+6.4\%$  & $11.7\%$ & $+0.55$ & $-15.0\%$ \\
+                 & $1/N$ & $+10.9\%$ & $11.2\%$ & $+0.97$ & $-15.0\%$ \\
+\midrule
+Bull (2021)      & HRP   & $+5.3\%$  & $3.5\%$  & $+1.53$ & $-2.2\%$  \\
+                 & MV    & $+7.7\%$  & $8.3\%$  & $+0.94$ & $-8.1\%$  \\
+                 & $1/N$ & $+8.7\%$  & $5.3\%$  & $+1.65$ & $-3.3\%$  \\
+\midrule
+Ukraine (2022)   & HRP   & $-19.2\%$ & $8.5\%$  & $-2.26$ & $-10.3\%$ \\
+                 & MV    & $-16.7\%$ & $13.5\%$ & $-1.24$ & $-10.5\%$ \\
+                 & $1/N$ & $-22.5\%$ & $11.5\%$ & $-1.97$ & $-12.5\%$ \\
+\midrule
+Rate Hike (2022) & HRP   & $-11.2\%$ & $9.2\%$  & $-1.21$ & $-16.1\%$ \\
+                 & MV    & $-10.6\%$ & $10.1\%$ & $-1.05$ & $-13.9\%$ \\
+                 & $1/N$ & $-13.7\%$ & $11.9\%$ & $-1.15$ & $-19.6\%$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-HRP consistently delivers lower volatility and smaller drawdowns than both benchmarks across all three scenarios, at the cost of a modest return penalty relative to $1/N$ in the COVID recovery.
+No single strategy dominates across all seven episodes, and the broadened coverage makes the trade-offs explicit. HRP records the lowest volatility in five of the seven episodes — the 2008 crisis is the exception, where the Minimum-Variance-tilted MV is lower — and the smallest maximum drawdown in the asymmetric crises where diversification matters most, most clearly the 2011 Eurozone debt crisis, where it stays positive ($+5.7\%$) with only a $-4.0\%$ drawdown while European equities fell. In the sharpest equity selloffs (2008 and 2022), however, MV achieves a smaller drawdown than HRP, and in the recovery and bull phases (2020, 2021) the naive $1/N$ portfolio earns both higher returns and a higher Sharpe ratio. HRP's contribution is therefore risk control and robustness across regimes rather than uniform outperformance — consistent with its construction, which targets diversification rather than return maximisation.
 
 % ─────────────────────────────────────────────────────────────
 \section{Limitations}
@@ -198,7 +216,7 @@ HRP consistently delivers lower volatility and smaller drawdowns than both bench
 
 \textbf{SCF US-centrism.} The risk profiler is trained on US household data. European investors may exhibit materially different risk preferences, savings rates, and financial literacy patterns. The EU Awareness layer communicates this explicitly at the point of recommendation, but does not correct the underlying distributional mismatch.
 
-\textbf{HRP opacity.} The recursive bisection algorithm produces weights that cannot be summarised by a simple rule. The LLM narrator and the MVO comparison tab partially mitigate this, but residual opacity is a fundamental limitation acknowledged in ADR-001.
+\textbf{HRP opacity.} The recursive bisection algorithm produces weights that cannot be summarised by a simple rule. The LLM narrator and the dedicated HRP vs.\ Markowitz comparison page partially mitigate this, but residual opacity is a fundamental limitation acknowledged in ADR-001.
 
 \textbf{Validator false positives.} The substring check for \textit{safe} also matches the cluster label \textit{safe\_haven}, triggering unnecessary fallback responses. Whole-word matching is deferred to future work. The EU Awareness check (Step~5) is keyword-based rather than semantic and may fail on paraphrased compliant responses.
 
@@ -213,6 +231,8 @@ HRP consistently delivers lower volatility and smaller drawdowns than both bench
 \textbf{Architecture as a safety mechanism.} The central design choice --- a strict separation between a deterministic ``calculator'' (the backend) and an LLM ``narrator'' constrained to a Ground Truth JSON contract --- made hallucination prevention \emph{structural} rather than instructional. The narrator is stateless: the payload is re-injected on every call, so the model stays anchored to current data and cannot drift across turns. This proved far more robust than relying on prompt wording alone.
 
 \textbf{Tests and CI catch real bugs.} A covariance-frequency bug (\texttt{CovarianceShrinkage(frequency=1)} without an explicit annualisation factor) would have inflated reported volatility by $\sqrt{252}\approx 15.9\times$; it surfaced only because the risk-metrics layer annualises explicitly and a regression test pinned the expected value. Smaller edge cases (e.g.\ integer-valued floats slipping through the validator's number check) emerged the same way. Coverage was governed through a shared GitHub issue rather than by unilaterally excluding untested modules, lifting the project from 77\,\% to 81\,\%.
+
+\textbf{Generative AI tools used.} All four team members used generative AI throughout the project, as required by the course brief. \textbf{Claude (Anthropic)} was the primary coding assistant and technical advisor across all weeks; it also powers the Chat Advisor at runtime via the Claude API. \textbf{ChatGPT (OpenAI)} was used for initial brainstorming and for explaining financial concepts (HRP, MiFID~II, SCF survey methodology). \textbf{GitHub Copilot / Gemini} provided code comparison and alternative implementation suggestions during development. All AI-assisted contributions are visible in the commit history; the agentic criterion is satisfied by \texttt{agent\_pr.yml} (PR~\#43).
 
 \textbf{Collaboration, honesty and reproducibility.} Parallel work across four roles produced classic distributed-Git frictions: long-lived branches drifting tens of commits behind \texttt{main}, cross-team review of optimiser fixes, and the consolidation of every schema into a single \texttt{backend/schemas} source of truth. A pre-publication secrets audit (scanning the full history for API-key patterns before the repository was made public) and an honest accounting of what is and is not wired into the live serving path --- the trained GBM and the ERC stress fallback are implemented but not on the live path --- were treated as part of the deliverable, not an afterthought.
 

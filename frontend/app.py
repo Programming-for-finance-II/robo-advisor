@@ -3976,7 +3976,7 @@ def _bt_section(eyebrow: str, title: str) -> None:
     st.markdown(
         f'<div style="display:flex;align-items:stretch;gap:0.8rem;margin:0 0 0.7rem;">'
         f'<div style="width:3px;flex-shrink:0;border-radius:99px;'
-        f'background:linear-gradient(180deg,{t["accent"]} 0%,#0dcfb0 100%);"></div>'
+        f'background:{t["accent"]};"></div>'
         f'<div>'
         f'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:0.66rem;'
         f'font-weight:700;letter-spacing:0.15em;text-transform:uppercase;'
@@ -4030,14 +4030,15 @@ def render_backtesting() -> None:
 
     st.markdown(
         f'<div style="font-size:0.95rem;line-height:1.6;color:{t["text_secondary"]};'
-        f'margin:0.2rem 0 1.3rem;max-width:60rem;">'
-        f'Backtesting replays each strategy on real historical prices to see how it '
-        f'would have held up in the past. Pick a stress scenario below to compare '
-        f'your <strong style="color:{t["text_primary"]};">HRP</strong> allocation '
-        f'against the classic <strong style="color:{t["text_primary"]};">Markowitz'
-        f'</strong> method through a real market crisis.</div>',
+        f'margin:0.2rem 0 0.6rem;">Backtesting replays each strategy on real historical '
+        f'prices to see how it would have held up in the past. Pick a stress scenario '
+        f'below to compare your <strong style="color:{t["text_primary"]};">HRP</strong> '
+        f'allocation against the classic '
+        f'<strong style="color:{t["text_primary"]};">Markowitz</strong> '
+        f'method through a real market crisis.</div>',
         unsafe_allow_html=True,
     )
+    st.markdown("---")
 
     profile_data = st.session_state.get("profile", {})
     profile_label = profile_data.get("profile_label", "MODERATE").lower()
@@ -4061,6 +4062,11 @@ def render_backtesting() -> None:
     with open(summary_file) as fh:
         summary = json.load(fh)
 
+    st.markdown(
+        '<style>[data-baseweb="select"] input{caret-color:transparent !important;'
+        'user-select:none !important;}</style>',
+        unsafe_allow_html=True,
+    )
     selected = st.selectbox(
         "Stress scenario",
         options=list(_SCENARIO_LABELS.keys()),
@@ -4146,7 +4152,7 @@ def render_backtesting() -> None:
     st.markdown("---")
 
     # ── Metrics comparison table ─────────────────────────────────────────────
-    _bt_section("Results", "Which strategy held up best?")
+    _bt_section("Results", "1.  Which strategy held up best?")
     rows = []
     for strat in _BACKTEST_STRATEGIES:
         m = summary[selected]["strategies"][strat]
@@ -4298,7 +4304,7 @@ def render_backtesting() -> None:
     # Two donuts (HRP vs Markowitz) showing the average mix each strategy held
     # across the scenario's rebalances — this is *what* drove the results above.
     if detail is not None:
-        _bt_section("Allocation", "What each strategy held")
+        _bt_section("Allocation", "2.  What each strategy held")
         st.caption(
             "Average allocation across the scenario's monthly rebalances, grouped "
             "by asset class — what actually drove the results above. A more "
@@ -4366,7 +4372,7 @@ def render_backtesting() -> None:
             unsafe_allow_html=True,
         )
 
-        _v_spacer(0.75)
+        _v_spacer(0.5)
 
         with st.expander("How HRP and Markowitz pick their mix"):
             st.markdown(
@@ -4388,7 +4394,7 @@ def render_backtesting() -> None:
 
     # ── Performance charts ───────────────────────────────────────────────────
     if detail is not None:
-        _bt_section("Over time", "How it played out")
+        _bt_section("Over time", "3.  How it played out")
         st.caption(
             "Both panels share the same timeline. The top shows what €10,000 would "
             "have been worth; the bottom shows how far each strategy had fallen from "
@@ -4409,15 +4415,17 @@ def render_backtesting() -> None:
             "1/N": "rgba(148,163,184,0.18)",
         }
         fig = make_subplots(
-            rows=2, cols=1, shared_xaxes=True, vertical_spacing=0.08,
-            row_heights=[0.62, 0.38],
+            rows=2, cols=1, shared_xaxes=True, vertical_spacing=0.22,
+            row_heights=[0.60, 0.40],
             subplot_titles=("Value of €10,000 invested", "Drawdown from peak (%)"),
         )
         # Pin the subplot-title colour to a theme-aware token so it stays readable
         # in both dark and light mode (make_subplots' default near-white would wash
         # out on the light surface).
-        for _ann in fig.layout.annotations:
+        for _i, _ann in enumerate(fig.layout.annotations):
             _ann.font.update(color=t["text_secondary"], size=13)
+            if _i == 1:
+                _ann.yshift = 14
         # Per-strategy stats reused for the takeaway below the chart.
         _perf: dict[str, dict[str, float]] = {}
         for strat in _BACKTEST_STRATEGIES:
@@ -4496,17 +4504,19 @@ def render_backtesting() -> None:
             f"{_perf[s]['final_ret']:+.1%}."
             for s in _BACKTEST_STRATEGIES
         )
-        # Teal "trajectory" note with a trend icon — distinct from the purple
-        # results verdict above so the two takeaways don't blur together.
         _bt_takeaway(
             f"{_ride} {_ends}",
-            "#0dcfb0",
+            "#7c5cfc",
             '<polyline points="2,12 6,8 9,11 16,4"/><polyline points="11,4 16,4 16,9"/>',
         )
 
-    st.caption(
-        f"Profile: {profile_label.upper()} · Rebalancing: monthly · TC: 10 bps/rebalance · "
-        "Lookback: 252 trading days"
+    st.markdown(
+        f'<div style="margin-top:1.4rem;padding-top:0.75rem;'
+        f'border-top:1px solid {t["border"]};font-size:0.75rem;'
+        f'color:{t["text_secondary"]};margin-bottom:0;padding-bottom:0;">'
+        f'Profile: {profile_label.upper()} · Rebalancing: monthly · '
+        f'TC: 10 bps/rebalance · Lookback: 252 trading days</div>',
+        unsafe_allow_html=True,
     )
 
 
