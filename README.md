@@ -359,7 +359,7 @@ model and European retail investors:
 - The LLM narrator applies **Rule 9 (EU Awareness)**: all advice acknowledges
   the SCF/EU behavioural gap when addressing European investors
 - A persistent **EU Investor Note** banner is shown on the Portfolio page
-- **UCITS badges** 🇪🇺 are displayed in the portfolio weights table
+- UCITS eligibility is surfaced in the HRP-vs-Markowitz comparison table, the ETF Explorer, and a UCITS Coverage metric
 
 ---
 
