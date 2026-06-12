@@ -3032,280 +3032,198 @@ def _render_hrp_tab(portfolio: dict) -> None:
 _CHAT_CSS = """
 <style>
 /* ════════════════════════════════════════════════════════════════════════
-   Chat Advisor — visual system (redesign). Matches the profile-gate language:
-   glowing orbs, Space Grotesk display, purple/teal accents, dot texture.
+   Chat Advisor — minimal & focused redesign.
+   One signature accent (purple #7c5cfc); teal only for the validated tick.
+   No heavy chrome — the conversation is the product.
    ════════════════════════════════════════════════════════════════════════ */
-.ca-page { margin-top: -0.3rem; }
-
-@keyframes ca-fade {
-    from { opacity: 0; transform: translateY(4px); }
+@keyframes ca-rise {
+    from { opacity: 0; transform: translateY(6px); }
     to   { opacity: 1; transform: translateY(0); }
 }
-@keyframes ca-pulse {
-    0%,100% { box-shadow: 0 0 0 0 rgba(13,207,176,0.55); }
-    50%     { box-shadow: 0 0 0 4px rgba(13,207,176,0); }
-}
-@keyframes ca-orb {
-    0%,100% { box-shadow: 0 0 22px rgba(124,92,252,0.35); }
-    50%     { box-shadow: 0 0 40px rgba(124,92,252,0.6); }
-}
 
-/* ── Status strip: profile / model / validator ──────────────────────────── */
-.ca-status {
-    display: flex; flex-wrap: wrap; align-items: center;
-    gap: 0.5rem; margin-bottom: 1rem;
+/* ── Trust / about strip (collapsible — replaces the old side panel) ─────── */
+.ca-about {
+    border: 1px solid #1c2336; border-radius: 12px;
+    background: rgba(16,23,42,0.55);
+    margin: 0 0 1.6rem; overflow: hidden;
 }
-.ca-pill {
-    display: inline-flex; align-items: center; gap: 0.45rem;
-    background: rgba(10,15,30,0.7);
-    border: 1px solid #1e2640; border-radius: 999px;
-    padding: 0.32rem 0.85rem;
+.ca-about > summary {
+    list-style: none; cursor: pointer; user-select: none;
+    display: flex; align-items: center; gap: 0.55rem;
+    padding: 0.6rem 0.9rem;
     font-family: 'Space Grotesk', sans-serif;
-    font-size: 0.74rem; font-weight: 500;
-    color: #94a3b8; letter-spacing: 0.02em;
+    font-size: 0.79rem; color: #8a97ad;
 }
-.ca-pill .ca-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
-.ca-pill--profile {
-    color: #a78bfa; border-color: rgba(124,92,252,0.32);
-    background: rgba(124,92,252,0.1);
-}
-.ca-pill--profile .ca-dot {
-    background: #7c5cfc; box-shadow: 0 0 0 3px rgba(124,92,252,0.18);
-}
-.ca-pill--model {
-    color: #93c5fd; border-color: rgba(59,130,246,0.30);
-    background: rgba(59,130,246,0.08);
-}
-.ca-pill--model .ca-dot { background: #3b82f6; }
-.ca-pill--guard {
-    color: #5eead4; border-color: rgba(13,207,176,0.30);
-    background: rgba(13,207,176,0.08);
-}
-.ca-pill--guard .ca-dot {
-    background: #0dcfb0; box-shadow: 0 0 0 3px rgba(13,207,176,0.15);
-}
-
-/* ── Chat shell ─────────────────────────────────────────────────────────── */
-.ca-shell {
-    background:
-        radial-gradient(120% 60% at 50% -8%, rgba(124,92,252,0.10) 0%, transparent 60%),
-        #0f1628;
-    border: 1px solid #1e2640; border-radius: 16px; overflow: hidden;
-}
-.ca-shell-head {
-    display: flex; align-items: center; gap: 0.85rem;
-    padding: 0.95rem 1.15rem;
-    background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 55%, #0d1220 100%);
-    border-bottom: 1px solid #1e2640; position: relative;
-}
-.ca-id-orb {
-    position: relative; flex-shrink: 0;
-    width: 2.6rem; height: 2.6rem; border-radius: 50%;
+.ca-about > summary::-webkit-details-marker { display: none; }
+.ca-tick {
     display: inline-flex; align-items: center; justify-content: center;
-    font-size: 1.15rem; color: #e9d5ff;
-    background: radial-gradient(circle at 34% 28%,
-        rgba(167,139,250,0.6) 0%, rgba(124,92,252,0.16) 62%, transparent 100%);
-    border: 1.5px solid rgba(124,92,252,0.45);
-    animation: ca-orb 3.4s ease-in-out infinite;
+    width: 18px; height: 18px; border-radius: 50%; flex-shrink: 0;
+    background: rgba(13,207,176,0.16); color: #0dcfb0;
 }
-.ca-id-status {
-    position: absolute; right: -1px; bottom: -1px;
-    width: 0.72rem; height: 0.72rem; border-radius: 50%;
-    background: #0dcfb0; border: 2px solid #0d1220;
-    animation: ca-pulse 2.2s ease-in-out infinite;
+.ca-about summary b { color: #d6deea; font-weight: 600; }
+.ca-about summary .ca-meta { color: #5b6678; }
+.ca-sep { color: #39435a; margin: 0 0.15rem; }
+.ca-about summary .ca-caret {
+    margin-left: auto; color: #4a5670; font-size: 0.68rem;
+    transition: transform 0.2s ease;
 }
-.ca-id-meta { display: flex; flex-direction: column; min-width: 0; }
-.ca-id-name {
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 0.98rem; font-weight: 700;
-    color: #f5f7fb; line-height: 1.2; letter-spacing: -0.01em;
+.ca-about[open] summary .ca-caret { transform: rotate(180deg); }
+.ca-about-body { padding: 0.4rem 1rem 1.05rem; border-top: 1px solid #1c2336; }
+.ca-cols { display: flex; gap: 1.5rem; flex-wrap: wrap; margin-top: 0.75rem; }
+.ca-col { flex: 1; min-width: 150px; }
+.ca-col-h {
+    font-family: 'Space Grotesk', sans-serif; font-size: 0.61rem;
+    letter-spacing: 0.13em; text-transform: uppercase; color: #566179;
+    font-weight: 600; margin-bottom: 0.5rem;
 }
-.ca-id-sub {
-    font-size: 0.74rem; color: #8a97ad;
-    margin-top: 0.12rem; letter-spacing: 0.01em;
+.ca-li {
+    display: flex; align-items: center; gap: 0.5rem; padding: 0.22rem 0;
+    font-size: 0.83rem; color: #b6c0d0;
 }
-.ca-id-badge {
-    margin-left: auto;
-    display: inline-flex; align-items: center; gap: 0.35rem;
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 0.68rem; font-weight: 600; color: #5eead4;
-    background: rgba(13,207,176,0.08);
-    border: 1px solid rgba(13,207,176,0.28); border-radius: 999px;
-    padding: 0.28rem 0.7rem; white-space: nowrap;
+.ca-li svg { flex-shrink: 0; }
+.ca-pipe {
+    display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;
+    margin-top: 0.95rem; padding-top: 0.9rem; border-top: 1px solid #1c2336;
 }
-.ca-id-badge svg { flex-shrink: 0; }
+.ca-step {
+    font-family: 'Space Grotesk', sans-serif; font-size: 0.66rem; color: #aab4c5;
+    background: rgba(124,92,252,0.09); border: 1px solid rgba(124,92,252,0.22);
+    border-radius: 6px; padding: 0.22rem 0.5rem;
+}
+.ca-arrow { color: #475569; font-size: 0.72rem; }
+.ca-pipe-note { font-size: 0.73rem; color: #5b6678; margin-left: 0.25rem; }
 
 /* ── Empty-state hero ───────────────────────────────────────────────────── */
-.ca-hero { text-align: center; padding: 2.4rem 1.5rem 0.5rem; }
-.ca-hero-orb {
-    width: 68px; height: 68px; border-radius: 50%;
-    background: radial-gradient(circle at 35% 30%,
-        rgba(167,139,250,0.55) 0%, rgba(124,92,252,0.15) 60%, transparent 100%);
-    border: 1px solid rgba(124,92,252,0.4);
+.ca-hero { text-align: center; padding: 1.8rem 0 0.4rem; animation: ca-rise 0.4s ease; }
+.ca-mark {
     display: inline-flex; align-items: center; justify-content: center;
-    margin-bottom: 0.9rem; font-size: 1.6rem;
-    animation: ca-orb 3.6s ease-in-out infinite;
+    width: 54px; height: 54px; border-radius: 16px; margin-bottom: 1.05rem;
+    font-size: 1.55rem; color: #ffffff;
+    background: linear-gradient(135deg, #7c5cfc 0%, #5b8def 100%);
+    box-shadow: 0 10px 26px rgba(124,92,252,0.36);
 }
 .ca-hero-title {
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 1.3rem; font-weight: 700;
-    color: #f5f7fb; letter-spacing: -0.01em; margin-bottom: 0.45rem;
+    font-family: 'Space Grotesk', sans-serif; font-size: 1.5rem; font-weight: 700;
+    color: #f1f5f9; letter-spacing: -0.02em; margin-bottom: 0.5rem;
 }
 .ca-hero-sub {
-    font-size: 0.88rem; color: #8a97ad;
-    max-width: 430px; margin: 0 auto; line-height: 1.6;
+    font-size: 0.93rem; color: #8a97ad; max-width: 450px;
+    margin: 0 auto; line-height: 1.6;
 }
-.ca-hero-eyebrow {
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 0.62rem; font-weight: 600;
-    letter-spacing: 0.18em; text-transform: uppercase;
-    color: #566179; margin: 1.6rem 0 0.7rem;
+.ca-eyebrow {
+    font-family: 'Space Grotesk', sans-serif; font-size: 0.61rem; font-weight: 600;
+    letter-spacing: 0.16em; text-transform: uppercase; color: #566179;
+    text-align: left; margin: 1.7rem 0 0.85rem;
 }
 
-/* ── Suggestion cards (st.button styled as cards) ───────────────────────── */
-.ca-suggest { padding: 0 1.15rem 1.5rem; }
-.ca-suggest .stButton > button {
-    position: relative;
-    background: rgba(15,22,40,0.66) !important;
-    border: 1px solid #1e2640 !important;
-    border-radius: 12px !important;
-    color: #cbd5e1 !important;
-    font-family: 'DM Sans', sans-serif !important;
-    font-size: 0.86rem !important; font-weight: 500 !important;
+/* ── Suggestions (stacked, minimal) — targeted by st-key ────────────────── */
+div[class*="st-key-chat_suggest"] button {
+    position: relative; width: 100%;
+    background: rgba(16,23,42,0.5) !important;
+    border: 1px solid #1c2336 !important; border-radius: 11px !important;
+    color: #c4cdda !important; font-family: 'DM Sans', sans-serif !important;
+    font-size: 0.88rem !important; font-weight: 500 !important;
     text-align: left !important; white-space: normal !important;
-    line-height: 1.45 !important; min-height: 3.6rem !important;
-    padding: 0.8rem 1rem 0.8rem 2.1rem !important;
-    transition: border-color 0.18s ease, background 0.18s ease,
-                transform 0.18s ease, color 0.18s ease !important;
+    padding: 0.78rem 2.5rem 0.78rem 1rem !important; line-height: 1.4 !important;
+    min-height: 0 !important;
+    transition: border-color 0.16s ease, background 0.16s ease,
+                transform 0.16s ease, color 0.16s ease !important;
 }
-.ca-suggest .stButton > button::before {
-    content: "›";
-    position: absolute; left: 0.95rem; top: 50%;
-    transform: translateY(-50%);
-    color: #7c5cfc; font-size: 1.1rem; font-weight: 700;
-    transition: transform 0.18s ease, color 0.18s ease;
+div[class*="st-key-chat_suggest"] button::after {
+    content: "→"; position: absolute; right: 1rem; top: 50%;
+    transform: translateY(-50%); color: #5b6678; font-size: 0.95rem;
+    transition: transform 0.16s ease, color 0.16s ease;
 }
-.ca-suggest .stButton > button:hover {
-    border-color: rgba(124,92,252,0.5) !important;
-    background: rgba(124,92,252,0.1) !important;
-    color: #e9d5ff !important; transform: translateY(-2px) !important;
+div[class*="st-key-chat_suggest"] button:hover {
+    border-color: rgba(124,92,252,0.45) !important;
+    background: rgba(124,92,252,0.08) !important; color: #e9d5ff !important;
+    transform: translateY(-1px) !important;
 }
-.ca-suggest .stButton > button:hover::before {
-    transform: translateY(-50%) translateX(3px); color: #a78bfa;
+div[class*="st-key-chat_suggest"] button:hover::after {
+    color: #a78bfa; transform: translateY(-50%) translateX(3px);
 }
-.ca-suggest .stButton > button p { text-align: left !important; }
+div[class*="st-key-chat_suggest"] button p {
+    text-align: left !important; margin: 0 !important; font-weight: 500 !important;
+}
 
 /* ── Conversation thread ────────────────────────────────────────────────── */
-.ca-thread { padding: 1.15rem 1.15rem 0.4rem; }
+.ca-thread { padding: 0.4rem 0 0.2rem; }
 [data-testid="stChatMessage"] {
-    background: transparent !important; border: none !important;
-    padding: 0.3rem 0 !important; margin-bottom: 0.7rem !important;
-    animation: ca-fade 0.28s ease-out;
-    width: 100% !important; max-width: 100% !important;
-    display: block !important;
+    background: transparent !important; border: none !important; box-shadow: none !important;
+    padding: 0.1rem 0 !important; margin-bottom: 1.15rem !important;
+    width: 100% !important; max-width: 100% !important; display: block !important;
+    animation: ca-rise 0.25s ease;
 }
 [data-testid="stChatMessageAvatarUser"],
 [data-testid="stChatMessageAvatarAssistant"],
 [data-testid="stChatMessageAvatarCustom"] { display: none !important; }
 
-/* Base bubble shared styles — no width here so each role can set its own */
-[data-testid="stChatMessage"] [data-testid="stChatMessageContent"] {
-    background: #131c30 !important;
-    border: 1px solid #1e2640 !important;
-    border-radius: 12px !important;
-    padding: 0.8rem 1.05rem 0.8rem 1.1rem !important;
-    box-sizing: border-box !important;
-    overflow-wrap: break-word !important; word-break: break-word !important;
-    display: block !important;
-}
-/* Assistant bubble: LEFT-aligned, wide — teal accent */
+/* Assistant: plain text, no bubble — maximum readability */
 [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarAssistant"])
 [data-testid="stChatMessageContent"] {
-    width: 88% !important;
-    margin-left: 0 !important;
-    margin-right: auto !important;
-    background: linear-gradient(135deg,
-        rgba(19,28,48,0.95), rgba(15,22,40,0.95)) !important;
-    border-left: 3px solid #0dcfb0 !important;
+    background: transparent !important; border: none !important; padding: 0 !important;
+    width: 100% !important; box-sizing: border-box !important;
+    overflow-wrap: break-word !important; word-break: break-word !important;
 }
 [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarAssistant"])
 [data-testid="stChatMessageContent"]::before {
     content: "✦ Assistant"; display: block;
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 0.66rem; font-weight: 600;
-    letter-spacing: 0.06em; text-transform: uppercase;
-    color: #5eead4; margin-bottom: 0.4rem; opacity: 0.9;
+    font-family: 'Space Grotesk', sans-serif; font-size: 0.63rem; font-weight: 600;
+    letter-spacing: 0.09em; text-transform: uppercase; color: #6d7891;
+    margin-bottom: 0.45rem;
 }
-/* User bubble: RIGHT-aligned, hugs its text (caps at 70%) — purple accent */
+/* User: compact pill, right-aligned, hugs its text */
 [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"])
 [data-testid="stChatMessageContent"] {
-    width: fit-content !important;
-    max-width: 70% !important;
-    margin-left: auto !important;
-    margin-right: 0 !important;
-    background: rgba(124,92,252,0.1) !important;
-    border-color: rgba(124,92,252,0.24) !important;
-    border-left: 3px solid #7c5cfc !important;
-}
-[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"])
-[data-testid="stChatMessageContent"]::before {
-    content: "You"; display: block;
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 0.66rem; font-weight: 600;
-    letter-spacing: 0.06em; text-transform: uppercase;
-    color: #a78bfa; margin-bottom: 0.4rem; opacity: 0.9;
+    width: fit-content !important; max-width: 80% !important;
+    margin-left: auto !important; margin-right: 0 !important;
+    background: rgba(124,92,252,0.13) !important;
+    border: 1px solid rgba(124,92,252,0.22) !important;
+    border-radius: 15px 15px 4px 15px !important;
+    padding: 0.6rem 0.92rem !important; box-sizing: border-box !important;
+    overflow-wrap: break-word !important; word-break: break-word !important;
 }
 [data-testid="stChatMessage"] p {
-    font-family: 'DM Sans', sans-serif !important;
-    font-size: 0.9rem !important; line-height: 1.65 !important;
-    color: #cdd6e3 !important; margin-bottom: 0.5rem !important;
-    text-align: left !important;
+    font-family: 'DM Sans', sans-serif !important; font-size: 0.94rem !important;
+    line-height: 1.7 !important; color: #d3dbe6 !important;
+    margin-bottom: 0.6rem !important; text-align: left !important;
 }
 [data-testid="stChatMessage"] p:last-child { margin-bottom: 0 !important; }
-[data-testid="stChatMessage"] em {
-    color: #5b6678 !important; font-size: 0.78rem !important;
-}
+[data-testid="stChatMessage"] em { color: #6b7689 !important; font-size: 0.82rem !important; }
 [data-testid="stChatMessage"] h1,
 [data-testid="stChatMessage"] h2,
 [data-testid="stChatMessage"] h3 {
     font-family: 'Space Grotesk', sans-serif !important;
-    color: #e2e8f0 !important; font-size: 0.95rem !important;
-    margin: 0.4rem 0 0.3rem !important;
+    color: #e8edf4 !important; font-size: 0.98rem !important;
+    margin: 0.5rem 0 0.35rem !important;
 }
-[data-testid="stChatMessage"] strong { color: #e9d5ff !important; }
+[data-testid="stChatMessage"] strong { color: #ede9fe !important; }
 [data-testid="stChatMessage"] code {
-    background: rgba(124,92,252,0.12) !important;
-    color: #c4b5fd !important;
-    padding: 0.05rem 0.35rem !important;
-    border-radius: 4px !important; font-size: 0.84rem !important;
+    background: rgba(124,92,252,0.12) !important; color: #c4b5fd !important;
+    padding: 0.05rem 0.35rem !important; border-radius: 4px !important;
+    font-size: 0.85rem !important;
 }
 [data-testid="stChatMessage"] table {
-    border-collapse: collapse !important; margin: 0.3rem 0 !important;
+    border-collapse: collapse !important; margin: 0.4rem 0 !important;
 }
 [data-testid="stChatMessage"] th,
 [data-testid="stChatMessage"] td {
-    border: 1px solid #1e2640 !important;
-    padding: 0.35rem 0.7rem !important;
-    font-size: 0.83rem !important; color: #94a3b8 !important;
+    border: 1px solid #1c2336 !important; padding: 0.35rem 0.7rem !important;
+    font-size: 0.84rem !important; color: #9aa6b8 !important;
 }
 [data-testid="stChatMessage"] th {
-    background: rgba(124,92,252,0.08) !important;
-    color: #a78bfa !important;
-    font-family: 'Space Grotesk', sans-serif !important;
-    font-weight: 600 !important;
+    background: rgba(124,92,252,0.08) !important; color: #a78bfa !important;
+    font-family: 'Space Grotesk', sans-serif !important; font-weight: 600 !important;
 }
 
-/* ── Chat input ─────────────────────────────────────────────────────────── */
+/* ── Input ──────────────────────────────────────────────────────────────── */
 [data-testid="stChatInput"] {
-    background: transparent !important;
-    border-top: 1px solid #1e2640 !important;
-    padding-top: 0.6rem !important;
+    background: transparent !important; border: none !important; padding-top: 0.5rem !important;
 }
 [data-testid="stChatInput"] > div {
-    background: #0d1220 !important;
-    border: 1px solid #1e2640 !important;
-    border-radius: 12px !important;
-    transition: border-color 0.15s ease !important;
+    background: #0e1424 !important; border: 1px solid #1c2336 !important;
+    border-radius: 14px !important;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
 }
 [data-testid="stChatInput"] > div:focus-within {
     border-color: rgba(124,92,252,0.55) !important;
@@ -3314,169 +3232,92 @@ _CHAT_CSS = """
 [data-testid="stChatInput"] textarea {
     background: transparent !important; color: #e2e8f0 !important;
     font-family: 'DM Sans', sans-serif !important;
-    font-size: 0.9rem !important; line-height: 1.55 !important;
+    font-size: 0.94rem !important; line-height: 1.55 !important;
 }
-[data-testid="stChatInput"] textarea::placeholder { color: #64748b !important; }
+[data-testid="stChatInput"] textarea::placeholder { color: #5b6678 !important; }
 [data-testid="stChatInput"] button {
-    background: rgba(124,92,252,0.18) !important;
-    border: 1px solid rgba(124,92,252,0.35) !important;
-    border-radius: 9px !important; color: #c4b5fd !important;
+    background: #7c5cfc !important; border: none !important;
+    border-radius: 10px !important; color: #ffffff !important;
 }
-[data-testid="stChatInput"] button:hover {
-    background: rgba(124,92,252,0.3) !important;
-    border-color: #7c5cfc !important;
-}
+[data-testid="stChatInput"] button:hover { background: #6b4ce0 !important; }
 
-/* ── Clear chat (ghost) ─────────────────────────────────────────────────── */
-.ca-clear .stButton > button {
-    background: transparent !important;
-    border: 1px solid #1e2640 !important; color: #64748b !important;
-    font-family: 'DM Sans', sans-serif !important;
-    font-size: 0.74rem !important; font-weight: 500 !important;
-    padding: 0.3rem 0.75rem !important; border-radius: 7px !important;
-    min-height: 1.9rem !important; height: 1.9rem !important;
-    transition: color 0.15s ease, border-color 0.15s ease !important;
+/* ── Clear conversation (ghost link) ────────────────────────────────────── */
+div[class*="st-key-ca_clear"] button {
+    background: transparent !important; border: none !important; color: #5b6678 !important;
+    font-family: 'DM Sans', sans-serif !important; font-size: 0.77rem !important;
+    font-weight: 500 !important; padding: 0.25rem 0 !important;
+    min-height: 0 !important; box-shadow: none !important;
 }
-.ca-clear .stButton > button:hover {
-    border-color: rgba(248,113,113,0.45) !important; color: #fca5a5 !important;
+div[class*="st-key-ca_clear"] button:hover {
+    color: #fca5a5 !important; background: transparent !important;
 }
-
-/* ── Info side card ─────────────────────────────────────────────────────── */
-.ca-info {
-    background: #0f1628; border: 1px solid #1e2640;
-    border-radius: 14px; overflow: hidden;
-    position: sticky; top: 92px;
-}
-.ca-info-head {
-    display: flex; align-items: center; gap: 0.65rem;
-    padding: 0.85rem 1.05rem;
-    background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 55%, #0d1220 100%);
-    border-bottom: 1px solid #1e2640;
-}
-.ca-info-head-num {
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 0.78rem; font-weight: 700; color: #a78bfa;
-    background: rgba(124,92,252,0.18);
-    border: 1px solid rgba(124,92,252,0.3); border-radius: 6px;
-    min-width: 1.85rem; height: 1.85rem;
-    display: inline-flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
-}
-.ca-info-head-title {
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 0.92rem; font-weight: 600; color: #f1f5f9;
-}
-.ca-info-body { padding: 1rem 1.1rem 1.1rem; }
-.ca-info-section-label {
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 0.62rem; letter-spacing: 0.14em;
-    text-transform: uppercase; color: #475569;
-    font-weight: 600; margin-bottom: 0.5rem;
-}
-.ca-info-row {
-    display: flex; align-items: center; gap: 0.6rem; padding: 0.45rem 0;
-}
-.ca-info-row + .ca-info-row { border-top: 1px dashed #1a2236; }
-.ca-info-row span.label {
-    font-family: 'DM Sans', sans-serif; font-size: 0.82rem; color: #cbd5e1;
-}
-.ca-info-divider { margin: 0.9rem 0 0.6rem; border-top: 1px solid #1a2236; }
-.ca-info-footer {
-    margin-top: 0.85rem; padding-top: 0.75rem;
-    border-top: 1px solid #1a2236;
-    font-size: 0.72rem; color: #64748b; line-height: 1.55;
-    display: flex; align-items: flex-start; gap: 0.55rem;
-}
-.ca-info-footer svg { flex-shrink: 0; margin-top: 0.12rem; }
-.ca-pipeline {
-    display: flex; align-items: center; gap: 0.35rem;
-    flex-wrap: wrap; margin-top: 0.4rem;
-}
-.ca-pipeline-step {
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 0.67rem; letter-spacing: 0.03em; color: #94a3b8;
-    background: rgba(15,22,40,0.7);
-    border: 1px solid #1e2640; border-radius: 6px;
-    padding: 0.22rem 0.5rem;
-}
-.ca-pipeline-arrow { color: #475569; font-size: 0.75rem; }
 </style>
 """
-
 # Light-theme override for the chat page. Appended AFTER _CHAT_CSS (so it wins by
 # source order) only when the light theme is active — flips the dark surfaces,
 # borders, and near-white text to readable light-mode values.
 _CHAT_CSS_LIGHT = """
 <style>
-.ca-pill { background: #f1f4fa; border-color: #D8DEE9; color: #334155; }
-.ca-shell { background: #ffffff; border-color: #D8DEE9;
-    box-shadow: 0 4px 16px rgba(15,23,42,0.06); }
-.ca-shell-head {
-    background: linear-gradient(135deg, #f8fafc 0%, #ede9fe 55%, #f1f4fa 100%);
-    border-bottom-color: #ddd6fe; }
-.ca-shell-head-title { color: #111827; }
-.ca-shell-head-sub { color: #64748B; }
+.ca-about {
+    background: #ffffff; border-color: #D8DEE9;
+    box-shadow: 0 2px 10px rgba(15,23,42,0.05);
+}
+.ca-about > summary { color: #64748B; }
+.ca-about summary b { color: #1f2937; }
+.ca-about summary .ca-meta { color: #94a3b8; }
+.ca-sep { color: #cbd5e1; }
+.ca-about-body { border-top-color: #E5E9F0; }
+.ca-col-h { color: #94a3b8; }
+.ca-li { color: #334155; }
+.ca-pipe { border-top-color: #E5E9F0; }
+.ca-step { color: #4b5563; background: #f4f1fe; border-color: #ddd6fe; }
+.ca-arrow { color: #94a3b8; }
+.ca-pipe-note { color: #64748B; }
 .ca-hero-title { color: #111827; }
 .ca-hero-sub { color: #64748B; }
-.ca-hero-eyebrow { color: #94a3b8; }
-.ca-suggest .stButton > button {
-    background: #f8fafc !important; border-color: #D8DEE9 !important;
-    color: #334155 !important; }
-.ca-suggest .stButton > button:hover {
-    background: #EEE8FF !important; color: #6d4deb !important; }
-[data-testid="stChatMessage"] [data-testid="stChatMessageContent"] {
-    background: #ffffff !important; border-color: #D8DEE9 !important;
-    border-left-color: #D8DEE9 !important; }
+.ca-eyebrow { color: #94a3b8; }
+div[class*="st-key-chat_suggest"] button {
+    background: #ffffff !important; border-color: #D8DEE9 !important; color: #334155 !important;
+}
+div[class*="st-key-chat_suggest"] button:hover {
+    background: #f4f1fe !important;
+    border-color: rgba(124,77,255,0.4) !important; color: #5b2bd9 !important;
+}
+div[class*="st-key-chat_suggest"] button::after { color: #94a3b8 !important; }
+div[class*="st-key-chat_suggest"] button:hover::after { color: #7C4DFF !important; }
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarAssistant"])
+[data-testid="stChatMessageContent"]::before { color: #94a3b8 !important; }
 [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"])
 [data-testid="stChatMessageContent"] {
     background: #EEE8FF !important; border-color: rgba(124,77,255,0.25) !important;
-    border-left-color: #7C4DFF !important; }
+}
 [data-testid="stChatMessage"] p { color: #334155 !important; }
 [data-testid="stChatMessage"] h1,
 [data-testid="stChatMessage"] h2,
 [data-testid="stChatMessage"] h3 { color: #111827 !important; }
-[data-testid="stChatMessage"] strong { color: #6d4deb !important; }
+[data-testid="stChatMessage"] strong { color: #5b2bd9 !important; }
+[data-testid="stChatMessage"] code { background: #f4f1fe !important; color: #6d4deb !important; }
 [data-testid="stChatMessage"] th,
 [data-testid="stChatMessage"] td { border-color: #D8DEE9 !important; color: #334155 !important; }
-[data-testid="stChatMessage"] th { color: #6d4deb !important; }
-[data-testid="stChatInput"] { border-top-color: #D8DEE9 !important; }
-[data-testid="stChatInput"] > div,
-[data-testid="stChatInput"] [data-baseweb="base-input"],
-[data-testid="stChatInput"] [data-baseweb="textarea"] {
-    background: #ffffff !important; border-color: #D8DEE9 !important; }
-[data-testid="stChatInput"] textarea {
-    background: #ffffff !important; color: #111827 !important; }
+[data-testid="stChatMessage"] th { color: #6d4deb !important; background: #f4f1fe !important; }
+[data-testid="stChatInput"] > div {
+    background: #ffffff !important; border-color: #D8DEE9 !important;
+}
+[data-testid="stChatInput"] textarea { background: #ffffff !important; color: #111827 !important; }
 [data-testid="stChatInput"] textarea::placeholder { color: #94a3b8 !important; }
-[data-testid="stChatInput"]:focus-within > div {
-    border-color: #7C4DFF !important;
-    box-shadow: 0 0 0 3px rgba(124,77,255,0.12) !important; }
-.ca-clear .stButton > button { border-color: #D8DEE9 !important; color: #64748B !important; }
-.ca-info { background: #ffffff; border-color: #D8DEE9; }
-.ca-info-head {
-    background: linear-gradient(135deg, #f8fafc 0%, #ede9fe 55%, #f1f4fa 100%);
-    border-bottom-color: #ddd6fe; }
-.ca-info-head-title { color: #111827; }
-.ca-info-section-label { color: #94a3b8; }
-.ca-info-row + .ca-info-row { border-top-color: #E5E9F0; }
-.ca-info-row span.label { color: #334155; }
-.ca-info-divider { border-top-color: #E5E9F0; }
-.ca-info-footer { border-top-color: #E5E9F0; color: #64748B; }
-.ca-pipeline-step {
-    color: #334155; background: #f1f4fa; border-color: #D8DEE9; }
-.ca-pipeline-arrow { color: #94a3b8; }
+div[class*="st-key-ca_clear"] button { color: #94a3b8 !important; }
 </style>
 """
-
 # No custom avatars — user vs assistant distinction is conveyed by CSS color.
 _CHAT_AVATARS: dict[str, None] = {"assistant": None, "user": None}
 
 # Example prompts shown in the empty state. A leading emoji gives each card a
 # small visual anchor (the chevron is added in CSS via ::before).
 _CHAT_SUGGESTIONS: list[str] = [
-    "💬  Explain my risk profile in plain English",
-    "📊  Why is my portfolio split this way?",
-    "🛡️  How would it hold up in a market crash?",
-    "🇪🇺  What's the EU investor caveat about?",
+    "Explain my risk profile in plain English",
+    "Why is my portfolio split this way?",
+    "How would it hold up in a market crash?",
+    "What's the EU investor caveat about?",
 ]
 
 
@@ -3711,30 +3552,34 @@ def _chat_stream_reply(
     return display_text
 
 
-def _render_chat_info_panel() -> None:
-    """Right-hand panel: scope of the advisor + safety pipeline."""
+def _chat_about_html(profile_label: str, model_label: str = "Claude Sonnet 4.6") -> str:
+    """Collapsible trust strip: advisor scope + 5-step safety pipeline.
+
+    Replaces the old right-hand side panel. Pure HTML <details> so it expands
+    in place with no Streamlit rerun. Shown collapsed above the conversation;
+    keeps the safety story one click away without cluttering every reply.
+    """
     chk = (
-        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" '
-        'stroke="#0dcfb0" stroke-width="2.5" stroke-linecap="round" '
+        '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" '
+        'stroke="#0dcfb0" stroke-width="2.6" stroke-linecap="round" '
         'stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>'
     )
     xmk = (
-        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" '
-        'stroke="#f87171" stroke-width="2.5" stroke-linecap="round" '
+        '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" '
+        'stroke="#f6798e" stroke-width="2.6" stroke-linecap="round" '
         'stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/>'
         '<line x1="6" y1="6" x2="18" y2="18"/></svg>'
     )
-    shield = (
-        '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" '
-        'stroke="#7c5cfc" stroke-width="2" stroke-linecap="round" '
-        'stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>'
-        '<polyline points="9 12 11 14 15 10"/></svg>'
+    tick = (
+        '<span class="ca-tick"><svg width="10" height="10" viewBox="0 0 24 24" '
+        'fill="none" stroke="currentColor" stroke-width="3.5" '
+        'stroke-linecap="round" stroke-linejoin="round">'
+        '<polyline points="20 6 9 17 4 12"/></svg></span>'
     )
 
     can_items = [
-        "Portfolio weights",
-        "Risk clusters",
-        "Historical drawdowns",
+        "Portfolio weights & clusters",
+        "Risk & historical drawdowns",
         "EU / UCITS caveats",
     ]
     cant_items = [
@@ -3742,47 +3587,36 @@ def _render_chat_info_panel() -> None:
         "Future return predictions",
     ]
     can_rows = "".join(
-        f'<div class="ca-info-row">{chk}<span class="label">{x}</span></div>'
-        for x in can_items
+        f'<div class="ca-li">{chk}<span>{x}</span></div>' for x in can_items
     )
     cant_rows = "".join(
-        f'<div class="ca-info-row">{xmk}<span class="label">{x}</span></div>'
-        for x in cant_items
+        f'<div class="ca-li">{xmk}<span>{x}</span></div>' for x in cant_items
     )
 
-    pipeline = (
-        '<div class="ca-pipeline">'
-        '<span class="ca-pipeline-step">Sanitise</span>'
-        '<span class="ca-pipeline-arrow">›</span>'
-        '<span class="ca-pipeline-step">Narrate</span>'
-        '<span class="ca-pipeline-arrow">›</span>'
-        '<span class="ca-pipeline-step">Validate</span>'
+    return (
+        '<details class="ca-about">'
+        '<summary>'
+        f'{tick}<b>Validated</b>'
+        '<span class="ca-meta">'
+        f'<span class="ca-sep">·</span>{model_label}'
+        f'<span class="ca-sep">·</span>Profile: {profile_label}'
+        '</span>'
+        '<span class="ca-caret">▾</span>'
+        '</summary>'
+        '<div class="ca-about-body">'
+        '<div class="ca-cols">'
+        f'<div class="ca-col"><div class="ca-col-h">Can explain</div>{can_rows}</div>'
+        f'<div class="ca-col"><div class="ca-col-h">Will not do</div>{cant_rows}</div>'
         '</div>'
-    )
-
-    st.markdown(
-        '<div class="ca-info">'
-        '<div class="ca-info-head">'
-        '<span class="ca-info-head-num">i</span>'
-        '<span class="ca-info-head-title">Advisor scope</span>'
-        '</div>'
-        '<div class="ca-info-body">'
-        '<div class="ca-info-section-label">Can explain</div>'
-        f'{can_rows}'
-        '<div class="ca-info-divider"></div>'
-        '<div class="ca-info-section-label">Cannot do</div>'
-        f'{cant_rows}'
-        '<div class="ca-info-divider"></div>'
-        '<div class="ca-info-section-label">Safety pipeline</div>'
-        f'{pipeline}'
-        '<div class="ca-info-footer">'
-        f'{shield}'
-        '<span>All responses are grounded in approved data and pass a '
-        '5-step safety validator before display.</span>'
+        '<div class="ca-pipe">'
+        '<span class="ca-step">Sanitise</span><span class="ca-arrow">›</span>'
+        '<span class="ca-step">Narrate</span><span class="ca-arrow">›</span>'
+        '<span class="ca-step">Validate</span>'
+        '<span class="ca-pipe-note">every reply passes a 5-step safety check '
+        'before display</span>'
         '</div>'
         '</div>'
-        '</div>',
-        unsafe_allow_html=True,
+        '</details>'
     )
 
 
@@ -3995,13 +3829,12 @@ def render_chat() -> None:
 
     page_header(
         "Chat Advisor",
-        "LLM Narrator · Validated responses",
+        "Grounded in your portfolio · validated answers",
         icon="💬",
     )
     st.markdown(_CHAT_CSS, unsafe_allow_html=True)
     if is_light():
         st.markdown(_CHAT_CSS_LIGHT, unsafe_allow_html=True)
-    st.markdown('<div class="ca-page">', unsafe_allow_html=True)
 
     profile_data = st.session_state.get("profile", {})
     raw_label = profile_data.get("profile_label", "MODERATE")
@@ -4018,87 +3851,40 @@ def render_chat() -> None:
         st.session_state["chat_history"] = []
     history: list[dict] = st.session_state["chat_history"]
 
-    # Grab any pending prompt (submitted via the inline input or a suggestion chip).
-    # The user message is added to history immediately so it appears in the thread.
-    # The assistant response is streamed live inside col_chat below.
+    # Grab any pending prompt (submitted via the inline input or a suggestion).
+    # The user message is added to history immediately so it appears in the
+    # thread; the assistant reply is streamed live below.
     pending = st.session_state.pop("_pending_prompt", None)
     if pending:
         history.append({"role": "user", "content": pending})
 
-    # Status strip: profile + model + validator
-    st.markdown(
-        f'<div class="ca-status">'
-        f'<span class="ca-pill ca-pill--profile"><span class="ca-dot"></span>'
-        f'Active profile · {raw_label}</span>'
-        f'<span class="ca-pill ca-pill--model"><span class="ca-dot"></span>'
-        f'Claude Sonnet 4.6</span>'
-        f'<span class="ca-pill ca-pill--guard"><span class="ca-dot"></span>'
-        f'Validator · 5 checks</span>'
-        f'</div>',
-        unsafe_allow_html=True,
-    )
-
-    col_chat, col_info = st.columns([5, 2], gap="large")
-
-    with col_info:
-        _render_chat_info_panel()
-
-    with col_chat:
-        # Sparkle glyph: keep the slim ✦ in dark mode (where it reads well),
-        # swap to the full-colour ✨ in light mode (where ✦ is too faint).
-        _spark = "✨" if is_light() else "✦"
-        # Chat shell: assistant-identity header + body
-        _check_svg = (
-            '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" '
-            'stroke="#0dcfb0" stroke-width="3" stroke-linecap="round" '
-            'stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>'
-        )
-        st.markdown(
-            '<div class="ca-shell">'
-            '<div class="ca-shell-head">'
-            '<div class="ca-id-orb">✦<span class="ca-id-status"></span></div>'
-            '<div class="ca-id-meta">'
-            '<span class="ca-id-name">RoboAdvisor Assistant</span>'
-            '<span class="ca-id-sub">Grounded in your portfolio · here to explain, '
-            'never to advise</span>'
-            '</div>'
-            f'<span class="ca-id-badge">{_check_svg}Validated</span>'
-            '</div>',
-            unsafe_allow_html=True,
-        )
+    # Minimal & focused: one centered column — the conversation is the product.
+    _, mid, _ = st.columns([1, 5, 1])
+    with mid:
+        # Collapsible trust strip (scope + 5-step safety pipeline). Replaces the
+        # old status strip and side panel; stays one click away while chatting.
+        st.markdown(_chat_about_html(raw_label), unsafe_allow_html=True)
 
         if not history:
             st.markdown(
                 '<div class="ca-hero">'
-                f'<div class="ca-hero-orb">{_spark}</div>'
-                '<div class="ca-hero-title">'
-                "Hi — ask me anything about your portfolio."
-                '</div>'
+                '<div class="ca-mark">✦</div>'
+                '<div class="ca-hero-title">Ask me about your portfolio</div>'
                 '<div class="ca-hero-sub">'
-                "I'll explain your allocation, your risk, and how your portfolio "
-                'behaved through past crises — in plain English, using only the '
-                "real numbers behind your dashboard."
+                "I explain your allocation, your risk, and how your portfolio held "
+                'up through past crises — in plain English, using only the real '
+                'numbers behind your dashboard.'
                 '</div>'
-                '<div class="ca-hero-eyebrow">Try one of these</div>'
                 '</div>',
                 unsafe_allow_html=True,
             )
-            st.markdown('<div class="ca-suggest">', unsafe_allow_html=True)
-            # 2-per-row grid so the four prompts stay comfortably readable.
-            for row_start in range(0, len(_CHAT_SUGGESTIONS), 2):
-                row = _CHAT_SUGGESTIONS[row_start:row_start + 2]
-                cols = st.columns(len(row))
-                for j, (cc, txt) in enumerate(zip(cols, row)):
-                    with cc:
-                        if st.button(
-                            txt,
-                            key=f"chat_suggest_{row_start + j}",
-                            use_container_width=True,
-                        ):
-                            # Strip the leading emoji before sending to the LLM.
-                            st.session_state["_pending_prompt"] = txt.split("  ", 1)[-1]
-                            st.rerun()
-            st.markdown("</div>", unsafe_allow_html=True)
+            st.markdown(
+                '<div class="ca-eyebrow">Try asking</div>', unsafe_allow_html=True
+            )
+            for i, txt in enumerate(_CHAT_SUGGESTIONS):
+                if st.button(txt, key=f"chat_suggest_{i}", use_container_width=True):
+                    st.session_state["_pending_prompt"] = txt
+                    st.rerun()
         else:
             st.markdown('<div class="ca-thread">', unsafe_allow_html=True)
             for msg in history:
@@ -4118,28 +3904,18 @@ def render_chat() -> None:
 
             st.markdown('</div>', unsafe_allow_html=True)
 
-            # Ghost "Clear chat" button below the thread
-            st.markdown('<div class="ca-clear">', unsafe_allow_html=True)
-            _, clr = st.columns([5, 1])
-            with clr:
-                if st.button("Clear", key="ca_clear_btn", use_container_width=True):
-                    st.session_state["chat_history"] = []
-                    st.rerun()
-            st.markdown('</div>', unsafe_allow_html=True)
+            # Ghost "Clear conversation" link below the thread.
+            if st.button("Clear conversation", key="ca_clear_btn"):
+                st.session_state["chat_history"] = []
+                st.rerun()
 
-        # Close .ca-shell
-        st.markdown('</div>', unsafe_allow_html=True)
-
-        # Inline chat input — rendered inside the column so Streamlit keeps it
-        # in normal flow (right below the conversation, above the page's
-        # "Continue exploring" nav) instead of pinning it to the viewport bottom.
+        # Inline chat input — kept inside the column so Streamlit renders it in
+        # normal flow (right below the conversation) instead of pinning it to
+        # the viewport bottom.
         typed = st.chat_input("Ask about your portfolio…")
         if typed:
             st.session_state["_pending_prompt"] = typed
             st.rerun()
-
-    # Close .ca-page
-    st.markdown('</div>', unsafe_allow_html=True)
 
 
 # ---------------------------------------------------------------------------
