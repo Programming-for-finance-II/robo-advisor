@@ -890,9 +890,10 @@ section[data-testid="stSidebar"],
 /* ── Metrics ──────────────────────────────────────────────────────────────── */
 [data-testid="stMetric"] {
     background: #ffffff !important;
-    border: 1px solid #e2e8f0 !important;
-    border-radius: 10px !important;
+    border: 1px solid #D8DEE9 !important;
+    border-radius: 12px !important;
     padding: 1rem 1.1rem !important;
+    box-shadow: 0 4px 16px rgba(15,23,42,0.05) !important;
 }
 [data-testid="stMetricLabel"] {
     font-size: 0.72rem !important;
@@ -951,8 +952,10 @@ hr { border-color: #e2e8f0 !important; }
 }
 [data-testid="stVerticalBlockBorderWrapper"] {
     overflow: hidden !important;
-    border-color: #e2e8f0 !important;
+    border: 1px solid #D8DEE9 !important;
+    border-radius: 18px !important;
     background: #ffffff !important;
+    box-shadow: 0 10px 30px rgba(15,23,42,0.07) !important;
 }
 .qs-header {
     display: flex;
@@ -962,7 +965,7 @@ hr { border-color: #e2e8f0 !important; }
     margin: -1rem -1rem 0.75rem -1rem;
     background: linear-gradient(135deg, #f8fafc 0%, #ede9fe 55%, #f1f5f9 100%);
     border-bottom: 1px solid #ddd6fe;
-    border-radius: 10px 10px 0 0;
+    border-radius: 18px 18px 0 0;
 }
 .qs-num {
     font-family: 'Space Grotesk', sans-serif;
@@ -995,10 +998,10 @@ hr { border-color: #e2e8f0 !important; }
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    margin: 2rem 0 0.5rem 0;
-    padding-top: 1rem;
+    margin: 2.25rem 0 0.6rem 0;
+    padding-top: 1.4rem;
     padding-left: 0.25rem;
-    border-top: 1px solid #f1f5f9;
+    border-top: 1px solid #E5EAF3;
 }
 .qs-q-row:first-of-type {
     margin-top: 0.75rem;
@@ -1167,11 +1170,12 @@ div[data-testid="stRadio"] label:has(input:checked) p {
 
 /* ── Info card ──────────────────────────────────────────────────────────── */
 details.qs-info-card {
-    background: rgba(59,130,246,0.04);
-    border: 1px solid rgba(59,130,246,0.18);
-    border-radius: 10px;
+    background: #ffffff;
+    border: 1px solid rgba(59,130,246,0.28);
+    border-radius: 14px;
     overflow: hidden;
     margin-bottom: 1.25rem;
+    box-shadow: 0 6px 20px rgba(15,23,42,0.06);
 }
 details.qs-info-card > summary {
     display: flex;
@@ -1265,6 +1269,35 @@ button[data-testid="stPills-pill"][aria-pressed="true"],
     background: rgba(245,158,11,0.1) !important;
     color: #b45309 !important;
     box-shadow: inset 0 0 0 1px rgba(245,158,11,0.25) !important;
+}
+
+/* ── BaseWeb radio controls (Settings, range selectors) ─────────────────────
+   These are the native radios outside the questionnaire (the questionnaire
+   hides them and renders full-width option cards instead). On the dark base
+   theme the unchecked inner dot stays near-black, which reads as an ugly black
+   bullet on a light page — recolour the whole control to the light palette. */
+[data-testid="stRadio"] label[data-baseweb="radio"] > div:first-child {
+    background-color: #FFFFFF !important;
+    border-color: #C7D2E0 !important;
+    border-width: 2px !important;
+}
+[data-testid="stRadio"] label[data-baseweb="radio"] > div:first-child > div {
+    background-color: transparent !important;
+}
+[data-testid="stRadio"] label[data-baseweb="radio"]:hover > div:first-child {
+    border-color: #7C4DFF !important;
+}
+[data-testid="stRadio"] label[data-baseweb="radio"]:has(input:checked)
+> div:first-child {
+    background-color: #EEE8FF !important;
+    border-color: #7C4DFF !important;
+}
+[data-testid="stRadio"] label[data-baseweb="radio"]:has(input:checked)
+> div:first-child > div {
+    background-color: #7C4DFF !important;
+}
+[data-testid="stRadio"] label[data-baseweb="radio"] > div:last-child {
+    color: #334155 !important;
 }
 </style>
 """

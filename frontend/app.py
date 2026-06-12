@@ -421,6 +421,32 @@ def main() -> None:
         )
 
     # Step 3: render brand HTML + CSS; nav buttons added as st.columns below
+    # Theme-aware navbar tokens — light mode gets a translucent white premium bar
+    # with a soft shadow/hairline; dark mode keeps the original glassy dark bar.
+    if is_light():
+        nav_bg = ("linear-gradient(180deg,"
+                  "rgba(255,255,255,0.90) 0%, rgba(255,255,255,0.84) 100%)")
+        nav_shadow = "0 8px 24px rgba(15,23,42,0.08)"
+        nav_hairline = ("linear-gradient(90deg,"
+                        "transparent 0%, rgba(124,77,255,0.35) 50%, transparent 100%)")
+        nav_brand_grad = "linear-gradient(92deg, #1e1b4b 0%, #7c4dff 100%)"
+        nav_brand_fallback = "#111827"
+        nav_sub_color = "rgba(51,65,85,0.72)"
+        nav_text = "#334155"
+        nav_text_hover = "#111827"
+        nav_hover_bg = "rgba(124,77,255,0.08)"
+    else:
+        nav_bg = ("linear-gradient(180deg,"
+                  "rgba(22,28,46,0.92) 0%, rgba(13,17,28,0.88) 100%)")
+        nav_shadow = "0 4px 30px rgba(0,0,0,0.45)"
+        nav_hairline = ("linear-gradient(90deg,"
+                        "transparent 0%, rgba(124,92,252,0.55) 50%, transparent 100%)")
+        nav_brand_grad = "linear-gradient(92deg, #ffffff 0%, #c9bcff 100%)"
+        nav_brand_fallback = "#f5f5f7"
+        nav_sub_color = "rgba(245,245,247,0.44)"
+        nav_text = "rgba(245,245,247,0.62)"
+        nav_text_hover = "#f5f5f7"
+        nav_hover_bg = "rgba(255,255,255,0.05)"
     st.markdown(
         f"""<style>
 /* ── Reset Streamlit chrome ─────────────────────────────────────────── */
@@ -438,13 +464,12 @@ section[data-testid="stMain"] > div:first-child {{
 .top-navbar {{
     position: fixed; top: 0; left: 0;
     width: 100%; height: 76px; z-index: 1000;
-    background: linear-gradient(180deg,
-        rgba(22,28,46,0.92) 0%, rgba(13,17,28,0.88) 100%);
+    background: {nav_bg};
     backdrop-filter: blur(30px) saturate(140%);
     -webkit-backdrop-filter: blur(30px) saturate(140%);
     display: flex; align-items: center; justify-content: space-between;
     padding: 0 40px; box-sizing: border-box;
-    box-shadow: 0 4px 30px rgba(0,0,0,0.45);
+    box-shadow: {nav_shadow};
     flex-wrap: nowrap;
     overflow: visible;
     animation: navSlideDown 0.5s cubic-bezier(0.16,1,0.3,1);
@@ -453,8 +478,7 @@ section[data-testid="stMain"] > div:first-child {{
 .top-navbar::after {{
     content: ""; position: absolute; left: 0; right: 0; bottom: 0;
     height: 1px;
-    background: linear-gradient(90deg,
-        transparent 0%, rgba(124,92,252,0.55) 50%, transparent 100%);
+    background: {nav_hairline};
 }}
 .top-navbar .brand {{
     display: flex; align-items: center; gap: 14px;
@@ -464,13 +488,13 @@ section[data-testid="stMain"] > div:first-child {{
     font-size: 19px; font-weight: 700;
     letter-spacing: -0.4px; line-height: 1.2;
     font-family: 'Space Grotesk', -apple-system, sans-serif;
-    background: linear-gradient(92deg, #ffffff 0%, #c9bcff 100%);
+    background: {nav_brand_grad};
     -webkit-background-clip: text; background-clip: text;
-    -webkit-text-fill-color: transparent; color: #f5f5f7;
+    -webkit-text-fill-color: transparent; color: {nav_brand_fallback};
 }}
 .top-navbar .brand-sub {{
     font-size: 9.5px; letter-spacing: 0.09em;
-    color: rgba(245,245,247,0.44); text-transform: uppercase;
+    color: {nav_sub_color}; text-transform: uppercase;
     line-height: 1.3; margin-top: 3px;
 }}
 /* ── Streamlit button row moved inside navbar by JS ─────────────────── */
@@ -491,7 +515,7 @@ section[data-testid="stMain"] > div:first-child {{
     position: relative !important;
     background: transparent !important;
     border: none !important; box-shadow: none !important;
-    color: rgba(245,245,247,0.62) !important;
+    color: {nav_text} !important;
     font-size: 13px !important; font-weight: 500 !important;
     letter-spacing: -0.1px !important;
     padding: 7px 15px !important; border-radius: 9px !important;
@@ -511,8 +535,8 @@ section[data-testid="stMain"] > div:first-child {{
     transition: width 0.22s cubic-bezier(0.16,1,0.3,1);
 }}
 .top-navbar .stButton > button:hover {{
-    color: #f5f5f7 !important;
-    background: rgba(255,255,255,0.05) !important;
+    color: {nav_text_hover} !important;
+    background: {nav_hover_bg} !important;
     transform: translateY(-1px) !important;
 }}
 .top-navbar .stButton > button:hover::after {{ width: 42%; }}
