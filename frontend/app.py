@@ -4029,7 +4029,13 @@ def render_backtesting() -> None:
     )
 
     st.markdown(
-        f'<div style="font-size:0.95rem;line-height:1.6;color:{t["text_secondary"]};margin:0.2rem 0 0.6rem;">Backtesting replays each strategy on real historical prices to see how it would have held up in the past. Pick a stress scenario below to compare your <strong style="color:{t["text_primary"]};">HRP</strong> allocation against the classic <strong style="color:{t["text_primary"]};">Markowitz</strong> method through a real market crisis.</div>',
+        f'<div style="font-size:0.95rem;line-height:1.6;color:{t["text_secondary"]};'
+        f'margin:0.2rem 0 0.6rem;">Backtesting replays each strategy on real historical '
+        f'prices to see how it would have held up in the past. Pick a stress scenario '
+        f'below to compare your <strong style="color:{t["text_primary"]};">HRP</strong> '
+        f'allocation against the classic '
+        f'<strong style="color:{t["text_primary"]};">Markowitz</strong> '
+        f'method through a real market crisis.</div>',
         unsafe_allow_html=True,
     )
     st.markdown("---")
