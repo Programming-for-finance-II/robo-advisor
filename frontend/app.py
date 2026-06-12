@@ -4704,29 +4704,94 @@ def render_compare() -> None:
     hrp_rc_vals = [hrp_rc.get(t, 0.0) * 100 for t in all_tickers]
     mv_rc_vals = [mv_rc.get(t, 0.0) * 100 for t in all_tickers]
 
+    # Plain-language, data-driven takeaway shown above the chart. Asset names
+    # are made readable (e.g. "Gold (GLD)") and the wording adapts to the real
+    # gap, so it never claims "HRP spreads / MV concentrates" when the numbers
+    # disagree (e.g. if both happen to be evenly balanced for some profile).
+    def _nice_asset(t: str) -> str:
+        name = _TICKER_DISPLAY_NAME.get(t)
+        return f"{name} ({t})" if name else t
+
+    hrp_top_t = max(hrp_rc, key=hrp_rc.get) if hrp_rc else None
+    mv_top_t = max(mv_rc, key=mv_rc.get) if mv_rc else None
+    hrp_top = hrp_rc.get(hrp_top_t, 0.0) * 100 if hrp_top_t else 0.0
+    mv_top = mv_rc.get(mv_top_t, 0.0) * 100 if mv_top_t else 0.0
+
+    if mv_top - hrp_top >= 8:
+        _headline = (
+            f"Markowitz puts {mv_top:.0f}% of all portfolio risk in a single ETF "
+            f"({_nice_asset(mv_top_t)}). HRP spreads it out — its largest "
+            f"contributor is just {hrp_top:.0f}%."
+        )
+    elif hrp_top - mv_top >= 8:
+        _headline = (
+            f"HRP puts {hrp_top:.0f}% of all portfolio risk in a single ETF "
+            f"({_nice_asset(hrp_top_t)}), while Markowitz's largest contributor "
+            f"is {mv_top:.0f}%."
+        )
+    else:
+        _headline = (
+            f"Both methods spread risk fairly evenly — the largest single "
+            f"contributor is {hrp_top:.0f}% (HRP) vs {mv_top:.0f}% (Markowitz)."
+        )
+
+    st.markdown(
+        f"<div style='display:flex;gap:0.55rem;align-items:flex-start;"
+        f"background:{thm['accent_soft']};border:1px solid {thm['accent_border']};"
+        f"border-radius:12px;padding:0.7rem 0.9rem;margin-bottom:0.9rem;'>"
+        f"<span style='color:{thm['accent_text']};font-size:1.1rem;line-height:1.3;"
+        f"flex-shrink:0;'>&#9679;</span>"
+        f"<span style='color:{thm['text_primary']};font-size:0.9rem;"
+        f"line-height:1.5;'>{_headline}</span>"
+        "</div>",
+        unsafe_allow_html=True,
+    )
+
+    n_assets = len(all_tickers)
+    equal_risk = 100.0 / n_assets if n_assets else 0.0
+
     fig_rc = go.Figure()
     fig_rc.add_trace(go.Bar(
-        name="HRP",
+        name="HRP · recommended",
         y=all_tickers,
         x=hrp_rc_vals,
         orientation="h",
         marker_color="#7c5cfc",
-        hovertemplate="%{y}: %{x:.1f}%<extra>HRP</extra>",
+        text=[f"{v:.1f}%" for v in hrp_rc_vals],
+        textposition="outside",
+        textfont=dict(size=11),
+        cliponaxis=False,
+        hovertemplate="%{y} — risk %{x:.1f}%<extra>HRP</extra>",
     ))
     fig_rc.add_trace(go.Bar(
-        name="Markowitz MV",
+        name="Markowitz MV · benchmark",
         y=all_tickers,
         x=mv_rc_vals,
         orientation="h",
         marker_color="#f87171",
-        hovertemplate="%{y}: %{x:.1f}%<extra>MV</extra>",
+        text=[f"{v:.1f}%" for v in mv_rc_vals],
+        textposition="outside",
+        textfont=dict(size=11),
+        cliponaxis=False,
+        hovertemplate="%{y} — risk %{x:.1f}%<extra>MV</extra>",
     ))
     fig_rc.update_layout(
         barmode="group",
-        xaxis_title="Risk contribution (%)",
-        height=360,
-        margin=dict(l=8, r=24, t=24, b=40),
+        xaxis_title="Share of total portfolio risk (%)",
+        height=380,
+        margin=dict(l=8, r=48, t=24, b=40),
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+    )
+    # "Equal risk" reference line: where every asset would sit if risk were split
+    # perfectly evenly across the universe. HRP hugs it; MV departs from it.
+    fig_rc.add_vline(
+        x=equal_risk,
+        line_width=1,
+        line_dash="dash",
+        line_color="#94a3b8",
+        annotation_text=f"equal risk · {equal_risk:.0f}%",
+        annotation_position="top",
+        annotation_font=dict(size=11, color="#94a3b8"),
     )
     fig_rc = apply_plotly_theme(fig_rc)
     fig_rc.update_layout(
@@ -4746,11 +4811,24 @@ def render_compare() -> None:
         else " Markowitz figures shown are an illustrative offline estimate."
     )
     st.caption(
-        "HRP targets equal risk contributions across assets. "
-        "MV concentrates risk in low-volatility assets (bonds), "
-        "which can reduce diversification benefits in a stress regime."
-        + _rc_note
+        "Each bar is an asset's share of total portfolio risk; the bars for each "
+        "method sum to 100%. The dashed line marks an equal split across all "
+        "assets — HRP stays close to it, a balanced-risk design." + _rc_note
     )
+
+    with st.expander("How is risk contribution calculated?"):
+        st.markdown(
+            "A **weight** tells you how much *money* you put in an asset; its "
+            "**risk contribution** tells you how much *volatility* it adds to the "
+            "whole portfolio — these are not the same thing."
+        )
+        st.latex(r"RC_i = \frac{w_i\,(\Sigma w)_i}{w^{\top}\Sigma w}")
+        st.markdown(
+            "where w are the portfolio weights and Σ is the covariance matrix. "
+            "The values sum to 100%, so every bar is a slice of total risk. "
+            "HRP and Markowitz use this same formula on the same covariance "
+            "matrix, so the comparison is fair (Maillard et al., 2010)."
+        )
 
     # ── 3. Correlation heatmap ────────────────────────────────────────────────
     st.markdown("---")
