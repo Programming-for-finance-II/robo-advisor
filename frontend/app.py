@@ -3177,12 +3177,13 @@ _CHAT_CSS = """
     padding: 0.3rem 0 !important; margin-bottom: 0.7rem !important;
     animation: ca-fade 0.28s ease-out;
     width: 100% !important; max-width: 100% !important;
-    display: flex !important; flex-direction: column !important;
+    display: block !important;
 }
 [data-testid="stChatMessageAvatarUser"],
 [data-testid="stChatMessageAvatarAssistant"],
 [data-testid="stChatMessageAvatarCustom"] { display: none !important; }
 
+/* Base bubble shared styles — no width here so each role can set its own */
 [data-testid="stChatMessage"] [data-testid="stChatMessageContent"] {
     background: #131c30 !important;
     border: 1px solid #1e2640 !important;
@@ -3190,12 +3191,14 @@ _CHAT_CSS = """
     padding: 0.8rem 1.05rem 0.8rem 1.1rem !important;
     box-sizing: border-box !important;
     overflow-wrap: break-word !important; word-break: break-word !important;
+    display: block !important;
 }
-/* Assistant bubble: right-aligned, wider — subtle gradient + teal accent + label */
+/* Assistant bubble: LEFT-aligned, wide — teal accent */
 [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarAssistant"])
 [data-testid="stChatMessageContent"] {
-    align-self: flex-end !important;
     width: 88% !important;
+    margin-left: 0 !important;
+    margin-right: auto !important;
     background: linear-gradient(135deg,
         rgba(19,28,48,0.95), rgba(15,22,40,0.95)) !important;
     border-left: 3px solid #0dcfb0 !important;
@@ -3208,11 +3211,12 @@ _CHAT_CSS = """
     letter-spacing: 0.06em; text-transform: uppercase;
     color: #5eead4; margin-bottom: 0.4rem; opacity: 0.9;
 }
-/* User bubble: left-aligned, compact — purple accent + label */
+/* User bubble: RIGHT-aligned, compact — purple accent */
 [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"])
 [data-testid="stChatMessageContent"] {
-    align-self: flex-start !important;
-    max-width: 70% !important;
+    width: 70% !important;
+    margin-left: auto !important;
+    margin-right: 0 !important;
     background: rgba(124,92,252,0.1) !important;
     border-color: rgba(124,92,252,0.24) !important;
     border-left: 3px solid #7c5cfc !important;
