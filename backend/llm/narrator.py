@@ -61,7 +61,7 @@ import hashlib
 import logging
 import os
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Generator, Optional
 
 # anthropic is the official Python SDK for the Claude API.
 # Listed in pyproject.toml as: anthropic>=0.28.0
@@ -418,6 +418,65 @@ class NarratorClient:
             ground_truth_hash=ground_truth_hash,
             model=self._model,
         )
+
+    def narrate_stream(
+        self,
+        payload: GroundTruthPayload,
+        user_message: str,
+    ) -> Generator[str, None, None]:
+        """
+        Yield text chunks from the Claude API streaming response.
+
+        Same injection defence and prompt assembly as narrate(), but yields
+        tokens as they arrive instead of waiting for the full response.
+        The caller is responsible for collecting chunks and running validation
+        on the complete text after the stream ends.
+
+        Args:
+            payload:      Validated GroundTruthPayload.
+            user_message: Raw question from the Chat Advisor text input.
+
+        Yields:
+            str: Individual text chunks from the streaming response.
+                 On injection block, yields the full INJECTION_FALLBACK string
+                 as a single chunk. On API error, yields API_ERROR_FALLBACK.
+        """
+        # ── Injection defence ────────────────────────────────────────────
+        if self._is_injection_attempt(user_message):
+            logger.warning(
+                "Prompt injection attempt blocked. Input length=%d chars.",
+                len(user_message),
+            )
+            yield INJECTION_FALLBACK
+            return
+
+        # ── Prompt assembly ──────────────────────────────────────────────
+        ground_truth_json: str = payload.model_dump_json(indent=2)
+        forbidden_phrases: list[str] = payload.llm_constraints.forbidden_phrases
+        system_prompt: str = build_system_prompt(ground_truth_json, forbidden_phrases)
+
+        # ── Streaming API call ───────────────────────────────────────────
+        try:
+            with self._client.messages.stream(
+                model=self._model,
+                max_tokens=self._max_tokens,
+                temperature=self._temperature,
+                system=system_prompt,
+                messages=[{"role": "user", "content": user_message}],
+            ) as stream:
+                for text in stream.text_stream:
+                    yield text
+
+        except anthropic.AuthenticationError as exc:
+            logger.error("Anthropic authentication error: %s", exc)
+            raise NarratorError(
+                message="Invalid Anthropic API key.",
+                details={"original_error": str(exc)},
+            ) from exc
+
+        except Exception as exc:  # noqa: BLE001
+            logger.error("Anthropic streaming API call failed: %s", exc)
+            yield API_ERROR_FALLBACK
 
     # ------------------------------------------------------------------
     # PRIVATE HELPERS
