@@ -27,6 +27,17 @@ and generates natural-language explanations through a constrained LLM narrator
 
 ---
 
+## Team
+
+| Role | Name | Area |
+|---|---|---|
+| **P1** | Sabrina Virgillito | Backend / Data Engineering |
+| **P2** | Emma Erba | Quant / Portfolio Optimization |
+| **P3** | Matteo Buttiglieri | ML / Risk Profiling |
+| **P4** | Elena Trombini | Frontend / LLM / Docs |
+
+---
+
 ## Project Structure
 
 ```text
@@ -47,13 +58,14 @@ robo-advisor/
 │   │   └── regime_detector.py
 │   ├── optimizer/             ← HRP + Ledoit-Wolf + Markowitz benchmark
 │   ├── llm/                   ← Claude API narrator + 5-step validator
+│   ├── schemas/               ← Pydantic Ground Truth models + mock data
 │   └── data/                  ← ValidatedDataLoader + UCITS fallback logic
 ├── frontend/
 │   └── app.py                 ← Streamlit UI (questionnaire, dashboard, chat)
 ├── docs/
 │   ├── user_guide.md          ← end-to-end user flow
 │   ├── architecture.md        ← internal data flow and component boundaries
-│   └── adr/                   ← Architecture Decision Records (ADR-001 to ADR-006)
+│   └── adr/                   ← Architecture Decision Records (ADR-001 to ADR-008)
 └── tests/                     ← pytest unit + integration (≥75% coverage)
 ```
 
