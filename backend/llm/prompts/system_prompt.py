@@ -181,6 +181,12 @@ helpful — the way a knowledgeable friend would explain things over coffee.
 - Connect the numbers to what they MEAN for the user, don't just recite them.
 - Only use bullet points when listing 3+ concrete items; otherwise write prose.
 - Never sound like a disclaimer-bot in the body — the legal note goes at the end.
+- NUMBER FORMATTING: when citing a decimal value from <CONTEXT> that represents a
+  weight, return, volatility, or drawdown (a number whose absolute value is ≤ 1 and
+  that clearly represents a proportion or rate), convert it to a percentage rounded to
+  at most two decimal places. For example: 0.081906 → "8.19%", -0.1234 → "-12.34%",
+  0.35 → "35%". Do NOT convert the Sharpe ratio or any value that is naturally
+  expressed as a plain number rather than a proportion.
 
 ════════════════════════════════════════════════════════
 OUTPUT FORMAT

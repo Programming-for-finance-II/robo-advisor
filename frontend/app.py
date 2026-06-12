@@ -3281,15 +3281,21 @@ div[class*="st-key-chat_suggest"] button p {
 }
 [data-testid="stChatInput"] button:hover { background: #6b4ce0 !important; }
 
-/* ── Clear conversation (ghost link) ────────────────────────────────────── */
+/* ── Clear conversation (danger-tinted bordered button) ─────────────────── */
 div[class*="st-key-ca_clear"] button {
-    background: transparent !important; border: none !important; color: #6b7689 !important;
+    background: rgba(239,68,68,0.07) !important;
+    border: 1px solid rgba(239,68,68,0.28) !important;
+    border-radius: 8px !important; color: #f87171 !important;
     font-family: 'DM Sans', sans-serif !important; font-size: 0.77rem !important;
-    font-weight: 500 !important; padding: 0.25rem 0 !important;
+    font-weight: 500 !important; padding: 0.32rem 0.8rem !important;
     min-height: 0 !important; box-shadow: none !important;
+    transition: background 0.15s ease, border-color 0.15s ease,
+                color 0.15s ease !important;
 }
 div[class*="st-key-ca_clear"] button:hover {
-    color: #fca5a5 !important; background: transparent !important;
+    background: rgba(239,68,68,0.16) !important;
+    border-color: rgba(239,68,68,0.55) !important;
+    color: #fca5a5 !important;
 }
 </style>
 """
@@ -3361,7 +3367,15 @@ div[class*="st-key-chat_suggest"] button::after { color: #7C4DFF !important; }
 }
 [data-testid="stChatInput"] textarea { background: #ffffff !important; color: #111827 !important; }
 [data-testid="stChatInput"] textarea::placeholder { color: #94a3b8 !important; }
-div[class*="st-key-ca_clear"] button { color: #94a3b8 !important; }
+div[class*="st-key-ca_clear"] button {
+    background: #fef2f2 !important; border: 1px solid #fecaca !important;
+    border-radius: 8px !important; color: #ef4444 !important;
+    padding: 0.32rem 0.8rem !important; min-height: 0 !important;
+}
+div[class*="st-key-ca_clear"] button:hover {
+    background: #fee2e2 !important; border-color: #f87171 !important;
+    color: #dc2626 !important;
+}
 </style>
 """
 # No custom avatars — user vs assistant distinction is conveyed by CSS color.
