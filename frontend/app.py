@@ -3549,52 +3549,6 @@ def _build_chat_payload(profile_key: str):
         return base
 
 
-def _chat_get_reply(text: str, raw_label: str, profile_key: str) -> str:
-    """
-    Produce a validated advisor reply for a user message.
-
-    Runs the deployed pipeline directly (no FastAPI hop, which does not exist on
-    Streamlit Cloud): input sanitiser -> NarratorClient -> 5-step validator.
-    Never raises — returns a user-facing string for every failure mode.
-    """
-    from backend.llm.input_sanitiser import sanitise
-    from backend.llm.narrator import NarratorError
-
-    san = sanitise(text)
-    if san.blocked:
-        return (
-            "Your question could not be processed — it looked like an unsafe "
-            "instruction. Please rephrase it."
-        )
-
-    try:
-        narrator = NarratorClient()
-    except NarratorError:
-        return (
-            "⚠️ The chat advisor is not configured: no `ANTHROPIC_API_KEY` was "
-            "found. Add it under **Manage app → Settings → Secrets** on Streamlit "
-            "Cloud, or in a local `.streamlit/secrets.toml`, then reload the page."
-        )
-
-    payload = _build_chat_payload(profile_key)
-    nresp = narrator.narrate(payload, san.sanitised_input)
-
-    if nresp.injection_blocked:
-        return "Your question could not be processed. Please rephrase it."
-    if nresp.api_error:
-        return (
-            "I could not reach the advisor right now. Please try again in a moment."
-        )
-
-    result = validate(
-        response_text=nresp.raw_text,
-        allowed_numbers=payload.llm_constraints.allowed_numbers,
-        forbidden_phrases=payload.llm_constraints.forbidden_phrases,
-        eu_awareness_required=False,
-    )
-    return result.safe_text
-
-
 def _chat_stream_reply(
     text: str,
     profile_key: str,
@@ -3603,9 +3557,11 @@ def _chat_stream_reply(
     """
     Stream a validated advisor reply token-by-token into a Streamlit placeholder.
 
-    Runs the same pipeline as _chat_get_reply() — input sanitiser → streaming
-    NarratorClient → 5-step validator — but yields tokens live so the user sees
-    the response appear word-by-word instead of waiting for the full round trip.
+    Runs the full chat pipeline — input sanitiser → streaming NarratorClient →
+    5-step validator — yielding tokens live so the user sees the response appear
+    word-by-word instead of waiting for the full round trip. Falls back to a
+    single blocking narrate() call when streaming is unavailable or fails, so the
+    chat never raises and never crashes the page.
 
     The placeholder is updated on every chunk with a blinking-cursor suffix (▌).
     After the stream ends, the validator runs on the full collected text and the
@@ -3644,16 +3600,44 @@ def _chat_stream_reply(
 
     payload = _build_chat_payload(profile_key)
 
-    # Stream tokens into the placeholder, appending a cursor on each update.
+    # ── Try to stream tokens live, but degrade gracefully ────────────────
+    # Streaming is an enhancement, not a requirement. If the deployed
+    # NarratorClient predates narrate_stream (stale deploy) or the streaming
+    # call fails for any reason, we silently fall back to the proven blocking
+    # narrate() path below — the chat must never crash the page.
     full_text = ""
-    try:
-        for chunk in narrator.narrate_stream(payload, san.sanitised_input):
-            full_text += chunk
-            placeholder.markdown(full_text + "▌")
-    except NarratorError:
-        msg = "⚠️ The chat advisor is not configured."
-        placeholder.markdown(msg)
-        return msg
+    streamed = False
+    if hasattr(narrator, "narrate_stream"):
+        try:
+            for chunk in narrator.narrate_stream(payload, san.sanitised_input):
+                full_text += chunk
+                placeholder.markdown(full_text + "▌")
+            streamed = bool(full_text)
+        except Exception:  # noqa: BLE001 — any streaming failure → blocking path
+            full_text = ""
+            streamed = False
+
+    # ── Blocking fallback (also the path when streaming is unavailable) ──
+    if not streamed:
+        placeholder.markdown("_Thinking…_")
+        try:
+            nresp = narrator.narrate(payload, san.sanitised_input)
+        except NarratorError:
+            msg = "⚠️ The chat advisor is not configured."
+            placeholder.markdown(msg)
+            return msg
+        if nresp.injection_blocked:
+            msg = "Your question could not be processed. Please rephrase it."
+            placeholder.markdown(msg)
+            return msg
+        if nresp.api_error:
+            msg = (
+                "I could not reach the advisor right now. "
+                "Please try again in a moment."
+            )
+            placeholder.markdown(msg)
+            return msg
+        full_text = nresp.raw_text
 
     # Validate the complete response, then display the final safe text.
     result = validate(
