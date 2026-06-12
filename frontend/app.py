@@ -4816,8 +4816,16 @@ def render_compare() -> None:
         dragmode="pan",
     )
     st.plotly_chart(fig_rc, use_container_width=True, config={"displaylogo": False})
-    if not mv_rc_is_live:
-        st.caption("Markowitz figures shown are an illustrative offline estimate.")
+    _rc_note = (
+        ""
+        if mv_rc_is_live
+        else " Markowitz figures shown are an illustrative offline estimate."
+    )
+    st.caption(
+        "Each bar is an asset's share of total portfolio risk; the bars for each "
+        "method sum to 100%. The dashed line marks an equal split across all "
+        "assets." + _rc_note
+    )
 
     # ── 3. Correlation heatmap ────────────────────────────────────────────────
     st.markdown("---")
