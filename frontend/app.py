@@ -4613,9 +4613,13 @@ def render_compare() -> None:
     # figures), so a stale session upgrades itself without a manual restart.
     portfolio = st.session_state.get("portfolio_data", {})
     _cached_label = st.session_state.get("portfolio_profile", "")
+    _MV_EXPECTED = (
+        "mv_risk_contributions", "mv_expected_volatility",
+        "mv_sharpe_ratio", "mv_max_drawdown", "correlation",
+    )
     _stale_mv = (
         portfolio.get("source") == "live"
-        and "mv_risk_contributions" not in portfolio
+        and any(_k not in portfolio for _k in _MV_EXPECTED)
         and not st.session_state.get("_compare_mv_retry")
     )
     if not portfolio or _cached_label != profile_label or _stale_mv:
@@ -4707,36 +4711,47 @@ def render_compare() -> None:
          "—", _num(mv_sharpe, "{:.2f}"), None),
     ]
 
+    # Value cell, styled like the dashboard allocation table: the winner shows
+    # in its accent colour, the loser is muted, and N/A is dimmed.
     def _cell(text, side, winner):
-        if winner == side and text != "—":
+        if text == "—":
+            return f'<span style="color:{thm["text_muted"]};">—</span>'
+        if winner == side:
             _col = "#7c5cfc" if side == "hrp" else "#f87171"
-            _bg = "rgba(124,92,252,0.18)" if side == "hrp" else "rgba(248,113,113,0.16)"
-            return (f"<span style='display:inline-block;padding:2px 9px;border-radius:999px;"
-                    f"background:{_bg};color:{_col};font-weight:500;'>{text}</span>")
-        return text
+            return f'<span style="color:{_col};">{text}</span>'
+        if winner is None:
+            return f'<span style="color:{thm["text_primary"]};">{text}</span>'
+        return f'<span style="color:{thm["text_secondary"]};">{text}</span>'
 
-    _td = (f"padding:9px 10px;border-top:0.5px solid {thm['border']};text-align:right;"
-           f"font-variant-numeric:tabular-nums;color:{thm['text_primary']};")
-    _trs = "".join(
-        f"<tr>"
-        f"<td style='padding:9px 10px;border-top:0.5px solid {thm['border']};'>"
-        f"<span style='color:{thm['text_secondary']};font-size:0.85rem;'>{_lab}</span><br>"
-        f"<span style='font-size:0.7rem;color:{thm['text_muted']};'>{_sub}</span></td>"
-        f"<td style='{_td}'>{_cell(_h, 'hrp', _w)}</td>"
-        f"<td style='{_td}'>{_cell(_m, 'mv', _w)}</td>"
-        f"</tr>"
+    _hdr = (
+        f'<div style="display:flex;align-items:center;padding:0 0.4rem 0.6rem;'
+        f'border-bottom:1px solid {thm["border"]};margin-bottom:0.1rem;">'
+        f'<div style="flex:1.7;font-size:0.72rem;font-weight:600;letter-spacing:0.08em;'
+        f'text-transform:uppercase;color:{thm["text_muted"]};">Metric</div>'
+        f'<div style="flex:0.9;font-size:0.72rem;font-weight:600;letter-spacing:0.08em;'
+        f'text-transform:uppercase;color:#7c5cfc;text-align:right;">HRP</div>'
+        f'<div style="flex:0.9;font-size:0.72rem;font-weight:600;letter-spacing:0.08em;'
+        f'text-transform:uppercase;color:#f87171;text-align:right;">Markowitz</div>'
+        f'</div>'
+    )
+    _val = ('flex:0.9;text-align:right;font-family:\'Space Grotesk\',sans-serif;'
+            'font-size:0.95rem;font-weight:600;')
+    _body = "".join(
+        f'<div style="display:flex;align-items:center;padding:0.62rem 0.4rem;'
+        f'border-bottom:1px solid {thm["border_soft"]};">'
+        f'<div style="flex:1.7;min-width:0;">'
+        f'<div style="font-size:0.9rem;font-weight:600;color:{thm["text_primary"]};'
+        f'line-height:1.25;">{_lab}</div>'
+        f'<div style="font-size:0.72rem;color:{thm["text_muted"]};">{_sub}</div></div>'
+        f'<div style="{_val}">{_cell(_h, "hrp", _w)}</div>'
+        f'<div style="{_val}">{_cell(_m, "mv", _w)}</div>'
+        f'</div>'
         for _lab, _sub, _h, _m, _w in _rows
     )
     st.markdown(
-        f"<table style='width:100%;border-collapse:collapse;'>"
-        f"<thead><tr>"
-        f"<th style='text-align:left;padding:8px 10px;font-size:0.72rem;font-weight:600;"
-        f"letter-spacing:0.04em;color:{thm['text_muted']};'>METRIC</th>"
-        f"<th style='text-align:right;padding:8px 10px;font-size:0.85rem;font-weight:600;"
-        f"color:#7c5cfc;'>HRP</th>"
-        f"<th style='text-align:right;padding:8px 10px;font-size:0.85rem;font-weight:600;"
-        f"color:#f87171;'>Markowitz</th>"
-        f"</tr></thead><tbody>{_trs}</tbody></table>",
+        f'<div style="background:{thm["bg_card"]};border:1px solid {thm["border"]};'
+        f'border-radius:12px;padding:0.9rem 1rem;box-shadow:{thm["shadow"]};">'
+        + _hdr + _body + '</div>',
         unsafe_allow_html=True,
     )
 
@@ -4767,9 +4782,9 @@ def render_compare() -> None:
         else " Markowitz figures shown are an illustrative offline estimate."
     )
     st.caption(
-        "Highlighted = better on that metric. HRP reports no Sharpe because it deliberately "
-        "doesn't estimate returns — avoiding the unstable estimate that makes Markowitz "
-        "over-concentrate in the first place." + _sc_note
+        "The coloured value is better on each metric. HRP reports no Sharpe because it "
+        "deliberately doesn't estimate returns — avoiding the unstable estimate that makes "
+        "Markowitz over-concentrate in the first place." + _sc_note
     )
 
     # ── 2. Risk contributions ─────────────────────────────────────────────────
