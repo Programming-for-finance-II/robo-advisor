@@ -31,7 +31,7 @@ Consolidated session logs, ordered by date and grouped by day, then by role (P1,
 
 ### How I did it
 
-- Used Claude as an advisor for the questionnaire structure and the methodological choice
+- Designed the questionnaire structure and the methodological choice myself, using Claude as a support tool
 - Discussed each question and its mapping to the three profiles (CONSERVATIVE, MODERATE, AGGRESSIVE)
 - Ran the Git commands from the terminal (Mac) for clone, branch, add, commit, push
 - Opened the PR manually on GitHub
@@ -136,7 +136,7 @@ Consolidated session logs, ordered by date and grouped by day, then by role (P1,
 
 ### How I did it
 
-- Code generated with AI support (Claude), aligned to the canonical v3.1 design
+- Wrote the code with AI support (Claude) as an assistant, aligned to the canonical v3.1 design
 - File structured with `dataclass(frozen=True)` for configuration immutability
 - Helper functions implemented for direct compatibility with `ValidatedDataLoader` (P1) and `hrp.py` (P2 W2)
 - Integrity assertions run at import time (`_validate_universe()`) to guard against accidental misconfiguration
@@ -189,7 +189,7 @@ Consolidated session logs, ordered by date and grouped by day, then by role (P1,
 
 ### How I did it
 
-- `OptimizationResult` code generated with AI support (Claude), aligned to the canonical v3.1 design
+- Wrote the `OptimizationResult` code with AI support (Claude) as an assistant, aligned to the canonical v3.1 design
 - Structure: `TypedDict` with `Literal` for enum-like fields (`algorithm`, `solver_status`)
 - File created directly from the GitHub browser editor to avoid local-branch problems
 - Lint fix also done from the GitHub browser editor
@@ -242,9 +242,9 @@ Consolidated session logs, ordered by date and grouped by day, then by role (P1,
 
 ### How I did it
 
-- Code written with Claude as pair programmer, starting from the existing `questionnaire_schema.md` v1.0
+- Wrote the code with Claude as a support tool, starting from the existing `questionnaire_schema.md` v1.0
 - Approach: strict type hints, named constants (zero magic numbers), NumPy-style docstrings, pure functions with no side effects
-- Fixes identified via a second AI review and critically evaluated before applying
+- Used a second AI review to surface candidate fixes, which I critically evaluated before applying
 - Smoke test run directly in Python before commit
 - Git operations from the macOS terminal (`zsh`)
 - PR opened manually on the GitHub browser
@@ -297,7 +297,7 @@ Consolidated session logs, ordered by date and grouped by day, then by role (P1,
 - VS Code for direct file editing
 - Integrated terminal for `git fetch`, `git merge`, `py_compile`, `pip install ruff`, `ruff check --fix`
 - GitHub Desktop / GitHub web for PR management and CI verification
-- Claude as technical advisor to verify consistency with design v3.1 and for step-by-step operational guidance
+- Used Claude as a technical support tool to verify consistency with design v3.1 and for step-by-step operational guidance
 
 ### Difficulties
 
@@ -397,7 +397,7 @@ Consolidated session logs, ordered by date and grouped by day, then by role (P1,
 
 ### How I did it
 
-- Used Claude as a technical and academic advisor throughout the session. The flow was collaborative: Claude generated code and documents, I verified the content against the real dataset (downloaded and inspected `SCFP2022.csv` from the Fed), and committed manually from the terminal on iPhone. The `RISKSCALE` correction emerged precisely from direct verification on the file — not from assumptions. Claude explained each choice before writing code
+- Used Claude as a technical and academic support tool throughout the session. The flow was collaborative: I drafted the code and documents with Claude's assistance, then verified the content against the real dataset (downloaded and inspected `SCFP2022.csv` from the Fed), and committed manually from the terminal on iPhone. The `RISKSCALE` correction emerged precisely from direct verification on the file — not from assumptions. I reviewed each choice before committing the code
 
 ### Difficulties
 
@@ -446,7 +446,7 @@ Consolidated session logs, ordered by date and grouped by day, then by role (P1,
 ### How I did it
 
 - Terminal navigation with `git branch -a`, `ls`, `cat` to inspect the repo state
-- `architecture.md` content generated with Claude and reviewed manually
+- Drafted the `architecture.md` content with AI support (Claude) and reviewed it manually
 - Decision to differentiate `architecture.md` from `README.md` after directly comparing the two files
 - Used `git add`, `git commit`, `git push` from the terminal
 - Verified branch and PR state on GitHub
@@ -2284,7 +2284,7 @@ It is Wednesday evening — `regime_detector.py` was planned for today and remai
 
 # 23 May 2026 — Week 4
 
-## P2 — Quant / Portfolio Optimization
+## P2 — Quant / Portfolio Optimization (session 1)
 **Estimated duration:** ~1 hour
 
 ### What I did
@@ -2336,6 +2336,57 @@ It is Wednesday evening — `regime_detector.py` was planned for today and remai
 - GFC 2008: HRP almost flat (-0.1%) vs MV -5.7% — the difference is economically significant
 - Rate Hike 2022: a difficult scenario for everyone, but HRP limits the damage (-8.9% vs -13.7% for 1/N) with the lowest volatility (7.6%)
 - COVID 2020: the only scenario where 1/N beats HRP on return (+11.9% vs +6.4%) — but with a much worse drawdown (-15.7% vs -10.1%)
+
+---
+
+## P2 — Quant / Portfolio Optimization (session 2)
+**Estimated duration:** ~2 hours
+
+### What I did
+
+- Improved the HRP dashboard UI and the questionnaire UX in `frontend/app.py` + `frontend/style.py` (branch `feature/p2-optimizer-scaffold`)
+- **Backtesting page**: replaced the placeholder "coming in Phase B" message with a fully functional page that loads pre-computed backtest results from `backtest_output/`
+  - Scenario selector: GFC 2008, COVID-19 Crash 2020, Rate Hike Cycle 2022
+  - Strategy comparison table HRP vs MV vs 1/N (CAGR, Volatility, Sharpe, Max DD, Calmar, TC)
+  - 4 metric cards with delta vs the Markowitz benchmark
+  - Equity curve chart (HRP / MV / 1/N) with a dashed reference line at 1.0
+  - Drawdown chart with per-strategy colour fills
+  - Source: real JSON files generated by `run_backtest.py` (moderate profile)
+- **Compare (MV) page**: replaced the placeholder with a side-by-side HRP vs Markowitz comparison using mock Phase A data — weight comparison table (HRP, MV, difference), grouped bar chart per ticker, efficient frontier plot via `plot_efficient_frontier()` from `charts.py`
+- **Questionnaire UX**: added a "Go to Portfolio Dashboard" button after profile calculation (same metric row as Profile and Confidence); answers now persist on navigation (radio buttons restore the saved index from `session_state['questionnaire_answers']`)
+- **HRP Portfolio tab redesign**: profile badge with matching colour (purple/teal/red), cluster breakdown pills (Equity, Bonds, Alternatives, Cash), Portfolio Weights table with `st.column_config.ProgressColumn`, risk-contribution bars coloured by cluster with a vertical dashed 1/N reference line, transparent chart backgrounds, aligned section headings, removed the "undefined" pie-chart title
+- **Sidebar fixes**: forced the sidebar always visible via CSS, hid the collapse arrow, reduced top padding to lift the logo
+- Opened a PR against `main` for team review
+
+### How I did it
+
+- Iterative inline CSS/HTML in Streamlit with `st.markdown(..., unsafe_allow_html=True)`
+- Fixed the Streamlit form re-render issue by moving the result display out of the `if submitted:` block and into `if session_state.get('profile'):`, so the button click is detected correctly
+- Transparent backgrounds set via `paper_bgcolor`/`plot_bgcolor = rgba(0,0,0,0)` for the donut, risk bars and dendrogram so the charts float on the page background
+- Collapse arrow hidden with the `button:not(:has(p))` selector to target icon-only buttons without affecting the text navigation buttons
+- Commits: `feat: improve HRP dashboard UI and questionnaire UX`, `fix: remove f-string prefix without placeholders`
+
+### Difficulties
+
+- Ruff F541: removed the f-string prefix from two strings without placeholders in `render_backtesting()` (`frontend/app.py` line ~1375)
+- Git push rejected by remote divergence: solved with `git stash` / `git pull --rebase` / `git stash pop` before the final push
+- Pie chart showed "undefined": fixed by replacing `title=None` with `title={'text': ''}`
+
+### Achievements / Key decisions
+
+- Backtesting and Compare (MV) pages are now functional rather than placeholders — the dashboard reads real backtest JSON for the moderate profile
+- Consistent colour language across the dashboard: risk-contribution bars, cluster pills and the donut all share the same cluster palette (purple = Equity, teal = Bonds, amber = Alternatives, blue = Cash)
+- Sidebar locked visible to prevent an accidental collapse from breaking navigation
+
+### Next steps
+
+- Generate backtest JSON for the CONSERVATIVE and AGGRESSIVE profiles (only MODERATE exists)
+- Replace the Compare (MV) mock data with live Markowitz output in Phase B
+
+### Notes for the academic PDF
+
+- The transparent-chart-background choice and the shared cluster palette are documentable in the Frontend/UX section as deliberate visual-consistency decisions
+- The Streamlit form re-render fix (moving the result display outside `if submitted:`) is a concrete example of Streamlit's rerun model — useful for the Lessons Learned section
 
 ---
 
@@ -3034,6 +3085,222 @@ It is Wednesday evening — `regime_detector.py` was planned for today and remai
 ---
 
 # 12 June 2026 — Week 7 (Friday)
+
+## P2 — Quant / Portfolio Optimization (session 1)
+**Estimated duration:** ~2 hours
+**Focus:** Backtesting page brought to a fully working state (PR #101)
+
+### What I did
+
+- Brought the Backtesting page of the Streamlit app to a fully working state. The page existed but was incomplete: backtest data was only present for the MODERATE profile, the scenario selector allowed free-text input, and both charts had a title/legend overlap
+- **New script `scripts/run_backtest.py`** (the codebase had a download-only script but no runner):
+  - Downloads historical prices from yfinance for each scenario's window (test period + 252-day lookback), with automatic UCITS → US fallback for sparse tickers
+  - Caches the downloaded CSVs under `data/prices/` to avoid redundant network calls on re-runs
+  - Calls `run_scenario()` once per scenario per profile (not `run_all_scenarios()`), so each scenario uses only its own price data
+  - Exports results via `export_results_json()` to `backtest_output/`, with a `--profiles` CLI flag to run a subset
+- **Generated the missing backtest data**: ran the script for CONSERVATIVE and AGGRESSIVE (MODERATE already existed) → 8 new JSON files, so all 12 (3 profiles × 3 scenarios + 3 summary files) are now committed
+- **UI fixes in `frontend/app.py`**:
+  - Scenario selector: replaced `st.selectbox` (text input, allows free typing) with `st.segmented_control` (button group, mutually exclusive segments), plus a guard for its `None` return value
+  - Chart title/legend overlap: set the legend to `x=1, xanchor="right"` and, after `apply_plotly_dark_theme()`, a second `update_layout(margin=dict(t=56))` to override the theme's global `margin.t = 24`
+  - Profile fallback transparency: a missing profile JSON now shows a visible warning and an explicit caption instead of silently redirecting to the MODERATE data
+
+### How I did it
+
+- The backend engine (`backend/optimizer/backtest.py`) was already implemented (monthly rebalancing, 252-day lookback, 10 bps TC per rebalance) — what was missing was the data and a script to generate it
+- Diagnosed the chart overlap to its root cause: `apply_plotly_dark_theme()` in `frontend/style.py` sets `margin.t = 24` globally, wiping out any top margin set before the call
+- Granular commits per fix: `c4e5a70` (run_backtest + JSON), `a533da8` (UI fixes), then the ruff fixes below
+
+### Difficulties
+
+- CI ruff failures in the new script, suppressed with the same pattern already used in `scripts/download_backtest_data.py`:
+  - E501 (lines > 100 chars): wrapped two long one-liners in `_download_prices()` and `_apply_fallback()` (`c15d35a`)
+  - E402 (module-level import not at top): unavoidable because `sys.path.insert()` must run before the local imports — suppressed with `# noqa: E402` (`ebb0218`)
+  - I001 (import block unsorted): ruff's isort treats the post-path-manipulation imports as a separate block — suppressed with `# noqa: E402, I001` (`9c433b6`)
+
+### Achievements / Key decisions
+
+- Backtesting page fully working across all three profiles and all three scenarios (GFC 2008, COVID-19 2020, Rate Hike 2022)
+- Decision: call `run_scenario()` per scenario rather than `run_all_scenarios()` so each scenario uses only its own price window
+- PR #101 (`feat: complete backtesting section, all profiles, UI fixes`) opened on `feature/p2-optimizer-scaffold` → `main`
+
+### Next steps
+
+- Centralise the HRP-vs-Markowitz analysis into a dedicated Compare page (the current MV view is a near-duplicate of the dashboard tab)
+
+### Notes for the academic PDF
+
+- The `margin.t` root-cause analysis is a concrete example of a theme-level override silently breaking per-chart layout — documentable in the Lessons Learned section
+- The explicit profile-fallback warning (instead of a silent redirect to MODERATE) is an honesty/transparency choice worth a brief note
+
+---
+
+## P2 — Quant / Portfolio Optimization (session 2)
+**Estimated duration:** ~2.5 hours
+**Focus:** Compare Markowitz deep-dive page + navigation polish (PRs #109–#112)
+
+### What I did
+
+- **PR #109 — Compare Markowitz redesign**: replaced the old "Compare (MV)" page (a near-duplicate of the dashboard's Markowitz tab) with a dedicated deep-dive analytical page:
+  - Radar chart across 5 normalised dimensions — Low Risk (1 − normalised σ), Diversification (1 − Herfindahl index), UCITS Coverage (weight share in UCITS-eligible ETFs), Drawdown Protection (1 − |max drawdown|), Return Potential (normalised expected return) — with HRP and Markowitz MV as overlapping polygons
+  - Risk-contribution comparison: grouped horizontal bar chart showing each asset's share of total portfolio risk under HRP vs MV (highlights the concentration typical of mean-variance)
+  - 8×8 asset correlation heatmap over the full universe (CSPX.L, EFA, GLD, VNQ, AGGH.MI, TLT, TIP, XEON.MI) with a stylised structure — the negative equity-bond correlation is the main diversification driver (Phase B will compute it from two-year rolling prices)
+- **PR #110 — questionnaire nav button fix**: the "View my Portfolio Dashboard" button did nothing on the live app
+- **PR #111 — removed the Markowitz tab from the Portfolio Dashboard**: deleted `_render_mv_tab` (~230 lines) so the dashboard shows only the user's HRP portfolio and all HRP-vs-Markowitz analysis is centralised in the Compare Markowitz page
+- **PR #112 — navigation reorder + model description cards + rename**:
+  - Moved "Compare Markowitz" immediately after "Portfolio Dashboard" (natural user flow)
+  - Added academic description cards (HRP: López de Prado 2016, Ledoit-Wolf shrinkage, 5–40% per-asset / 10–60% per-cluster constraints; Markowitz: 1952, corner solutions, used as benchmark), styled like the existing "What is the Grable-Lytton Scale?" card
+  - Renamed "Compare (MV)" → "Compare Markowitz" everywhere (PAGES list, routing, nav icons, header)
+
+### How I did it
+
+- All changes via pull requests on `Programming-for-finance-II/robo-advisor`, fully traceable in the commit history
+- Python syntax validated with `ast.parse` before each commit
+- Diagnosed the button bug: `main()` resolves the active page from the `?page=` URL query parameter on every rerun, overwriting `session_state.active_page`. The button updated `session_state` but not the query param, so the navigation was silently cancelled
+
+### Difficulties
+
+- The questionnaire nav button (PR #110): fixed by setting `st.query_params["page"] = "Portfolio Dashboard"` before `st.rerun()` in the button handler
+
+### Achievements / Key decisions
+
+- HRP-vs-Markowitz analysis is now centralised on one dedicated page; the dashboard is HRP-only
+- Decision: keep Phase A (mock) values throughout while preserving the Phase B live-data paths for when the live toggle is enabled
+- All four PRs merged and deployed automatically to `robo-advisor-usi.streamlit.app` via Streamlit Community Cloud
+
+### Next steps
+
+- Replace the stylised correlation matrix with a live two-year rolling computation in Phase B
+- Swap the mock MV data for live Markowitz optimizer output
+
+### Notes for the academic PDF
+
+- The radar chart's five dimensions (Low Risk, Diversification via 1 − Herfindahl, UCITS Coverage, Drawdown Protection, Return Potential) are a compact way to visualise the HRP-vs-Markowitz trade-off — citable in the Portfolio Optimization section
+- The query-param vs `session_state` navigation bug is a good Streamlit-specific Lessons Learned example (URL state and session state must be kept in sync)
+
+---
+
+## P2 — Quant / Portfolio Optimization (session 3)
+**Estimated duration:** ~2 hours
+**Focus:** Pre-PR code review, navigation refactor, merge-conflict resolution (PR #124)
+
+### What I did
+
+- **Code review & bug fixes** before opening the PR, focusing on whether the new charts read the correct data:
+  - Hardcoded profile caption — the Backtesting caption always showed "MODERATE" regardless of the selected profile → now reads the active profile from `session_state`
+  - Wrong `max_drawdown` fallback — the Compare (MV) page used a fixed `-0.187` (the moderate value) for all profiles → replaced with a profile-aware lookup `{'CONSERVATIVE': -0.112, 'MODERATE': -0.187, 'AGGRESSIVE': -0.312}`
+  - Scattered numpy imports — `import numpy as np` appeared four times inside function bodies → moved to the top-level import block
+- **Navigation refactor**: replaced the `st.radio` sidebar widget with icon-based buttons, storing the active page in `session_state` so it survives Streamlit reruns; added the Backtesting and Compare (MV) pages to the navigation
+- Confirmed the Backtesting and rebuilt Compare (MV) pages render correctly (equity curve + drawdown charts; radar, risk-contribution bars, efficient frontier scatter, correlation heatmap)
+
+### How I did it
+
+- Reviewed the branch against `main` before opening the PR to catch data-wiring errors
+- Opened **PR #124** (`feat(p2): backtesting page + Compare MV deep-dive + UI polish`) targeting `main`
+
+### Difficulties
+
+- Merge conflict: `main` had added `_render_chat_info_panel()` in the same file region where the branch had extended `_render_hrp_tab()` and added `_render_mv_tab()`. Resolution:
+  - Kept `main`'s pipeline HTML inside `_render_chat_info_panel()` (the branch's `fig_rc`/dendrogram code was redundant — `main` already uses `plot_risk_contributions()` from the charts module)
+  - Restored the full `_render_mv_tab()` function at module level, which the conflict had displaced
+- After pushing the resolution, CI failed on a single ruff E501 (long frontier caption) — fixed by wrapping the string across two lines; CI then passed and the PR was mergeable
+
+### Achievements / Key decisions
+
+- Three data-wiring bugs caught and fixed in review before merge (hardcoded caption, wrong drawdown fallback, scattered imports)
+- Navigation state now survives reruns via `session_state` rather than the widget's transient value
+- Files changed: `frontend/app.py`, `frontend/style.py`, `scripts/run_backtest.py`, `backtest_output/*.json`, `docs/report.tex`
+
+### Next steps
+
+- Phase B: replace the mock MV data with live optimizer output and real backtest results
+
+### Notes for the academic PDF
+
+- The profile-aware `max_drawdown` lookup replacing a hardcoded moderate value is a small but concrete example of the "no silent single-profile assumptions" discipline — useful for the Lessons Learned section
+- The merge-conflict resolution (keeping `main`'s charts-module call over the branch's redundant inline code) demonstrates favouring the shared module over duplicated logic — documentable in the agentic-coordination notes
+
+---
+
+## P2 — Quant / Portfolio Optimization (session 4)
+**Estimated duration:** ~2 hours
+**Focus:** Backtesting page rework for non-specialist readability (PRs #146–#147)
+
+### What I did
+
+- Reworked the Backtesting page so the HRP-vs-Markowitz comparison is clear and self-explanatory for a non-specialist reader (`frontend/app.py`, with a small support change in `backend/optimizer/charts.py`):
+  - Restricted the comparison to **HRP vs Markowitz** and dropped the internal 1/N benchmark; relabelled "MV" as "Markowitz" everywhere
+  - Replaced the annualised CAGR with the **total return over the scenario** (computed from the equity curve) — much clearer on short crisis windows
+  - Slimmed the metrics table to Total return / Volatility / Sharpe / Max drawdown, with a one-line plain-language hint under each header
+  - Added a plain-language **"winner" callout** per scenario (best Sharpe and smallest drawdown)
+  - Added two **allocation donuts** (HRP vs Markowitz) showing the average mix each strategy held, with a "Why these mixes?" explanation
+  - Removed the redundant HRP metric cards, gave the drawdown chart a clearly filled coloured area, and unified the section-title sizes
+  - Marked the three US proxy tickers (SPY, AGG, BIL) in grey, with an alert explaining they stand in for the EU UCITS ETFs (CSPX.L, AGGH.MI, XEON.MI) that lack price history back to 2008
+
+### How I did it
+
+- Implemented incrementally in `frontend/app.py`; added SPY/AGG/BIL to the cluster/name maps in `backend/optimizer/charts.py` so their donut slices are coloured; reused the dashboard's `plot_weights_donut` for visual consistency
+- Verified live in the running Streamlit app across all three risk profiles and all three stress scenarios
+- Data-checked the "Why these mixes?" explanation against all 9 scenario × profile combinations (Herfindahl index + top holdings) so the wording holds everywhere
+
+### Difficulties
+
+- A first fix (restore the saved profile on a hard page reload) turned out to be redundant — the same fix had already landed on `main` via the profile-gate work — so I closed that PR
+- My initial explanation text was factually wrong: it claimed Markowitz always concentrates in long-term Treasuries and gold (false for 2022, where it held cash and real estate) and that HRP is "more diversified" (by Herfindahl it is actually slightly more concentrated, because it overweights cash) → rewrote it into a general, data-verified version
+- Clarified the UCITS vs US-proxy distinction: only 3 of the 8 ETFs are European UCITS, chosen because EU retail investors can only buy UCITS funds under MiFID II; the backtest substitutes US-listed equivalents for the pre-2008 history they lack
+
+### Achievements / Key decisions
+
+- PR #146 merged into `main` (full Backtesting page rework); PR #147 opened (grey proxy tickers + explanatory alert)
+- Decision: keep the full 11-ticker backtest universe but visually distinguish the 3 US proxies (rather than merging them), with an explanatory note
+- Decision: show total return over the scenario instead of CAGR for readability
+- Decision: describe the strategies at the method level (what HRP and Markowitz do) so the explanation stays true across every scenario and profile
+
+### Next steps
+
+- Merge PR #147
+- Optional future polish: consolidate each proxy/primary pair into a single holding (8-asset view) for a cleaner donut
+
+### Notes for the academic PDF
+
+- The corrected explanation is a documentable example of verifying narrative claims against the data: HRP is slightly *more* concentrated by Herfindahl (it overweights cash), the opposite of the intuitive "HRP is more diversified" claim — a good honesty point for the Portfolio Optimization / Limitations sections
+- The UCITS vs US-proxy substitution (3 of 8 ETFs are UCITS; SPY/AGG/BIL fill the pre-2008 gap) ties the backtest directly to the MiFID II / EU Awareness narrative
+
+---
+
+## P2 — Quant / Portfolio Optimization (session 5)
+**Estimated duration:** ~1 hour
+**Focus:** Portfolio Dashboard chart readability (`charts.py`)
+
+### What I did
+
+- Improved the readability and visual consistency of the Portfolio Dashboard charts (`backend/optimizer/charts.py`):
+  - **Risk Contributions** — each bar is now coloured by its asset cluster (Equity, Bonds, Alternatives, Cash) using the same colour mapping as the Allocation donut (previously every bar shared one flat colour, so a bar could not be matched to its donut slice)
+  - **Allocation donut** — thin slices (e.g. Gold, Real Estate) previously dropped their percentage label; labels now auto-position (roomy slices keep the label inside the ring, thin slices push it outside) so all eight asset percentages are always readable
+
+### How I did it
+
+- `plot_risk_contributions()` — bars coloured per cluster
+- `plot_weights_donut()` — slice labels set to automatic positioning
+
+### Difficulties
+
+- None of note — a focused readability change
+
+### Achievements / Key decisions
+
+- The dashboard now presents a consistent colour language across the allocation and risk views, and no allocation percentage is hidden
+- Implemented on a dedicated branch and opened a PR; reviewed and merged into `main`
+
+### Next steps
+
+- None — readability change complete
+
+### Notes for the academic PDF
+
+- The shared cluster palette across the donut and the risk-contribution bars is a small but concrete visual-consistency decision — citable in the Frontend/UX section
+- Deployment note worth recording: the live Streamlit Cloud app caches the running process, so a new build is only picked up after rebooting the app from the Streamlit Cloud dashboard — a useful Lessons Learned detail about the deployment workflow
+
+---
 
 ## P4 — Frontend / LLM / Docs
 
