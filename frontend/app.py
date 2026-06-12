@@ -1185,7 +1185,11 @@ def _render_profile_result_card(result: dict, show_dashboard_button: bool = True
 # ---------------------------------------------------------------------------
 
 def render_questionnaire() -> None:
-    page_header("Investor Profile Questionnaire", "Grable-Lytton Scale · 10 questions", icon="🧭")
+    page_header(
+        "Investor Profile Questionnaire",
+        "Grable-Lytton Scale · 10 questions",
+        eyebrow=_PAGE_EYEBROW["Investor Profile Questionnaire"],
+    )
 
     # Info card — Grable-Lytton explanation (native <details> for full style control)
     st.markdown(
@@ -1621,6 +1625,17 @@ _PG_ICON_SHIELD = (
 )
 
 
+# Uppercase "kicker" shown above each page title. Single source of truth so the
+# gate empty-state and the real page render the same eyebrow for a given title.
+_PAGE_EYEBROW: dict[str, str] = {
+    "Investor Profile Questionnaire": "Risk Profiling",
+    "Portfolio Dashboard": "Allocation",
+    "Backtesting": "Validation",
+    "Compare Markowitz": "Benchmark",
+    "Chat Advisor": "AI Assistant",
+}
+
+
 def _render_profile_required_gate(
     title: str,
     subtitle: str,
@@ -1635,7 +1650,7 @@ def _render_profile_required_gate(
     (questionnaire → profile → this page) and a styled call-to-action that
     routes to the questionnaire.
     """
-    page_header(title, subtitle, icon=icon)
+    page_header(title, subtitle, eyebrow=_PAGE_EYEBROW.get(title, ""))
     st.markdown(_GATE_CSS, unsafe_allow_html=True)
     if is_light():
         st.markdown(_GATE_CSS_LIGHT, unsafe_allow_html=True)
@@ -1720,7 +1735,7 @@ def render_portfolio() -> None:
     page_header(
         "Portfolio Dashboard",
         f"HRP optimization · {profile_label.capitalize()} profile",
-        icon="📊",
+        eyebrow=_PAGE_EYEBROW["Portfolio Dashboard"],
     )
 
     _ic_cluster = (
@@ -3778,7 +3793,7 @@ def render_chat() -> None:
     page_header(
         "Chat Advisor",
         "Grounded in your portfolio · validated answers",
-        icon="💬",
+        eyebrow=_PAGE_EYEBROW["Chat Advisor"],
     )
     st.markdown(_CHAT_CSS, unsafe_allow_html=True)
     if is_light():
@@ -3914,7 +3929,11 @@ def render_backtesting() -> None:
         return
 
     t = get_theme_tokens()
-    page_header("Backtesting", "Walk-forward simulation · HRP vs Markowitz", icon="📈")
+    page_header(
+        "Backtesting",
+        "Walk-forward simulation · HRP vs Markowitz",
+        eyebrow=_PAGE_EYEBROW["Backtesting"],
+    )
 
     st.markdown(
         """
@@ -4357,7 +4376,11 @@ def render_compare() -> None:
         return
 
     thm = get_theme_tokens()
-    page_header("Compare Markowitz", "Deep-dive analysis · HRP vs Markowitz", icon="🆚")
+    page_header(
+        "Compare Markowitz",
+        "Deep-dive analysis · HRP vs Markowitz",
+        eyebrow=_PAGE_EYEBROW["Compare Markowitz"],
+    )
 
     _badge = (
         f"width:2.4rem;height:2.4rem;flex-shrink:0;border-radius:50%;"
