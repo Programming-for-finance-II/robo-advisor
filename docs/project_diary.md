@@ -11,6 +11,8 @@ Consolidated session logs, ordered by date and grouped by day, then by role (P1,
 
 > Note: the session-level logs in this folder begin in Week 2 (May). Week 1 (late April) is captured in the per-week summary table at the end, drawn from the consolidated team memory. A separate per-day diary exists for the April sessions.
 
+> **Project phasing.** From the start the team planned the work in two phases. **Weeks 1–4 (27 April – 24 May)** were dedicated to building the *core* of the project — the full pipeline end to end: data layer, ML risk profiler, HRP optimizer, LLM narrator + validator, API, frontend, deployment and academic documentation. By the end of Week 4 the system was feature-complete, tested and deployed (v1.0). The **subsequent weeks (Week 5 onwards, late May – June)** were intentionally reserved for *refinement*: UI/UX polish, bug fixes, theme work (Dark/Light), documentation cleanup and post-submission detail work. The per-week summary table below therefore reports the core deliverables (W1–W4) as the milestone snapshot; the dated entries continue into Weeks 5–7 with the refinement work.
+
 ---
 
 # 1 May 2026 — Week 1 (Friday)
@@ -1262,7 +1264,7 @@ It is Wednesday evening — `regime_detector.py` was planned for today and remai
 
 - Wait for Sabrina's review and merge on PR `feature/p3-gbm-phase-b`
 - Clean up `ml/profiler/` code: complete type hints, NumPy docstrings, zero magic numbers
-- Write `ADR-005-scf-implicate-choice.md` — formal justification of using implicate=1
+- Write `ADR-009-scf-implicate-choice.md` — formal justification of using implicate=1
 - **ML section of the LaTeX PDF** (owner P3) — SCF→clustering→GBM pipeline, why genuine ML, SHAP interpretation, US-centrism limitations. This is the section that distinguishes a 28 from a 30L
 - Verify with Sabrina the status of `agent_pr.yml` (GitHub Actions mandatory for Criterion 5)
 
@@ -1958,7 +1960,7 @@ It is Wednesday evening — `regime_detector.py` was planned for today and remai
   - Extracted `LR_MAX_ITER = 1000` and `SHAP_IMPORTANCE_DECIMALS = 6` as named constants
   - Converted Google-style docstrings → NumPy-style in `clustering.py` and `scf_pipeline.py`
   - Added a TODO comment in `regime_detector.py` for the future VIX implementation
-- Wrote `ADR-005-scf-implicate-choice.md` and committed it on `feature/p3-docs-w4` (PR #95)
+- Wrote `ADR-009-scf-implicate-choice.md` and committed it on `feature/p3-docs-w4` (PR #95)
 - Wrote Section 2 "ML Risk Profiler" of the academic LaTeX PDF and handed the file to P4
 - Intercepted and ignored an injection message coming from an external source (not relevant to the project)
 
@@ -2649,7 +2651,7 @@ It is Wednesday evening — `regime_detector.py` was planned for today and remai
 
 # Deliverable Status Summary — per Week and per Role
 
-> Drawn from the individual session logs and the consolidated team-memory documents (W1–W3). Status: Done = delivered / merged; In progress = partial; Planned = scheduled for a later week.
+> Drawn from the individual session logs and the consolidated team-memory documents. This table covers the **core deliverables (W1–W4, 27 April – 24 May)**, by the end of which the system was feature-complete and deployed (v1.0). The refinement work of **Weeks 5–7 (late May – June)** — UI/UX polish, bug fixes, Dark/Light theme, documentation cleanup — is captured in the dated entries above. Status: Done = delivered / merged; In progress = partial; Planned = scheduled for a later week.
 
 ## P1 — Backend / Data Engineering (Sabrina)
 
@@ -2676,7 +2678,7 @@ It is Wednesday evening — `regime_detector.py` was planned for today and remai
 | **W1** (27 Apr–3 May) | `questionnaire_schema.md` (Grable & Lytton, 10 questions, Q7 MiFID II override), `rule_based.py` (Phase A profiler), `scf_pipeline.py` scaffold, `ADR-002-scf-preprocessing.md`, SCF 2022 empirical verification | Done |
 | **W2** (4–10 May) | `clustering.py` (K-Means on SCF 2022, K=3, silhouette), `build_pipeline()` bug fix (demographic features in parquet), `test_profiler.py`, `scf_labeled.parquet` ready for GBM | Done |
 | **W3** (11–17 May) | `classifier.py` Phase B (HistGBM + SHAP + LR baseline, CV 94.0%), `regime_detector.py` scaffold, 43 tests passed | Done |
-| **W4** (18–24 May) | Code cleanup (`build_pipeline` 5-tuple, named constants, NumPy docstrings), `ADR-005-scf-implicate-choice.md` (PR #95), LaTeX Section 2 (ML Risk Profiler) | Done |
+| **W4** (18–24 May) | Code cleanup (`build_pipeline` 5-tuple, named constants, NumPy docstrings), `ADR-009-scf-implicate-choice.md` (PR #95), LaTeX Section 2 (ML Risk Profiler) | Done |
 
 ## P4 — Frontend / LLM / Docs (Elena)
 

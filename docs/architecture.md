@@ -176,10 +176,14 @@ The LLM layer is therefore not trusted by default. Every response must pass vali
 | ADR | Decision | Status |
 |---|---|---|
 | [ADR-001](adr/ADR-001-hrp-over-markowitz.md) | HRP over Markowitz as default optimizer | Accepted |
-| [ADR-002](adr/ADR-002-scf-behavioural-labels.md) | SCF behavioural clustering over rule-based labels | Accepted |
-| [ADR-003](adr/ADR-003-ucits-fallback.md) | UCITS-first ETF universe with US fallback | Accepted |
+| [ADR-002](adr/ADR-002-scf-preprocessing.md) | SCF preprocessing choices | Accepted |
+| [ADR-003](adr/ADR-003-cloud-deploy.md) | Cloud deployment strategy (Streamlit Cloud vs Railway) | Accepted |
 | [ADR-004](adr/ADR-004-llm-narrator-validator.md) | LLM as narrator only — Ground Truth JSON + Validator | Accepted |
 | [ADR-005](adr/ADR-005-db-schema.md) | Database schema and audit trail design | Accepted |
+| [ADR-006](adr/ADR-006-regime-detector.md) | Regime detector — dual-signal trigger and ERC fallback | Accepted |
+| [ADR-007](adr/ADR-007-ledoit-wolf-shrinkage.md) | Ledoit-Wolf shrinkage as mandatory covariance pre-processing | Accepted |
+| [ADR-008](adr/ADR-008-profile-differentiation.md) | Per-profile guardrails for risk-appetite differentiation | Accepted |
+| [ADR-009](adr/ADR-009-scf-implicate-choice.md) | SCF multiple imputation — use of implicate 1 only | Accepted |
 
 ---
 

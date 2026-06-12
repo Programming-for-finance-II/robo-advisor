@@ -65,7 +65,7 @@ robo-advisor/
 ├── docs/
 │   ├── user_guide.md          ← end-to-end user flow
 │   ├── architecture.md        ← internal data flow and component boundaries
-│   └── adr/                   ← Architecture Decision Records (ADR-001 to ADR-008)
+│   └── adr/                   ← Architecture Decision Records (ADR-001 to ADR-009)
 └── tests/                     ← pytest unit + integration (≥75% coverage)
 ```
 
