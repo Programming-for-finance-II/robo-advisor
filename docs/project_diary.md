@@ -3459,6 +3459,69 @@ Episodes now covered: 2008, 2011, 2018, 2020, 2021, 2022 — solid historical co
 
 ---
 
+## P1 — Backend / Data Engineering
+**Estimated duration:** ~3 hours
+**Focus:** Compare Markowitz page — full rework to real data, colour consistency, and readability (`frontend/app.py`, `render_compare`)
+
+### What I did
+
+1. **Live data infrastructure**
+   - The Compare page now loads its own data independently (same cache mechanism as the dashboard), removing the previous dependency on visiting the dashboard first.
+   - **Auto-heal for stale sessions**: if a cached session is missing any expected MV field (`mv_risk_contributions`, `mv_expected_volatility`, `mv_sharpe_ratio`, `mv_max_drawdown`, `correlation`), the page silently re-fetches once.
+   - Added `_run_live_optimization`: given the HRP prices already in cache, computes MV risk contributions (marginal variance formula, same covariance matrix as HRP), MV vol/return/Sharpe/max-drawdown, the real correlation matrix, the HRP quasi-diagonal ordering, and the cluster structure from `backend/optimizer/hrp.py`.
+   - Removed the dead function `_render_mv_tab` (~184 lines): a legacy Markowitz tab that was never called and produced fabricated MV data.
+
+2. **Section 1 — Key Metrics (formerly: radar chart)**
+   - Replaced a radar that compared HRP against a mock Markowitz (`vol = HRP × 0.92`, arbitrary 0–1 normalisation) with a **real-data scorecard** matching the dashboard table style.
+   - Metrics: annual volatility, max drawdown, largest single-asset risk contribution, diversification score — all from live data. Sharpe shown for MV only (HRP does not estimate returns by design).
+   - The winning value for each metric is **circled** in the method's colour (purple HRP / red MV); the losing value is muted.
+   - Above the table: a **data-driven verdict** (head-to-head winner count) and a **verdict card** with keyword chips (`Robust`, `Diversified`, `Adapts to you` vs `Efficient`, `Higher Sharpe`, `Concentrated`).
+   - Honest disclosure: HRP omits Sharpe by design to avoid the unstable return estimate that causes Markowitz to concentrate; Markowitz is one-size-fits-all across profiles while HRP adapts.
+
+3. **Section 2 — Risk Contributions**
+   - MV risk contributions are now **real** (marginal variance, same covariance as HRP), not `weight × volatility`.
+   - Replaced the stacked class chart and the desaturated palette with a single grouped horizontal bar chart (HRP vs MV, standard purple/red colours), an **equal-risk reference line**, percentage labels, and rounded corners.
+   - Adaptive headline above the chart (e.g. "Markowitz concentrates 53% on one asset; HRP distributes").
+
+4. **Section 3 — Asset Correlation Matrix**
+   - Matrix now uses **real correlations** from live prices (offline stylised fallback labelled as such).
+   - Colour scale changed to teal → purple (consistent with the page palette, replacing blue/orange).
+   - Matrix **reordered by the real HRP clusters** (quasi-diagonalisation): real groupings emerge on the diagonal (e.g. gold isolated, real-estate near equities).
+   - Single amber highlight on the tightest cluster (where Markowitz concentrates); arbitrary boxes removed.
+   - Scale **clipped to [0, 1]** when no negative correlations are present so the legend matches what is visible; cells are **square**.
+   - "How to read this chart" moved into a collapsible card (dashboard style): colour-key pills, HRP/MV method cards, market-regime callout, schematic text with bold keywords.
+
+### How I did it
+
+- All MV quantities computed from the **same price matrix** already loaded for HRP, so no extra network calls and no divergence between the two methods' inputs.
+- Colour discipline enforced globally: one constant per method (`HRP_COLOR = "#7c5cfc"`, `MV_COLOR = "#f87171"`), used in every chart and card.
+- Dead code removed before adding new code to keep the diff reviewable.
+- Tested visually across all three profiles (CONSERVATIVE / MODERATE / AGGRESSIVE) in both Dark and Light theme.
+
+### Difficulties
+
+- The auto-heal logic required careful ordering: the stale-session check must run before any chart rendering, otherwise the page crashes mid-render on a cache miss.
+- Quasi-diagonalisation of the correlation matrix required extracting the leaf order from `scipy.cluster.hierarchy.leaves_list` and applying it consistently to both axes.
+
+### Achievements / Key decisions
+
+- Compare Markowitz page is now **fully based on real data** — no mock values passed off as live.
+- **One colour = one method** across all three sections and both themes.
+- Dead `_render_mv_tab` (~184 lines) removed: cleaner codebase, no risk of stale mock data leaking back.
+- Decision: HRP Sharpe shown as `—` with an explicit note rather than omitted silently — transparency over completeness.
+
+### Next steps
+
+- Phase B: wire the `/compare` API endpoint so the live optimisation runs server-side rather than client-side in `render_compare`.
+
+### Notes for the academic PDF
+
+- The auto-heal pattern (detect stale fields → re-fetch once) is a small but concrete example of **defensive programming** in a stateful Streamlit session — citable in the Frontend section.
+- Computing both MV and HRP quantities from the same covariance matrix eliminates a whole class of "the comparison is unfair because the inputs differ" objections — worth a sentence in Section 3 (Portfolio Optimization).
+- The quasi-diagonalisation reordering is the visual proof that HRP's clustering is meaningful, not decorative — citable in Section 3 alongside the dendrogram.
+
+---
+
 # Deliverable Status Summary — per Week and per Role
 
 > Drawn from the individual session logs and the consolidated team-memory documents. This table covers the **core deliverables (W1–W4, 27 April – 24 May)**, by the end of which the system was feature-complete and deployed (v1.0). The refinement work of **Weeks 5–7 (late May – June)** — UI/UX polish, bug fixes, Dark/Light theme, documentation cleanup — is captured in the dated entries above. Status: Done = delivered / merged; In progress = partial; Planned = scheduled for a later week.
