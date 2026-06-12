@@ -279,6 +279,9 @@ def _run_live_optimization(profile_label: str) -> dict:
                     if _avg > _hot_avg:
                         _hot_avg, _hot = _avg, _members
             correlation["hot_cluster"] = _hot
+            correlation["hrp_clusters"] = {
+                str(_t): int(_lab) for _t, _lab in zip(cov.columns, _labels)
+            }
         except Exception:
             pass
     except Exception:
@@ -4948,7 +4951,7 @@ def render_compare() -> None:
         "HRP and Markowitz build their portfolios from this same correlation matrix — but "
         "they use it in opposite ways. Here the assets are ordered the way HRP groups them, "
         "by how they actually move (purple = together, teal = apart), so its real groups sit "
-        "side by side — which can differ from their asset-class labels."
+        "side by side."
         "</p>",
         unsafe_allow_html=True,
     )
@@ -5029,16 +5032,62 @@ def render_compare() -> None:
             for b in range(len(_TICKERS_HM)) if a != b]
     _has_diversifiers = (min(_off) <= -0.10) if _off else False
 
+    # Data-driven "surprise": which assets HRP groups against their asset-class
+    # label (e.g. real estate moving with equities, gold standing on its own).
+    _NICE_HM = {
+        "CSPX.L": "US equity", "EFA": "intl equity", "GLD": "gold",
+        "VNQ": "real estate", "AGGH.MI": "euro bonds", "TLT": "long Treasuries",
+        "TIP": "inflation bonds", "XEON.MI": "cash",
+    }
+    _CLASS_PLAIN = {"Equity": "equities", "Alternatives": "real assets",
+                    "Bonds": "bonds", "Cash": "cash"}
+    _insight = ""
+    _hrp_clusters = _corr_live.get("hrp_clusters") if _corr_live else None
+    if _hrp_clusters:
+        from collections import Counter
+
+        _byc: dict[int, list[str]] = {}
+        for _t, _cid in _hrp_clusters.items():
+            _byc.setdefault(_cid, []).append(_t)
+        _cls_size: dict[str, int] = {}
+        for _t in _hrp_clusters:
+            _cc = _HRP_TICKER_CLUSTER.get(_t, "Cash")
+            _cls_size[_cc] = _cls_size.get(_cc, 0) + 1
+        _finds: list[str] = []
+        for _members in _byc.values():
+            if len(_members) >= 2:
+                _dom = Counter(
+                    _HRP_TICKER_CLUSTER.get(t, "Cash") for t in _members
+                ).most_common(1)[0][0]
+                for t in _members:
+                    if _HRP_TICKER_CLUSTER.get(t, "Cash") != _dom:
+                        _finds.append(
+                            f"{_NICE_HM.get(t, t)} ({t}) moves with "
+                            f"{_CLASS_PLAIN.get(_dom, 'the rest')}"
+                        )
+            elif _members:
+                t = _members[0]
+                if _cls_size.get(_HRP_TICKER_CLUSTER.get(t, "Cash"), 0) > 1:
+                    _finds.append(f"{_NICE_HM.get(t, t)} ({t}) stands on its own")
+        if _finds:
+            _insight = "HRP groups by behaviour, not labels — " + "; ".join(_finds[:2]) + "."
+
+    # Colour scale: full diverging only when there are negatives to show;
+    # otherwise clip to [0, 1] so the legend matches what is on screen.
+    _neutral = "#eef1f6" if is_light() else "#0e1626"
+    if _has_diversifiers:
+        _cscale = [[0.0, "#0dcfb0"], [0.5, _neutral], [1.0, "#7c5cfc"]]
+        _zmin, _ticks = -1, [-1, -0.5, 0, 0.5, 1]
+    else:
+        _cscale = [[0.0, _neutral], [1.0, "#7c5cfc"]]
+        _zmin, _ticks = 0, [0, 0.25, 0.5, 0.75, 1]
+
     fig_hm = go.Figure(go.Heatmap(
         z=_CORR.tolist(),
         x=_TICKERS_HM,
         y=_TICKERS_HM,
-        colorscale=[
-            [0.00, "#0dcfb0"],   # negative correlation — assets hedge (diversifying)
-            [0.50, "#eef1f6" if is_light() else "#0e1626"],  # ~zero
-            [1.00, "#7c5cfc"],   # positive correlation — assets move together
-        ],
-        zmin=-1,
+        colorscale=_cscale,
+        zmin=_zmin,
         zmax=1,
         text=[[f"{v:.2f}" for v in row] for row in _CORR],
         texttemplate="%{text}",
@@ -5046,7 +5095,7 @@ def render_compare() -> None:
         hovertemplate="%{y} / %{x}: %{z:.2f}<extra></extra>",
         colorbar=dict(
             title="ρ",
-            tickvals=[-1, -0.5, 0, 0.5, 1],
+            tickvals=_ticks,
             thickness=12,
             len=0.85,
         ),
@@ -5076,7 +5125,17 @@ def render_compare() -> None:
         modebar_add=["resetScale2d"],
         dragmode="pan",
     )
+    # Keep cells square so the matrix reads as a matrix, not a stretched grid.
+    fig_hm.update_xaxes(constrain="domain")
+    fig_hm.update_yaxes(scaleanchor="x", scaleratio=1, constrain="domain")
     st.plotly_chart(fig_hm, use_container_width=True, config={"displaylogo": False})
+
+    if _insight:
+        st.markdown(
+            f"<p style='color:{thm['text_primary']};font-size:0.84rem;font-weight:500;"
+            f"line-height:1.5;margin:0.5rem 0 0.4rem;'>{_insight}</p>",
+            unsafe_allow_html=True,
+        )
 
     if _hot_s >= 0 and _hot_avg > 0:
         st.markdown(
@@ -5135,14 +5194,13 @@ def render_compare() -> None:
         else " Figures shown are a stylised illustration (live prices unavailable)."
     )
     _legend = (
-        "Teal = assets that hedge each other (diversifying); purple = move together. "
+        "Purple = move together, teal = move apart. "
         if _has_diversifiers
-        else "Purple = assets that move together; teal would mark diversifiers, but "
-             "there are none in the current data. "
+        else "Purple = move together (darker = weaker correlation). "
     )
     st.caption(
-        _legend + "Assets are ordered by HRP's own grouping; the highlighted block is "
-        "its tightest cluster, where Markowitz over-concentrates." + _hm_note
+        _legend + "Ordered by HRP's grouping; the highlighted block is its tightest "
+        "cluster, where Markowitz over-concentrates." + _hm_note
     )
 
 
