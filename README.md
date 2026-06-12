@@ -432,7 +432,7 @@ Full project documentation (LaTeX PDF, 5–8 pages) submitted on iCorsi includes
 - Mathematical derivation of HRP (López de Prado, 2016)
 - ML pipeline: SCF preprocessing, clustering, GBM + SHAP
 - LLM Narrator architecture: Ground Truth JSON, 5-step Validator, EU Awareness
-- Backtest results: six historical episodes (GFC 2008, Eurozone 2011, Selloff 2018, COVID 2020, Bull 2021, Rate Hike 2022)
+- Backtest results: seven historical episodes (GFC 2008, Eurozone 2011, Selloff 2018, COVID 2020, Bull 2021, Ukraine 2022, Rate Hike 2022)
 - Limitations and failure modes
 - Lessons learned from the agentic development process
 
