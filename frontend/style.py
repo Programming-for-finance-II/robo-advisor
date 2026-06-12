@@ -1041,19 +1041,19 @@ hr { border-color: #e2e8f0 !important; }
 [data-testid="stVerticalBlockBorderWrapper"] {
     overflow: hidden !important;
     border: 1px solid #D8DEE9 !important;
-    border-radius: 18px !important;
+    border-radius: 20px !important;
     background: #ffffff !important;
-    box-shadow: 0 10px 30px rgba(15,23,42,0.07) !important;
+    box-shadow: 0 10px 30px rgba(15,23,42,0.06) !important;
 }
 .qs-header {
     display: flex;
     align-items: center;
     gap: 1rem;
-    padding: 1rem 1.25rem;
-    margin: -1rem -1rem 0.75rem -1rem;
-    background: linear-gradient(135deg, #f8fafc 0%, #ede9fe 55%, #f1f5f9 100%);
-    border-bottom: 1px solid #ddd6fe;
-    border-radius: 18px 18px 0 0;
+    padding: 1.15rem 1.4rem;
+    margin: -1rem -1rem 1rem -1rem;
+    background: #EEF4FF;
+    border-bottom: 1px solid #DCE6F5;
+    border-radius: 20px 20px 0 0;
 }
 .qs-num {
     font-family: 'Space Grotesk', sans-serif;
@@ -1072,42 +1072,40 @@ hr { border-color: #e2e8f0 !important; }
 }
 .qs-title {
     font-family: 'Space Grotesk', sans-serif;
-    font-size: 1.05rem;
-    font-weight: 600;
-    color: #1e293b;
+    font-size: 1.08rem;
+    font-weight: 700;
+    color: #0f172a;
     line-height: 1.2;
 }
 .qs-sub {
     font-size: 0.78rem;
-    color: #94a3b8;
-    margin-top: 0.15rem;
+    color: #64748b;
+    margin-top: 0.2rem;
 }
 .qs-q-row {
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    margin: 2.5rem 0 0.6rem 0;
-    padding-top: 1.6rem;
+    margin: 2.75rem 0 0.85rem 0;
+    padding-top: 1.85rem;
     padding-left: 0.25rem;
-    border-top: 1px solid #DCE3EE;
+    border-top: 1px solid #E8EDF5;
 }
 .qs-q-row:first-of-type {
     margin-top: 0.75rem;
     padding-top: 0;
     border-top: none;
 }
-/* Group each question's answer options on a soft inset panel so it reads as a
-   distinct block under its question (the bordered-card option styling does not
-   match this Streamlit build's DOM, so we group at the radio container level). */
+/* Answer options sit directly under the question — no framed mini-cards.
+   Separation between questions comes from spacing + the .qs-q-row divider. */
 [data-testid="stForm"] [data-testid="stRadio"] {
-    background: #F8FAFC !important;
-    border: 1px solid #E5EAF3 !important;
-    border-radius: 10px !important;
-    padding: 0.55rem 0.9rem !important;
-    margin-bottom: 0.5rem !important;
+    background: transparent !important;
+    border: none !important;
+    padding: 0 0 0.4rem 0 !important;
+    margin-bottom: 0.6rem !important;
 }
 [data-testid="stForm"] [data-testid="stRadio"] [role="radiogroup"] {
-    gap: 0.15rem !important;
+    gap: 0.35rem !important;
 }
 .qs-q-badge {
     font-family: 'Space Grotesk', sans-serif;
