@@ -4289,6 +4289,37 @@ def render_backtesting() -> None:
                      delta_color="inverse")
     m_cols[3].metric("HRP Volatility", f"{hrp['annualised_volatility']:.1%}")
 
+    # ── Best-strategy takeaway ───────────────────────────────────────────────
+    # Plain-language summary of which strategy held up best in this scenario:
+    # the highest Sharpe (best risk-adjusted return) and the smallest loss
+    # (max drawdown closest to zero, since drawdowns are negative).
+    _strats = summary[selected]["strategies"]
+    best_sharpe = max(_strats, key=lambda s: _strats[s]["sharpe_ratio"])
+    best_dd = max(_strats, key=lambda s: _strats[s]["max_drawdown"])
+    _sh = _strats[best_sharpe]["sharpe_ratio"]
+    _dd = _strats[best_dd]["max_drawdown"]
+    if best_sharpe == best_dd:
+        _takeaway = (
+            f"<strong>{best_sharpe}</strong> held up best in this scenario — the "
+            f"highest risk-adjusted return (Sharpe {_sh:.2f}) and the smallest "
+            f"loss (max drawdown {_dd:.1%})."
+        )
+    else:
+        _takeaway = (
+            f"<strong>{best_sharpe}</strong> gave the best risk-adjusted return "
+            f"(Sharpe {_sh:.2f}), while <strong>{best_dd}</strong> had the "
+            f"smallest loss (max drawdown {_dd:.1%})."
+        )
+    st.markdown(
+        f'<div style="background:{t["accent_soft"]};border:1px solid {t["accent_border"]};'
+        f'border-radius:10px;padding:0.8rem 1rem;margin-top:0.5rem;'
+        f'display:flex;gap:0.65rem;align-items:flex-start;">'
+        f'<span style="font-size:1.1rem;line-height:1.4;flex-shrink:0;">🏆</span>'
+        f'<span style="font-size:0.88rem;line-height:1.55;color:{t["text_secondary"]};">'
+        f'{_takeaway}</span></div>',
+        unsafe_allow_html=True,
+    )
+
     st.markdown("---")
 
     # ── Equity curve chart ───────────────────────────────────────────────────
