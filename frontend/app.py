@@ -3915,6 +3915,73 @@ _STRATEGY_LABELS: dict[str, str] = {
 # colour in the donuts but get a diagonal hatch, explained in a note underneath.
 _PROXY_TICKERS: frozenset[str] = frozenset({"SPY", "AGG", "BIL"})
 
+# One-sentence, factual context per stress scenario (no advice) — shown under the
+# selector with the period so the backtest reads as a story, not just numbers.
+_SCENARIO_CONTEXT: dict[str, str] = {
+    "gfc_2008": (
+        "Lehman Brothers' collapse froze global credit markets; equities fell "
+        "sharply into early 2009 as the financial system seized up."
+    ),
+    "covid_2020": (
+        "A global pandemic triggered one of the fastest crashes on record in early "
+        "2020, followed by an equally sharp, policy-driven recovery."
+    ),
+    "rate_hike_2022": (
+        "Central banks raised interest rates aggressively to curb inflation, pulling "
+        "both equities and bonds lower through 2022."
+    ),
+}
+
+
+def _bt_period_label(start: str, end: str) -> str:
+    """Format an ISO date range as 'Jan – Dec 2020' / 'Sep 2008 – Mar 2009'."""
+    from datetime import datetime
+    s = datetime.strptime(start, "%Y-%m-%d")
+    e = datetime.strptime(end, "%Y-%m-%d")
+    if s.year == e.year:
+        return f"{s.strftime('%b')} – {e.strftime('%b %Y')}"
+    return f"{s.strftime('%b %Y')} – {e.strftime('%b %Y')}"
+
+
+def _bt_section(eyebrow: str, title: str) -> None:
+    """Section header in the page-header 'eyebrow + accent bar' idiom, so the
+    backtesting sections match the new header style instead of '1. 2. 3.'."""
+    t = get_theme_tokens()
+    st.markdown(
+        f'<div style="display:flex;align-items:stretch;gap:0.8rem;margin:0 0 0.7rem;">'
+        f'<div style="width:3px;flex-shrink:0;border-radius:99px;'
+        f'background:linear-gradient(180deg,{t["accent"]} 0%,#0dcfb0 100%);"></div>'
+        f'<div>'
+        f'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:0.66rem;'
+        f'font-weight:700;letter-spacing:0.15em;text-transform:uppercase;'
+        f'color:{t["accent_text"]};margin-bottom:0.2rem;">{eyebrow}</div>'
+        f'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:1.2rem;'
+        f'font-weight:700;color:{t["text_primary"]};letter-spacing:-0.01em;'
+        f'line-height:1.2;">{title}</div>'
+        f'</div></div>',
+        unsafe_allow_html=True,
+    )
+
+
+def _bt_takeaway(html: str, color: str, icon: str) -> None:
+    """Section-closing note with a coloured left edge and a small icon chip, so the
+    three takeaways read differently instead of three identical purple washes.
+
+    ``color`` is a #rrggbb hex; ``icon`` is inner SVG markup (0..18 viewBox).
+    """
+    t = get_theme_tokens()
+    st.markdown(
+        f'<div style="display:flex;gap:0.7rem;align-items:flex-start;'
+        f'background:{color}14;border:1px solid {color}33;border-left:3px solid {color};'
+        f'border-radius:10px;padding:0.8rem 1rem;margin-top:1rem;">'
+        f'<svg width="17" height="17" viewBox="0 0 18 18" fill="none" stroke="{color}" '
+        f'stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" '
+        f'style="flex-shrink:0;margin-top:1px;">{icon}</svg>'
+        f'<div style="font-size:0.88rem;line-height:1.55;color:{t["text_secondary"]};">'
+        f'{html}</div></div>',
+        unsafe_allow_html=True,
+    )
+
 
 def render_backtesting() -> None:
     _restore_persisted_profile()
@@ -3936,20 +4003,13 @@ def render_backtesting() -> None:
     )
 
     st.markdown(
-        """
-        <details class="qs-info-card">
-          <summary>
-            <span class="qs-info-title">What is backtesting?</span>
-            <span class="qs-info-chevron">▾</span>
-          </summary>
-          <div class="qs-info-body">
-            Backtesting replays each strategy on real historical prices to see how
-            it would have performed in the past — including during market crashes.
-            Pick a stress scenario below to compare how your HRP allocation and
-            the classic Markowitz (Mean-Variance) method would have held up.
-          </div>
-        </details>
-        """,
+        f'<div style="font-size:0.95rem;line-height:1.6;color:{t["text_secondary"]};'
+        f'margin:0.2rem 0 1.3rem;max-width:60rem;">'
+        f'Backtesting replays each strategy on real historical prices to see how it '
+        f'would have held up in the past. Pick a stress scenario below to compare '
+        f'your <strong style="color:{t["text_primary"]};">HRP</strong> allocation '
+        f'against the classic <strong style="color:{t["text_primary"]};">Markowitz'
+        f'</strong> method through a real market crisis.</div>',
         unsafe_allow_html=True,
     )
 
@@ -3985,10 +4045,8 @@ def render_backtesting() -> None:
     if selected is None:
         return
 
-    st.markdown("---")
-
-    # Load the per-strategy equity curves once: used both for the headline
-    # "total return over the scenario" figure and for the charts further down.
+    # Load the per-strategy equity curves once: used by the verdict band, the
+    # headline "total return over the scenario" figure and the charts below.
     scenario_file = _BACKTEST_DIR / f"backtest_{selected}_{profile_label}.json"
     detail = None
     period_return: dict[str, float] = {}
@@ -4004,19 +4062,85 @@ def render_backtesting() -> None:
                 # crisis period.
                 period_return[_s] = _ec[-1]["portfolio_value"] - 1.0
 
+    # ── Scenario context: period + one-line "what happened" ──────────────────
+    _sc = summary[selected]
+    _period = _bt_period_label(_sc["test_start"], _sc["test_end"])
+    _ctx = _SCENARIO_CONTEXT.get(selected, "")
+    st.markdown(
+        f'<div style="display:flex;gap:0.75rem;align-items:baseline;flex-wrap:wrap;'
+        f'margin:0.4rem 0 1.25rem;">'
+        f'<span style="font-family:\'Space Grotesk\',sans-serif;font-weight:700;'
+        f'font-size:0.8rem;letter-spacing:0.02em;color:{t["accent_text"]};'
+        f'white-space:nowrap;">{_period}</span>'
+        f'<span style="font-size:0.9rem;line-height:1.55;color:{t["text_secondary"]};'
+        f'flex:1;min-width:240px;">{_ctx}</span></div>',
+        unsafe_allow_html=True,
+    )
+
+    # ── Verdict band: who held up best + your HRP outcome, at a glance ────────
+    _vstrats = {s: _sc["strategies"][s] for s in _BACKTEST_STRATEGIES}
+    _v_resilient = max(_vstrats, key=lambda s: _vstrats[s]["max_drawdown"])  # ~0 best
+    _v_sharpe = max(_vstrats, key=lambda s: _vstrats[s]["sharpe_ratio"])
+    _hrp_ret = period_return.get("HRP")
+    _hrp_final = (1.0 + _hrp_ret) * 10_000 if _hrp_ret is not None else None
+    _gain = _hrp_ret is not None and _hrp_ret >= 0
+    _money_accent = "#22c55e" if _gain else "#f87171"
+    _money_bg = "rgba(34,197,94,0.13)" if _gain else "rgba(248,113,113,0.13)"
+    _money_icon = (
+        '<polyline points="2,13 7,8 11,11 16,4"/><polyline points="12,4 16,4 16,8"/>'
+        if _gain else
+        '<polyline points="2,4 7,9 11,6 16,13"/><polyline points="12,13 16,13 16,9"/>'
+    )
+    _kpi_cards([
+        {
+            "label": "Most resilient",
+            "value": _STRATEGY_LABELS.get(_v_resilient, _v_resilient),
+            "accent": "#0dcfb0", "bg": "rgba(13,207,176,0.13)",
+            "icon": '<path d="M9 16s6-3 6-7.5V4L9 1.5 3 4v4.5C3 13 9 16 9 16z"/>',
+            "hint": f"smallest drop · {_vstrats[_v_resilient]['max_drawdown']:.1%} "
+                    "from peak",
+        },
+        {
+            "label": "Best risk-adjusted",
+            "value": _STRATEGY_LABELS.get(_v_sharpe, _v_sharpe),
+            "accent": "#7c5cfc", "bg": "rgba(124,92,252,0.13)",
+            "icon": '<polygon points="9,2 4,10 8,10 7,16 13,8 9,8"/>',
+            "hint": f"Sharpe {_vstrats[_v_sharpe]['sharpe_ratio']:.2f} · return per "
+                    "unit of risk",
+        },
+        {
+            "label": "HRP · €10,000 became",
+            "value": f"€{_hrp_final:,.0f}" if _hrp_final is not None else "—",
+            "accent": _money_accent, "bg": _money_bg, "icon": _money_icon,
+            "hint": f"{_hrp_ret:+.1%} over the period" if _hrp_ret is not None
+                    else "scenario detail unavailable",
+        },
+    ])
+
+    _v_spacer(0.6)
+    st.markdown("---")
+
     # ── Metrics comparison table ─────────────────────────────────────────────
-    _section_header("1", "Which strategy held up best?")
+    _bt_section("Results", "Which strategy held up best?")
     rows = []
     for strat in _BACKTEST_STRATEGIES:
         m = summary[selected]["strategies"][strat]
         _ret = period_return.get(strat, m["cagr"])
         rows.append({
+            "strat":        strat,
+            "_ret":         _ret,
             "Strategy":     _STRATEGY_LABELS.get(strat, strat),
             "Total return": f"{_ret:+.1%}",
             "Volatility":   f"{m['annualised_volatility']:.1%}",
             "Sharpe":       f"{m['sharpe_ratio']:.2f}",
             "Max drawdown": f"{m['max_drawdown']:.1%}",
         })
+    # The strategy that held up best — highest Sharpe — is tinted and badged so
+    # the winner is obvious without reading every cell.
+    _winner = max(
+        _BACKTEST_STRATEGIES,
+        key=lambda s: summary[selected]["strategies"][s]["sharpe_ratio"],
+    )
     _cols = ["Strategy", "Total return", "Volatility", "Sharpe", "Max drawdown"]
     # Plain-language hint shown under each metric header so the table is
     # readable without prior finance knowledge.
@@ -4042,17 +4166,39 @@ def render_backtesting() -> None:
         + "</th>"
         for i, c in enumerate(_cols)
     )
+    # Sign colours for the Total-return column (theme-aware for contrast).
+    _pos = "#16a34a" if is_light() else "#34d399"
+    _neg = "#dc2626" if is_light() else "#f87171"
+    _win_bg = "rgba(124,77,255,0.06)" if is_light() else "rgba(124,92,252,0.08)"
+    _win_pill = (
+        f'<span style="display:inline-block;margin-left:0.5rem;'
+        f'font-family:\'Space Grotesk\',sans-serif;font-size:0.58rem;font-weight:700;'
+        f'letter-spacing:0.05em;text-transform:uppercase;color:{t["accent_text"]};'
+        f'background:{t["accent_soft"]};border:1px solid {t["accent_border"]};'
+        f'border-radius:99px;padding:0.1rem 0.42rem;vertical-align:middle;">'
+        f'★ Best</span>'
+    )
     _body = ""
     for r in rows:
-        cells = "".join(
-            f'<td style="padding:0.55rem 0.85rem;'
-            f'text-align:{"left" if i == 0 else "right"};font-size:0.82rem;'
-            f'color:{t["text_primary"] if i == 0 else t["text_secondary"]};'
-            f'font-weight:{"600" if i == 0 else "400"};'
-            f'border-top:1px solid {t["border"]};white-space:nowrap;">{r[c]}</td>'
-            for i, c in enumerate(_cols)
-        )
-        _body += f"<tr>{cells}</tr>"
+        _is_win = r["strat"] == _winner
+        cells = ""
+        for i, c in enumerate(_cols):
+            _align = "left" if i == 0 else "right"
+            if i == 0:
+                _val = f'{r[c]}{_win_pill if _is_win else ""}'
+                _color, _weight = t["text_primary"], "700" if _is_win else "600"
+            elif c == "Total return":
+                _color = _pos if r["_ret"] >= 0 else _neg
+                _val, _weight = r[c], "600"
+            else:
+                _color, _val, _weight = t["text_secondary"], r[c], "400"
+            cells += (
+                f'<td style="padding:0.55rem 0.85rem;text-align:{_align};'
+                f'font-size:0.82rem;color:{_color};font-weight:{_weight};'
+                f'border-top:1px solid {t["border"]};white-space:nowrap;">{_val}</td>'
+            )
+        _row_style = f'background:{_win_bg};' if _is_win else ""
+        _body += f'<tr style="{_row_style}">{cells}</tr>'
     _head_bg = (
         "linear-gradient(135deg,#f8fafc 0%,#ede9fe 55%,#f1f4fa 100%)"
         if is_light() else
@@ -4112,16 +4258,13 @@ def render_backtesting() -> None:
                 f"best risk-adjusted result of the group, though every strategy "
                 f"posted a negative Sharpe ({_sh:.2f}) in this downturn."
             )
-    # Light, airy purple wash — no left accent bar and no icon, so the takeaway
-    # reads as a plain highlighted note rather than a heavy callout.
-    _tw_bg = "rgba(124,77,255,0.05)" if is_light() else "rgba(124,92,252,0.05)"
-    _tw_border = "rgba(124,77,255,0.18)" if is_light() else "rgba(124,92,252,0.18)"
-    st.markdown(
-        f'<div style="background:{_tw_bg};border:1px solid {_tw_border};'
-        f'border-radius:10px;padding:0.8rem 1rem;margin-top:1.25rem;'
-        f'font-size:0.88rem;line-height:1.55;color:{t["text_secondary"]};">'
-        f'{_takeaway}</div>',
-        unsafe_allow_html=True,
+    # Purple "verdict" note with a trophy icon — the takeaway for the results.
+    _bt_takeaway(
+        _takeaway,
+        "#7c5cfc",
+        '<path d="M5 3h8v3a4 4 0 0 1-8 0V3z"/><path d="M5 5H3v1a2 2 0 0 0 2 2"/>'
+        '<path d="M13 5h2v1a2 2 0 0 1-2 2"/><line x1="9" y1="10" x2="9" y2="13"/>'
+        '<path d="M6.5 15h5l-.5-2h-4l-.5 2z"/>',
     )
 
     st.markdown("---")
@@ -4130,7 +4273,7 @@ def render_backtesting() -> None:
     # Two donuts (HRP vs Markowitz) showing the average mix each strategy held
     # across the scenario's rebalances — this is *what* drove the results above.
     if detail is not None:
-        _section_header("2", "Why — what each strategy held")
+        _bt_section("Allocation", "What each strategy held")
         st.caption(
             "Average allocation across the scenario's monthly rebalances — what "
             "actually drove the results above. A more defensive mix tends to move "
@@ -4202,7 +4345,7 @@ def render_backtesting() -> None:
 
         _v_spacer(0.75)
 
-        with st.expander("💡 Why these mixes?"):
+        with st.expander("How HRP and Markowitz pick their mix"):
             st.markdown(
                 f'<div style="font-size:0.88rem;line-height:1.6;'
                 f'color:{t["text_secondary"]};">'
@@ -4222,7 +4365,7 @@ def render_backtesting() -> None:
 
     # ── Performance charts ───────────────────────────────────────────────────
     if detail is not None:
-        _section_header("3", "How it played out over time")
+        _bt_section("Over time", "How it played out")
         st.caption(
             "Both panels share the same timeline. The top shows what €10,000 would "
             "have been worth; the bottom shows how far each strategy had fallen from "
@@ -4330,14 +4473,12 @@ def render_backtesting() -> None:
             f"{_perf[s]['final_ret']:+.1%}."
             for s in _BACKTEST_STRATEGIES
         )
-        _tw3_bg = "rgba(124,77,255,0.05)" if is_light() else "rgba(124,92,252,0.05)"
-        _tw3_border = "rgba(124,77,255,0.18)" if is_light() else "rgba(124,92,252,0.18)"
-        st.markdown(
-            f'<div style="background:{_tw3_bg};border:1px solid {_tw3_border};'
-            f'border-radius:10px;padding:0.8rem 1rem;margin-top:0.6rem;'
-            f'font-size:0.88rem;line-height:1.55;color:{t["text_secondary"]};">'
-            f'{_ride} {_ends}</div>',
-            unsafe_allow_html=True,
+        # Teal "trajectory" note with a trend icon — distinct from the purple
+        # results verdict above so the two takeaways don't blur together.
+        _bt_takeaway(
+            f"{_ride} {_ends}",
+            "#0dcfb0",
+            '<polyline points="2,12 6,8 9,11 16,4"/><polyline points="11,4 16,4 16,9"/>',
         )
 
     st.caption(
