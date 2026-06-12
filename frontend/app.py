@@ -4606,43 +4606,53 @@ def render_compare() -> None:
         for _lab, _sub, _h, _m, _w in _rows
     )
     st.markdown(
-        f'<div style="background:{thm["bg_card"]};border:1px solid {thm["border"]};'
-        f'border-radius:12px;padding:0.9rem 1rem;box-shadow:{thm["shadow"]};">'
+        f'<div style="max-width:600px;margin:0 auto;background:{thm["bg_card"]};'
+        f'border:1px solid {thm["border"]};border-radius:12px;'
+        f'padding:0.9rem 1rem;box-shadow:{thm["shadow"]};">'
         + _hdr + _body + '</div>',
         unsafe_allow_html=True,
     )
 
-    # Data-driven explanation of why each method wins different metrics.
+    # Glanceable, data-driven verdict: each method's strength in its accent
+    # colour with the key numbers — readable, no fading captions.
     if mv_rc_is_live and isinstance(mv_sharpe, (int, float)):
-        _why = (
-            f"Markowitz optimises the in-sample risk and return directly — that is why it "
-            f"reports a Sharpe of {mv_sharpe:.2f} (which HRP doesn't compute) and edges HRP on "
-            f"the efficiency metrics. But it gets there by concentrating: {mv_bets:.1f} effective "
-            f"bets with {mv_top:.0f}% of risk in a single asset, versus HRP's {hrp_bets:.1f} and "
-            f"{hrp_top:.0f}%. HRP spreads risk wider, trading a little efficiency for robustness "
-            f"when those estimates turn out wrong."
-        )
+        _hrp_line = (f"Risk spread across <b>{hrp_bets:.1f}</b> effective bets "
+                     f"(vs {mv_bets:.1f}), and it adapts to your risk profile.")
+        _mv_line = (f"Lower in-sample volatility and a <b>{mv_sharpe:.2f}</b> Sharpe — "
+                    f"but <b>{mv_top:.0f}%</b> of risk sits in one asset.")
     else:
-        _why = (
-            "Markowitz chases in-sample efficiency and concentrates risk; HRP spreads it across "
-            "more positions for robustness — which is why each one wins different metrics."
-        )
+        _hrp_line = "Risk spread across more positions, and it adapts to your risk profile."
+        _mv_line = "Chases in-sample efficiency, but concentrates risk in a few positions."
+
     st.markdown(
-        f"<p style='color:{thm['text_secondary']};font-size:0.82rem;"
-        f"line-height:1.55;margin:0.7rem 0 0.2rem;'>{_why}</p>",
+        f'<div style="max-width:600px;margin:0.8rem auto 0;display:grid;'
+        f'grid-template-columns:1fr 1fr;gap:0.7rem;">'
+        f'<div style="background:{thm["bg_card"]};border:1px solid {thm["border"]};'
+        f'border-left:3px solid #7c5cfc;border-radius:10px;padding:0.75rem 0.9rem;">'
+        f'<div style="font-weight:600;color:#7c5cfc;font-size:0.88rem;'
+        f'margin-bottom:0.3rem;">HRP — more robust</div>'
+        f'<div style="color:{thm["text_secondary"]};font-size:0.84rem;'
+        f'line-height:1.5;">{_hrp_line}</div></div>'
+        f'<div style="background:{thm["bg_card"]};border:1px solid {thm["border"]};'
+        f'border-left:3px solid #f87171;border-radius:10px;padding:0.75rem 0.9rem;">'
+        f'<div style="font-weight:600;color:#f87171;font-size:0.88rem;'
+        f'margin-bottom:0.3rem;">Markowitz — more efficient</div>'
+        f'<div style="color:{thm["text_secondary"]};font-size:0.84rem;'
+        f'line-height:1.5;">{_mv_line}</div></div>'
+        f'</div>',
         unsafe_allow_html=True,
     )
-
-    _sc_note = (
-        ""
-        if mv_rc_is_live
-        else " Markowitz figures shown are an illustrative offline estimate."
+    _sc_extra = (
+        "" if mv_rc_is_live
+        else " · figures are an illustrative offline estimate"
     )
-    st.caption(
-        "The coloured value is better on each metric. Markowitz produces one portfolio for "
-        "everyone — HRP adapts to your risk profile, so only HRP's column changes when you "
-        "switch profile. HRP also reports no Sharpe because it deliberately doesn't estimate "
-        "returns, avoiding the unstable estimate that makes Markowitz over-concentrate." + _sc_note
+    st.markdown(
+        f'<div style="max-width:600px;margin:0.55rem auto 0;font-size:0.78rem;'
+        f'color:{thm["text_muted"]};line-height:1.5;">'
+        f"The coloured value wins each metric. HRP shows no Sharpe — by design it "
+        f"doesn't estimate returns, which keeps it from over-concentrating like "
+        f"Markowitz{_sc_extra}.</div>",
+        unsafe_allow_html=True,
     )
 
     # ── 2. Risk contributions ─────────────────────────────────────────────────
