@@ -222,7 +222,7 @@ The app has six pages, reachable from the top navigation bar:
    - Cluster grouping view (how your money is grouped) and HRP methodology cards
    - Key metrics cards (expected return, volatility, Sharpe, max drawdown)
    - Risk contribution breakdown (Plotly bar chart)
-   - UCITS badges 🇪🇺 in the weights table
+   - UCITS eligibility shown in the HRP-vs-Markowitz comparison table and the ETF Explorer 
    - EU Investor Note banner and Stress Regime banner (shown only when
      correlations spike above 0.75)
    - **ETF Explorer** — price chart, TER/AUM, ESG scores and analyst consensus
