@@ -237,3 +237,5 @@ docs/*.out
 docs/*.run.xml
 docs/*.toc
 docs/*.log
+docs/*.fdb_latexmk
+docs/*.fls
