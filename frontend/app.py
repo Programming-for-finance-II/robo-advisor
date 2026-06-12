@@ -4790,6 +4790,50 @@ def render_compare() -> None:
     _mv_chips = _chips(("Efficient", "Higher Sharpe", "Concentrated"),
                        "rgba(248,113,113,0.16)", "#f87171")
 
+    # One-line, data-driven verdict above the scorecard so the reader gets the
+    # answer before decoding the table — mirrors the takeaway banner in §2.
+    # Wins are tallied from the same _rows the table renders; Sharpe (a draw by
+    # design, HRP reports none) is excluded from the head-to-head count and
+    # called out separately.
+    _hrp_wins = sum(1 for _r in _rows if _r[4] == "hrp")
+    _mv_wins = sum(1 for _r in _rows if _r[4] == "mv")
+    _comparable = _hrp_wins + _mv_wins
+    _sharpe_txt = _num(mv_sharpe, "{:.2f}")
+    if _comparable == 0:
+        _verdict = (
+            "Live figures are still loading — the head-to-head comparison will "
+            "appear once market data is available."
+        )
+    elif _hrp_wins > _mv_wins:
+        _verdict = (
+            f"<b>HRP wins {_hrp_wins} of {_comparable}</b> head-to-head metrics — "
+            f"lower risk and better diversification. Markowitz's only edge is its "
+            f"in-sample Sharpe ({_sharpe_txt}), which HRP does not chase by design."
+        )
+    elif _mv_wins > _hrp_wins:
+        _verdict = (
+            f"<b>Markowitz wins {_mv_wins} of {_comparable}</b> head-to-head metrics "
+            f"here, including a higher Sharpe ({_sharpe_txt}) — but at the cost of a "
+            f"more concentrated portfolio."
+        )
+    else:
+        _verdict = (
+            f"HRP and Markowitz each take {_hrp_wins} of {_comparable} comparable "
+            f"metrics; Markowitz adds a higher in-sample Sharpe ({_sharpe_txt})."
+        )
+
+    st.markdown(
+        f"<div style='display:flex;gap:0.55rem;align-items:flex-start;"
+        f"background:{thm['accent_soft']};border:1px solid {thm['accent_border']};"
+        f"border-radius:12px;padding:0.7rem 0.9rem;margin-bottom:0.9rem;'>"
+        f"<span style='color:{thm['accent_text']};font-size:1.1rem;line-height:1.3;"
+        f"flex-shrink:0;'>&#9679;</span>"
+        f"<span style='color:{thm['text_primary']};font-size:0.9rem;"
+        f"line-height:1.5;'>{_verdict}</span>"
+        "</div>",
+        unsafe_allow_html=True,
+    )
+
     _col_tbl, _col_sum = st.columns([1.8, 1], gap="medium", vertical_alignment="center")
     with _col_tbl:
         st.markdown(
