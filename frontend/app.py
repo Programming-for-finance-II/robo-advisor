@@ -3171,7 +3171,9 @@ div[class*="st-key-chat_suggest"] button p {
 .ca-thread { padding: 0.3rem 0 0.2rem; }
 [data-testid="stChatMessage"] {
     background: transparent !important; border: none !important; box-shadow: none !important;
-    padding: 0.1rem 0 !important; margin-bottom: 0.95rem !important;
+    /* Top padding reserves space for the absolutely-positioned role label that
+       floats above each bubble, keeping it visible without affecting inner layout. */
+    padding: 1.45rem 0 0 !important; margin-bottom: 0.75rem !important;
     width: 100% !important; max-width: 100% !important; display: block !important;
     animation: ca-rise 0.25s ease;
 }
@@ -3179,9 +3181,10 @@ div[class*="st-key-chat_suggest"] button p {
 [data-testid="stChatMessageAvatarAssistant"],
 [data-testid="stChatMessageAvatarCustom"] { display: none !important; }
 
-/* Assistant: LEFT, teal-accented box + label */
+/* Assistant: LEFT, teal-accented box */
 [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarAssistant"])
 [data-testid="stChatMessageContent"] {
+    position: relative !important;
     width: 92% !important; margin-left: 0 !important; margin-right: auto !important;
     background: linear-gradient(135deg,
         rgba(13,207,176,0.09), rgba(16,26,42,0.65)) !important;
@@ -3191,16 +3194,19 @@ div[class*="st-key-chat_suggest"] button p {
     padding: 0.7rem 1rem !important; box-sizing: border-box !important;
     overflow-wrap: break-word !important; word-break: break-word !important;
 }
+/* Label floats above the top-left corner of the box — outside the flow */
 [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarAssistant"])
 [data-testid="stChatMessageContent"]::before {
-    content: "✦ Assistant"; display: block;
+    content: "✦ Assistant";
+    position: absolute; top: -1.25rem; left: 0.45rem;
     font-family: 'Space Grotesk', sans-serif; font-size: 0.64rem; font-weight: 700;
     letter-spacing: 0.08em; text-transform: uppercase; color: #5eead4;
-    margin-bottom: 0.4rem;
+    white-space: nowrap;
 }
-/* User: RIGHT, purple-accented box + label, hugs its text */
+/* User: RIGHT, purple-accented box, hugs its text */
 [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"])
 [data-testid="stChatMessageContent"] {
+    position: relative !important;
     width: fit-content !important; max-width: 82% !important;
     margin-left: auto !important; margin-right: 0 !important;
     background: linear-gradient(135deg,
@@ -3211,12 +3217,14 @@ div[class*="st-key-chat_suggest"] button p {
     padding: 0.65rem 0.95rem !important; box-sizing: border-box !important;
     overflow-wrap: break-word !important; word-break: break-word !important;
 }
+/* Label floats above the top-right corner of the box — outside the flow */
 [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"])
 [data-testid="stChatMessageContent"]::before {
-    content: "You"; display: block;
+    content: "You";
+    position: absolute; top: -1.25rem; right: 0.45rem;
     font-family: 'Space Grotesk', sans-serif; font-size: 0.64rem; font-weight: 700;
     letter-spacing: 0.08em; text-transform: uppercase; color: #c4b5fd;
-    margin-bottom: 0.4rem;
+    white-space: nowrap;
 }
 [data-testid="stChatMessage"] p {
     font-family: 'DM Sans', sans-serif !important; font-size: 0.93rem !important;
@@ -3225,14 +3233,6 @@ div[class*="st-key-chat_suggest"] button p {
     text-align: left !important;
 }
 [data-testid="stChatMessage"] p:last-child { margin-bottom: 0 !important; }
-/* Zero all margins/padding on Streamlit's markdown wrapper div so the bubble's
-   own padding controls spacing symmetrically — top and bottom equally. */
-[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarAssistant"])
-[data-testid="stChatMessageContent"] > div,
-[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"])
-[data-testid="stChatMessageContent"] > div {
-    margin: 0 !important; padding: 0 !important;
-}
 [data-testid="stChatMessage"] em { color: #6b7689 !important; font-size: 0.82rem !important; }
 [data-testid="stChatMessage"] h1,
 [data-testid="stChatMessage"] h2,
@@ -3353,13 +3353,10 @@ div[class*="st-key-chat_suggest"] button::after { color: #7C4DFF !important; }
 }
 [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"])
 [data-testid="stChatMessageContent"]::before { color: #6d4deb !important; }
-[data-testid="stChatMessage"] p { color: #334155 !important; margin-top: 0 !important; }
-[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarAssistant"])
-[data-testid="stChatMessageContent"] > div,
-[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"])
-[data-testid="stChatMessageContent"] > div {
-    margin: 0 !important; padding: 0 !important;
+[data-testid="stChatMessage"] p {
+    color: #334155 !important; margin-top: 0 !important; margin-bottom: 0.55rem !important;
 }
+[data-testid="stChatMessage"] p:last-child { margin-bottom: 0 !important; }
 [data-testid="stChatMessage"] h1,
 [data-testid="stChatMessage"] h2,
 [data-testid="stChatMessage"] h3 { color: #111827 !important; }
