@@ -59,7 +59,7 @@ _CLUSTER_ORDER: dict[str, int] = {
 }
 
 
-def plot_weights_donut(weights: dict[str, float]) -> go.Figure:
+def plot_weights_donut(weights: dict[str, float], dark: bool = True) -> go.Figure:
     """Donut chart of portfolio weights coloured by asset cluster.
 
     Design notes (rework):
@@ -90,39 +90,52 @@ def plot_weights_donut(weights: dict[str, float]) -> go.Figure:
     labels = [_short_name(t) for t in tickers]
     colors = [_CLUSTER_COLORS.get(_TICKER_CLUSTER.get(t, ""), "#64748b") for t in tickers]
 
+    # Theme-aware chrome (slice borders, centre label, legend text). Slice fill
+    # colours and the white in-slice labels read well on both themes.
+    _line = "#0d1220" if dark else "#FFFFFF"
+    _ctr = "#f1f5f9" if dark else "#1A1726"
+    _sub = "#64748b" if dark else "#76748F"
+    _leg = "#cbd5e1" if dark else "#43425A"
+
+    # Per-slice label, ALWAYS kept inside the ring (never pushed outside with
+    # leader lines, which looked messy for the many thin slices of a
+    # conservative profile). Wide slices show the ticker + percentage; thin
+    # slices show just the percentage so it still fits; the very thinnest are
+    # left blank rather than crammed — the full detail lives in the table and
+    # the hover tooltip beside the chart.
+    _total = sum(values) or 1.0
+    slice_text: list[str] = []
+    for _t, _w in zip(tickers, values):
+        _pct = _w / _total
+        if _pct >= 0.06:
+            slice_text.append(f"{_t}<br>{_pct * 100:.0f}%")
+        elif _pct >= 0.03:
+            slice_text.append(f"{_pct * 100:.0f}%")
+        else:
+            slice_text.append("")
+
     fig = go.Figure(go.Pie(
         labels=labels,
         values=values,
-        text=tickers,
+        text=slice_text,
         customdata=tickers,
         hole=0.62,
         sort=False,
         direction="clockwise",
         rotation=0,
-        marker=dict(colors=colors, line=dict(color="#0d1220", width=2.5)),
-        texttemplate="%{text}<br>%{percent}",
-        # "auto" keeps the ticker+percentage inside whenever the slice is wide
-        # enough and only pushes the label outside for the very thin slices
-        # (e.g. the sub-1% positions in a conservative profile), where nothing
-        # would fit inside. `automargin` then shrinks the ring so those outside
-        # labels are never clipped at the figure edge.
-        textposition="auto",
-        automargin=True,
+        marker=dict(colors=colors, line=dict(color=_line, width=2.5)),
+        texttemplate="%{text}",
+        # "inside" guarantees labels never spill outside the ring: anything that
+        # cannot fit is hidden, not relocated with a leader line.
+        textposition="inside",
         insidetextorientation="horizontal",
-        # A slightly smaller inside font lets the ~6-7% slices (e.g. AGGH.MI in
-        # an aggressive profile) keep their label inside the ring; only the
-        # sub-~3% slices of a conservative profile still get pushed outside.
         textfont=dict(size=11, color="#ffffff", family="Space Grotesk, sans-serif"),
-        # Outside labels (thin slices) render in a smaller, neutral colour so
-        # they read clearly off the dark page and take less room, reducing the
-        # chance of two adjacent outside labels touching.
-        outsidetextfont=dict(size=10, color="#cbd5e1", family="Space Grotesk, sans-serif"),
         hovertemplate="<b>%{label}</b> (%{customdata})<br>Weight: %{percent}<extra></extra>",
     ))
 
     cluster_legend = "&nbsp;&nbsp;&nbsp;".join(
         f'<span style="color:{c}">●</span> '
-        f'<span style="color:#cbd5e1">{cl}</span>'
+        f'<span style="color:{_leg}">{cl}</span>'
         for cl, c in _CLUSTER_COLORS.items()
     )
 
@@ -133,9 +146,9 @@ def plot_weights_donut(weights: dict[str, float]) -> go.Figure:
         annotations=[
             dict(
                 text=(
-                    f'<span style="font-size:24px;color:#f1f5f9;font-weight:700;'
+                    f'<span style="font-size:24px;color:{_ctr};font-weight:700;'
                     f'font-family:Space Grotesk">{len(tickers)}</span>'
-                    f'<br><span style="font-size:10px;color:#64748b;'
+                    f'<br><span style="font-size:10px;color:{_sub};'
                     f'letter-spacing:0.12em">HOLDINGS</span>'
                 ),
                 x=0.5, y=0.5,
@@ -145,10 +158,9 @@ def plot_weights_donut(weights: dict[str, float]) -> go.Figure:
             ),
             dict(
                 text=cluster_legend,
-                # Sit the legend well clear of the ring: thin-slice outside
-                # labels can reach the bottom of the donut, so the legend is
-                # pushed well below them to avoid touching at any viewport width.
-                x=0.5, y=-0.30,
+                # Labels now stay inside the ring, so the legend can sit just
+                # below the donut without risk of touching stray outside labels.
+                x=0.5, y=-0.16,
                 xanchor="center", yanchor="top",
                 showarrow=False,
                 font=dict(size=11),

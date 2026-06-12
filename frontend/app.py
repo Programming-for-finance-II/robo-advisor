@@ -2983,7 +2983,7 @@ def _render_hrp_tab(portfolio: dict) -> None:
     with col_donut:
         try:
             from backend.optimizer.charts import plot_weights_donut
-            fig_donut = plot_weights_donut(weights)
+            fig_donut = plot_weights_donut(weights, dark=not is_light())
             fig_donut = apply_plotly_theme(fig_donut)
             # Re-assert the donut's own layout: apply_plotly_theme()
             # overwrites margin (and would clip the bottom colour legend) and
@@ -2993,7 +2993,7 @@ def _render_hrp_tab(portfolio: dict) -> None:
             # on the page with no dark panel behind it.
             fig_donut.update_layout(
                 height=460,
-                margin=dict(l=10, r=10, t=30, b=124),
+                margin=dict(l=10, r=10, t=30, b=84),
                 paper_bgcolor="rgba(0,0,0,0)",
                 plot_bgcolor="rgba(0,0,0,0)",
             )
