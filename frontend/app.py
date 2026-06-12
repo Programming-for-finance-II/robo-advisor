@@ -4706,21 +4706,23 @@ def render_compare() -> None:
         ("Largest single-asset risk", "lower = less concentrated",
          f"{hrp_top:.0f}%", f"{mv_top:.0f}%",
          "hrp" if hrp_top < mv_top else "mv"),
-        ("Effective number of bets", "higher = more diversified",
+        ("Diversification score", "higher = more diversified",
          f"{hrp_bets:.1f}", f"{mv_bets:.1f}",
          "hrp" if hrp_bets > mv_bets else "mv"),
         ("Sharpe ratio", "return per unit of risk",
          "—", _num(mv_sharpe, "{:.2f}"), None),
     ]
 
-    # Value cell, styled like the dashboard allocation table: the winner shows
-    # in its accent colour, the loser is muted, and N/A is dimmed.
+    # Value cell: the better value stays in the primary colour with a neutral
+    # green check (not a strategy colour, so the winner is unambiguous); the
+    # loser is muted, and N/A is dimmed.
     def _cell(text, side, winner):
         if text == "—":
             return f'<span style="color:{thm["text_muted"]};">—</span>'
         if winner == side:
-            _col = "#7c5cfc" if side == "hrp" else "#f87171"
-            return f'<span style="color:{_col};">{text}</span>'
+            return (f'<span style="color:{thm["text_primary"]};">{text}'
+                    f'<span style="color:#34d399;font-size:0.8em;'
+                    f'margin-left:0.3rem;">✓</span></span>')
         if winner is None:
             return f'<span style="color:{thm["text_primary"]};">{text}</span>'
         return f'<span style="color:{thm["text_secondary"]};">{text}</span>'
@@ -4750,29 +4752,48 @@ def render_compare() -> None:
         f'</div>'
         for _lab, _sub, _h, _m, _w in _rows
     )
-    # Verdict cards (to the right of the table): keyword chips for fast scanning
-    # plus one data-driven line each. Readable, no fading captions.
-    if mv_rc_is_live and isinstance(mv_sharpe, (int, float)):
-        _hrp_line = (f"Risk across <b>{hrp_bets:.1f}</b> effective bets; "
-                     f"adapts to your profile.")
-        _mv_line = (f"<b>{mv_sharpe:.2f}</b> Sharpe, lower volatility — but "
-                    f"<b>{mv_top:.0f}%</b> of risk in one asset.")
-    else:
-        _hrp_line = "Risk spread across more positions; adapts to your profile."
-        _mv_line = "More efficient in-sample, but concentrated in a few positions."
+    # Verdict cards beside the table: each lists, as data-driven bullets, the
+    # metrics that method actually wins (plus its structural edge), so the
+    # strengths are fast to scan and tied to the real numbers.
+    _STRENGTH = {
+        "Annual volatility": "Lower volatility",
+        "Max drawdown": "Smaller drawdown",
+        "Largest single-asset risk": "Less concentrated",
+        "Diversification score": "More diversified",
+    }
+    _hrp_pts, _mv_pts = [], []
+    for _lab, _, _h, _m, _w in _rows:
+        _ph = _STRENGTH.get(_lab)
+        if not _ph:
+            continue
+        if _w == "hrp":
+            _hrp_pts.append(f"{_ph} — <b>{_h}</b> vs {_m}")
+        elif _w == "mv":
+            _mv_pts.append(f"{_ph} — <b>{_m}</b> vs {_h}")
+    _hrp_pts.append("Adapts to your risk profile")
+    if isinstance(mv_sharpe, (int, float)):
+        _mv_pts.append(f"Reports a Sharpe (<b>{mv_sharpe:.2f}</b>)")
 
-    def _chips(words, bg, col):
+    def _bullets(points, dot):
         return "".join(
-            f'<span style="display:inline-block;font-size:0.66rem;font-weight:600;'
-            f'padding:2px 7px;border-radius:999px;margin:0 0.25rem 0.3rem 0;'
-            f'background:{bg};color:{col};">{w}</span>'
-            for w in words
+            f'<div style="display:flex;gap:0.45rem;align-items:baseline;'
+            f'margin-bottom:0.3rem;font-size:0.8rem;color:{thm["text_secondary"]};'
+            f'line-height:1.4;"><span style="color:{dot};flex-shrink:0;">•</span>'
+            f'<span>{p}</span></div>'
+            for p in points
         )
 
-    _hrp_chips = _chips(("Robust", "Diversified", "Adapts to you"),
-                        "rgba(124,92,252,0.16)", "#a78bfa")
-    _mv_chips = _chips(("Efficient", "Higher Sharpe", "Concentrated"),
-                       "rgba(248,113,113,0.16)", "#f87171")
+    def _verdict(title, tag, accent, points):
+        return (
+            f'<div style="background:{thm["bg_card"]};border:1px solid {thm["border"]};'
+            f'border-left:3px solid {accent};border-radius:10px;padding:0.7rem 0.85rem;'
+            f'margin-bottom:0.6rem;">'
+            f'<div style="font-weight:600;color:{accent};font-size:0.9rem;'
+            f'margin-bottom:0.45rem;">{title} '
+            f'<span style="color:{thm["text_muted"]};font-weight:400;'
+            f'font-size:0.76rem;">· {tag}</span></div>'
+            f'{_bullets(points, accent)}</div>'
+        )
 
     _col_tbl, _col_sum = st.columns([1.8, 1], gap="medium", vertical_alignment="center")
     with _col_tbl:
@@ -4784,21 +4805,8 @@ def render_compare() -> None:
         )
     with _col_sum:
         st.markdown(
-            f'<div style="background:{thm["bg_card"]};border:1px solid {thm["border"]};'
-            f'border-left:3px solid #7c5cfc;border-radius:10px;padding:0.7rem 0.85rem;'
-            f'margin-bottom:0.6rem;">'
-            f'<div style="font-weight:600;color:#7c5cfc;font-size:0.9rem;'
-            f'margin-bottom:0.4rem;">HRP</div>'
-            f'<div style="margin-bottom:0.4rem;">{_hrp_chips}</div>'
-            f'<div style="color:{thm["text_secondary"]};font-size:0.8rem;'
-            f'line-height:1.45;">{_hrp_line}</div></div>'
-            f'<div style="background:{thm["bg_card"]};border:1px solid {thm["border"]};'
-            f'border-left:3px solid #f87171;border-radius:10px;padding:0.7rem 0.85rem;">'
-            f'<div style="font-weight:600;color:#f87171;font-size:0.9rem;'
-            f'margin-bottom:0.4rem;">Markowitz</div>'
-            f'<div style="margin-bottom:0.4rem;">{_mv_chips}</div>'
-            f'<div style="color:{thm["text_secondary"]};font-size:0.8rem;'
-            f'line-height:1.45;">{_mv_line}</div></div>',
+            _verdict("HRP", "more robust", "#7c5cfc", _hrp_pts)
+            + _verdict("Markowitz", "more efficient", "#f87171", _mv_pts),
             unsafe_allow_html=True,
         )
 
@@ -4808,7 +4816,8 @@ def render_compare() -> None:
     )
     st.markdown(
         f'<div style="margin:0.6rem 0 0;font-size:0.78rem;color:{thm["text_muted"]};'
-        f'line-height:1.5;">The coloured value wins each metric. HRP shows no Sharpe — '
+        f'line-height:1.5;"><span style="color:#34d399;">✓</span> marks the better value '
+        f'on each metric. HRP shows no Sharpe — '
         f"by design it doesn't estimate returns, which keeps it from over-concentrating "
         f'like Markowitz{_sc_extra}.</div>',
         unsafe_allow_html=True,
