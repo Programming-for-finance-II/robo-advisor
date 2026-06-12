@@ -1594,15 +1594,18 @@ def apply_plotly_theme(fig):
         # font without text makes Plotly render the literal string "undefined".
         if fig.layout.title is not None and fig.layout.title.text:
             fig.update_layout(title_font_color="#111827")
-        # Axis `color` already drives tick labels, line, AND axis-title text, so
-        # we avoid `title_font_color` (which would invent an empty axis title).
+        # Colour every axis element explicitly. Unlike the main layout title,
+        # setting an axis title font colour does NOT invent an "undefined" label,
+        # so it is safe and guarantees readable axis titles + tick labels.
         fig.update_xaxes(
             gridcolor="#e2e8f0", linecolor="#cbd5e1",
-            color="#334155", tickfont_color="#334155", zerolinecolor="#e2e8f0",
+            color="#334155", tickfont_color="#334155",
+            title_font_color="#334155", zerolinecolor="#e2e8f0",
         )
         fig.update_yaxes(
             gridcolor="#e2e8f0", linecolor="#cbd5e1",
-            color="#334155", tickfont_color="#334155", zerolinecolor="#e2e8f0",
+            color="#334155", tickfont_color="#334155",
+            title_font_color="#334155", zerolinecolor="#e2e8f0",
         )
         # Annotations carry their own font colour; relax any near-white values.
         for ann in fig.layout.annotations:

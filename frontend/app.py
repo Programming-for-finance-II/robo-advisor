@@ -3902,7 +3902,7 @@ _MOCK_MV_WEIGHTS: dict[str, float] = {
 
 def render_compare() -> None:
     thm = get_theme_tokens()
-    page_header("Compare Markowitz", "Deep-dive analysis · HRP vs Markowitz", icon="⚖")
+    page_header("Compare Markowitz", "Deep-dive analysis · HRP vs Markowitz", icon="🆚")
 
     _badge = (
         f"width:2.4rem;height:2.4rem;flex-shrink:0;border-radius:50%;"
