@@ -4708,82 +4708,6 @@ def render_compare() -> None:
         unsafe_allow_html=True,
     )
 
-    st.caption(
-        "Risk contribution of each asset as a share of total portfolio risk, "
-        "grouped by asset class."
-    )
-
-    # ── Overview: 100%-stacked risk, one row per method ──────────────────────
-    # An immediate read of concentration: a wide segment vs many slices. Coloured
-    # by a slightly softened version of the dashboard's asset-class palette;
-    # same-class neighbours are split by a thin separator and each asset is
-    # labelled (ticker + %) inside its segment. Rounded ends and the legend above
-    # keep it in line with the rest of the project.
-    _SOFT_CLASS_COLOR: dict[str, str] = {
-        "Equity": "#8a7fe0", "Alternatives": "#e0a23a",
-        "Bonds": "#2fb9a3", "Cash": "#4f86e0",
-    }
-    _CLASS_ORDER = {"Equity": 0, "Alternatives": 1, "Bonds": 2, "Cash": 3}
-    _seg_order = sorted(
-        all_tickers,
-        key=lambda t: (_CLASS_ORDER.get(_HRP_TICKER_CLUSTER.get(t, "Cash"), 9),
-                       -hrp_rc.get(t, 0.0)),
-    )
-    _methods = ["HRP", "Markowitz"]
-    _seen_cls: set[str] = set()
-    fig_stack = go.Figure()
-    for t in _seg_order:
-        cls = _HRP_TICKER_CLUSTER.get(t, "Cash")
-        color = _SOFT_CLASS_COLOR.get(cls, "#64748b")
-        h = hrp_rc.get(t, 0.0) * 100
-        m = mv_rc.get(t, 0.0) * 100
-        disp = _TICKER_DISPLAY_NAME.get(t, t)
-        # Ticker + % inside a segment only when it is wide enough to hold them.
-        seg_text = [
-            f"{t} {h:.0f}%" if h >= 6 else "",
-            f"{t} {m:.0f}%" if m >= 6 else "",
-        ]
-        fig_stack.add_trace(go.Bar(
-            name=cls,
-            legendgroup=cls,
-            showlegend=cls not in _seen_cls,
-            y=_methods,
-            x=[h, m],
-            orientation="h",
-            marker=dict(color=color, line=dict(color="#0b1220", width=1.5)),
-            text=seg_text,
-            textposition="inside",
-            insidetextanchor="middle",
-            insidetextfont=dict(size=11, color="#f8fafc"),
-            cliponaxis=False,
-            hovertemplate=f"{disp} ({t}) — %{{x:.1f}}%<extra>%{{y}}</extra>",
-        ))
-        _seen_cls.add(cls)
-    fig_stack = apply_plotly_theme(fig_stack)
-    fig_stack.update_layout(
-        barmode="stack",
-        barcornerradius=6,
-        height=185,
-        margin=dict(l=8, r=8, t=44, b=44),
-        legend=dict(orientation="h", yanchor="bottom", y=1.05,
-                    xanchor="center", x=0.5, font=dict(size=11)),
-        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-        modebar_remove=[
-            "select2d", "lasso2d", "autoScale2d", "zoom2d", "pan2d",
-            "hoverClosestCartesian", "hoverCompareCartesian",
-            "toggleSpikelines", "zoomIn2d", "zoomOut2d",
-        ],
-        dragmode=False,
-    )
-    fig_stack.update_xaxes(range=[0, 100], ticksuffix="%")
-    fig_stack.update_yaxes(autorange="reversed")  # HRP row on top
-    st.plotly_chart(fig_stack, use_container_width=True, config={"displaylogo": False})
-
-    st.caption(
-        "Per-asset detail: each ETF's risk contribution, HRP versus Markowitz "
-        "side by side."
-    )
-
     n_assets = len(all_tickers)
     equal_risk = 100.0 / n_assets if n_assets else 0.0
 
@@ -4793,7 +4717,7 @@ def render_compare() -> None:
         y=all_tickers,
         x=hrp_rc_vals,
         orientation="h",
-        marker_color="#8a7fe0",
+        marker_color="#7c5cfc",
         text=[f"{v:.1f}%" for v in hrp_rc_vals],
         textposition="outside",
         textfont=dict(size=11),
@@ -4805,7 +4729,7 @@ def render_compare() -> None:
         y=all_tickers,
         x=mv_rc_vals,
         orientation="h",
-        marker_color="#e0896a",
+        marker_color="#f87171",
         text=[f"{v:.1f}%" for v in mv_rc_vals],
         textposition="outside",
         textfont=dict(size=11),
@@ -4816,7 +4740,7 @@ def render_compare() -> None:
         barmode="group",
         barcornerradius=4,
         xaxis_title="Share of total portfolio risk (%)",
-        height=350,
+        height=380,
         margin=dict(l=8, r=48, t=24, b=40),
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
     )
@@ -4843,30 +4767,8 @@ def render_compare() -> None:
         dragmode="pan",
     )
     st.plotly_chart(fig_rc, use_container_width=True, config={"displaylogo": False})
-    _rc_note = (
-        ""
-        if mv_rc_is_live
-        else " Markowitz figures shown are an illustrative offline estimate."
-    )
-    st.caption(
-        "Each bar is an asset's share of total portfolio risk; the bars for each "
-        "method sum to 100%. The dashed line marks an equal split across all "
-        "assets — HRP stays close to it, a balanced-risk design." + _rc_note
-    )
-
-    with st.expander("How is risk contribution calculated?"):
-        st.markdown(
-            "A **weight** tells you how much *money* you put in an asset; its "
-            "**risk contribution** tells you how much *volatility* it adds to the "
-            "whole portfolio — these are not the same thing."
-        )
-        st.latex(r"RC_i = \frac{w_i\,(\Sigma w)_i}{w^{\top}\Sigma w}")
-        st.markdown(
-            "where w are the portfolio weights and Σ is the covariance matrix. "
-            "The values sum to 100%, so every bar is a slice of total risk. "
-            "HRP and Markowitz use this same formula on the same covariance "
-            "matrix, so the comparison is fair (Maillard et al., 2010)."
-        )
+    if not mv_rc_is_live:
+        st.caption("Markowitz figures shown are an illustrative offline estimate.")
 
     # ── 3. Correlation heatmap ────────────────────────────────────────────────
     st.markdown("---")
