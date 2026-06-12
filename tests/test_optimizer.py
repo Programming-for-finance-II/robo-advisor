@@ -130,6 +130,42 @@ def test_optimize_profile_tilt_produces_different_weights() -> None:
     )
 
 
+def test_cluster_bounds_bind_on_fallback_tickers() -> None:
+    """Regression guard for the backtest cash-inflation bug.
+
+    The optimiser receives a ``cluster_map`` keyed by *primary* tickers
+    (CSPX.L, XEON.MI, AGGH.MI). In historical backtests the price columns arrive
+    under their *fallback* labels (SPY, BIL, AGG) because the EU UCITS ETFs have
+    no pre-2010 history. Before the fix, those fallback columns matched no key in
+    the cluster map, so the per-cluster bounds silently did not bind and HRP
+    piled into low-vol cash (BIL) up to ``asset_max`` (0.40) — making every
+    crisis backtest look almost loss-proof (2008 showed a ~0% loss).
+
+    With fallback-aware cluster bounds, the MODERATE cash cap (0.25) must hold
+    and the risk_assets floor (0.20) must be met even under fallback labels.
+    """
+    from backend.optimizer.hrp import optimize
+
+    # Cash (XEON.MI slot, vol 0.001) is the lowest-vol asset, so unconstrained
+    # HRP wants to over-allocate to it — exactly the situation the cap guards.
+    prices = _make_prices_with_varied_vol()
+    # Relabel the three columns whose live fallback differs from the primary.
+    prices = prices.rename(columns={"CSPX.L": "SPY", "AGGH.MI": "AGG", "XEON.MI": "BIL"})
+
+    weights = optimize(prices=prices, profile="MODERATE", cluster_map=CLUSTER_MAP)["weights"]
+
+    cash = weights.get("BIL", 0.0)
+    equity = weights.get("SPY", 0.0) + weights.get("EFA", 0.0)
+    assert cash <= 0.25 + 1e-6, (
+        f"cash (BIL) {cash:.3f} exceeds the MODERATE 0.25 cap — cluster bounds "
+        "are not binding on fallback tickers"
+    )
+    assert equity >= 0.20 - 1e-6, (
+        f"risk_assets (SPY+EFA) {equity:.3f} below the MODERATE 0.20 floor — "
+        "cluster bounds are not binding on fallback tickers"
+    )
+
+
 def test_aggressive_holds_more_equity_and_less_cash_than_conservative() -> None:
     """
     Directional sanity check: an AGGRESSIVE investor must end up with strictly
