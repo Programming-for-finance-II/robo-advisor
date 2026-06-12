@@ -3589,11 +3589,14 @@ def render_chat() -> None:
         _render_chat_info_panel()
 
     with col_chat:
+        # Sparkle glyph: keep the slim ✦ in dark mode (where it reads well),
+        # swap to the full-colour ✨ in light mode (where ✦ is too faint).
+        _spark = "✨" if is_light() else "✦"
         # Chat shell: gradient header + body
         st.markdown(
             '<div class="ca-shell">'
             '<div class="ca-shell-head">'
-            '<span class="ca-shell-head-icon">✨</span>'
+            f'<span class="ca-shell-head-icon">{_spark}</span>'
             '<div>'
             '<div class="ca-shell-head-title">Conversation</div>'
             '<div class="ca-shell-head-sub">'
@@ -3606,7 +3609,7 @@ def render_chat() -> None:
         if not history:
             st.markdown(
                 '<div class="ca-hero">'
-                '<div class="ca-hero-orb">✨</div>'
+                f'<div class="ca-hero-orb">{_spark}</div>'
                 '<div class="ca-hero-title">'
                 "Hi — I'm your AI Finance Assistant."
                 '</div>'
