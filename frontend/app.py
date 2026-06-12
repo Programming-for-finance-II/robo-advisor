@@ -3917,11 +3917,6 @@ _STRATEGY_LABELS: dict[str, str] = {
     "MV":  "Markowitz",
 }
 
-# US-listed proxies the backtest uses for the EU ETFs that lack price history
-# back to 2008 (CSPX.L→SPY, AGGH.MI→AGG, XEON.MI→BIL). They keep their asset-class
-# colour in the donuts but get a diagonal hatch, explained in a note underneath.
-_PROXY_TICKERS: frozenset[str] = frozenset({"SPY", "AGG", "BIL"})
-
 # One-sentence, factual context per stress scenario (no advice) — shown under the
 # selector with the period so the backtest reads as a story, not just numbers.
 _SCENARIO_CONTEXT: dict[str, str] = {
@@ -4054,12 +4049,11 @@ def render_backtesting() -> None:
     with open(summary_file) as fh:
         summary = json.load(fh)
 
-    selected = st.segmented_control(
+    selected = st.selectbox(
         "Stress scenario",
         options=list(_SCENARIO_LABELS.keys()),
         format_func=lambda k: _SCENARIO_LABELS[k],
-        default=list(_SCENARIO_LABELS.keys())[0],
-        required=True,
+        index=0,
     )
     if selected is None:
         return
@@ -4294,71 +4288,69 @@ def render_backtesting() -> None:
     if detail is not None:
         _bt_section("Allocation", "What each strategy held")
         st.caption(
-            "Average allocation across the scenario's monthly rebalances — what "
-            "actually drove the results above. A more defensive mix tends to move "
-            "less, in both directions."
+            "Average allocation across the scenario's monthly rebalances, grouped "
+            "by asset class — what actually drove the results above. A more "
+            "defensive mix (more bonds and cash) tends to move less, in both "
+            "directions."
         )
-        from backend.optimizer.charts import plot_weights_donut
-        _alloc_cols = st.columns(len(_BACKTEST_STRATEGIES))
-        for _i, _strat in enumerate(_BACKTEST_STRATEGIES):
+        from backend.optimizer.charts import _CLUSTER_COLORS, _TICKER_CLUSTER
+
+        _CLASS_ORDER = ["Equity", "Alternatives", "Bonds", "Cash"]
+        # Aggregate each strategy's average per-ticker weights into asset classes.
+        _class_w: dict[str, dict[str, float]] = {}
+        for _strat in _BACKTEST_STRATEGIES:
             _log = detail["strategies"][_strat].get("rebalance_log", [])
-            if not _log:
-                continue
-            _avg: dict[str, float] = {}
-            for _snap in _log:
-                for _tk, _w in _snap["weights"].items():
-                    _avg[_tk] = _avg.get(_tk, 0.0) + _w
-            # Average over rebalances, drop dust (<0.5%), then renormalise to 100%.
-            _avg = {tk: v / len(_log) for tk, v in _avg.items() if v / len(_log) >= 0.005}
-            _tot = sum(_avg.values())
-            if _tot:
-                _avg = {tk: v / _tot for tk, v in _avg.items()}
-            with _alloc_cols[_i]:
-                st.markdown(
-                    f'<div style="text-align:center;font-family:\'Space Grotesk\','
-                    f'sans-serif;font-weight:600;font-size:0.95rem;'
-                    f'color:{t["text_primary"]};">'
-                    f'{_STRATEGY_LABELS.get(_strat, _strat)}</div>',
-                    unsafe_allow_html=True,
-                )
-                _fig_alloc = plot_weights_donut(_avg)
-                _fig_alloc = apply_plotly_theme(_fig_alloc)
-                # Keep every ticker label + % inside its slice (no leader lines).
-                _fig_alloc.update_traces(textposition="inside",
-                                         insidetextorientation="horizontal",
-                                         textfont_size=10)
-                # Mark the US proxy slices (SPY/AGG/BIL) with a diagonal hatch so
-                # they stand out from the primary EU ETFs *without* breaking the
-                # by-asset-class colour legend below: they keep their category
-                # colour (equity/bonds/cash) and just get a striped overlay. The
-                # alert below explains why.
-                _tk_order = [str(tk) for tk in _fig_alloc.data[0].customdata]
-                _fig_alloc.data[0].marker.pattern = dict(
-                    shape=["/" if tk in _PROXY_TICKERS else "" for tk in _tk_order],
-                    # "overlay" draws the hatch *on top* of the slice colour;
-                    # without it Plotly's default "replace" mode swaps the colour
-                    # out for the pattern background, so cash (blue) etc. went dark.
-                    fillmode="overlay",
-                    # Light, sparse stripes: the slice keeps its asset-class colour
-                    # (e.g. cash = blue) clearly visible, the hatch just flags "this
-                    # is a US proxy". A heavy/dark pattern muddied the colour.
-                    fgcolor="#0d1220",  # = slice border, so stripes read as thin cuts
-                    size=9,
-                    solidity=0.14,
-                )
-                _fig_alloc.update_layout(height=340, margin=dict(l=10, r=10, t=12, b=38))
-                st.plotly_chart(_fig_alloc, use_container_width=True,
-                                config={"displaylogo": False, "responsive": False})
+            _agg: dict[str, float] = dict.fromkeys(_CLASS_ORDER, 0.0)
+            if _log:
+                _avg: dict[str, float] = {}
+                for _snap in _log:
+                    for _tk, _w in _snap["weights"].items():
+                        _avg[_tk] = _avg.get(_tk, 0.0) + _w
+                _tot = sum(_avg.values()) or 1.0
+                for _tk, _w in _avg.items():
+                    _cls = _TICKER_CLUSTER.get(_tk, "Alternatives")
+                    _agg[_cls] = _agg.get(_cls, 0.0) + _w / _tot
+            _class_w[_strat] = _agg
+
+        # Two horizontal 100%-stacked bars (HRP on top, Markowitz below): one
+        # coloured segment per asset class, so the two mixes are directly
+        # comparable at a glance instead of two separate pies.
+        _ystrats = list(_BACKTEST_STRATEGIES)[::-1]  # render HRP on top
+        _ylabels = [_STRATEGY_LABELS.get(s, s) for s in _ystrats]
+        _alloc_fig = go.Figure()
+        for _cls in _CLASS_ORDER:
+            _xs = [_class_w[s].get(_cls, 0.0) * 100 for s in _ystrats]
+            _alloc_fig.add_trace(go.Bar(
+                y=_ylabels, x=_xs, name=_cls, orientation="h",
+                marker_color=_CLUSTER_COLORS[_cls],
+                text=[f"{v:.0f}%" if v >= 7 else "" for v in _xs],
+                textposition="inside", insidetextanchor="middle",
+                textfont=dict(size=12, color="#ffffff"),
+                hovertemplate="%{y} · " + _cls + ": %{x:.1f}%<extra></extra>",
+            ))
+        _alloc_fig.update_layout(
+            barmode="stack", height=210, bargap=0.45,
+            margin=dict(l=8, r=8, t=42, b=20),
+            legend=dict(orientation="h", yanchor="bottom", y=1.02,
+                        xanchor="left", x=0, title_text=""),
+            xaxis=dict(range=[0, 100], ticksuffix="%", showgrid=False,
+                       zeroline=False),
+            yaxis=dict(showgrid=False),
+        )
+        _alloc_fig = apply_plotly_theme(_alloc_fig)
+        _alloc_fig.update_layout(
+            yaxis=dict(tickfont=dict(
+                family="Space Grotesk", size=14, color=t["text_primary"])),
+        )
+        st.plotly_chart(_alloc_fig, use_container_width=True,
+                        config={"displaylogo": False})
 
         st.markdown(
-            f'<div style="font-size:0.84rem;line-height:1.55;'
-            f'color:{t["text_secondary"]};margin-top:0.6rem;">'
-            f'<strong style="color:{t["text_primary"]};">About the striped '
-            f'slices (SPY, AGG, BIL):</strong> these are US-listed stand-ins for '
-            f'CSPX.L, AGGH.MI and XEON.MI. The backtest uses them for the early '
-            f'years because those European ETFs have no price history back to 2008 — '
-            f'the real ETFs take over once available. They track the same exposures '
-            f'(US equity, aggregate bonds, cash).</div>',
+            f'<div style="font-size:0.82rem;line-height:1.55;'
+            f'color:{t["text_secondary"]};margin-top:0.2rem;">'
+            f'For windows before the EU UCITS ETFs existed, the backtest stands '
+            f'them in with US-listed equivalents (CSPX.L→SPY, AGGH.MI→AGG, '
+            f'XEON.MI→BIL) — same exposures, real prices.</div>',
             unsafe_allow_html=True,
         )
 
