@@ -53,6 +53,8 @@ The platform is a Streamlit web application backed by a FastAPI service, with a 
 
 Source code and Architecture Decision Records: \url{https://github.com/Programming-for-finance-II/robo-advisor}
 
+The repository also contains two supplementary documents submitted alongside this report: \texttt{docs/development\_plan.pdf} (project plan, timeline and role allocation) and \texttt{docs/project\_diary.pdf} (full session-by-session development diary, covering every work session from 27 April to 12 June 2026 across all four roles).
+
 % ─────────────────────────────────────────────────────────────
 \section{Backend and Data Infrastructure (P1)}
 % ─────────────────────────────────────────────────────────────
@@ -229,6 +231,8 @@ No single strategy dominates across all seven episodes, and the broadened covera
 \textbf{Architecture as a safety mechanism.} The central design choice --- a strict separation between a deterministic ``calculator'' (the backend) and an LLM ``narrator'' constrained to a Ground Truth JSON contract --- made hallucination prevention \emph{structural} rather than instructional. The narrator is stateless: the payload is re-injected on every call, so the model stays anchored to current data and cannot drift across turns. This proved far more robust than relying on prompt wording alone.
 
 \textbf{Tests and CI catch real bugs.} A covariance-frequency bug (\texttt{CovarianceShrinkage(frequency=1)} without an explicit annualisation factor) would have inflated reported volatility by $\sqrt{252}\approx 15.9\times$; it surfaced only because the risk-metrics layer annualises explicitly and a regression test pinned the expected value. Smaller edge cases (e.g.\ integer-valued floats slipping through the validator's number check) emerged the same way. Coverage was governed through a shared GitHub issue rather than by unilaterally excluding untested modules, lifting the project from 77\,\% to 81\,\%.
+
+\textbf{Generative AI tools used.} All four team members used generative AI throughout the project, as required by the course brief. \textbf{Claude (Anthropic)} was the primary coding assistant and technical advisor across all weeks; it also powers the Chat Advisor at runtime via the Claude API. \textbf{ChatGPT (OpenAI)} was used for initial brainstorming and for explaining financial concepts (HRP, MiFID~II, SCF survey methodology). \textbf{GitHub Copilot / Gemini} provided code comparison and alternative implementation suggestions during development. All AI-assisted contributions are visible in the commit history; the agentic criterion is satisfied by \texttt{agent\_pr.yml} (PR~\#43).
 
 \textbf{Collaboration, honesty and reproducibility.} Parallel work across four roles produced classic distributed-Git frictions: long-lived branches drifting tens of commits behind \texttt{main}, cross-team review of optimiser fixes, and the consolidation of every schema into a single \texttt{backend/schemas} source of truth. A pre-publication secrets audit (scanning the full history for API-key patterns before the repository was made public) and an honest accounting of what is and is not wired into the live serving path --- the trained GBM and the ERC stress fallback are implemented but not on the live path --- were treated as part of the deliverable, not an afterthought.
 
