@@ -17,8 +17,10 @@ Usage:
 
 from __future__ import annotations
 
+import json
 import uuid
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Literal
 
 from backend.schemas.ground_truth import (
@@ -275,22 +277,70 @@ def _make_cluster_structure(profile: ProfileLabel) -> ClusterStructure:
     )
 
 
+# ---------------------------------------------------------------------------
+# Stress scenarios — portfolio drawdowns are sourced from the REAL backtest so
+# the chat advisor and dashboard quote the same figures the Backtesting page
+# shows. Previously these were hand-set mock numbers that drifted from the
+# computed backtest (e.g. the rate-hike drawdown was off by ~7pp), which made
+# the chatbot contradict the Backtesting page.
+#
+# benchmark_drawdown stays a factual market constant (the broad equity index
+# fall for that event) — it is not a profile-specific portfolio figure.
+# ukraine_feb_2022 has no backtest scenario, so it keeps an illustrative value.
+# ---------------------------------------------------------------------------
+
+_BACKTEST_DIR = Path(__file__).resolve().parents[2] / "backtest_output"
+# mock_data uses "balanced"; the backtest files use "moderate".
+_PROFILE_TO_BACKTEST: dict[ProfileLabel, str] = {
+    "conservative": "conservative",
+    "balanced": "moderate",
+    "aggressive": "aggressive",
+}
+
+
+def _real_hrp_drawdown(profile: ProfileLabel, scenario_key: str) -> float | None:
+    """HRP max drawdown for (profile, scenario) from the real backtest summary.
+
+    Returns None if the backtest artefacts are unavailable, so callers can fall
+    back to an illustrative value and the payload never fails to build.
+    """
+    bt_profile = _PROFILE_TO_BACKTEST.get(profile, "moderate")
+    path = _BACKTEST_DIR / f"backtest_summary_{bt_profile}.json"
+    try:
+        data = json.loads(path.read_text())
+        dd = float(data[scenario_key]["strategies"]["HRP"]["max_drawdown"])
+        return round(min(dd, 0.0), 4)  # schema requires <= 0
+    except Exception:
+        return None
+
+
+def _stress_for(
+    profile: ProfileLabel,
+    covid_fallback: float,
+    ukraine: float,
+    rates_fallback: float,
+) -> StressScenarios:
+    covid = _real_hrp_drawdown(profile, "covid_2020")
+    rates = _real_hrp_drawdown(profile, "rate_hike_2022")
+    return StressScenarios(
+        covid_march_2020=ScenarioResult(
+            portfolio_drawdown=covid if covid is not None else covid_fallback,
+            benchmark_drawdown=-0.338,
+        ),
+        ukraine_feb_2022=ScenarioResult(
+            portfolio_drawdown=ukraine, benchmark_drawdown=-0.127,
+        ),
+        rates_hike_2022=ScenarioResult(
+            portfolio_drawdown=rates if rates is not None else rates_fallback,
+            benchmark_drawdown=-0.183,
+        ),
+    )
+
+
 _STRESS: dict[ProfileLabel, StressScenarios] = {
-    "conservative": StressScenarios(
-        covid_march_2020=ScenarioResult(portfolio_drawdown=-0.078,  benchmark_drawdown=-0.338),
-        ukraine_feb_2022=ScenarioResult(portfolio_drawdown=-0.042,  benchmark_drawdown=-0.127),
-        rates_hike_2022=ScenarioResult(portfolio_drawdown=-0.061,  benchmark_drawdown=-0.183),
-    ),
-    "balanced": StressScenarios(
-        covid_march_2020=ScenarioResult(portfolio_drawdown=-0.142,  benchmark_drawdown=-0.338),
-        ukraine_feb_2022=ScenarioResult(portfolio_drawdown=-0.071,  benchmark_drawdown=-0.127),
-        rates_hike_2022=ScenarioResult(portfolio_drawdown=-0.089,  benchmark_drawdown=-0.183),
-    ),
-    "aggressive": StressScenarios(
-        covid_march_2020=ScenarioResult(portfolio_drawdown=-0.241,  benchmark_drawdown=-0.338),
-        ukraine_feb_2022=ScenarioResult(portfolio_drawdown=-0.108,  benchmark_drawdown=-0.127),
-        rates_hike_2022=ScenarioResult(portfolio_drawdown=-0.139,  benchmark_drawdown=-0.183),
-    ),
+    "conservative": _stress_for("conservative", -0.078, -0.042, -0.061),
+    "balanced": _stress_for("balanced", -0.142, -0.071, -0.089),
+    "aggressive": _stress_for("aggressive", -0.241, -0.108, -0.139),
 }
  
 _BACKTEST: dict[ProfileLabel, BacktestSummary] = {
