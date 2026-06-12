@@ -587,7 +587,7 @@ Consolidated session logs, ordered by date and grouped by day, then by role (P1,
 
 ---
 
-# 9 May 2026 — Week 3 (Monday)
+# 9 May 2026 — Week 2 (Saturday)
 
 ## P4 — Frontend / LLM / Docs
 **Estimated duration:** ~1.5 hours
@@ -644,7 +644,7 @@ Consolidated session logs, ordered by date and grouped by day, then by role (P1,
 
 ---
 
-# 11 May 2026 — Week 2
+# 11 May 2026 — Week 3 (Monday)
 
 ## P3 — ML / Risk Profiling
 **Estimated duration:** 1h30
@@ -1996,7 +1996,7 @@ It is Wednesday evening — `regime_detector.py` was planned for today and remai
 
 ---
 
-# 28 May 2026 — Week 4
+# 28 May 2026 — Week 5 (Thursday)
 
 ## P4 — Frontend / LLM / Docs
 **Estimated duration:** ~2h
@@ -2059,7 +2059,7 @@ It is Wednesday evening — `regime_detector.py` was planned for today and remai
 
 ---
 
-# 31 May 2026 — Week 4 (Sunday)
+# 31 May 2026 — Week 5 (Sunday)
 
 ## P1 — Backend / Data Engineering
 
@@ -2118,7 +2118,7 @@ It is Wednesday evening — `regime_detector.py` was planned for today and remai
 
 ---
 
-# 2 June 2026 — Week 4 (Tuesday)
+# 2 June 2026 — Week 6 (Tuesday)
 
 ## P4 — Frontend / LLM / Docs
 
@@ -2200,7 +2200,7 @@ It is Wednesday evening — `regime_detector.py` was planned for today and remai
 
 ---
 
-# 3 June 2026 — Week 4 (Wednesday)
+# 3 June 2026 — Week 6 (Wednesday)
 
 ## P4 — Frontend / LLM / Docs
 
@@ -2268,7 +2268,7 @@ It is Wednesday evening — `regime_detector.py` was planned for today and remai
 
 ---
 
-# 4 June 2026 — Week 4 (Thursday)
+# 4 June 2026 — Week 6 (Thursday)
 
 ## P1 — Backend / Data Engineering (session 1)
 
@@ -2445,7 +2445,7 @@ It is Wednesday evening — `regime_detector.py` was planned for today and remai
 
 ---
 
-# 9 June 2026 — Week 4 (Tuesday)
+# 9 June 2026 — Week 7 (Tuesday)
 
 ## P1 — Backend / Data Engineering
 
@@ -2567,7 +2567,7 @@ It is Wednesday evening — `regime_detector.py` was planned for today and remai
 
 ---
 
-# 12 June 2026 — Week 4 (Thursday)
+# 12 June 2026 — Week 7 (Friday)
 
 ## P4 — Frontend / LLM / Docs
 
