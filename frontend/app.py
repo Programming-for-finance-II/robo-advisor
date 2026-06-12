@@ -3241,7 +3241,10 @@ div[class*="st-key-chat_suggest"] button p {
     color: #e8edf4 !important; font-size: 0.98rem !important;
     margin: 0.5rem 0 0.35rem !important;
 }
-[data-testid="stChatMessage"] strong { color: #ede9fe !important; }
+/* Dark-mode strong: vivid purple, clearly distinct from regular text (#d6dee9) */
+[data-testid="stChatMessage"] strong {
+    color: #a78bfa !important; font-weight: 700 !important;
+}
 [data-testid="stChatMessage"] code {
     background: rgba(124,92,252,0.14) !important; color: #c4b5fd !important;
     padding: 0.05rem 0.35rem !important; border-radius: 4px !important;
