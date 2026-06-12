@@ -164,7 +164,7 @@ Layer~1 sanitises user input before the API call: inputs exceeding 500 character
 \section{Backtest Results}
 % ─────────────────────────────────────────────────────────────
 
-Three historical stress scenarios are evaluated using US proxy tickers with 10\,bps transaction costs per rebalance.
+Six historical episodes are evaluated for the MODERATE profile: four crises (Global Financial Crisis~2008, Eurozone debt crisis~2011, COVID-19 crash~2020, rate-hike cycle~2022), one moderate-stress year (rate-fear selloff~2018), and one positive regime (post-COVID bull~2021). Each backtest rebalances monthly on a 252-day lookback with 10\,bps of transaction costs per rebalance. The three UCITS primaries lack price history for the earlier windows, so the engine substitutes US-listed proxies (\texttt{SPY}, \texttt{AGG}, \texttt{BIL}); cluster box constraints are applied to these proxies under their primaries' clusters, so the profile cap on cash binds throughout the historical window (an earlier version mismatched the constraint keys to the proxy tickers, silently leaving $\sim$40\,\% in cash and understating drawdowns).
 
 \begin{table}[H]
 \centering\small
@@ -173,22 +173,34 @@ Three historical stress scenarios are evaluated using US proxy tickers with 10\,
 \toprule
 Scenario & Model & Ann.\ Return & Volatility & Sharpe & Max DD \\
 \midrule
-GFC (2008)       & HRP   & $-0.1\%$ & $8.6\%$  & $-0.01$ & $-11.9\%$ \\
-                 & MV    & $-5.7\%$ & $10.7\%$ & $-0.53$ & $-18.0\%$ \\
-                 & $1/N$ & $-5.1\%$ & $18.4\%$ & $-0.28$ & $-25.1\%$ \\
+GFC (2008)       & HRP   & $-5.4\%$  & $16.0\%$ & $-0.33$ & $-22.3\%$ \\
+                 & MV    & $-9.3\%$  & $11.8\%$ & $-0.78$ & $-21.5\%$ \\
+                 & $1/N$ & $-4.9\%$  & $16.6\%$ & $-0.29$ & $-23.2\%$ \\
 \midrule
-COVID-19 (2020)  & HRP   & $+6.4\%$ & $7.7\%$  & $0.83$  & $-10.1\%$ \\
-                 & MV    & $+7.2\%$ & $13.8\%$ & $0.52$  & $-15.5\%$ \\
-                 & $1/N$ & $+11.9\%$ & $13.3\%$ & $0.90$  & $-19.1\%$ \\% corrected
+Eurozone (2011)  & HRP   & $+5.7\%$  & $6.0\%$  & $+0.95$ & $-4.0\%$  \\
+                 & MV    & $+9.3\%$  & $8.1\%$  & $+1.15$ & $-6.9\%$  \\
+                 & $1/N$ & $+7.8\%$  & $8.8\%$  & $+0.89$ & $-5.5\%$  \\
 \midrule
-Rate Hike (2022) & HRP   & $-8.9\%$ & $7.6\%$  & $-1.17$ & $-13.0\%$ \\
-                 & MV    & $-13.1\%$ & $10.4\%$ & $-1.27$ & $-16.3\%$ \\
-                 & $1/N$ & $-13.7\%$ & $11.3\%$ & $-1.21$ & $-19.1\%$ \\
+Selloff (2018)   & HRP   & $-2.3\%$  & $4.2\%$  & $-0.55$ & $-4.8\%$  \\
+                 & MV    & $-3.7\%$  & $8.6\%$  & $-0.43$ & $-7.1\%$  \\
+                 & $1/N$ & $-3.4\%$  & $5.7\%$  & $-0.60$ & $-6.7\%$  \\
+\midrule
+COVID-19 (2020)  & HRP   & $+7.5\%$  & $9.7\%$  & $+0.77$ & $-13.9\%$ \\
+                 & MV    & $+6.4\%$  & $11.7\%$ & $+0.55$ & $-15.0\%$ \\
+                 & $1/N$ & $+10.9\%$ & $11.2\%$ & $+0.97$ & $-15.0\%$ \\
+\midrule
+Bull (2021)      & HRP   & $+5.3\%$  & $3.5\%$  & $+1.53$ & $-2.2\%$  \\
+                 & MV    & $+7.7\%$  & $8.3\%$  & $+0.94$ & $-8.1\%$  \\
+                 & $1/N$ & $+8.7\%$  & $5.3\%$  & $+1.65$ & $-3.3\%$  \\
+\midrule
+Rate Hike (2022) & HRP   & $-11.2\%$ & $9.2\%$  & $-1.21$ & $-16.1\%$ \\
+                 & MV    & $-10.6\%$ & $10.1\%$ & $-1.05$ & $-13.9\%$ \\
+                 & $1/N$ & $-13.7\%$ & $11.9\%$ & $-1.15$ & $-19.6\%$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-HRP consistently delivers lower volatility and smaller drawdowns than both benchmarks across all three scenarios, at the cost of a modest return penalty relative to $1/N$ in the COVID recovery.
+No single strategy dominates across all six episodes, and the broadened coverage makes the trade-offs explicit. HRP records the lowest volatility in five of the six episodes — the 2008 crisis is the exception, where the Minimum-Variance-tilted MV is lower — and the smallest maximum drawdown in the asymmetric crises where diversification matters most, most clearly the 2011 Eurozone debt crisis, where it stays positive ($+5.7\%$) with only a $-4.0\%$ drawdown while European equities fell. In the sharpest equity selloffs (2008 and 2022), however, MV achieves a smaller drawdown than HRP, and in the recovery and bull phases (2020, 2021) the naive $1/N$ portfolio earns both higher returns and a higher Sharpe ratio. HRP's contribution is therefore risk control and robustness across regimes rather than uniform outperformance — consistent with its construction, which targets diversification rather than return maximisation.
 
 % ─────────────────────────────────────────────────────────────
 \section{Limitations}
