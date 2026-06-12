@@ -3221,9 +3221,14 @@ div[class*="st-key-chat_suggest"] button p {
 [data-testid="stChatMessage"] p {
     font-family: 'DM Sans', sans-serif !important; font-size: 0.93rem !important;
     line-height: 1.66 !important; color: #d6dee9 !important;
-    margin-bottom: 0.55rem !important; text-align: left !important;
+    margin-top: 0 !important; margin-bottom: 0.55rem !important;
+    text-align: left !important;
 }
 [data-testid="stChatMessage"] p:last-child { margin-bottom: 0 !important; }
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"])
+[data-testid="stChatMessageContent"] > div:first-child {
+    margin-top: 0 !important; padding-top: 0 !important;
+}
 [data-testid="stChatMessage"] em { color: #6b7689 !important; font-size: 0.82rem !important; }
 [data-testid="stChatMessage"] h1,
 [data-testid="stChatMessage"] h2,
@@ -3338,7 +3343,11 @@ div[class*="st-key-chat_suggest"] button::after { color: #7C4DFF !important; }
 }
 [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"])
 [data-testid="stChatMessageContent"]::before { color: #6d4deb !important; }
-[data-testid="stChatMessage"] p { color: #334155 !important; }
+[data-testid="stChatMessage"] p { color: #334155 !important; margin-top: 0 !important; }
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"])
+[data-testid="stChatMessageContent"] > div:first-child {
+    margin-top: 0 !important; padding-top: 0 !important;
+}
 [data-testid="stChatMessage"] h1,
 [data-testid="stChatMessage"] h2,
 [data-testid="stChatMessage"] h3 { color: #111827 !important; }
