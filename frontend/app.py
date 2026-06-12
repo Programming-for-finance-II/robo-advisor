@@ -4904,6 +4904,12 @@ def render_compare() -> None:
             if _avg > _hot_avg:
                 _hot_cls, _hot_s, _hot_e, _hot_avg = _cls, _s, _e, _avg
 
+    # Are there real diversifiers (meaningfully negative correlations)? In the
+    # current rate regime stocks and bonds move together, so often there are none.
+    _off = [_CORR[a][b] for a in range(len(_TICKERS_HM))
+            for b in range(len(_TICKERS_HM)) if a != b]
+    _has_diversifiers = (min(_off) <= -0.10) if _off else False
+
     fig_hm = go.Figure(go.Heatmap(
         z=_CORR.tolist(),
         x=_TICKERS_HM,
@@ -4996,15 +5002,37 @@ def render_compare() -> None:
         unsafe_allow_html=True,
     )
 
+    if _has_diversifiers:
+        _regime = (
+            "The teal cells are the real diversifiers — assets that move against the "
+            "rest (like the stock–bond hedge). Combining them is what lowers risk."
+        )
+    else:
+        _regime = (
+            "Right now almost everything moves together — even stocks and bonds. The "
+            "classic hedge has weakened, so diversification is harder, which is exactly "
+            "when HRP's robustness matters most."
+        )
+    st.markdown(
+        f"<p style='color:{thm['text_secondary']};font-size:0.82rem;"
+        f"line-height:1.55;margin:0.5rem 0 0.2rem;'>{_regime}</p>",
+        unsafe_allow_html=True,
+    )
+
     _hm_note = (
         ""
         if _corr_is_live
         else " Figures shown are a stylised illustration (live prices unavailable)."
     )
+    _legend = (
+        "Teal = assets that hedge each other (diversifying); purple = move together. "
+        if _has_diversifiers
+        else "Purple = assets that move together; teal would mark diversifiers, but "
+             "there are none in the current data. "
+    )
     st.caption(
-        "Teal = assets that hedge each other (diversifying); purple = assets that move "
-        "together. Outlined blocks are the asset clusters; the highlighted one is the "
-        "most correlated." + _hm_note
+        _legend + "Outlined blocks are the asset clusters; the highlighted one is "
+        "the most correlated." + _hm_note
     )
 
 
