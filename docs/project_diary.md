@@ -3302,6 +3302,85 @@ It is Wednesday evening — `regime_detector.py` was planned for today and remai
 
 ---
 
+## P3 — ML / Risk Profiling
+**Estimated duration:** ~3 hours
+**Focus:** Backtesting bug fix (unconstrained fallback tickers) + 3 new historical scenarios
+
+### What I did
+
+**Bug fix — backtesting with unconstrained fallback tickers**
+
+- Identified a critical bug in the backtest engine: the optimizer received the cluster map keyed by the primary UCITS tickers (e.g. `CSPX.L`, `XEON.MI`, `AGGH.MI`), but in the historical years those ETFs did not yet exist
+- yfinance returned the columns under the US fallback tickers (`SPY`, `BIL`, `AGG`) — the keys did not match → the cluster constraints were never applied
+- Without the cash cap (`25%` for MODERATE), risk-parity poured everything into the lowest-volatility asset (`BIL`) up to a fixed 40%
+- **Effect of the bug:** every backtest was secretly holding ~40% cash → unrealistically low drawdowns
+- **Fix applied:** a `make_optimizer_fallback_aware()` function so that each fallback ticker inherits the cluster of its primary — the constraints now always bind
+- The fix is inert in the live system (the UCITS ETFs exist at current dates, no fallback active) — the dashboard does not change, but the latent bug is closed
+- Added a regression test for the fix
+- Committed the historical prices for offline reproducibility
+
+**Numerical impact of the fix (MODERATE profile, 2008 scenario)**
+
+| Metric | Before the fix | After the fix |
+|---|---|---|
+| Return | −0.1% (€9,989) | −8.1% (€9,190) |
+| Max drawdown | −11.9% | −22.3% |
+| Average cash in portfolio | ~40% | ~13% |
+
+Drawdowns now scale correctly with risk:
+- Conservative 2008: −7%
+- Moderate 2008: −22%
+- Aggressive 2008: −37%
+
+**New backtesting scenarios (from 3 to 6 episodes total)**
+
+Added 3 new historical episodes:
+
+1. **Eurozone Debt Crisis (2011)** — HRP turns positive thanks to the gold and bond rally: demonstrates the real value of HRP diversification in asymmetric crises
+2. **Rate-Fear Selloff (2018)** — mild losses, a moderate stress scenario
+3. **Post-COVID Bull (2021)** — a positive contrast scenario: +5.4% total, Sharpe 1.53
+
+Episodes now covered: 2008, 2011, 2018, 2020, 2021, 2022 — solid historical coverage for the demo and defensible at the exam.
+
+### How I did it
+
+- Analyzed the bug by tracing the data flow: `yfinance loader` → `fallback map` → `cluster map` → `optimizer constraints`
+- Comparative debugging: ran the backtest with and without the fix and compared the output
+- Extended the historical dataset for the 3 new episodes via yfinance
+- Used Claude as an advisor to structure the debugging and document the numerical impact
+- Wrote a regression test to prevent future regressions
+
+### Difficulties
+
+- The bug was silent: no runtime error, the results looked reasonable until the portfolio composition was analyzed by date
+- Identification required noticing that the fixed ~40% cash was anomalous for a MODERATE profile
+- The fix had to be inert for the live system — verified explicitly before committing
+
+### Achievements / Key decisions
+
+- **Serious bug closed:** the backtest numbers are now real, verifiable and defensible at the exam
+- **Historical coverage broadened:** 6 episodes vs the previous 3 — covering both crises (2008, 2011, 2020, 2022) and positive (2021) and moderate (2018) regimes
+- The Conservative/Moderate/Aggressive progression on drawdowns is now monotonic and correct — a strong argument for the demo
+- The 2011 scenario is the most academically interesting: HRP positive in a crisis where European equities were losing — demonstrates the key point of López de Prado (2016)
+- Prices committed for offline reproducibility → the professor can reproduce the results without an internet connection
+
+### Next steps
+
+- Update Section 5 of the LaTeX (Backtest Results) with the 6 scenarios and the new tables
+- Verify that the Streamlit dashboard (P4) shows all 6 episodes in the backtesting tab
+- Coordinate with P4 to update any mock data if needed
+- Consider adding a comparative HRP vs Markowitz vs 1/N table across all 6 scenarios
+
+### Notes for the academic PDF
+
+- The fallback-ticker bug is a concrete example of a "hidden assumption" in backtesting — citable in the Limitations section as a resolved methodological risk
+- Having the fallback ticker inherit its primary's cluster is a documentable design choice: it preserves the economic semantics of the cluster even in the absence of the primary tickers
+- The 2011 scenario (Eurozone Debt Crisis) with HRP positive is the ideal test case for the Portfolio Optimization section: it shows hierarchical diversification in action on real data
+- The 2008–2022 range with 6 episodes covers 3 distinct crisis types (subprime, sovereign debt, rate shock) and 2 positive regimes — methodologically solid for an academic paper
+- The regression test added ensures future changes to the optimizer cannot silently reintroduce the bug — a brief mention in the Lessons Learned section
+
+---
+
 ## P4 — Frontend / LLM / Docs
 
 **Estimated duration:** ~2 hours
