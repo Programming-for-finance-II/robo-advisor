@@ -389,7 +389,7 @@ new branch → PR opened automatically. The PR URL is documented in `AGENTS.md` 
 evidence for the course's AI agent criterion.
 
 All AI-assisted contributions are visible in the commit history. The academic PDF
-(Section 7: Lessons Learned) includes a full retrospective on the agentic workflow.
+(see the *Lessons Learned* section) includes a full retrospective on the agentic workflow.
 
 ---
 

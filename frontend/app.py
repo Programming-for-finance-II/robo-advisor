@@ -1924,7 +1924,8 @@ def render_portfolio() -> None:
         st.error(
             f"HIGH STRESS REGIME -- Average pairwise correlation: "
             f"{avg_corr:.2f} (threshold: 0.75). "
-            "Portfolio adjusted to minimum-variance ERC allocation."
+            "Diversification benefits are reduced in this regime; "
+            "interpret the allocation with caution."
         )
 
     st.markdown("---")

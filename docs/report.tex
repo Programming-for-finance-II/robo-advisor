@@ -77,7 +77,7 @@ The SQLite database (\texttt{robo\_advisor.db}) contains two tables. \texttt{mar
 % ─────────────────────────────────────────────────────────────
 
 \subsection{Architecture}
-The profiler operates in two phases. \textbf{Phase~A} is a rule-based fallback using the Grable--Lytton (1999) instrument \parencite{grable1999}: ten questionnaire items scored on $[0,30]$ are mapped to three profiles (\texttt{CONSERVATIVE}, \texttt{MODERATE}, \texttt{AGGRESSIVE}), with a capital-preservation override that caps the profile regardless of total score. \textbf{Phase~B} uses a trained GBM classifier grounded in empirically observed household behaviour. Both phases return a uniform \texttt{ProfilerOutput} typed dictionary, so downstream components are agnostic to which phase produced the classification.
+The profiler combines two components behind a shared interface. The \textbf{rule-based engine} implements the Grable--Lytton (1999) instrument \parencite{grable1999}: ten questionnaire items scored on $[0,30]$ are mapped to three profiles (\texttt{CONSERVATIVE}, \texttt{MODERATE}, \texttt{AGGRESSIVE}), with a capital-preservation override that caps the profile regardless of total score; this deterministic, MiFID~II-aligned engine is the live serving path. Alongside it, a \textbf{Gradient Boosting classifier} trained and validated on empirically observed household behaviour provides an empirically grounded model. Both return a uniform \texttt{ProfilerOutput} typed dictionary, so downstream components are agnostic to which one produced the classification.
 
 \subsection{Label Construction and GBM Classifier}
 Training labels are derived from the SCF~2022 \parencite{FedSCF2022} ($n=4{,}595$ households, implicate~1). Four allocation variables (\texttt{EQUITY}, \texttt{BOND}, \texttt{CASHLI}, \texttt{STOCKS}) are normalised and clustered via K-Means ($K=3$, silhouette $s=0.84$). Clusters are labelled deterministically by mean equity share. A \texttt{HistGradientBoostingClassifier} is trained on nine questionnaire-derived features with SCF sample weights preserved. Performance:
@@ -135,7 +135,7 @@ Raw weights are tilted by risk profile: Conservative blends toward Minimum Varia
 The Ledoit--Wolf shrinkage estimator \parencite{LedoitWolf2004} $\hat{\Sigma} = (1-\alpha)S + \alpha\mu_S I$ is applied before clustering to stabilise the distance matrix. Box constraints clip weights to $[5\%, 40\%]$ per asset and $[10\%, 60\%]$ per cluster; weights are renormalised after clipping.
 
 \subsection{Market Regime Detection}
-A dual-trigger detector flags \texttt{HIGH\_STRESS} when $\bar{\rho}_{\mathrm{LW}} > 0.75$ or $\mathrm{VIX} > 30$ (ADR-006). Under stress, HRP is replaced by a cluster-level Equal Risk Contribution portfolio and a banner is shown in the frontend.
+A dual-trigger detector flags \texttt{HIGH\_STRESS} when $\bar{\rho}_{\mathrm{LW}} > 0.75$ or $\mathrm{VIX} > 30$ (ADR-006). When triggered, the frontend surfaces a warning banner cautioning that diversification benefits are reduced in the prevailing regime. A cluster-level Equal Risk Contribution allocation (\texttt{get\_erc\_cluster\_weights}) is implemented as the defensive response for this regime; wiring it into the automatic serving path is left as future work.
 
 % ─────────────────────────────────────────────────────────────
 \section{LLM Narrator and Validator (P4)}
@@ -205,13 +205,25 @@ HRP consistently delivers lower volatility and smaller drawdowns than both bench
 \textbf{SQLite persistence.} The audit trail resets on Streamlit Cloud redeploy. A managed PostgreSQL instance would be required in production (ADR-005).
 
 % ─────────────────────────────────────────────────────────────
+\section{Lessons Learned}
+% ─────────────────────────────────────────────────────────────
+
+\textbf{Process over product: the agentic workflow.} The mandatory AI-agent criterion was satisfied by a GitHub Actions workflow that opens pull requests autonomously through the LLM API (PR~\#43). The main obstacle was infrastructural: in a private organisation the default \texttt{GITHUB\_TOKEN} cannot open pull requests, which we resolved with a scoped Personal Access Token. Pairing branch protection with mandatory CI turned the agentic process into a reviewable, auditable record rather than an opaque automation --- precisely the ``process over product'' the brief asks for.
+
+\textbf{Architecture as a safety mechanism.} The central design choice --- a strict separation between a deterministic ``calculator'' (the backend) and an LLM ``narrator'' constrained to a Ground Truth JSON contract --- made hallucination prevention \emph{structural} rather than instructional. The narrator is stateless: the payload is re-injected on every call, so the model stays anchored to current data and cannot drift across turns. This proved far more robust than relying on prompt wording alone.
+
+\textbf{Tests and CI catch real bugs.} A covariance-frequency bug (\texttt{CovarianceShrinkage(frequency=1)} without an explicit annualisation factor) would have inflated reported volatility by $\sqrt{252}\approx 15.9\times$; it surfaced only because the risk-metrics layer annualises explicitly and a regression test pinned the expected value. Smaller edge cases (e.g.\ integer-valued floats slipping through the validator's number check) emerged the same way. Coverage was governed through a shared GitHub issue rather than by unilaterally excluding untested modules, lifting the project from 77\,\% to 81\,\%.
+
+\textbf{Collaboration, honesty and reproducibility.} Parallel work across four roles produced classic distributed-Git frictions: long-lived branches drifting tens of commits behind \texttt{main}, cross-team review of optimiser fixes, and the consolidation of every schema into a single \texttt{backend/schemas} source of truth. A pre-publication secrets audit (scanning the full history for API-key patterns before the repository was made public) and an honest accounting of what is and is not wired into the live serving path --- the trained GBM and the ERC stress fallback are implemented but not on the live path --- were treated as part of the deliverable, not an afterthought.
+
+% ─────────────────────────────────────────────────────────────
 \section{Conclusions}
 % ─────────────────────────────────────────────────────────────
 
 This paper presented an educational robo-advisor prototype demonstrating a complete investment workflow — from risk profiling to portfolio optimisation to natural-language explanation — while explicitly addressing transparency and geographic-awareness gaps common in commercial platforms. The Ground Truth JSON contract and the five-step validator represent the core architectural innovation: they make hallucination prevention structural rather than instructional. The EU Awareness layer (Rule~9, \texttt{profiler\_us\_centric\_caveat}, Validator Step~5) is a deliberate design choice to surface the geographic limitations of a US-trained model to European investors at the point of recommendation.
 
 \subsection*{Future Work}
-Replace the SCF~2022 training dataset with the ECB Household Finance and Consumption Survey (HFCS); replace \texttt{yfinance} with a reliable data provider; implement whole-word matching in the validator; add narrator retry logic before returning the safe fallback; extend the regime detector with a rolling confirmation window.
+Replace the SCF~2022 training dataset with the ECB Household Finance and Consumption Survey (HFCS); replace \texttt{yfinance} with a reliable data provider; implement whole-word matching in the validator; add narrator retry logic before returning the safe fallback; wire the cluster-level ERC fallback into the live serving path under \texttt{HIGH\_STRESS}; extend the regime detector with a rolling confirmation window.
 
 % ─────────────────────────────────────────────────────────────
 \nocite{FedSCF2022, MiFIDII}
