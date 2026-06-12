@@ -248,6 +248,39 @@ def _run_live_optimization(profile_label: str) -> dict:
             "tickers": list(cov.columns),
             "matrix": np.clip(_corr_mat, -1.0, 1.0).tolist(),
         }
+        # HRP's own ordering (quasi-diagonalisation) + its tightest cluster, so
+        # the matrix view can mirror how HRP actually groups assets by behaviour.
+        try:
+            from scipy.cluster.hierarchy import fcluster, linkage
+            from scipy.spatial.distance import squareform
+
+            from backend.optimizer.hrp import (
+                _corr_to_distance,
+                _cov_to_corr,
+                _get_quasi_diagonal_order,
+            )
+
+            _corr_df = _cov_to_corr(cov)
+            _dist = np.asarray(_corr_to_distance(_corr_df))
+            _link = linkage(squareform(_dist, checks=False), method="ward")
+            _qidx = _get_quasi_diagonal_order(_link, len(cov.columns))
+            correlation["hrp_order"] = [cov.columns[i] for i in _qidx]
+
+            _labels = fcluster(_link, t=4, criterion="maxclust")
+            _groups: dict[int, list[str]] = {}
+            for _t, _lab in zip(cov.columns, _labels):
+                _groups.setdefault(int(_lab), []).append(_t)
+            _hot, _hot_avg = [], -2.0
+            for _members in _groups.values():
+                if len(_members) >= 2:
+                    _pv = [float(_corr_df.loc[a, b])
+                           for _x, a in enumerate(_members) for b in _members[_x + 1:]]
+                    _avg = sum(_pv) / len(_pv) if _pv else 0.0
+                    if _avg > _hot_avg:
+                        _hot_avg, _hot = _avg, _members
+            correlation["hot_cluster"] = _hot
+        except Exception:
+            pass
     except Exception:
         correlation = None
 
@@ -4913,8 +4946,9 @@ def render_compare() -> None:
         f"<p style='color:{thm['text_secondary']};font-size:0.82rem;"
         "line-height:1.55;margin-bottom:0.5rem;'>"
         "HRP and Markowitz build their portfolios from this same correlation matrix — but "
-        "they use it in opposite ways, and that is what makes their allocations differ. Each "
-        "cell shows how two ETFs move: together (purple) or apart (teal)."
+        "they use it in opposite ways. Here the assets are ordered the way HRP groups them, "
+        "by how they actually move (purple = together, teal = apart), so its real groups sit "
+        "side by side — which can differ from their asset-class labels."
         "</p>",
         unsafe_allow_html=True,
     )
@@ -4940,39 +4974,60 @@ def render_compare() -> None:
         ])
         _corr_is_live = False
 
-    # Order assets by HRP cluster so same-class assets sit together and the
-    # within-cluster blocks become visible on the diagonal.
-    _CLS_ORDER = {"Equity": 0, "Alternatives": 1, "Bonds": 2, "Cash": 3}
-    _order = sorted(
-        range(len(_TICKERS_HM)),
-        key=lambda i: (_CLS_ORDER.get(_HRP_TICKER_CLUSTER.get(_TICKERS_HM[i], "Cash"), 9),
-                       _TICKERS_HM[i]),
-    )
+    # Order assets the way HRP does (quasi-diagonalisation) so its real groups
+    # emerge on the diagonal. Fall back to asset-class order when HRP's order is
+    # unavailable (offline / stylised matrix).
+    _hrp_order = _corr_live.get("hrp_order") if _corr_live else None
+    if _hrp_order and set(_hrp_order) == set(_TICKERS_HM):
+        _pos = {t: i for i, t in enumerate(_TICKERS_HM)}
+        _order = [_pos[t] for t in _hrp_order]
+    else:
+        _CLS_ORDER = {"Equity": 0, "Alternatives": 1, "Bonds": 2, "Cash": 3}
+        _order = sorted(
+            range(len(_TICKERS_HM)),
+            key=lambda i: (_CLS_ORDER.get(_HRP_TICKER_CLUSTER.get(_TICKERS_HM[i], "Cash"), 9),
+                           _TICKERS_HM[i]),
+        )
     _TICKERS_HM = [_TICKERS_HM[i] for i in _order]
     _CORR = _CORR[np.ix_(_order, _order)]
 
-    # Identify the most-correlated cluster block (>= 2 assets). That block is
-    # where Markowitz's matrix inversion becomes unstable and over-concentrates,
-    # so the contrast with HRP is sharpest there — drives the highlight + text.
-    _CLS_WORD = {"Equity": "equity", "Alternatives": "real-asset",
-                 "Bonds": "bond", "Cash": "cash"}
-    _spans = []
-    _k = 0
-    while _k < len(_TICKERS_HM):
-        _kc = _HRP_TICKER_CLUSTER.get(_TICKERS_HM[_k], "Cash")
-        _ke = _k
-        while _ke < len(_TICKERS_HM) and _HRP_TICKER_CLUSTER.get(_TICKERS_HM[_ke], "Cash") == _kc:
-            _ke += 1
-        _spans.append((_kc, _k, _ke - 1))
-        _k = _ke
-    _hot_cls, _hot_s, _hot_e, _hot_avg = None, -1, -1, -1.0
-    for _cls, _s, _e in _spans:
-        if _e > _s:
-            _vals = [_CORR[a][b] for a in range(_s, _e + 1)
-                     for b in range(_s, _e + 1) if a != b]
-            _avg = sum(_vals) / len(_vals) if _vals else 0.0
-            if _avg > _hot_avg:
-                _hot_cls, _hot_s, _hot_e, _hot_avg = _cls, _s, _e, _avg
+    # The single tightest cluster HRP found — where Markowitz over-concentrates.
+    # Use HRP's own cluster when available; else fall back to the most-correlated
+    # contiguous asset-class block. Only a contiguous run is highlighted.
+    _hot_members = [t for t in ((_corr_live.get("hot_cluster") if _corr_live else None) or [])
+                    if t in _TICKERS_HM]
+    _hot_s = _hot_e = -1
+    if _hot_members:
+        _idxs = sorted(_TICKERS_HM.index(t) for t in _hot_members)
+        if _idxs == list(range(_idxs[0], _idxs[-1] + 1)):
+            _hot_s, _hot_e = _idxs[0], _idxs[-1]
+    else:
+        _best = -2.0
+        _k = 0
+        while _k < len(_TICKERS_HM):
+            _kc = _HRP_TICKER_CLUSTER.get(_TICKERS_HM[_k], "Cash")
+            _ke = _k
+            while (_ke < len(_TICKERS_HM)
+                   and _HRP_TICKER_CLUSTER.get(_TICKERS_HM[_ke], "Cash") == _kc):
+                _ke += 1
+            if _ke - _k >= 2:
+                _vals = [_CORR[a][b] for a in range(_k, _ke) for b in range(_k, _ke) if a != b]
+                _avg = sum(_vals) / len(_vals) if _vals else 0.0
+                if _avg > _best:
+                    _best, _hot_s, _hot_e = _avg, _k, _ke - 1
+            _k = _ke
+    if _hot_s >= 0:
+        _hv = [_CORR[a][b] for a in range(_hot_s, _hot_e + 1)
+               for b in range(_hot_s, _hot_e + 1) if a != b]
+        _hot_avg = sum(_hv) / len(_hv) if _hv else 0.0
+    else:
+        _hot_avg = 0.0
+
+    # Are there real diversifiers (meaningfully negative correlations)? In the
+    # current rate regime stocks and bonds move together, so often there are none.
+    _off = [_CORR[a][b] for a in range(len(_TICKERS_HM))
+            for b in range(len(_TICKERS_HM)) if a != b]
+    _has_diversifiers = (min(_off) <= -0.10) if _off else False
 
     fig_hm = go.Figure(go.Heatmap(
         z=_CORR.tolist(),
@@ -4997,25 +5052,17 @@ def render_compare() -> None:
         ),
     ))
 
-    # Outline each HRP cluster as a block on the diagonal, so the grouping the
-    # intro describes is actually visible on the chart.
-    _outline = "#334155" if is_light() else "#f8fafc"
-    _n = len(_TICKERS_HM)
-    _i = 0
-    while _i < _n:
-        _c = _HRP_TICKER_CLUSTER.get(_TICKERS_HM[_i], "Cash")
-        _j = _i
-        while _j < _n and _HRP_TICKER_CLUSTER.get(_TICKERS_HM[_j], "Cash") == _c:
-            _j += 1
-        _hot = (_i == _hot_s and _j - 1 == _hot_e)
+    # A single highlight on HRP's tightest cluster — no cluster boxes, so we
+    # don't assert hard boundaries. The quasi-diagonal order already makes the
+    # groups visible; this only flags where Markowitz over-concentrates.
+    if _hot_s >= 0:
         fig_hm.add_shape(
             type="rect",
-            x0=_i - 0.5, x1=_j - 0.5, y0=_i - 0.5, y1=_j - 0.5,
-            line=dict(color="#fbbf24" if _hot else _outline, width=3 if _hot else 2),
+            x0=_hot_s - 0.5, x1=_hot_e + 0.5, y0=_hot_s - 0.5, y1=_hot_e + 0.5,
+            line=dict(color="#fbbf24", width=3),
             fillcolor="rgba(0,0,0,0)",
             layer="above",
         )
-        _i = _j
 
     fig_hm.update_layout(height=440, margin=dict(l=8, r=8, t=8, b=8))
     fig_hm = apply_plotly_theme(fig_hm)
@@ -5031,14 +5078,13 @@ def render_compare() -> None:
     )
     st.plotly_chart(fig_hm, use_container_width=True, config={"displaylogo": False})
 
-    _hot_word = _CLS_WORD.get(_hot_cls, "most-correlated") if _hot_cls else "most-correlated"
-    if _hot_cls and _hot_avg > 0:
+    if _hot_s >= 0 and _hot_avg > 0:
         st.markdown(
             f"<p style='color:{thm['text_secondary']};font-size:0.82rem;"
             "line-height:1.55;margin:0.4rem 0 0.6rem;'>"
-            f"The {_hot_word} ETFs move almost together (ρ ≈ {_hot_avg:.2f}) — the "
-            "highlighted block. A cluster of near-identical assets is exactly where the "
-            "two models part ways:"
+            f"The highlighted block is HRP's tightest cluster — those ETFs move almost "
+            f"together (ρ ≈ {_hot_avg:.2f}). A group of near-identical assets is exactly "
+            "where the two models part ways:"
             "</p>",
             unsafe_allow_html=True,
         )
@@ -5066,15 +5112,37 @@ def render_compare() -> None:
         unsafe_allow_html=True,
     )
 
+    if _has_diversifiers:
+        _regime = (
+            "The teal cells are the real diversifiers — assets that move against the "
+            "rest (like the stock–bond hedge). Combining them is what lowers risk."
+        )
+    else:
+        _regime = (
+            "Right now almost everything moves together — even stocks and bonds. The "
+            "classic hedge has weakened, so diversification is harder, which is exactly "
+            "when HRP's robustness matters most."
+        )
+    st.markdown(
+        f"<p style='color:{thm['text_secondary']};font-size:0.82rem;"
+        f"line-height:1.55;margin:0.5rem 0 0.2rem;'>{_regime}</p>",
+        unsafe_allow_html=True,
+    )
+
     _hm_note = (
         ""
         if _corr_is_live
         else " Figures shown are a stylised illustration (live prices unavailable)."
     )
+    _legend = (
+        "Teal = assets that hedge each other (diversifying); purple = move together. "
+        if _has_diversifiers
+        else "Purple = assets that move together; teal would mark diversifiers, but "
+             "there are none in the current data. "
+    )
     st.caption(
-        "Teal = assets that hedge each other (diversifying); purple = assets that move "
-        "together. Outlined blocks are the asset clusters; the highlighted one is the "
-        "most correlated." + _hm_note
+        _legend + "Assets are ordered by HRP's own grouping; the highlighted block is "
+        "its tightest cluster, where Markowitz over-concentrates." + _hm_note
     )
 
 

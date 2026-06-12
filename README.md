@@ -8,10 +8,12 @@
 [![CI](https://github.com/Programming-for-finance-II/robo-advisor/actions/workflows/ci.yml/badge.svg)](https://github.com/Programming-for-finance-II/robo-advisor/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-MIT-lightgrey)](LICENSE)
 
-An academic robo-advisor that classifies investor risk profiles using a
-machine learning model trained on real household behaviour data (Fed SCF 2022),
-optimises portfolios via Hierarchical Risk Parity (López de Prado, 2016),
-and generates natural-language explanations through a constrained LLM narrator
+An academic robo-advisor that classifies investor risk profiles with a
+deterministic, MiFID II-aligned rule-based engine (Grable–Lytton, 1999),
+complemented by a Gradient Boosting classifier trained and validated on real
+household behaviour data (Fed SCF 2022, 94% cross-validated accuracy). It
+optimises portfolios via Hierarchical Risk Parity (López de Prado, 2016), and
+generates natural-language explanations through a constrained LLM narrator
 (Claude API) that is mathematically prevented from inventing numbers.
 
 **Course:** Programming in Finance II — Prof. P. Gruber — USI 2026
@@ -53,7 +55,7 @@ robo-advisor/
 ├── backend/
 │   ├── api/                   ← FastAPI endpoints (/profile, /optimize, /advice, /backtest, /compare)
 │   ├── ml/
-│   │   ├── profiler/          ← GBM classifier trained on Fed SCF 2022
+│   │   ├── profiler/          ← rule-based engine (live) + GBM trained on Fed SCF 2022
 │   │   └── regime_detector.py
 │   ├── optimizer/             ← HRP + Ledoit-Wolf + Markowitz benchmark
 │   ├── llm/                   ← Claude API narrator + 5-step validator
@@ -65,7 +67,7 @@ robo-advisor/
 │   ├── user_guide.md          ← end-to-end user flow
 │   ├── architecture.md        ← internal data flow and component boundaries
 │   └── adr/                   ← Architecture Decision Records (ADR-001 to ADR-009)
-└── tests/                     ← pytest unit + integration (≥75% coverage)
+└── tests/                     ← pytest unit + integration (≥80% coverage)
 ```
 
 ---
@@ -213,8 +215,8 @@ The app has six pages, reachable from the top navigation bar:
    Q7 ("safety net money") triggers a MiFID II hard override to CONSERVATIVE
    regardless of other answers. On submission you immediately see your
    **investor profile** (`CONSERVATIVE` / `MODERATE` / `AGGRESSIVE`) with a model
-   confidence score and the top behavioural drivers (SHAP values in Phase B,
-   importance scores in Phase A).
+   confidence score and the model's top behavioural drivers, shown as
+   feature-importance scores.
 
 2. **Portfolio Dashboard** — explore your HRP-optimised portfolio with:
    - Allocation donut chart with tickers and weights
@@ -294,9 +296,12 @@ Returns HRP-optimised portfolio weights and risk metrics.
 {
   "algorithm": "HRP",
   "weights": { "CSPX.L": 0.22, "EFA": 0.15, "AGGH.MI": 0.18 },
+  "expected_return": 0.061,
   "expected_volatility": 0.094,
-  "sharpe_ratio": null,
+  "sharpe_ratio": 0.65,
   "risk_contributions": { "CSPX.L": 0.31, "EFA": 0.22 },
+  "optimizer_version": "hrp_v1",
+  "solver_status": "optimal",
   "ucits_tickers_used": ["CSPX.L", "AGGH.MI", "XEON.MI"],
   "fallback_tickers_applied": [],
   "recommendation_id": "uuid-...",
@@ -304,8 +309,9 @@ Returns HRP-optimised portfolio weights and risk metrics.
 }
 ```
 
-> Note: `expected_return` and `sharpe_ratio` are `null` by design for HRP — the algorithm
-> does not require or produce reliable point estimates of forward returns. See ADR-001.
+> Note: HRP does not rely on forward-return estimates to build the weights;
+> `expected_return` and `sharpe_ratio` are reported ex-post from the loaded price
+> history for comparability with the Mean-Variance benchmark. See ADR-001.
 
 ### `POST /advice`
 
@@ -335,11 +341,11 @@ Generates a validated LLM explanation of the portfolio.
 
 | Component | Technology | Notes |
 |---|---|---|
-| Risk Profiler ★ | scikit-learn GBM + SHAP | Trained on Fed SCF 2022 real data |
+| Risk Profiler ★ | Rule-based engine + scikit-learn Gradient Boosting + SHAP | Grable–Lytton scoring (live); GBM trained & validated on Fed SCF 2022 |
 | LLM Narrator ★ | Claude API (Anthropic) | Narrator pattern — cannot invent numbers |
 | LLM Validator | Custom 5-step pipeline | Forbidden phrases, hallucinated numbers, disclaimer, injection detection, EU Awareness Rule 9 |
 | Portfolio Optimizer | PyPortfolioOpt HRP | Ledoit-Wolf shrinkage, guardrails 5–40% per asset, 10–60% per cluster |
-| Regime Detector | Correlation threshold + VIX | avg\|ρ\| > 0.75 → HIGH_STRESS → ERC fallback |
+| Regime Detector | Correlation threshold + VIX | avg\|ρ\| > 0.75 → HIGH_STRESS flag + investor banner |
 | Data Layer | yfinance | ValidatedDataLoader with UCITS fallback + SHA-256 audit hash |
 | Database | SQLite | Full audit trail (market hash, prompt hash, validator flags) |
 | Frontend | Streamlit | EU Investor Note, stress banner, UCITS badges, HRP vs MV tabs |
@@ -401,7 +407,7 @@ uv run pytest tests/test_validator.py -v
 ```
 
 CI runs `ruff` lint + `pytest` + coverage on every push and PR.
-Coverage target: ≥75% on backend modules.
+Coverage target: ≥80% on backend modules.
 
 ---
 
