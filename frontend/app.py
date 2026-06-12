@@ -4581,22 +4581,26 @@ def render_compare() -> None:
         "Return Potential",
     ]
 
+    # Stronger fills on the light surface — 15% opacity washes out to almost
+    # nothing on white, so the two shapes are hard to tell apart.
+    _hrp_fill = "rgba(124,92,252,0.30)" if is_light() else "rgba(124,92,252,0.15)"
+    _mv_fill = "rgba(248,113,113,0.28)" if is_light() else "rgba(248,113,113,0.15)"
     fig_radar = go.Figure()
     fig_radar.add_trace(go.Scatterpolar(
         r=hrp_scores + [hrp_scores[0]],
         theta=categories + [categories[0]],
         fill="toself",
         name="HRP (default)",
-        line=dict(color="#7c5cfc", width=2),
-        fillcolor="rgba(124,92,252,0.15)",
+        line=dict(color="#7c5cfc", width=2.5),
+        fillcolor=_hrp_fill,
     ))
     fig_radar.add_trace(go.Scatterpolar(
         r=mv_scores + [mv_scores[0]],
         theta=categories + [categories[0]],
         fill="toself",
         name="Markowitz MV",
-        line=dict(color="#f87171", width=2),
-        fillcolor="rgba(248,113,113,0.15)",
+        line=dict(color="#f87171", width=2.5),
+        fillcolor=_mv_fill,
     ))
     fig_radar.update_layout(
         polar=dict(
@@ -4616,7 +4620,7 @@ def render_compare() -> None:
         margin=dict(l=40, r=40, t=60, b=40),
     )
     fig_radar = apply_plotly_theme(fig_radar)
-    _grid = "#e2e8f0" if is_light() else "#1e2640"
+    _grid = "#cbd5e1" if is_light() else "#1e2640"
     fig_radar.update_layout(
         paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
         polar=dict(
