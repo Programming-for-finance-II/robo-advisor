@@ -4539,56 +4539,60 @@ def render_compare() -> None:
     )
 
     # ── Overview: 100%-stacked risk, one row per method ──────────────────────
-    # An immediate read of concentration: a wide single segment (Markowitz on
-    # gold) vs many even slices (HRP). Coloured by the app's asset-class palette,
-    # with a lighter shade to separate assets inside the same class.
-    _SEG_COLOR: dict[str, str] = {
-        "CSPX.L": "#7c5cfc", "EFA": "#a78bfa",       # Equity (purple)
-        "GLD": "#f59e0b", "VNQ": "#fbbf24",          # Alternatives (amber)
-        "AGGH.MI": "#0dcfb0", "TLT": "#0a9e88", "TIP": "#5eead4",  # Bonds (teal)
-        "XEON.MI": "#3b82f6",                        # Cash (blue)
-    }
+    # An immediate read of concentration: a wide segment (Markowitz on gold) vs
+    # many slices (HRP). Coloured by the Portfolio Dashboard's asset-class
+    # palette so the two pages stay visually consistent; same-class neighbours
+    # are split by a thin separator and each asset is labelled inside its
+    # segment. The legend sits above so it never overlaps the % axis below.
     _SEG_SHORT: dict[str, str] = {
         "CSPX.L": "US equity", "EFA": "Intl equity", "VNQ": "Real estate",
         "GLD": "Gold", "AGGH.MI": "Euro bonds", "TLT": "Treasuries",
         "TIP": "Infl. bonds", "XEON.MI": "Cash",
     }
+    _CLASS_ORDER = {"Equity": 0, "Alternatives": 1, "Bonds": 2, "Cash": 3}
+    _seg_order = sorted(
+        all_tickers,
+        key=lambda t: (_CLASS_ORDER.get(_HRP_TICKER_CLUSTER.get(t, "Cash"), 9),
+                       -hrp_rc.get(t, 0.0)),
+    )
     _methods = ["HRP", "Markowitz"]
+    _seen_cls: set[str] = set()
     fig_stack = go.Figure()
-    for t in all_tickers:
+    for t in _seg_order:
+        cls = _HRP_TICKER_CLUSTER.get(t, "Cash")
+        color = _HRP_CLUSTER_COLOR.get(cls, "#64748b")
         h = hrp_rc.get(t, 0.0) * 100
         m = mv_rc.get(t, 0.0) * 100
         short = _SEG_SHORT.get(t, t)
         disp = _TICKER_DISPLAY_NAME.get(t, t)
         # Label a segment inline only when it is wide enough to hold the text.
         seg_text = [
-            f"{short} {h:.0f}%" if h >= 12 else "",
-            f"{short} {m:.0f}%" if m >= 12 else "",
+            f"{short} {h:.0f}%" if h >= 11 else "",
+            f"{short} {m:.0f}%" if m >= 11 else "",
         ]
         fig_stack.add_trace(go.Bar(
-            name=f"{disp} ({t})",
+            name=cls,
+            legendgroup=cls,
+            showlegend=cls not in _seen_cls,
             y=_methods,
             x=[h, m],
             orientation="h",
-            marker_color=_SEG_COLOR.get(t, "#64748b"),
+            marker=dict(color=color, line=dict(color="#0b1220", width=1.5)),
             text=seg_text,
             textposition="inside",
             insidetextanchor="middle",
-            textfont=dict(size=11, color="#0b1020"),
+            insidetextfont=dict(size=11, color="#f8fafc"),
             cliponaxis=False,
             hovertemplate=f"{disp} ({t}) — %{{x:.1f}}%<extra>%{{y}}</extra>",
         ))
-    fig_stack.update_layout(
-        barmode="stack",
-        height=210,
-        margin=dict(l=8, r=8, t=8, b=8),
-        xaxis=dict(range=[0, 100], ticksuffix="%"),
-        legend=dict(orientation="h", yanchor="bottom", y=-0.45,
-                    xanchor="center", x=0.5, font=dict(size=11)),
-    )
-    fig_stack.update_yaxes(autorange="reversed")  # HRP row on top
+        _seen_cls.add(cls)
     fig_stack = apply_plotly_theme(fig_stack)
     fig_stack.update_layout(
+        barmode="stack",
+        height=220,
+        margin=dict(l=8, r=8, t=44, b=44),
+        legend=dict(orientation="h", yanchor="bottom", y=1.04,
+                    xanchor="center", x=0.5, font=dict(size=11)),
         paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
         modebar_remove=[
             "select2d", "lasso2d", "autoScale2d", "zoom2d", "pan2d",
@@ -4597,10 +4601,13 @@ def render_compare() -> None:
         ],
         dragmode=False,
     )
+    fig_stack.update_xaxes(range=[0, 100], ticksuffix="%")
+    fig_stack.update_yaxes(autorange="reversed")  # HRP row on top
     st.plotly_chart(fig_stack, use_container_width=True, config={"displaylogo": False})
     st.caption(
-        "Each bar is 100% of that method's risk, split by asset — a wide segment "
-        "means risk is piled into one holding. Below: the same figures per asset."
+        "Each bar is 100% of that method's risk, split by asset and coloured by "
+        "asset class — a wide segment means risk is piled into one holding. "
+        "Below: the same figures per asset."
     )
 
     n_assets = len(all_tickers)
