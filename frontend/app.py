@@ -5274,7 +5274,8 @@ def render_compare() -> None:
             "<b>unstable</b> → it <b>over-concentrates</b> risk.</div></div></div>"
             f'<div style="background:{thm["accent_soft"]};'
             f'border:1px solid {thm["accent_border"]};border-radius:10px;'
-            f'padding:0.6rem 0.8rem;font-size:0.83rem;color:{thm["text_primary"]};'
+            f'padding:0.6rem 0.8rem;margin-bottom:0.5rem;font-size:0.83rem;'
+            f'color:{thm["text_primary"]};'
             f'line-height:1.55;">{_regime_html}</div>{_offline_html}',
             unsafe_allow_html=True,
         )
