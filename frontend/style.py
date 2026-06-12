@@ -1398,6 +1398,30 @@ button[data-testid="stPills-pill"][aria-pressed="true"],
 [data-testid="stRadio"] label[data-baseweb="radio"] > div:last-child {
     color: #334155 !important;
 }
+/* ── Expander (light): make the collapsible read as a clear, tappable card ── */
+/* Streamlit's default border is near-white at 20% opacity, so on the light    */
+/* surface the dropdown is almost invisible. Give it a real border, a white    */
+/* card background and a coloured chevron so users see it can be opened.        */
+[data-testid="stExpander"] details {
+    border: 1px solid #D8DEE9 !important;
+    background: #FFFFFF !important;
+    border-radius: 10px !important;
+    box-shadow: 0 1px 3px rgba(15,23,42,0.05) !important;
+}
+[data-testid="stExpander"] details:hover {
+    border-color: #7C4DFF !important;
+}
+[data-testid="stExpander"] details > summary {
+    color: #111827 !important;
+    font-weight: 600 !important;
+}
+[data-testid="stExpander"] details > summary:hover {
+    color: #6d4deb !important;
+}
+[data-testid="stExpander"] details > summary svg {
+    fill: #6d4deb !important;
+    color: #6d4deb !important;
+}
 </style>
 """
 
@@ -1613,6 +1637,25 @@ def apply_plotly_theme(fig):
                 None, "#94a3b8", "#cbd5e1", "#e2e8f0", "#f1f5f9", "white", "#ffffff",
             ):
                 ann.font.color = "#334155"
+        # The donut's centre count and colour legend set their colours via inline
+        # <span style="color:…"> inside the annotation text, which bypasses
+        # ann.font.color above and would otherwise render near-white on the light
+        # surface. Swap those washed-out hexes for readable dark equivalents.
+        _light_text_swap = {"#f1f5f9": "#111827", "#cbd5e1": "#334155"}
+        for ann in fig.layout.annotations:
+            if ann.text:
+                swapped = ann.text
+                for _old, _new in _light_text_swap.items():
+                    swapped = swapped.replace(_old, _new)
+                if swapped != ann.text:
+                    ann.text = swapped
+        # Pie/donut labels that don't fit inside a thin slice get pushed *outside*
+        # onto the white paper, where the white in-slice font is invisible.
+        # Recolour only the outside labels dark; inside labels stay white on
+        # their coloured slice.
+        for tr in fig.data:
+            if tr.type == "pie":
+                tr.outsidetextfont.color = "#334155"
         # Polar charts (radar) keep their own axis styling
         if fig.layout.polar is not None:
             fig.update_polars(

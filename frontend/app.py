@@ -4100,12 +4100,7 @@ def render_backtesting() -> None:
                 period_return[_s] = _ec[-1]["portfolio_value"] - 1.0
 
     # ── Metrics comparison table ─────────────────────────────────────────────
-    st.markdown(
-        f'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:1.3rem;'
-        f'font-weight:700;color:{t["text_primary"]};margin:0.5rem 0 0.15rem;">'
-        f'Strategy comparison</div>',
-        unsafe_allow_html=True,
-    )
+    _section_header("1", "Which strategy held up best?")
     rows = []
     for strat in _BACKTEST_STRATEGIES:
         m = summary[selected]["strategies"][strat]
@@ -4161,7 +4156,7 @@ def render_backtesting() -> None:
     st.markdown(
         f'<div style="overflow-x:auto;border:1px solid {t["border"]};'
         f'border-radius:12px;">'
-        f'<table style="width:100%;border-collapse:collapse;">'
+        f'<table style="width:100%;border-collapse:collapse;margin:0;">'
         f'<thead><tr style="background:{_head_bg};'
         f'border-bottom:1px solid {t["border"]};">{_head}</tr></thead>'
         f"<tbody>{_body}</tbody></table></div>",
@@ -4191,13 +4186,15 @@ def render_backtesting() -> None:
             f"(Sharpe {_sh:.2f}), while <strong>{_dd_name}</strong> had the "
             f"smallest loss (max drawdown {_dd:.1%})."
         )
+    # Light, airy purple wash — no left accent bar and no icon, so the takeaway
+    # reads as a plain highlighted note rather than a heavy callout.
+    _tw_bg = "rgba(124,77,255,0.05)" if is_light() else "rgba(124,92,252,0.05)"
+    _tw_border = "rgba(124,77,255,0.18)" if is_light() else "rgba(124,92,252,0.18)"
     st.markdown(
-        f'<div style="background:{t["accent_soft"]};border:1px solid {t["accent_border"]};'
-        f'border-radius:10px;padding:0.8rem 1rem;margin-top:0.5rem;'
-        f'display:flex;gap:0.65rem;align-items:flex-start;">'
-        f'<span style="font-size:1.1rem;line-height:1.4;flex-shrink:0;">🏆</span>'
-        f'<span style="font-size:0.88rem;line-height:1.55;color:{t["text_secondary"]};">'
-        f'{_takeaway}</span></div>',
+        f'<div style="background:{_tw_bg};border:1px solid {_tw_border};'
+        f'border-radius:10px;padding:0.8rem 1rem;margin-top:1.25rem;'
+        f'font-size:0.88rem;line-height:1.55;color:{t["text_secondary"]};">'
+        f'{_takeaway}</div>',
         unsafe_allow_html=True,
     )
 
@@ -4207,12 +4204,7 @@ def render_backtesting() -> None:
     # Two donuts (HRP vs Markowitz) showing the average mix each strategy held
     # across the scenario's rebalances — this is *what* drove the results above.
     if detail is not None:
-        st.markdown(
-            f'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:1.3rem;'
-            f'font-weight:700;color:{t["text_primary"]};margin:0.5rem 0 0.15rem;">'
-            f'What each strategy held</div>',
-            unsafe_allow_html=True,
-        )
+        _section_header("2", "Why — what each strategy held")
         st.caption(
             "Average allocation across the scenario's monthly rebalances — what "
             "actually drove the results above. A more defensive mix tends to move "
@@ -4260,12 +4252,10 @@ def render_backtesting() -> None:
                                 config={"displaylogo": False, "responsive": False})
 
         st.markdown(
-            f'<div style="background:{t["bg_card"]};border:1px solid {t["border"]};'
-            f'border-left:3px solid {_PROXY_COLOR};border-radius:10px;'
-            f'padding:0.75rem 1rem;margin-top:0.6rem;font-size:0.84rem;'
-            f'line-height:1.55;color:{t["text_secondary"]};">'
-            f'<span style="color:{_PROXY_COLOR};font-weight:700;">ℹ️ About the grey '
-            f'slices (SPY, AGG, BIL):</span> these are US-listed stand-ins for '
+            f'<div style="font-size:0.84rem;line-height:1.55;'
+            f'color:{t["text_secondary"]};margin-top:0.6rem;">'
+            f'<strong style="color:{t["text_primary"]};">About the grey '
+            f'slices (SPY, AGG, BIL):</strong> these are US-listed stand-ins for '
             f'CSPX.L, AGGH.MI and XEON.MI. The backtest uses them for the early '
             f'years because those European ETFs have no price history back to 2008 — '
             f'the real ETFs take over once available. They track the same exposures '
@@ -4273,31 +4263,29 @@ def render_backtesting() -> None:
             unsafe_allow_html=True,
         )
 
-        st.markdown(
-            f'<div style="background:{t["accent_soft"]};border:1px solid '
-            f'{t["accent_border"]};border-radius:10px;padding:0.85rem 1.05rem;'
-            f'margin-top:0.5rem;font-size:0.88rem;line-height:1.6;'
-            f'color:{t["text_secondary"]};">'
-            f'<strong style="color:{t["text_primary"]};">Why these mixes?</strong> '
-            f'HRP (Hierarchical Risk Parity) balances how much risk each asset '
-            f'contributes, so it leans on the calmest assets — cash and short-term '
-            f'bonds — and keeps volatile ones like equities small. Markowitz '
-            f'(Mean-Variance) optimises for the best past risk/return trade-off, so '
-            f'its mix shifts toward whatever looked most efficient over the recent '
-            f'window — which changes from one scenario to the next.</div>',
-            unsafe_allow_html=True,
-        )
+        _v_spacer(0.75)
+
+        with st.expander("💡 Why these mixes?"):
+            st.markdown(
+                f'<div style="font-size:0.88rem;line-height:1.6;'
+                f'color:{t["text_secondary"]};">'
+                f'<strong style="color:{t["text_primary"]};">HRP (Hierarchical '
+                f'Risk Parity)</strong> balances how much risk each asset '
+                f'contributes, so it leans on the calmest assets — cash and '
+                f'short-term bonds — and keeps volatile ones like equities small. '
+                f'<strong style="color:{t["text_primary"]};">Markowitz '
+                f'(Mean-Variance)</strong> optimises for the best past risk/return '
+                f'trade-off, so its mix shifts toward whatever looked most '
+                f'efficient over the recent window — which changes from one '
+                f'scenario to the next.</div>',
+                unsafe_allow_html=True,
+            )
 
     st.markdown("---")
 
     # ── Performance charts ───────────────────────────────────────────────────
     if detail is not None:
-        st.markdown(
-            f'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:1.3rem;'
-            f'font-weight:700;color:{t["text_primary"]};margin:0.5rem 0 0.15rem;">'
-            f'How the portfolio would have moved</div>',
-            unsafe_allow_html=True,
-        )
+        _section_header("3", "How it played out over time")
         st.caption(
             "The value of each strategy over the scenario (top), and how far it fell "
             "from its previous peak (bottom) — the result of the mixes shown above."
@@ -4593,22 +4581,26 @@ def render_compare() -> None:
         "Return Potential",
     ]
 
+    # Stronger fills on the light surface — 15% opacity washes out to almost
+    # nothing on white, so the two shapes are hard to tell apart.
+    _hrp_fill = "rgba(124,92,252,0.30)" if is_light() else "rgba(124,92,252,0.15)"
+    _mv_fill = "rgba(248,113,113,0.28)" if is_light() else "rgba(248,113,113,0.15)"
     fig_radar = go.Figure()
     fig_radar.add_trace(go.Scatterpolar(
         r=hrp_scores + [hrp_scores[0]],
         theta=categories + [categories[0]],
         fill="toself",
         name="HRP (default)",
-        line=dict(color="#7c5cfc", width=2),
-        fillcolor="rgba(124,92,252,0.15)",
+        line=dict(color="#7c5cfc", width=2.5),
+        fillcolor=_hrp_fill,
     ))
     fig_radar.add_trace(go.Scatterpolar(
         r=mv_scores + [mv_scores[0]],
         theta=categories + [categories[0]],
         fill="toself",
         name="Markowitz MV",
-        line=dict(color="#f87171", width=2),
-        fillcolor="rgba(248,113,113,0.15)",
+        line=dict(color="#f87171", width=2.5),
+        fillcolor=_mv_fill,
     ))
     fig_radar.update_layout(
         polar=dict(
@@ -4628,7 +4620,7 @@ def render_compare() -> None:
         margin=dict(l=40, r=40, t=60, b=40),
     )
     fig_radar = apply_plotly_theme(fig_radar)
-    _grid = "#e2e8f0" if is_light() else "#1e2640"
+    _grid = "#cbd5e1" if is_light() else "#1e2640"
     fig_radar.update_layout(
         paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
         polar=dict(
