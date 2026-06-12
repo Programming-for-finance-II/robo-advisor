@@ -520,7 +520,7 @@ def main() -> None:
     if is_light():
         nav_bg = ("linear-gradient(180deg,"
                   "rgba(255,255,255,0.90) 0%, rgba(255,255,255,0.84) 100%)")
-        nav_shadow = "0 8px 24px rgba(15,23,42,0.08)"
+        nav_shadow = "0 8px 24px rgba(91,52,214,0.10)"
         nav_hairline = ("linear-gradient(90deg,"
                         "transparent 0%, rgba(124,77,255,0.35) 50%, transparent 100%)")
         nav_brand_grad = "linear-gradient(92deg, #1e1b4b 0%, #7c4dff 100%)"
@@ -1291,7 +1291,7 @@ def render_questionnaire() -> None:
     # gradient lines perfectly centred on the circles (circle height = 2.8rem,
     # centre = 1.4rem from top) regardless of the label below each circle.
     tk = get_theme_tokens()
-    _step_bg = "#f1f4fa" if is_light() else "rgba(15,23,42,0.55)"
+    _step_bg = "#EFEDF9" if is_light() else "rgba(15,23,42,0.55)"
     _c_blue = "#2563eb" if is_light() else "#60a5fa"
     _c_purple = "#6d4deb" if is_light() else "#a78bfa"
     _c_amber = "#b45309" if is_light() else "#fbbf24"
@@ -1575,21 +1575,21 @@ _GATE_CSS = """
 _GATE_CSS_LIGHT = """
 <style>
 .pg-wrap {
-    border: 1px solid #D8DEE9;
+    border: 1px solid #E5E2F1;
     background:
         radial-gradient(120% 90% at 50% -10%, rgba(124,77,255,0.10) 0%, transparent 55%),
-        linear-gradient(180deg, #ffffff 0%, #f1f4fa 100%);
-    box-shadow: 0 12px 32px rgba(15,23,42,0.08);
+        linear-gradient(180deg, #ffffff 0%, #EFEDF9 100%);
+    box-shadow: 0 12px 32px rgba(91,52,214,0.10);
 }
 .pg-eyebrow { color: #6d4deb; }
 .pg-title { color: #0f172a; }
 .pg-body { color: #334155; }
 .pg-step {
     background: #ffffff;
-    border: 1px solid #D8DEE9;
-    box-shadow: 0 4px 16px rgba(15,23,42,0.05);
+    border: 1px solid #E5E2F1;
+    box-shadow: 0 4px 16px rgba(91,52,214,0.07);
 }
-.pg-step-num { color: #6d4deb; background: #EEE8FF; border-color: rgba(124,77,255,0.4); }
+.pg-step-num { color: #6d4deb; background: #EFEAFE; border-color: rgba(124,77,255,0.4); }
 .pg-step--active .pg-step-num {
     color: #ffffff; background: linear-gradient(135deg,#8b6bff,#7c4dff);
     border-color: transparent;
@@ -1600,7 +1600,7 @@ _GATE_CSS_LIGHT = """
 .pg-chip {
     color: #334155;
     background: #ffffff;
-    border: 1px solid #D8DEE9;
+    border: 1px solid #E5E2F1;
 }
 </style>
 """
@@ -2667,7 +2667,7 @@ def _render_etf_explorer() -> None:
     # Per-pill CSS: cluster-coloured dot + active (navy) / inactive (grey).
     # Streamlit tags each keyed widget's container with `st-key-<key>`.
     _pill_bg = "#f1f4fa" if is_light() else "rgba(255,255,255,0.05)"
-    _pill_border = "#D8DEE9" if is_light() else "rgba(255,255,255,0.10)"
+    _pill_border = "#E5E2F1" if is_light() else "rgba(255,255,255,0.10)"
     _pill_color = "#334155" if is_light() else "#94a3b8"
     css_rules = [
         'div[class*="st-key-pill_"] button {'
@@ -2763,7 +2763,7 @@ def _render_etf_explorer() -> None:
                 ),
                 yaxis=dict(
                     side="right", showgrid=True,
-                    gridcolor="#e2e8f0" if is_light() else "rgba(255,255,255,0.05)",
+                    gridcolor="#EAE7F4" if is_light() else "rgba(255,255,255,0.05)",
                     color="#64748b",
                     range=[y_lo - y_pad, y_hi + y_pad], fixedrange=False,
                 ),
@@ -3419,14 +3419,14 @@ div[class*="st-key-ca_clear"] button:hover {
 _CHAT_CSS_LIGHT = """
 <style>
 div[class*="st-key-ca_screen"] {
-    border-color: #D8DEE9 !important;
+    border-color: #E5E2F1 !important;
     background:
         radial-gradient(135% 80% at 50% -12%, rgba(124,77,255,0.07) 0%, transparent 55%),
         #ffffff !important;
-    box-shadow: 0 10px 30px rgba(15,23,42,0.08) !important;
+    box-shadow: 0 10px 30px rgba(91,52,214,0.10) !important;
 }
 .ca-head {
-    background: linear-gradient(135deg, #f8fafc 0%, #ede9fe 55%, #f1f4fa 100%);
+    background: linear-gradient(135deg, #F4F2FB 0%, #ede9fe 55%, #EFEDF9 100%);
     border-color: #ddd6fe;
 }
 .ca-head-name { color: #111827; }
@@ -3434,7 +3434,7 @@ div[class*="st-key-ca_screen"] {
 .ca-pill--profile { color: #6d4deb; background: #efeafe; border-color: #ddd6fe; }
 .ca-pill--model { color: #2563eb; background: #e7effe; border-color: #c7dafc; }
 .ca-pill--guard { color: #0f9e87; background: #e3faf5; border-color: #bdf0e6; }
-.ca-foot { background: #f8fafc; border-color: #E5E9F0; }
+.ca-foot { background: #F4F2FB; border-color: #EEECF7; }
 .ca-step { color: #4b5563; background: #f4f1fe; border-color: #ddd6fe; }
 .ca-arrow { color: #94a3b8; }
 .ca-foot-note { color: #64748B; }
@@ -3473,10 +3473,10 @@ div[class*="st-key-chat_suggest"] button::after { color: #7C4DFF !important; }
 [data-testid="stChatMessage"] strong { color: #5b2bd9 !important; }
 [data-testid="stChatMessage"] code { background: #f4f1fe !important; color: #6d4deb !important; }
 [data-testid="stChatMessage"] th,
-[data-testid="stChatMessage"] td { border-color: #D8DEE9 !important; color: #334155 !important; }
+[data-testid="stChatMessage"] td { border-color: #E5E2F1 !important; color: #334155 !important; }
 [data-testid="stChatMessage"] th { color: #6d4deb !important; background: #f4f1fe !important; }
 [data-testid="stChatInput"] > div {
-    background: #ffffff !important; border-color: #D8DEE9 !important;
+    background: #ffffff !important; border-color: #E5E2F1 !important;
 }
 [data-testid="stChatInput"] textarea { background: #ffffff !important; color: #111827 !important; }
 [data-testid="stChatInput"] textarea::placeholder { color: #94a3b8 !important; }
