@@ -34,6 +34,76 @@
       }
     }
   },
+  "euro_debt_2011": {
+    "scenario_label": "Eurozone Debt Crisis (2011)",
+    "test_start": "2011-01-03",
+    "test_end": "2011-12-30",
+    "profile": "MODERATE",
+    "strategies": {
+      "HRP": {
+        "cagr": 0.057371,
+        "annualised_volatility": 0.060383,
+        "sharpe_ratio": 0.950116,
+        "max_drawdown": -0.039743,
+        "calmar_ratio": 1.443553,
+        "total_transaction_cost": 0.000831,
+        "n_rebalances": 10
+      },
+      "MV": {
+        "cagr": 0.092542,
+        "annualised_volatility": 0.080783,
+        "sharpe_ratio": 1.145557,
+        "max_drawdown": -0.069088,
+        "calmar_ratio": 1.339472,
+        "total_transaction_cost": 0.00261,
+        "n_rebalances": 10
+      },
+      "1/N": {
+        "cagr": 0.078451,
+        "annualised_volatility": 0.08777,
+        "sharpe_ratio": 0.893827,
+        "max_drawdown": -0.055178,
+        "calmar_ratio": 1.421786,
+        "total_transaction_cost": 0.0,
+        "n_rebalances": 10
+      }
+    }
+  },
+  "selloff_2018": {
+    "scenario_label": "Rate-Fear Selloff (2018)",
+    "test_start": "2018-01-02",
+    "test_end": "2018-12-31",
+    "profile": "MODERATE",
+    "strategies": {
+      "HRP": {
+        "cagr": -0.022902,
+        "annualised_volatility": 0.041703,
+        "sharpe_ratio": -0.549162,
+        "max_drawdown": -0.048151,
+        "calmar_ratio": -0.475624,
+        "total_transaction_cost": 0.000779,
+        "n_rebalances": 9
+      },
+      "MV": {
+        "cagr": -0.036948,
+        "annualised_volatility": 0.086447,
+        "sharpe_ratio": -0.427403,
+        "max_drawdown": -0.071162,
+        "calmar_ratio": -0.519204,
+        "total_transaction_cost": 0.002047,
+        "n_rebalances": 9
+      },
+      "1/N": {
+        "cagr": -0.034145,
+        "annualised_volatility": 0.057045,
+        "sharpe_ratio": -0.598564,
+        "max_drawdown": -0.066852,
+        "calmar_ratio": -0.510761,
+        "total_transaction_cost": 0.0,
+        "n_rebalances": 9
+      }
+    }
+  },
   "covid_2020": {
     "scenario_label": "COVID-19 Crash (2020)",
     "test_start": "2020-01-02",
@@ -66,6 +136,41 @@
         "calmar_ratio": 0.727865,
         "total_transaction_cost": 0.0,
         "n_rebalances": 9
+      }
+    }
+  },
+  "recovery_2021": {
+    "scenario_label": "Post-COVID Bull (2021)",
+    "test_start": "2021-01-04",
+    "test_end": "2021-12-31",
+    "profile": "MODERATE",
+    "strategies": {
+      "HRP": {
+        "cagr": 0.053095,
+        "annualised_volatility": 0.034759,
+        "sharpe_ratio": 1.527539,
+        "max_drawdown": -0.02178,
+        "calmar_ratio": 2.437858,
+        "total_transaction_cost": 0.00069,
+        "n_rebalances": 8
+      },
+      "MV": {
+        "cagr": 0.077356,
+        "annualised_volatility": 0.082595,
+        "sharpe_ratio": 0.936567,
+        "max_drawdown": -0.080868,
+        "calmar_ratio": 0.956569,
+        "total_transaction_cost": 0.002566,
+        "n_rebalances": 8
+      },
+      "1/N": {
+        "cagr": 0.087029,
+        "annualised_volatility": 0.052729,
+        "sharpe_ratio": 1.650509,
+        "max_drawdown": -0.03349,
+        "calmar_ratio": 2.598618,
+        "total_transaction_cost": 0.0,
+        "n_rebalances": 8
       }
     }
   },

@@ -1,0 +1,3657 @@
+{
+  "scenario_key": "euro_debt_2011",
+  "scenario_label": "Eurozone Debt Crisis (2011)",
+  "test_start": "2011-01-03",
+  "test_end": "2011-12-30",
+  "profile": "AGGRESSIVE",
+  "tickers_used": [
+    "AGGH.MI",
+    "CSPX.L",
+    "EFA",
+    "GLD",
+    "TIP",
+    "TLT",
+    "VNQ",
+    "XEON.MI",
+    "SPY",
+    "AGG"
+  ],
+  "strategies": {
+    "HRP": {
+      "strategy": "HRP",
+      "cagr": 0.049563,
+      "annualised_volatility": 0.126767,
+      "sharpe_ratio": 0.390978,
+      "max_drawdown": -0.085699,
+      "calmar_ratio": 0.578338,
+      "total_transaction_cost": 0.000555,
+      "n_rebalances": 10,
+      "equity_curve": [
+        {
+          "date": "2011-01-03",
+          "portfolio_value": 0.999681
+        },
+        {
+          "date": "2011-01-04",
+          "portfolio_value": 0.995748
+        },
+        {
+          "date": "2011-01-05",
+          "portfolio_value": 0.993923
+        },
+        {
+          "date": "2011-01-06",
+          "portfolio_value": 0.990557
+        },
+        {
+          "date": "2011-01-07",
+          "portfolio_value": 0.990263
+        },
+        {
+          "date": "2011-01-10",
+          "portfolio_value": 0.990804
+        },
+        {
+          "date": "2011-01-11",
+          "portfolio_value": 0.992483
+        },
+        {
+          "date": "2011-01-12",
+          "portfolio_value": 0.998988
+        },
+        {
+          "date": "2011-01-13",
+          "portfolio_value": 0.999969
+        },
+        {
+          "date": "2011-01-14",
+          "portfolio_value": 1.002038
+        },
+        {
+          "date": "2011-01-17",
+          "portfolio_value": 1.002041
+        },
+        {
+          "date": "2011-01-18",
+          "portfolio_value": 1.004608
+        },
+        {
+          "date": "2011-01-19",
+          "portfolio_value": 0.999952
+        },
+        {
+          "date": "2011-01-20",
+          "portfolio_value": 0.994691
+        },
+        {
+          "date": "2011-01-21",
+          "portfolio_value": 0.997363
+        },
+        {
+          "date": "2011-01-24",
+          "portfolio_value": 1.000889
+        },
+        {
+          "date": "2011-01-25",
+          "portfolio_value": 1.003168
+        },
+        {
+          "date": "2011-01-26",
+          "portfolio_value": 1.004494
+        },
+        {
+          "date": "2011-01-27",
+          "portfolio_value": 1.006091
+        },
+        {
+          "date": "2011-01-28",
+          "portfolio_value": 0.997625
+        },
+        {
+          "date": "2011-01-31",
+          "portfolio_value": 1.001631
+        },
+        {
+          "date": "2011-02-01",
+          "portfolio_value": 1.010283
+        },
+        {
+          "date": "2011-02-02",
+          "portfolio_value": 1.009103
+        },
+        {
+          "date": "2011-02-03",
+          "portfolio_value": 1.009578
+        },
+        {
+          "date": "2011-02-04",
+          "portfolio_value": 1.007655
+        },
+        {
+          "date": "2011-02-07",
+          "portfolio_value": 1.011428
+        },
+        {
+          "date": "2011-02-08",
+          "portfolio_value": 1.013758
+        },
+        {
+          "date": "2011-02-09",
+          "portfolio_value": 1.013699
+        },
+        {
+          "date": "2011-02-10",
+          "portfolio_value": 1.011378
+        },
+        {
+          "date": "2011-02-11",
+          "portfolio_value": 1.015457
+        },
+        {
+          "date": "2011-02-14",
+          "portfolio_value": 1.017009
+        },
+        {
+          "date": "2011-02-15",
+          "portfolio_value": 1.016317
+        },
+        {
+          "date": "2011-02-16",
+          "portfolio_value": 1.020241
+        },
+        {
+          "date": "2011-02-17",
+          "portfolio_value": 1.023019
+        },
+        {
+          "date": "2011-02-18",
+          "portfolio_value": 1.024894
+        },
+        {
+          "date": "2011-02-21",
+          "portfolio_value": 1.02489
+        },
+        {
+          "date": "2011-02-22",
+          "portfolio_value": 1.015688
+        },
+        {
+          "date": "2011-02-23",
+          "portfolio_value": 1.014527
+        },
+        {
+          "date": "2011-02-24",
+          "portfolio_value": 1.013788
+        },
+        {
+          "date": "2011-02-25",
+          "portfolio_value": 1.022545
+        },
+        {
+          "date": "2011-02-28",
+          "portfolio_value": 1.029028
+        },
+        {
+          "date": "2011-03-01",
+          "portfolio_value": 1.020153
+        },
+        {
+          "date": "2011-03-02",
+          "portfolio_value": 1.019122
+        },
+        {
+          "date": "2011-03-03",
+          "portfolio_value": 1.025489
+        },
+        {
+          "date": "2011-03-04",
+          "portfolio_value": 1.022745
+        },
+        {
+          "date": "2011-03-07",
+          "portfolio_value": 1.017764
+        },
+        {
+          "date": "2011-03-08",
+          "portfolio_value": 1.021637
+        },
+        {
+          "date": "2011-03-09",
+          "portfolio_value": 1.022348
+        },
+        {
+          "date": "2011-03-10",
+          "portfolio_value": 1.01222
+        },
+        {
+          "date": "2011-03-11",
+          "portfolio_value": 1.015023
+        },
+        {
+          "date": "2011-03-14",
+          "portfolio_value": 1.009525
+        },
+        {
+          "date": "2011-03-15",
+          "portfolio_value": 1.001819
+        },
+        {
+          "date": "2011-03-16",
+          "portfolio_value": 0.991285
+        },
+        {
+          "date": "2011-03-17",
+          "portfolio_value": 1.001381
+        },
+        {
+          "date": "2011-03-18",
+          "portfolio_value": 1.006721
+        },
+        {
+          "date": "2011-03-21",
+          "portfolio_value": 1.01594
+        },
+        {
+          "date": "2011-03-22",
+          "portfolio_value": 1.01381
+        },
+        {
+          "date": "2011-03-23",
+          "portfolio_value": 1.014018
+        },
+        {
+          "date": "2011-03-24",
+          "portfolio_value": 1.018056
+        },
+        {
+          "date": "2011-03-25",
+          "portfolio_value": 1.017239
+        },
+        {
+          "date": "2011-03-28",
+          "portfolio_value": 1.016022
+        },
+        {
+          "date": "2011-03-29",
+          "portfolio_value": 1.018251
+        },
+        {
+          "date": "2011-03-30",
+          "portfolio_value": 1.025194
+        },
+        {
+          "date": "2011-03-31",
+          "portfolio_value": 1.025144
+        },
+        {
+          "date": "2011-04-01",
+          "portfolio_value": 1.028604
+        },
+        {
+          "date": "2011-04-04",
+          "portfolio_value": 1.029933
+        },
+        {
+          "date": "2011-04-05",
+          "portfolio_value": 1.029956
+        },
+        {
+          "date": "2011-04-06",
+          "portfolio_value": 1.030706
+        },
+        {
+          "date": "2011-04-07",
+          "portfolio_value": 1.028126
+        },
+        {
+          "date": "2011-04-08",
+          "portfolio_value": 1.027874
+        },
+        {
+          "date": "2011-04-11",
+          "portfolio_value": 1.026411
+        },
+        {
+          "date": "2011-04-12",
+          "portfolio_value": 1.023591
+        },
+        {
+          "date": "2011-04-13",
+          "portfolio_value": 1.02483
+        },
+        {
+          "date": "2011-04-14",
+          "portfolio_value": 1.028135
+        },
+        {
+          "date": "2011-04-15",
+          "portfolio_value": 1.032917
+        },
+        {
+          "date": "2011-04-18",
+          "portfolio_value": 1.025888
+        },
+        {
+          "date": "2011-04-19",
+          "portfolio_value": 1.030549
+        },
+        {
+          "date": "2011-04-20",
+          "portfolio_value": 1.039716
+        },
+        {
+          "date": "2011-04-21",
+          "portfolio_value": 1.043163
+        },
+        {
+          "date": "2011-04-25",
+          "portfolio_value": 1.044214
+        },
+        {
+          "date": "2011-04-26",
+          "portfolio_value": 1.050349
+        },
+        {
+          "date": "2011-04-27",
+          "portfolio_value": 1.055748
+        },
+        {
+          "date": "2011-04-28",
+          "portfolio_value": 1.060909
+        },
+        {
+          "date": "2011-04-29",
+          "portfolio_value": 1.061795
+        },
+        {
+          "date": "2011-05-02",
+          "portfolio_value": 1.062095
+        },
+        {
+          "date": "2011-05-03",
+          "portfolio_value": 1.058852
+        },
+        {
+          "date": "2011-05-04",
+          "portfolio_value": 1.05433
+        },
+        {
+          "date": "2011-05-05",
+          "portfolio_value": 1.046851
+        },
+        {
+          "date": "2011-05-06",
+          "portfolio_value": 1.04781
+        },
+        {
+          "date": "2011-05-09",
+          "portfolio_value": 1.052094
+        },
+        {
+          "date": "2011-05-10",
+          "portfolio_value": 1.057391
+        },
+        {
+          "date": "2011-05-11",
+          "portfolio_value": 1.049225
+        },
+        {
+          "date": "2011-05-12",
+          "portfolio_value": 1.050634
+        },
+        {
+          "date": "2011-05-13",
+          "portfolio_value": 1.04475
+        },
+        {
+          "date": "2011-05-16",
+          "portfolio_value": 1.043409
+        },
+        {
+          "date": "2011-05-17",
+          "portfolio_value": 1.04439
+        },
+        {
+          "date": "2011-05-18",
+          "portfolio_value": 1.048355
+        },
+        {
+          "date": "2011-05-19",
+          "portfolio_value": 1.050297
+        },
+        {
+          "date": "2011-05-20",
+          "portfolio_value": 1.045084
+        },
+        {
+          "date": "2011-05-23",
+          "portfolio_value": 1.037001
+        },
+        {
+          "date": "2011-05-24",
+          "portfolio_value": 1.039174
+        },
+        {
+          "date": "2011-05-25",
+          "portfolio_value": 1.041465
+        },
+        {
+          "date": "2011-05-26",
+          "portfolio_value": 1.046945
+        },
+        {
+          "date": "2011-05-27",
+          "portfolio_value": 1.050979
+        },
+        {
+          "date": "2011-05-30",
+          "portfolio_value": 1.050982
+        },
+        {
+          "date": "2011-05-31",
+          "portfolio_value": 1.059509
+        },
+        {
+          "date": "2011-06-01",
+          "portfolio_value": 1.047906
+        },
+        {
+          "date": "2011-06-02",
+          "portfolio_value": 1.045202
+        },
+        {
+          "date": "2011-06-03",
+          "portfolio_value": 1.044047
+        },
+        {
+          "date": "2011-06-06",
+          "portfolio_value": 1.036682
+        },
+        {
+          "date": "2011-06-07",
+          "portfolio_value": 1.040025
+        },
+        {
+          "date": "2011-06-08",
+          "portfolio_value": 1.036595
+        },
+        {
+          "date": "2011-06-09",
+          "portfolio_value": 1.039344
+        },
+        {
+          "date": "2011-06-10",
+          "portfolio_value": 1.028402
+        },
+        {
+          "date": "2011-06-13",
+          "portfolio_value": 1.027923
+        },
+        {
+          "date": "2011-06-14",
+          "portfolio_value": 1.034968
+        },
+        {
+          "date": "2011-06-15",
+          "portfolio_value": 1.024643
+        },
+        {
+          "date": "2011-06-16",
+          "portfolio_value": 1.025774
+        },
+        {
+          "date": "2011-06-17",
+          "portfolio_value": 1.029634
+        },
+        {
+          "date": "2011-06-20",
+          "portfolio_value": 1.031893
+        },
+        {
+          "date": "2011-06-21",
+          "portfolio_value": 1.040848
+        },
+        {
+          "date": "2011-06-22",
+          "portfolio_value": 1.036996
+        },
+        {
+          "date": "2011-06-23",
+          "portfolio_value": 1.032588
+        },
+        {
+          "date": "2011-06-24",
+          "portfolio_value": 1.026187
+        },
+        {
+          "date": "2011-06-27",
+          "portfolio_value": 1.02886
+        },
+        {
+          "date": "2011-06-28",
+          "portfolio_value": 1.034379
+        },
+        {
+          "date": "2011-06-29",
+          "portfolio_value": 1.040658
+        },
+        {
+          "date": "2011-06-30",
+          "portfolio_value": 1.045386
+        },
+        {
+          "date": "2011-07-01",
+          "portfolio_value": 1.052762
+        },
+        {
+          "date": "2011-07-04",
+          "portfolio_value": 1.052757
+        },
+        {
+          "date": "2011-07-05",
+          "portfolio_value": 1.054539
+        },
+        {
+          "date": "2011-07-06",
+          "portfolio_value": 1.055857
+        },
+        {
+          "date": "2011-07-07",
+          "portfolio_value": 1.061208
+        },
+        {
+          "date": "2011-07-08",
+          "portfolio_value": 1.059543
+        },
+        {
+          "date": "2011-07-11",
+          "portfolio_value": 1.049538
+        },
+        {
+          "date": "2011-07-12",
+          "portfolio_value": 1.048676
+        },
+        {
+          "date": "2011-07-13",
+          "portfolio_value": 1.052832
+        },
+        {
+          "date": "2011-07-14",
+          "portfolio_value": 1.046509
+        },
+        {
+          "date": "2011-07-15",
+          "portfolio_value": 1.050814
+        },
+        {
+          "date": "2011-07-18",
+          "portfolio_value": 1.044661
+        },
+        {
+          "date": "2011-07-19",
+          "portfolio_value": 1.055123
+        },
+        {
+          "date": "2011-07-20",
+          "portfolio_value": 1.057132
+        },
+        {
+          "date": "2011-07-21",
+          "portfolio_value": 1.064333
+        },
+        {
+          "date": "2011-07-22",
+          "portfolio_value": 1.067104
+        },
+        {
+          "date": "2011-07-25",
+          "portfolio_value": 1.062619
+        },
+        {
+          "date": "2011-07-26",
+          "portfolio_value": 1.064157
+        },
+        {
+          "date": "2011-07-27",
+          "portfolio_value": 1.05025
+        },
+        {
+          "date": "2011-07-28",
+          "portfolio_value": 1.049993
+        },
+        {
+          "date": "2011-07-29",
+          "portfolio_value": 1.052355
+        },
+        {
+          "date": "2011-08-01",
+          "portfolio_value": 1.048273
+        },
+        {
+          "date": "2011-08-02",
+          "portfolio_value": 1.038346
+        },
+        {
+          "date": "2011-08-03",
+          "portfolio_value": 1.040076
+        },
+        {
+          "date": "2011-08-04",
+          "portfolio_value": 1.012716
+        },
+        {
+          "date": "2011-08-05",
+          "portfolio_value": 1.009639
+        },
+        {
+          "date": "2011-08-08",
+          "portfolio_value": 0.975654
+        },
+        {
+          "date": "2011-08-09",
+          "portfolio_value": 1.010711
+        },
+        {
+          "date": "2011-08-10",
+          "portfolio_value": 0.992923
+        },
+        {
+          "date": "2011-08-11",
+          "portfolio_value": 1.00988
+        },
+        {
+          "date": "2011-08-12",
+          "portfolio_value": 1.016031
+        },
+        {
+          "date": "2011-08-15",
+          "portfolio_value": 1.029684
+        },
+        {
+          "date": "2011-08-16",
+          "portfolio_value": 1.027119
+        },
+        {
+          "date": "2011-08-17",
+          "portfolio_value": 1.030937
+        },
+        {
+          "date": "2011-08-18",
+          "portfolio_value": 1.00843
+        },
+        {
+          "date": "2011-08-19",
+          "portfolio_value": 1.000899
+        },
+        {
+          "date": "2011-08-22",
+          "portfolio_value": 1.004005
+        },
+        {
+          "date": "2011-08-23",
+          "portfolio_value": 1.016474
+        },
+        {
+          "date": "2011-08-24",
+          "portfolio_value": 1.014992
+        },
+        {
+          "date": "2011-08-25",
+          "portfolio_value": 1.006476
+        },
+        {
+          "date": "2011-08-26",
+          "portfolio_value": 1.017991
+        },
+        {
+          "date": "2011-08-29",
+          "portfolio_value": 1.030412
+        },
+        {
+          "date": "2011-08-30",
+          "portfolio_value": 1.034891
+        },
+        {
+          "date": "2011-08-31",
+          "portfolio_value": 1.038188
+        },
+        {
+          "date": "2011-09-01",
+          "portfolio_value": 1.034375
+        },
+        {
+          "date": "2011-09-02",
+          "portfolio_value": 1.026822
+        },
+        {
+          "date": "2011-09-05",
+          "portfolio_value": 1.026819
+        },
+        {
+          "date": "2011-09-06",
+          "portfolio_value": 1.019183
+        },
+        {
+          "date": "2011-09-07",
+          "portfolio_value": 1.031671
+        },
+        {
+          "date": "2011-09-08",
+          "portfolio_value": 1.027666
+        },
+        {
+          "date": "2011-09-09",
+          "portfolio_value": 1.011584
+        },
+        {
+          "date": "2011-09-12",
+          "portfolio_value": 1.010849
+        },
+        {
+          "date": "2011-09-13",
+          "portfolio_value": 1.014982
+        },
+        {
+          "date": "2011-09-14",
+          "portfolio_value": 1.022206
+        },
+        {
+          "date": "2011-09-15",
+          "portfolio_value": 1.029579
+        },
+        {
+          "date": "2011-09-16",
+          "portfolio_value": 1.033862
+        },
+        {
+          "date": "2011-09-19",
+          "portfolio_value": 1.024732
+        },
+        {
+          "date": "2011-09-20",
+          "portfolio_value": 1.027073
+        },
+        {
+          "date": "2011-09-21",
+          "portfolio_value": 1.010137
+        },
+        {
+          "date": "2011-09-22",
+          "portfolio_value": 0.994225
+        },
+        {
+          "date": "2011-09-23",
+          "portfolio_value": 0.991901
+        },
+        {
+          "date": "2011-09-26",
+          "portfolio_value": 1.000424
+        },
+        {
+          "date": "2011-09-27",
+          "portfolio_value": 1.008955
+        },
+        {
+          "date": "2011-09-28",
+          "portfolio_value": 0.995519
+        },
+        {
+          "date": "2011-09-29",
+          "portfolio_value": 1.00354
+        },
+        {
+          "date": "2011-09-30",
+          "portfolio_value": 0.990646
+        },
+        {
+          "date": "2011-10-03",
+          "portfolio_value": 0.978519
+        },
+        {
+          "date": "2011-10-04",
+          "portfolio_value": 0.988124
+        },
+        {
+          "date": "2011-10-05",
+          "portfolio_value": 0.994888
+        },
+        {
+          "date": "2011-10-06",
+          "portfolio_value": 1.00599
+        },
+        {
+          "date": "2011-10-07",
+          "portfolio_value": 0.998472
+        },
+        {
+          "date": "2011-10-10",
+          "portfolio_value": 1.019386
+        },
+        {
+          "date": "2011-10-11",
+          "portfolio_value": 1.017033
+        },
+        {
+          "date": "2011-10-12",
+          "portfolio_value": 1.022569
+        },
+        {
+          "date": "2011-10-13",
+          "portfolio_value": 1.021855
+        },
+        {
+          "date": "2011-10-14",
+          "portfolio_value": 1.030139
+        },
+        {
+          "date": "2011-10-17",
+          "portfolio_value": 1.020221
+        },
+        {
+          "date": "2011-10-18",
+          "portfolio_value": 1.031068
+        },
+        {
+          "date": "2011-10-19",
+          "portfolio_value": 1.022414
+        },
+        {
+          "date": "2011-10-20",
+          "portfolio_value": 1.022973
+        },
+        {
+          "date": "2011-10-21",
+          "portfolio_value": 1.03597
+        },
+        {
+          "date": "2011-10-24",
+          "portfolio_value": 1.045565
+        },
+        {
+          "date": "2011-10-25",
+          "portfolio_value": 1.040926
+        },
+        {
+          "date": "2011-10-26",
+          "portfolio_value": 1.046109
+        },
+        {
+          "date": "2011-10-27",
+          "portfolio_value": 1.068374
+        },
+        {
+          "date": "2011-10-28",
+          "portfolio_value": 1.069186
+        },
+        {
+          "date": "2011-10-31",
+          "portfolio_value": 1.054698
+        },
+        {
+          "date": "2011-11-01",
+          "portfolio_value": 1.041569
+        },
+        {
+          "date": "2011-11-02",
+          "portfolio_value": 1.049723
+        },
+        {
+          "date": "2011-11-03",
+          "portfolio_value": 1.060495
+        },
+        {
+          "date": "2011-11-04",
+          "portfolio_value": 1.055523
+        },
+        {
+          "date": "2011-11-07",
+          "portfolio_value": 1.061101
+        },
+        {
+          "date": "2011-11-08",
+          "portfolio_value": 1.066155
+        },
+        {
+          "date": "2011-11-09",
+          "portfolio_value": 1.042032
+        },
+        {
+          "date": "2011-11-10",
+          "portfolio_value": 1.045064
+        },
+        {
+          "date": "2011-11-11",
+          "portfolio_value": 1.058423
+        },
+        {
+          "date": "2011-11-14",
+          "portfolio_value": 1.051554
+        },
+        {
+          "date": "2011-11-15",
+          "portfolio_value": 1.052873
+        },
+        {
+          "date": "2011-11-16",
+          "portfolio_value": 1.043376
+        },
+        {
+          "date": "2011-11-17",
+          "portfolio_value": 1.033308
+        },
+        {
+          "date": "2011-11-18",
+          "portfolio_value": 1.034524
+        },
+        {
+          "date": "2011-11-21",
+          "portfolio_value": 1.020196
+        },
+        {
+          "date": "2011-11-22",
+          "portfolio_value": 1.020148
+        },
+        {
+          "date": "2011-11-23",
+          "portfolio_value": 1.006814
+        },
+        {
+          "date": "2011-11-24",
+          "portfolio_value": 1.006816
+        },
+        {
+          "date": "2011-11-25",
+          "portfolio_value": 1.003657
+        },
+        {
+          "date": "2011-11-28",
+          "portfolio_value": 1.023121
+        },
+        {
+          "date": "2011-11-29",
+          "portfolio_value": 1.024418
+        },
+        {
+          "date": "2011-11-30",
+          "portfolio_value": 1.049636
+        },
+        {
+          "date": "2011-12-01",
+          "portfolio_value": 1.046644
+        },
+        {
+          "date": "2011-12-02",
+          "portfolio_value": 1.048036
+        },
+        {
+          "date": "2011-12-05",
+          "portfolio_value": 1.053037
+        },
+        {
+          "date": "2011-12-06",
+          "portfolio_value": 1.051539
+        },
+        {
+          "date": "2011-12-07",
+          "portfolio_value": 1.056028
+        },
+        {
+          "date": "2011-12-08",
+          "portfolio_value": 1.040748
+        },
+        {
+          "date": "2011-12-09",
+          "portfolio_value": 1.050708
+        },
+        {
+          "date": "2011-12-12",
+          "portfolio_value": 1.038404
+        },
+        {
+          "date": "2011-12-13",
+          "portfolio_value": 1.031559
+        },
+        {
+          "date": "2011-12-14",
+          "portfolio_value": 1.026155
+        },
+        {
+          "date": "2011-12-15",
+          "portfolio_value": 1.02874
+        },
+        {
+          "date": "2011-12-16",
+          "portfolio_value": 1.032472
+        },
+        {
+          "date": "2011-12-19",
+          "portfolio_value": 1.027976
+        },
+        {
+          "date": "2011-12-20",
+          "portfolio_value": 1.04512
+        },
+        {
+          "date": "2011-12-21",
+          "portfolio_value": 1.043156
+        },
+        {
+          "date": "2011-12-22",
+          "portfolio_value": 1.048791
+        },
+        {
+          "date": "2011-12-23",
+          "portfolio_value": 1.052189
+        },
+        {
+          "date": "2011-12-27",
+          "portfolio_value": 1.051819
+        },
+        {
+          "date": "2011-12-28",
+          "portfolio_value": 1.043266
+        },
+        {
+          "date": "2011-12-29",
+          "portfolio_value": 1.050571
+        }
+      ],
+      "rebalance_log": [
+        {
+          "date": "2011-01-03",
+          "weights": {
+            "VNQ": 0.109641,
+            "EFA": 0.176892,
+            "CSPX.L": 0.13611,
+            "SPY": 0.136998,
+            "TIP": 0.059131,
+            "TLT": 0.067695,
+            "AGGH.MI": 0.067275,
+            "AGG": 0.082942,
+            "GLD": 0.070969,
+            "XEON.MI": 0.092348
+          },
+          "turnover": 0.319281,
+          "transaction_cost": 0.000319
+        },
+        {
+          "date": "2011-01-31",
+          "weights": {
+            "VNQ": 0.109181,
+            "EFA": 0.176059,
+            "CSPX.L": 0.136438,
+            "SPY": 0.137503,
+            "TIP": 0.059244,
+            "TLT": 0.068494,
+            "AGGH.MI": 0.067223,
+            "AGG": 0.082034,
+            "GLD": 0.071493,
+            "XEON.MI": 0.092332
+          },
+          "turnover": 0.004537,
+          "transaction_cost": 5e-06
+        },
+        {
+          "date": "2011-02-28",
+          "weights": {
+            "VNQ": 0.108667,
+            "EFA": 0.176098,
+            "CSPX.L": 0.1364,
+            "SPY": 0.137502,
+            "TIP": 0.058619,
+            "TLT": 0.069448,
+            "AGGH.MI": 0.067463,
+            "AGG": 0.082471,
+            "GLD": 0.070666,
+            "XEON.MI": 0.092667
+          },
+          "turnover": 0.004009,
+          "transaction_cost": 4e-06
+        },
+        {
+          "date": "2011-03-31",
+          "weights": {
+            "VNQ": 0.107983,
+            "EFA": 0.176877,
+            "CSPX.L": 0.135965,
+            "SPY": 0.137158,
+            "TIP": 0.059725,
+            "TLT": 0.070059,
+            "AGGH.MI": 0.067468,
+            "AGG": 0.082301,
+            "GLD": 0.06928,
+            "XEON.MI": 0.093184
+          },
+          "turnover": 0.00604,
+          "transaction_cost": 6e-06
+        },
+        {
+          "date": "2011-05-31",
+          "weights": {
+            "VNQ": 0.099378,
+            "EFA": 0.179103,
+            "CSPX.L": 0.134924,
+            "SPY": 0.135973,
+            "TIP": 0.054186,
+            "TLT": 0.078749,
+            "AGGH.MI": 0.06452,
+            "AGG": 0.079688,
+            "GLD": 0.078907,
+            "XEON.MI": 0.094571
+          },
+          "turnover": 0.043861,
+          "transaction_cost": 4.4e-05
+        },
+        {
+          "date": "2011-06-30",
+          "weights": {
+            "VNQ": 0.098508,
+            "EFA": 0.182628,
+            "CSPX.L": 0.133011,
+            "SPY": 0.13436,
+            "TIP": 0.054697,
+            "TLT": 0.083166,
+            "AGGH.MI": 0.06231,
+            "AGG": 0.076458,
+            "GLD": 0.078041,
+            "XEON.MI": 0.09682
+          },
+          "turnover": 0.021403,
+          "transaction_cost": 2.1e-05
+        },
+        {
+          "date": "2011-08-31",
+          "weights": {
+            "VNQ": 0.097303,
+            "EFA": 0.170747,
+            "CSPX.L": 0.139619,
+            "SPY": 0.139634,
+            "XEON.MI": 0.094559,
+            "GLD": 0.07572,
+            "TIP": 0.066723,
+            "TLT": 0.077048,
+            "AGGH.MI": 0.069323,
+            "AGG": 0.069323
+          },
+          "turnover": 0.061843,
+          "transaction_cost": 6.2e-05
+        },
+        {
+          "date": "2011-09-30",
+          "weights": {
+            "VNQ": 0.097335,
+            "EFA": 0.170874,
+            "CSPX.L": 0.139558,
+            "SPY": 0.139569,
+            "XEON.MI": 0.095925,
+            "GLD": 0.079706,
+            "TIP": 0.064403,
+            "TLT": 0.078059,
+            "AGGH.MI": 0.067286,
+            "AGG": 0.067286
+          },
+          "turnover": 0.013044,
+          "transaction_cost": 1.3e-05
+        },
+        {
+          "date": "2011-10-31",
+          "weights": {
+            "VNQ": 0.104279,
+            "EFA": 0.170792,
+            "CSPX.L": 0.139599,
+            "SPY": 0.139609,
+            "XEON.MI": 0.099038,
+            "GLD": 0.078028,
+            "TIP": 0.062048,
+            "TLT": 0.078977,
+            "AGGH.MI": 0.063815,
+            "AGG": 0.063815
+          },
+          "turnover": 0.022113,
+          "transaction_cost": 2.2e-05
+        },
+        {
+          "date": "2011-11-30",
+          "weights": {
+            "VNQ": 0.099164,
+            "EFA": 0.172183,
+            "CSPX.L": 0.137695,
+            "SPY": 0.140121,
+            "TIP": 0.06502,
+            "TLT": 0.065877,
+            "AGGH.MI": 0.06906,
+            "AGG": 0.083089,
+            "GLD": 0.073442,
+            "XEON.MI": 0.094349
+          },
+          "turnover": 0.058791,
+          "transaction_cost": 5.9e-05
+        }
+      ]
+    },
+    "MV": {
+      "strategy": "MV",
+      "cagr": 0.092542,
+      "annualised_volatility": 0.080783,
+      "sharpe_ratio": 1.145557,
+      "max_drawdown": -0.069088,
+      "calmar_ratio": 1.339472,
+      "total_transaction_cost": 0.00261,
+      "n_rebalances": 10,
+      "equity_curve": [
+        {
+          "date": "2011-01-03",
+          "portfolio_value": 1.0
+        },
+        {
+          "date": "2011-01-04",
+          "portfolio_value": 0.99602
+        },
+        {
+          "date": "2011-01-05",
+          "portfolio_value": 0.992903
+        },
+        {
+          "date": "2011-01-06",
+          "portfolio_value": 0.9908
+        },
+        {
+          "date": "2011-01-07",
+          "portfolio_value": 0.991354
+        },
+        {
+          "date": "2011-01-10",
+          "portfolio_value": 0.99266
+        },
+        {
+          "date": "2011-01-11",
+          "portfolio_value": 0.993493
+        },
+        {
+          "date": "2011-01-12",
+          "portfolio_value": 0.997477
+        },
+        {
+          "date": "2011-01-13",
+          "portfolio_value": 0.998626
+        },
+        {
+          "date": "2011-01-14",
+          "portfolio_value": 0.998852
+        },
+        {
+          "date": "2011-01-17",
+          "portfolio_value": 0.998854
+        },
+        {
+          "date": "2011-01-18",
+          "portfolio_value": 1.000687
+        },
+        {
+          "date": "2011-01-19",
+          "portfolio_value": 0.997743
+        },
+        {
+          "date": "2011-01-20",
+          "portfolio_value": 0.991683
+        },
+        {
+          "date": "2011-01-21",
+          "portfolio_value": 0.994209
+        },
+        {
+          "date": "2011-01-24",
+          "portfolio_value": 0.996261
+        },
+        {
+          "date": "2011-01-25",
+          "portfolio_value": 0.999095
+        },
+        {
+          "date": "2011-01-26",
+          "portfolio_value": 0.999144
+        },
+        {
+          "date": "2011-01-27",
+          "portfolio_value": 0.999712
+        },
+        {
+          "date": "2011-01-28",
+          "portfolio_value": 0.995374
+        },
+        {
+          "date": "2011-01-31",
+          "portfolio_value": 0.997633
+        },
+        {
+          "date": "2011-02-01",
+          "portfolio_value": 1.003152
+        },
+        {
+          "date": "2011-02-02",
+          "portfolio_value": 1.001947
+        },
+        {
+          "date": "2011-02-03",
+          "portfolio_value": 1.001935
+        },
+        {
+          "date": "2011-02-04",
+          "portfolio_value": 0.999071
+        },
+        {
+          "date": "2011-02-07",
+          "portfolio_value": 1.002202
+        },
+        {
+          "date": "2011-02-08",
+          "portfolio_value": 1.003302
+        },
+        {
+          "date": "2011-02-09",
+          "portfolio_value": 1.004099
+        },
+        {
+          "date": "2011-02-10",
+          "portfolio_value": 1.001423
+        },
+        {
+          "date": "2011-02-11",
+          "portfolio_value": 1.005673
+        },
+        {
+          "date": "2011-02-14",
+          "portfolio_value": 1.007092
+        },
+        {
+          "date": "2011-02-15",
+          "portfolio_value": 1.007378
+        },
+        {
+          "date": "2011-02-16",
+          "portfolio_value": 1.009724
+        },
+        {
+          "date": "2011-02-17",
+          "portfolio_value": 1.012509
+        },
+        {
+          "date": "2011-02-18",
+          "portfolio_value": 1.014084
+        },
+        {
+          "date": "2011-02-21",
+          "portfolio_value": 1.01408
+        },
+        {
+          "date": "2011-02-22",
+          "portfolio_value": 1.009945
+        },
+        {
+          "date": "2011-02-23",
+          "portfolio_value": 1.009787
+        },
+        {
+          "date": "2011-02-24",
+          "portfolio_value": 1.009256
+        },
+        {
+          "date": "2011-02-25",
+          "portfolio_value": 1.016728
+        },
+        {
+          "date": "2011-02-28",
+          "portfolio_value": 1.019871
+        },
+        {
+          "date": "2011-03-01",
+          "portfolio_value": 1.02299
+        },
+        {
+          "date": "2011-03-02",
+          "portfolio_value": 1.02075
+        },
+        {
+          "date": "2011-03-03",
+          "portfolio_value": 1.017615
+        },
+        {
+          "date": "2011-03-04",
+          "portfolio_value": 1.021158
+        },
+        {
+          "date": "2011-03-07",
+          "portfolio_value": 1.019836
+        },
+        {
+          "date": "2011-03-08",
+          "portfolio_value": 1.020651
+        },
+        {
+          "date": "2011-03-09",
+          "portfolio_value": 1.02168
+        },
+        {
+          "date": "2011-03-10",
+          "portfolio_value": 1.014777
+        },
+        {
+          "date": "2011-03-11",
+          "portfolio_value": 1.017049
+        },
+        {
+          "date": "2011-03-14",
+          "portfolio_value": 1.016829
+        },
+        {
+          "date": "2011-03-15",
+          "portfolio_value": 1.007547
+        },
+        {
+          "date": "2011-03-16",
+          "portfolio_value": 1.004928
+        },
+        {
+          "date": "2011-03-17",
+          "portfolio_value": 1.010467
+        },
+        {
+          "date": "2011-03-18",
+          "portfolio_value": 1.016527
+        },
+        {
+          "date": "2011-03-21",
+          "portfolio_value": 1.021244
+        },
+        {
+          "date": "2011-03-22",
+          "portfolio_value": 1.019782
+        },
+        {
+          "date": "2011-03-23",
+          "portfolio_value": 1.022609
+        },
+        {
+          "date": "2011-03-24",
+          "portfolio_value": 1.020729
+        },
+        {
+          "date": "2011-03-25",
+          "portfolio_value": 1.020276
+        },
+        {
+          "date": "2011-03-28",
+          "portfolio_value": 1.017919
+        },
+        {
+          "date": "2011-03-29",
+          "portfolio_value": 1.017294
+        },
+        {
+          "date": "2011-03-30",
+          "portfolio_value": 1.022417
+        },
+        {
+          "date": "2011-03-31",
+          "portfolio_value": 1.025715
+        },
+        {
+          "date": "2011-04-01",
+          "portfolio_value": 1.025702
+        },
+        {
+          "date": "2011-04-04",
+          "portfolio_value": 1.028851
+        },
+        {
+          "date": "2011-04-05",
+          "portfolio_value": 1.034466
+        },
+        {
+          "date": "2011-04-06",
+          "portfolio_value": 1.034011
+        },
+        {
+          "date": "2011-04-07",
+          "portfolio_value": 1.033716
+        },
+        {
+          "date": "2011-04-08",
+          "portfolio_value": 1.036711
+        },
+        {
+          "date": "2011-04-11",
+          "portfolio_value": 1.033382
+        },
+        {
+          "date": "2011-04-12",
+          "portfolio_value": 1.03105
+        },
+        {
+          "date": "2011-04-13",
+          "portfolio_value": 1.032846
+        },
+        {
+          "date": "2011-04-14",
+          "portfolio_value": 1.039065
+        },
+        {
+          "date": "2011-04-15",
+          "portfolio_value": 1.046218
+        },
+        {
+          "date": "2011-04-18",
+          "portfolio_value": 1.046398
+        },
+        {
+          "date": "2011-04-19",
+          "portfolio_value": 1.048975
+        },
+        {
+          "date": "2011-04-20",
+          "portfolio_value": 1.052789
+        },
+        {
+          "date": "2011-04-21",
+          "portfolio_value": 1.054357
+        },
+        {
+          "date": "2011-04-25",
+          "portfolio_value": 1.055804
+        },
+        {
+          "date": "2011-04-26",
+          "portfolio_value": 1.057804
+        },
+        {
+          "date": "2011-04-27",
+          "portfolio_value": 1.066556
+        },
+        {
+          "date": "2011-04-28",
+          "portfolio_value": 1.071047
+        },
+        {
+          "date": "2011-04-29",
+          "portfolio_value": 1.078731
+        },
+        {
+          "date": "2011-05-02",
+          "portfolio_value": 1.073946
+        },
+        {
+          "date": "2011-05-03",
+          "portfolio_value": 1.071834
+        },
+        {
+          "date": "2011-05-04",
+          "portfolio_value": 1.06485
+        },
+        {
+          "date": "2011-05-05",
+          "portfolio_value": 1.051017
+        },
+        {
+          "date": "2011-05-06",
+          "portfolio_value": 1.056237
+        },
+        {
+          "date": "2011-05-09",
+          "portfolio_value": 1.063845
+        },
+        {
+          "date": "2011-05-10",
+          "portfolio_value": 1.066457
+        },
+        {
+          "date": "2011-05-11",
+          "portfolio_value": 1.059602
+        },
+        {
+          "date": "2011-05-12",
+          "portfolio_value": 1.05977
+        },
+        {
+          "date": "2011-05-13",
+          "portfolio_value": 1.055398
+        },
+        {
+          "date": "2011-05-16",
+          "portfolio_value": 1.054538
+        },
+        {
+          "date": "2011-05-17",
+          "portfolio_value": 1.053622
+        },
+        {
+          "date": "2011-05-18",
+          "portfolio_value": 1.056929
+        },
+        {
+          "date": "2011-05-19",
+          "portfolio_value": 1.057199
+        },
+        {
+          "date": "2011-05-20",
+          "portfolio_value": 1.060358
+        },
+        {
+          "date": "2011-05-23",
+          "portfolio_value": 1.058702
+        },
+        {
+          "date": "2011-05-24",
+          "portfolio_value": 1.062571
+        },
+        {
+          "date": "2011-05-25",
+          "portfolio_value": 1.063276
+        },
+        {
+          "date": "2011-05-26",
+          "portfolio_value": 1.065148
+        },
+        {
+          "date": "2011-05-27",
+          "portfolio_value": 1.070926
+        },
+        {
+          "date": "2011-05-30",
+          "portfolio_value": 1.070928
+        },
+        {
+          "date": "2011-05-31",
+          "portfolio_value": 1.074328
+        },
+        {
+          "date": "2011-06-01",
+          "portfolio_value": 1.06994
+        },
+        {
+          "date": "2011-06-02",
+          "portfolio_value": 1.066402
+        },
+        {
+          "date": "2011-06-03",
+          "portfolio_value": 1.066269
+        },
+        {
+          "date": "2011-06-06",
+          "portfolio_value": 1.062473
+        },
+        {
+          "date": "2011-06-07",
+          "portfolio_value": 1.064265
+        },
+        {
+          "date": "2011-06-08",
+          "portfolio_value": 1.062211
+        },
+        {
+          "date": "2011-06-09",
+          "portfolio_value": 1.064177
+        },
+        {
+          "date": "2011-06-10",
+          "portfolio_value": 1.056963
+        },
+        {
+          "date": "2011-06-13",
+          "portfolio_value": 1.054905
+        },
+        {
+          "date": "2011-06-14",
+          "portfolio_value": 1.058801
+        },
+        {
+          "date": "2011-06-15",
+          "portfolio_value": 1.055416
+        },
+        {
+          "date": "2011-06-16",
+          "portfolio_value": 1.05615
+        },
+        {
+          "date": "2011-06-17",
+          "portfolio_value": 1.058975
+        },
+        {
+          "date": "2011-06-20",
+          "portfolio_value": 1.060043
+        },
+        {
+          "date": "2011-06-21",
+          "portfolio_value": 1.066201
+        },
+        {
+          "date": "2011-06-22",
+          "portfolio_value": 1.063865
+        },
+        {
+          "date": "2011-06-23",
+          "portfolio_value": 1.060768
+        },
+        {
+          "date": "2011-06-24",
+          "portfolio_value": 1.055252
+        },
+        {
+          "date": "2011-06-27",
+          "portfolio_value": 1.055764
+        },
+        {
+          "date": "2011-06-28",
+          "portfolio_value": 1.058414
+        },
+        {
+          "date": "2011-06-29",
+          "portfolio_value": 1.062293
+        },
+        {
+          "date": "2011-06-30",
+          "portfolio_value": 1.062625
+        },
+        {
+          "date": "2011-07-01",
+          "portfolio_value": 1.066061
+        },
+        {
+          "date": "2011-07-04",
+          "portfolio_value": 1.066059
+        },
+        {
+          "date": "2011-07-05",
+          "portfolio_value": 1.071391
+        },
+        {
+          "date": "2011-07-06",
+          "portfolio_value": 1.074999
+        },
+        {
+          "date": "2011-07-07",
+          "portfolio_value": 1.078476
+        },
+        {
+          "date": "2011-07-08",
+          "portfolio_value": 1.080399
+        },
+        {
+          "date": "2011-07-11",
+          "portfolio_value": 1.078294
+        },
+        {
+          "date": "2011-07-12",
+          "portfolio_value": 1.080369
+        },
+        {
+          "date": "2011-07-13",
+          "portfolio_value": 1.084555
+        },
+        {
+          "date": "2011-07-14",
+          "portfolio_value": 1.079934
+        },
+        {
+          "date": "2011-07-15",
+          "portfolio_value": 1.084262
+        },
+        {
+          "date": "2011-07-18",
+          "portfolio_value": 1.082874
+        },
+        {
+          "date": "2011-07-19",
+          "portfolio_value": 1.088092
+        },
+        {
+          "date": "2011-07-20",
+          "portfolio_value": 1.088888
+        },
+        {
+          "date": "2011-07-21",
+          "portfolio_value": 1.090778
+        },
+        {
+          "date": "2011-07-22",
+          "portfolio_value": 1.094907
+        },
+        {
+          "date": "2011-07-25",
+          "portfolio_value": 1.094049
+        },
+        {
+          "date": "2011-07-26",
+          "portfolio_value": 1.095013
+        },
+        {
+          "date": "2011-07-27",
+          "portfolio_value": 1.086542
+        },
+        {
+          "date": "2011-07-28",
+          "portfolio_value": 1.087477
+        },
+        {
+          "date": "2011-07-29",
+          "portfolio_value": 1.092346
+        },
+        {
+          "date": "2011-08-01",
+          "portfolio_value": 1.090428
+        },
+        {
+          "date": "2011-08-02",
+          "portfolio_value": 1.090996
+        },
+        {
+          "date": "2011-08-03",
+          "portfolio_value": 1.090698
+        },
+        {
+          "date": "2011-08-04",
+          "portfolio_value": 1.076375
+        },
+        {
+          "date": "2011-08-05",
+          "portfolio_value": 1.072072
+        },
+        {
+          "date": "2011-08-08",
+          "portfolio_value": 1.061015
+        },
+        {
+          "date": "2011-08-09",
+          "portfolio_value": 1.085592
+        },
+        {
+          "date": "2011-08-10",
+          "portfolio_value": 1.08676
+        },
+        {
+          "date": "2011-08-11",
+          "portfolio_value": 1.08788
+        },
+        {
+          "date": "2011-08-12",
+          "portfolio_value": 1.092046
+        },
+        {
+          "date": "2011-08-15",
+          "portfolio_value": 1.101459
+        },
+        {
+          "date": "2011-08-16",
+          "portfolio_value": 1.103303
+        },
+        {
+          "date": "2011-08-17",
+          "portfolio_value": 1.10723
+        },
+        {
+          "date": "2011-08-18",
+          "portfolio_value": 1.095524
+        },
+        {
+          "date": "2011-08-19",
+          "portfolio_value": 1.094141
+        },
+        {
+          "date": "2011-08-22",
+          "portfolio_value": 1.100955
+        },
+        {
+          "date": "2011-08-23",
+          "portfolio_value": 1.099892
+        },
+        {
+          "date": "2011-08-24",
+          "portfolio_value": 1.089283
+        },
+        {
+          "date": "2011-08-25",
+          "portfolio_value": 1.087196
+        },
+        {
+          "date": "2011-08-26",
+          "portfolio_value": 1.101194
+        },
+        {
+          "date": "2011-08-29",
+          "portfolio_value": 1.103807
+        },
+        {
+          "date": "2011-08-30",
+          "portfolio_value": 1.11479
+        },
+        {
+          "date": "2011-08-31",
+          "portfolio_value": 1.111147
+        },
+        {
+          "date": "2011-09-01",
+          "portfolio_value": 1.112435
+        },
+        {
+          "date": "2011-09-02",
+          "portfolio_value": 1.125047
+        },
+        {
+          "date": "2011-09-05",
+          "portfolio_value": 1.125045
+        },
+        {
+          "date": "2011-09-06",
+          "portfolio_value": 1.120848
+        },
+        {
+          "date": "2011-09-07",
+          "portfolio_value": 1.111597
+        },
+        {
+          "date": "2011-09-08",
+          "portfolio_value": 1.122646
+        },
+        {
+          "date": "2011-09-09",
+          "portfolio_value": 1.114284
+        },
+        {
+          "date": "2011-09-12",
+          "portfolio_value": 1.104076
+        },
+        {
+          "date": "2011-09-13",
+          "portfolio_value": 1.108788
+        },
+        {
+          "date": "2011-09-14",
+          "portfolio_value": 1.108443
+        },
+        {
+          "date": "2011-09-15",
+          "portfolio_value": 1.10383
+        },
+        {
+          "date": "2011-09-16",
+          "portfolio_value": 1.109808
+        },
+        {
+          "date": "2011-09-19",
+          "portfolio_value": 1.100965
+        },
+        {
+          "date": "2011-09-20",
+          "portfolio_value": 1.108712
+        },
+        {
+          "date": "2011-09-21",
+          "portfolio_value": 1.097748
+        },
+        {
+          "date": "2011-09-22",
+          "portfolio_value": 1.081477
+        },
+        {
+          "date": "2011-09-23",
+          "portfolio_value": 1.056658
+        },
+        {
+          "date": "2011-09-26",
+          "portfolio_value": 1.053029
+        },
+        {
+          "date": "2011-09-27",
+          "portfolio_value": 1.063619
+        },
+        {
+          "date": "2011-09-28",
+          "portfolio_value": 1.047319
+        },
+        {
+          "date": "2011-09-29",
+          "portfolio_value": 1.053625
+        },
+        {
+          "date": "2011-09-30",
+          "portfolio_value": 1.057255
+        },
+        {
+          "date": "2011-10-03",
+          "portfolio_value": 1.066312
+        },
+        {
+          "date": "2011-10-04",
+          "portfolio_value": 1.061091
+        },
+        {
+          "date": "2011-10-05",
+          "portfolio_value": 1.063493
+        },
+        {
+          "date": "2011-10-06",
+          "portfolio_value": 1.063069
+        },
+        {
+          "date": "2011-10-07",
+          "portfolio_value": 1.055195
+        },
+        {
+          "date": "2011-10-10",
+          "portfolio_value": 1.064508
+        },
+        {
+          "date": "2011-10-11",
+          "portfolio_value": 1.060679
+        },
+        {
+          "date": "2011-10-12",
+          "portfolio_value": 1.059407
+        },
+        {
+          "date": "2011-10-13",
+          "portfolio_value": 1.061038
+        },
+        {
+          "date": "2011-10-14",
+          "portfolio_value": 1.060929
+        },
+        {
+          "date": "2011-10-17",
+          "portfolio_value": 1.062222
+        },
+        {
+          "date": "2011-10-18",
+          "portfolio_value": 1.063493
+        },
+        {
+          "date": "2011-10-19",
+          "portfolio_value": 1.057332
+        },
+        {
+          "date": "2011-10-20",
+          "portfolio_value": 1.052051
+        },
+        {
+          "date": "2011-10-21",
+          "portfolio_value": 1.05616
+        },
+        {
+          "date": "2011-10-24",
+          "portfolio_value": 1.062683
+        },
+        {
+          "date": "2011-10-25",
+          "portfolio_value": 1.076864
+        },
+        {
+          "date": "2011-10-26",
+          "portfolio_value": 1.075222
+        },
+        {
+          "date": "2011-10-27",
+          "portfolio_value": 1.07465
+        },
+        {
+          "date": "2011-10-28",
+          "portfolio_value": 1.079064
+        },
+        {
+          "date": "2011-10-31",
+          "portfolio_value": 1.085195
+        },
+        {
+          "date": "2011-11-01",
+          "portfolio_value": 1.092561
+        },
+        {
+          "date": "2011-11-02",
+          "portfolio_value": 1.093937
+        },
+        {
+          "date": "2011-11-03",
+          "portfolio_value": 1.096603
+        },
+        {
+          "date": "2011-11-04",
+          "portfolio_value": 1.094119
+        },
+        {
+          "date": "2011-11-07",
+          "portfolio_value": 1.104521
+        },
+        {
+          "date": "2011-11-08",
+          "portfolio_value": 1.099591
+        },
+        {
+          "date": "2011-11-09",
+          "portfolio_value": 1.095941
+        },
+        {
+          "date": "2011-11-10",
+          "portfolio_value": 1.090351
+        },
+        {
+          "date": "2011-11-11",
+          "portfolio_value": 1.097186
+        },
+        {
+          "date": "2011-11-14",
+          "portfolio_value": 1.099219
+        },
+        {
+          "date": "2011-11-15",
+          "portfolio_value": 1.09941
+        },
+        {
+          "date": "2011-11-16",
+          "portfolio_value": 1.096395
+        },
+        {
+          "date": "2011-11-17",
+          "portfolio_value": 1.088886
+        },
+        {
+          "date": "2011-11-18",
+          "portfolio_value": 1.090065
+        },
+        {
+          "date": "2011-11-21",
+          "portfolio_value": 1.08057
+        },
+        {
+          "date": "2011-11-22",
+          "portfolio_value": 1.087195
+        },
+        {
+          "date": "2011-11-23",
+          "portfolio_value": 1.084885
+        },
+        {
+          "date": "2011-11-24",
+          "portfolio_value": 1.084886
+        },
+        {
+          "date": "2011-11-25",
+          "portfolio_value": 1.076479
+        },
+        {
+          "date": "2011-11-28",
+          "portfolio_value": 1.088471
+        },
+        {
+          "date": "2011-11-29",
+          "portfolio_value": 1.086408
+        },
+        {
+          "date": "2011-11-30",
+          "portfolio_value": 1.091461
+        },
+        {
+          "date": "2011-12-01",
+          "portfolio_value": 1.088279
+        },
+        {
+          "date": "2011-12-02",
+          "portfolio_value": 1.094731
+        },
+        {
+          "date": "2011-12-05",
+          "portfolio_value": 1.094591
+        },
+        {
+          "date": "2011-12-06",
+          "portfolio_value": 1.090689
+        },
+        {
+          "date": "2011-12-07",
+          "portfolio_value": 1.094091
+        },
+        {
+          "date": "2011-12-08",
+          "portfolio_value": 1.091123
+        },
+        {
+          "date": "2011-12-09",
+          "portfolio_value": 1.086955
+        },
+        {
+          "date": "2011-12-12",
+          "portfolio_value": 1.084865
+        },
+        {
+          "date": "2011-12-13",
+          "portfolio_value": 1.084173
+        },
+        {
+          "date": "2011-12-14",
+          "portfolio_value": 1.086249
+        },
+        {
+          "date": "2011-12-15",
+          "portfolio_value": 1.085244
+        },
+        {
+          "date": "2011-12-16",
+          "portfolio_value": 1.093189
+        },
+        {
+          "date": "2011-12-19",
+          "portfolio_value": 1.096475
+        },
+        {
+          "date": "2011-12-20",
+          "portfolio_value": 1.09567
+        },
+        {
+          "date": "2011-12-21",
+          "portfolio_value": 1.089378
+        },
+        {
+          "date": "2011-12-22",
+          "portfolio_value": 1.092394
+        },
+        {
+          "date": "2011-12-23",
+          "portfolio_value": 1.089657
+        },
+        {
+          "date": "2011-12-27",
+          "portfolio_value": 1.090047
+        },
+        {
+          "date": "2011-12-28",
+          "portfolio_value": 1.09164
+        },
+        {
+          "date": "2011-12-29",
+          "portfolio_value": 1.094462
+        }
+      ],
+      "rebalance_log": [
+        {
+          "date": "2011-01-03",
+          "weights": {
+            "AGGH.MI": 0.1,
+            "CSPX.L": 0.1,
+            "EFA": 0.1,
+            "GLD": 0.1,
+            "TIP": 0.1,
+            "TLT": 0.1,
+            "VNQ": 0.1,
+            "XEON.MI": 0.1,
+            "SPY": 0.1,
+            "AGG": 0.1
+          },
+          "turnover": 0.0,
+          "transaction_cost": 0.0
+        },
+        {
+          "date": "2011-01-31",
+          "weights": {
+            "AGGH.MI": 0.1,
+            "CSPX.L": 0.1,
+            "EFA": 0.1,
+            "GLD": 0.1,
+            "TIP": 0.1,
+            "TLT": 0.1,
+            "VNQ": 0.1,
+            "XEON.MI": 0.1,
+            "SPY": 0.1,
+            "AGG": 0.1
+          },
+          "turnover": 0.0,
+          "transaction_cost": 0.0
+        },
+        {
+          "date": "2011-02-28",
+          "weights": {
+            "AGGH.MI": 0.05,
+            "CSPX.L": 0.05,
+            "EFA": 0.05,
+            "GLD": 0.4,
+            "TIP": 0.15323,
+            "TLT": 0.06426,
+            "VNQ": 0.08251,
+            "XEON.MI": 0.05,
+            "SPY": 0.05,
+            "AGG": 0.05
+          },
+          "turnover": 0.70646,
+          "transaction_cost": 0.000706
+        },
+        {
+          "date": "2011-03-31",
+          "weights": {
+            "AGGH.MI": 0.05,
+            "CSPX.L": 0.05,
+            "EFA": 0.05,
+            "GLD": 0.4,
+            "TIP": 0.2,
+            "TLT": 0.05,
+            "VNQ": 0.05,
+            "XEON.MI": 0.05,
+            "SPY": 0.05,
+            "AGG": 0.05
+          },
+          "turnover": 0.09354,
+          "transaction_cost": 9.4e-05
+        },
+        {
+          "date": "2011-05-31",
+          "weights": {
+            "AGGH.MI": 0.090992,
+            "CSPX.L": 0.106912,
+            "EFA": 0.050001,
+            "GLD": 0.191964,
+            "TIP": 0.212224,
+            "TLT": 0.050001,
+            "VNQ": 0.050001,
+            "XEON.MI": 0.050001,
+            "SPY": 0.106912,
+            "AGG": 0.090992
+          },
+          "turnover": 0.416072,
+          "transaction_cost": 0.000416
+        },
+        {
+          "date": "2011-06-30",
+          "weights": {
+            "AGGH.MI": 0.05,
+            "CSPX.L": 0.11121,
+            "EFA": 0.05,
+            "GLD": 0.23228,
+            "TIP": 0.24483,
+            "TLT": 0.05,
+            "VNQ": 0.05047,
+            "XEON.MI": 0.05,
+            "SPY": 0.11121,
+            "AGG": 0.05
+          },
+          "turnover": 0.163974,
+          "transaction_cost": 0.000164
+        },
+        {
+          "date": "2011-08-31",
+          "weights": {
+            "AGGH.MI": 0.05,
+            "CSPX.L": 0.05,
+            "EFA": 0.05,
+            "GLD": 0.4,
+            "TIP": 0.2,
+            "TLT": 0.05,
+            "VNQ": 0.05,
+            "XEON.MI": 0.05,
+            "SPY": 0.05,
+            "AGG": 0.05
+          },
+          "turnover": 0.33544,
+          "transaction_cost": 0.000335
+        },
+        {
+          "date": "2011-09-30",
+          "weights": {
+            "AGGH.MI": 0.05,
+            "CSPX.L": 0.05,
+            "EFA": 0.05,
+            "GLD": 0.25359,
+            "TIP": 0.05,
+            "TLT": 0.34641,
+            "VNQ": 0.05,
+            "XEON.MI": 0.05,
+            "SPY": 0.05,
+            "AGG": 0.05
+          },
+          "turnover": 0.59282,
+          "transaction_cost": 0.000593
+        },
+        {
+          "date": "2011-10-31",
+          "weights": {
+            "AGGH.MI": 0.05,
+            "CSPX.L": 0.05,
+            "EFA": 0.05,
+            "GLD": 0.25359,
+            "TIP": 0.05,
+            "TLT": 0.34641,
+            "VNQ": 0.05,
+            "XEON.MI": 0.05,
+            "SPY": 0.05,
+            "AGG": 0.05
+          },
+          "turnover": 0.0,
+          "transaction_cost": 0.0
+        },
+        {
+          "date": "2011-11-30",
+          "weights": {
+            "AGGH.MI": 0.05,
+            "CSPX.L": 0.05,
+            "EFA": 0.05,
+            "GLD": 0.10848,
+            "TIP": 0.20069,
+            "TLT": 0.34083,
+            "VNQ": 0.05,
+            "XEON.MI": 0.05,
+            "SPY": 0.05,
+            "AGG": 0.05
+          },
+          "turnover": 0.30138,
+          "transaction_cost": 0.000301
+        }
+      ]
+    },
+    "1/N": {
+      "strategy": "1/N",
+      "cagr": 0.078451,
+      "annualised_volatility": 0.08777,
+      "sharpe_ratio": 0.893827,
+      "max_drawdown": -0.055178,
+      "calmar_ratio": 1.421786,
+      "total_transaction_cost": 0.0,
+      "n_rebalances": 10,
+      "equity_curve": [
+        {
+          "date": "2011-01-03",
+          "portfolio_value": 1.0
+        },
+        {
+          "date": "2011-01-04",
+          "portfolio_value": 0.99602
+        },
+        {
+          "date": "2011-01-05",
+          "portfolio_value": 0.992903
+        },
+        {
+          "date": "2011-01-06",
+          "portfolio_value": 0.9908
+        },
+        {
+          "date": "2011-01-07",
+          "portfolio_value": 0.991354
+        },
+        {
+          "date": "2011-01-10",
+          "portfolio_value": 0.99266
+        },
+        {
+          "date": "2011-01-11",
+          "portfolio_value": 0.993493
+        },
+        {
+          "date": "2011-01-12",
+          "portfolio_value": 0.997477
+        },
+        {
+          "date": "2011-01-13",
+          "portfolio_value": 0.998626
+        },
+        {
+          "date": "2011-01-14",
+          "portfolio_value": 0.998852
+        },
+        {
+          "date": "2011-01-17",
+          "portfolio_value": 0.998854
+        },
+        {
+          "date": "2011-01-18",
+          "portfolio_value": 1.000687
+        },
+        {
+          "date": "2011-01-19",
+          "portfolio_value": 0.997743
+        },
+        {
+          "date": "2011-01-20",
+          "portfolio_value": 0.991683
+        },
+        {
+          "date": "2011-01-21",
+          "portfolio_value": 0.994209
+        },
+        {
+          "date": "2011-01-24",
+          "portfolio_value": 0.996261
+        },
+        {
+          "date": "2011-01-25",
+          "portfolio_value": 0.999095
+        },
+        {
+          "date": "2011-01-26",
+          "portfolio_value": 0.999144
+        },
+        {
+          "date": "2011-01-27",
+          "portfolio_value": 0.999712
+        },
+        {
+          "date": "2011-01-28",
+          "portfolio_value": 0.995374
+        },
+        {
+          "date": "2011-01-31",
+          "portfolio_value": 0.997633
+        },
+        {
+          "date": "2011-02-01",
+          "portfolio_value": 1.003152
+        },
+        {
+          "date": "2011-02-02",
+          "portfolio_value": 1.001947
+        },
+        {
+          "date": "2011-02-03",
+          "portfolio_value": 1.001935
+        },
+        {
+          "date": "2011-02-04",
+          "portfolio_value": 0.999071
+        },
+        {
+          "date": "2011-02-07",
+          "portfolio_value": 1.002202
+        },
+        {
+          "date": "2011-02-08",
+          "portfolio_value": 1.003302
+        },
+        {
+          "date": "2011-02-09",
+          "portfolio_value": 1.004099
+        },
+        {
+          "date": "2011-02-10",
+          "portfolio_value": 1.001423
+        },
+        {
+          "date": "2011-02-11",
+          "portfolio_value": 1.005673
+        },
+        {
+          "date": "2011-02-14",
+          "portfolio_value": 1.007092
+        },
+        {
+          "date": "2011-02-15",
+          "portfolio_value": 1.007378
+        },
+        {
+          "date": "2011-02-16",
+          "portfolio_value": 1.009724
+        },
+        {
+          "date": "2011-02-17",
+          "portfolio_value": 1.012509
+        },
+        {
+          "date": "2011-02-18",
+          "portfolio_value": 1.014084
+        },
+        {
+          "date": "2011-02-21",
+          "portfolio_value": 1.01408
+        },
+        {
+          "date": "2011-02-22",
+          "portfolio_value": 1.009945
+        },
+        {
+          "date": "2011-02-23",
+          "portfolio_value": 1.009787
+        },
+        {
+          "date": "2011-02-24",
+          "portfolio_value": 1.009256
+        },
+        {
+          "date": "2011-02-25",
+          "portfolio_value": 1.016728
+        },
+        {
+          "date": "2011-02-28",
+          "portfolio_value": 1.021882
+        },
+        {
+          "date": "2011-03-01",
+          "portfolio_value": 1.016488
+        },
+        {
+          "date": "2011-03-02",
+          "portfolio_value": 1.014265
+        },
+        {
+          "date": "2011-03-03",
+          "portfolio_value": 1.017213
+        },
+        {
+          "date": "2011-03-04",
+          "portfolio_value": 1.016789
+        },
+        {
+          "date": "2011-03-07",
+          "portfolio_value": 1.013107
+        },
+        {
+          "date": "2011-03-08",
+          "portfolio_value": 1.015664
+        },
+        {
+          "date": "2011-03-09",
+          "portfolio_value": 1.016954
+        },
+        {
+          "date": "2011-03-10",
+          "portfolio_value": 1.010915
+        },
+        {
+          "date": "2011-03-11",
+          "portfolio_value": 1.012972
+        },
+        {
+          "date": "2011-03-14",
+          "portfolio_value": 1.009616
+        },
+        {
+          "date": "2011-03-15",
+          "portfolio_value": 1.004336
+        },
+        {
+          "date": "2011-03-16",
+          "portfolio_value": 0.998429
+        },
+        {
+          "date": "2011-03-17",
+          "portfolio_value": 1.004999
+        },
+        {
+          "date": "2011-03-18",
+          "portfolio_value": 1.009278
+        },
+        {
+          "date": "2011-03-21",
+          "portfolio_value": 1.015059
+        },
+        {
+          "date": "2011-03-22",
+          "portfolio_value": 1.013454
+        },
+        {
+          "date": "2011-03-23",
+          "portfolio_value": 1.013597
+        },
+        {
+          "date": "2011-03-24",
+          "portfolio_value": 1.015279
+        },
+        {
+          "date": "2011-03-25",
+          "portfolio_value": 1.014708
+        },
+        {
+          "date": "2011-03-28",
+          "portfolio_value": 1.013616
+        },
+        {
+          "date": "2011-03-29",
+          "portfolio_value": 1.014441
+        },
+        {
+          "date": "2011-03-30",
+          "portfolio_value": 1.020375
+        },
+        {
+          "date": "2011-03-31",
+          "portfolio_value": 1.020906
+        },
+        {
+          "date": "2011-04-01",
+          "portfolio_value": 1.023456
+        },
+        {
+          "date": "2011-04-04",
+          "portfolio_value": 1.025066
+        },
+        {
+          "date": "2011-04-05",
+          "portfolio_value": 1.025477
+        },
+        {
+          "date": "2011-04-06",
+          "portfolio_value": 1.02457
+        },
+        {
+          "date": "2011-04-07",
+          "portfolio_value": 1.022793
+        },
+        {
+          "date": "2011-04-08",
+          "portfolio_value": 1.022292
+        },
+        {
+          "date": "2011-04-11",
+          "portfolio_value": 1.021034
+        },
+        {
+          "date": "2011-04-12",
+          "portfolio_value": 1.020039
+        },
+        {
+          "date": "2011-04-13",
+          "portfolio_value": 1.021459
+        },
+        {
+          "date": "2011-04-14",
+          "portfolio_value": 1.024527
+        },
+        {
+          "date": "2011-04-15",
+          "portfolio_value": 1.030205
+        },
+        {
+          "date": "2011-04-18",
+          "portfolio_value": 1.026099
+        },
+        {
+          "date": "2011-04-19",
+          "portfolio_value": 1.030066
+        },
+        {
+          "date": "2011-04-20",
+          "portfolio_value": 1.035801
+        },
+        {
+          "date": "2011-04-21",
+          "portfolio_value": 1.03826
+        },
+        {
+          "date": "2011-04-25",
+          "portfolio_value": 1.03962
+        },
+        {
+          "date": "2011-04-26",
+          "portfolio_value": 1.044914
+        },
+        {
+          "date": "2011-04-27",
+          "portfolio_value": 1.048875
+        },
+        {
+          "date": "2011-04-28",
+          "portfolio_value": 1.053719
+        },
+        {
+          "date": "2011-04-29",
+          "portfolio_value": 1.055629
+        },
+        {
+          "date": "2011-05-02",
+          "portfolio_value": 1.055242
+        },
+        {
+          "date": "2011-05-03",
+          "portfolio_value": 1.053179
+        },
+        {
+          "date": "2011-05-04",
+          "portfolio_value": 1.049745
+        },
+        {
+          "date": "2011-05-05",
+          "portfolio_value": 1.044031
+        },
+        {
+          "date": "2011-05-06",
+          "portfolio_value": 1.044967
+        },
+        {
+          "date": "2011-05-09",
+          "portfolio_value": 1.048899
+        },
+        {
+          "date": "2011-05-10",
+          "portfolio_value": 1.052307
+        },
+        {
+          "date": "2011-05-11",
+          "portfolio_value": 1.046551
+        },
+        {
+          "date": "2011-05-12",
+          "portfolio_value": 1.047
+        },
+        {
+          "date": "2011-05-13",
+          "portfolio_value": 1.043219
+        },
+        {
+          "date": "2011-05-16",
+          "portfolio_value": 1.042737
+        },
+        {
+          "date": "2011-05-17",
+          "portfolio_value": 1.043834
+        },
+        {
+          "date": "2011-05-18",
+          "portfolio_value": 1.046215
+        },
+        {
+          "date": "2011-05-19",
+          "portfolio_value": 1.047322
+        },
+        {
+          "date": "2011-05-20",
+          "portfolio_value": 1.044433
+        },
+        {
+          "date": "2011-05-23",
+          "portfolio_value": 1.039458
+        },
+        {
+          "date": "2011-05-24",
+          "portfolio_value": 1.041729
+        },
+        {
+          "date": "2011-05-25",
+          "portfolio_value": 1.043074
+        },
+        {
+          "date": "2011-05-26",
+          "portfolio_value": 1.047754
+        },
+        {
+          "date": "2011-05-27",
+          "portfolio_value": 1.051289
+        },
+        {
+          "date": "2011-05-30",
+          "portfolio_value": 1.051292
+        },
+        {
+          "date": "2011-05-31",
+          "portfolio_value": 1.057312
+        },
+        {
+          "date": "2011-06-01",
+          "portfolio_value": 1.050326
+        },
+        {
+          "date": "2011-06-02",
+          "portfolio_value": 1.046371
+        },
+        {
+          "date": "2011-06-03",
+          "portfolio_value": 1.046299
+        },
+        {
+          "date": "2011-06-06",
+          "portfolio_value": 1.040668
+        },
+        {
+          "date": "2011-06-07",
+          "portfolio_value": 1.043605
+        },
+        {
+          "date": "2011-06-08",
+          "portfolio_value": 1.04166
+        },
+        {
+          "date": "2011-06-09",
+          "portfolio_value": 1.042878
+        },
+        {
+          "date": "2011-06-10",
+          "portfolio_value": 1.034775
+        },
+        {
+          "date": "2011-06-13",
+          "portfolio_value": 1.033708
+        },
+        {
+          "date": "2011-06-14",
+          "portfolio_value": 1.037939
+        },
+        {
+          "date": "2011-06-15",
+          "portfolio_value": 1.03244
+        },
+        {
+          "date": "2011-06-16",
+          "portfolio_value": 1.033785
+        },
+        {
+          "date": "2011-06-17",
+          "portfolio_value": 1.036726
+        },
+        {
+          "date": "2011-06-20",
+          "portfolio_value": 1.038567
+        },
+        {
+          "date": "2011-06-21",
+          "portfolio_value": 1.044975
+        },
+        {
+          "date": "2011-06-22",
+          "portfolio_value": 1.042255
+        },
+        {
+          "date": "2011-06-23",
+          "portfolio_value": 1.039053
+        },
+        {
+          "date": "2011-06-24",
+          "portfolio_value": 1.033981
+        },
+        {
+          "date": "2011-06-27",
+          "portfolio_value": 1.034792
+        },
+        {
+          "date": "2011-06-28",
+          "portfolio_value": 1.037891
+        },
+        {
+          "date": "2011-06-29",
+          "portfolio_value": 1.041968
+        },
+        {
+          "date": "2011-06-30",
+          "portfolio_value": 1.044479
+        },
+        {
+          "date": "2011-07-01",
+          "portfolio_value": 1.049767
+        },
+        {
+          "date": "2011-07-04",
+          "portfolio_value": 1.049762
+        },
+        {
+          "date": "2011-07-05",
+          "portfolio_value": 1.052891
+        },
+        {
+          "date": "2011-07-06",
+          "portfolio_value": 1.055147
+        },
+        {
+          "date": "2011-07-07",
+          "portfolio_value": 1.058808
+        },
+        {
+          "date": "2011-07-08",
+          "portfolio_value": 1.059709
+        },
+        {
+          "date": "2011-07-11",
+          "portfolio_value": 1.054534
+        },
+        {
+          "date": "2011-07-12",
+          "portfolio_value": 1.055054
+        },
+        {
+          "date": "2011-07-13",
+          "portfolio_value": 1.058154
+        },
+        {
+          "date": "2011-07-14",
+          "portfolio_value": 1.052396
+        },
+        {
+          "date": "2011-07-15",
+          "portfolio_value": 1.056399
+        },
+        {
+          "date": "2011-07-18",
+          "portfolio_value": 1.052055
+        },
+        {
+          "date": "2011-07-19",
+          "portfolio_value": 1.060625
+        },
+        {
+          "date": "2011-07-20",
+          "portfolio_value": 1.061278
+        },
+        {
+          "date": "2011-07-21",
+          "portfolio_value": 1.06515
+        },
+        {
+          "date": "2011-07-22",
+          "portfolio_value": 1.068424
+        },
+        {
+          "date": "2011-07-25",
+          "portfolio_value": 1.064727
+        },
+        {
+          "date": "2011-07-26",
+          "portfolio_value": 1.066366
+        },
+        {
+          "date": "2011-07-27",
+          "portfolio_value": 1.055893
+        },
+        {
+          "date": "2011-07-28",
+          "portfolio_value": 1.056459
+        },
+        {
+          "date": "2011-07-29",
+          "portfolio_value": 1.060535
+        },
+        {
+          "date": "2011-08-01",
+          "portfolio_value": 1.05819
+        },
+        {
+          "date": "2011-08-02",
+          "portfolio_value": 1.053933
+        },
+        {
+          "date": "2011-08-03",
+          "portfolio_value": 1.054582
+        },
+        {
+          "date": "2011-08-04",
+          "portfolio_value": 1.037445
+        },
+        {
+          "date": "2011-08-05",
+          "portfolio_value": 1.031548
+        },
+        {
+          "date": "2011-08-08",
+          "portfolio_value": 1.009471
+        },
+        {
+          "date": "2011-08-09",
+          "portfolio_value": 1.038094
+        },
+        {
+          "date": "2011-08-10",
+          "portfolio_value": 1.030714
+        },
+        {
+          "date": "2011-08-11",
+          "portfolio_value": 1.038071
+        },
+        {
+          "date": "2011-08-12",
+          "portfolio_value": 1.04373
+        },
+        {
+          "date": "2011-08-15",
+          "portfolio_value": 1.054246
+        },
+        {
+          "date": "2011-08-16",
+          "portfolio_value": 1.054316
+        },
+        {
+          "date": "2011-08-17",
+          "portfolio_value": 1.058416
+        },
+        {
+          "date": "2011-08-18",
+          "portfolio_value": 1.043103
+        },
+        {
+          "date": "2011-08-19",
+          "portfolio_value": 1.038517
+        },
+        {
+          "date": "2011-08-22",
+          "portfolio_value": 1.041589
+        },
+        {
+          "date": "2011-08-23",
+          "portfolio_value": 1.047915
+        },
+        {
+          "date": "2011-08-24",
+          "portfolio_value": 1.043037
+        },
+        {
+          "date": "2011-08-25",
+          "portfolio_value": 1.038194
+        },
+        {
+          "date": "2011-08-26",
+          "portfolio_value": 1.048801
+        },
+        {
+          "date": "2011-08-29",
+          "portfolio_value": 1.056498
+        },
+        {
+          "date": "2011-08-30",
+          "portfolio_value": 1.062882
+        },
+        {
+          "date": "2011-08-31",
+          "portfolio_value": 1.063825
+        },
+        {
+          "date": "2011-09-01",
+          "portfolio_value": 1.062759
+        },
+        {
+          "date": "2011-09-02",
+          "portfolio_value": 1.060913
+        },
+        {
+          "date": "2011-09-05",
+          "portfolio_value": 1.06091
+        },
+        {
+          "date": "2011-09-06",
+          "portfolio_value": 1.056257
+        },
+        {
+          "date": "2011-09-07",
+          "portfolio_value": 1.063195
+        },
+        {
+          "date": "2011-09-08",
+          "portfolio_value": 1.062547
+        },
+        {
+          "date": "2011-09-09",
+          "portfolio_value": 1.050876
+        },
+        {
+          "date": "2011-09-12",
+          "portfolio_value": 1.04911
+        },
+        {
+          "date": "2011-09-13",
+          "portfolio_value": 1.051649
+        },
+        {
+          "date": "2011-09-14",
+          "portfolio_value": 1.05686
+        },
+        {
+          "date": "2011-09-15",
+          "portfolio_value": 1.060427
+        },
+        {
+          "date": "2011-09-16",
+          "portfolio_value": 1.064864
+        },
+        {
+          "date": "2011-09-19",
+          "portfolio_value": 1.058609
+        },
+        {
+          "date": "2011-09-20",
+          "portfolio_value": 1.061571
+        },
+        {
+          "date": "2011-09-21",
+          "portfolio_value": 1.049283
+        },
+        {
+          "date": "2011-09-22",
+          "portfolio_value": 1.03812
+        },
+        {
+          "date": "2011-09-23",
+          "portfolio_value": 1.032034
+        },
+        {
+          "date": "2011-09-26",
+          "portfolio_value": 1.036459
+        },
+        {
+          "date": "2011-09-27",
+          "portfolio_value": 1.042694
+        },
+        {
+          "date": "2011-09-28",
+          "portfolio_value": 1.03091
+        },
+        {
+          "date": "2011-09-29",
+          "portfolio_value": 1.037456
+        },
+        {
+          "date": "2011-09-30",
+          "portfolio_value": 1.029421
+        },
+        {
+          "date": "2011-10-03",
+          "portfolio_value": 1.022573
+        },
+        {
+          "date": "2011-10-04",
+          "portfolio_value": 1.028835
+        },
+        {
+          "date": "2011-10-05",
+          "portfolio_value": 1.033049
+        },
+        {
+          "date": "2011-10-06",
+          "portfolio_value": 1.04081
+        },
+        {
+          "date": "2011-10-07",
+          "portfolio_value": 1.033411
+        },
+        {
+          "date": "2011-10-10",
+          "portfolio_value": 1.049492
+        },
+        {
+          "date": "2011-10-11",
+          "portfolio_value": 1.047085
+        },
+        {
+          "date": "2011-10-12",
+          "portfolio_value": 1.050553
+        },
+        {
+          "date": "2011-10-13",
+          "portfolio_value": 1.050102
+        },
+        {
+          "date": "2011-10-14",
+          "portfolio_value": 1.056033
+        },
+        {
+          "date": "2011-10-17",
+          "portfolio_value": 1.049836
+        },
+        {
+          "date": "2011-10-18",
+          "portfolio_value": 1.058266
+        },
+        {
+          "date": "2011-10-19",
+          "portfolio_value": 1.051466
+        },
+        {
+          "date": "2011-10-20",
+          "portfolio_value": 1.051025
+        },
+        {
+          "date": "2011-10-21",
+          "portfolio_value": 1.061081
+        },
+        {
+          "date": "2011-10-24",
+          "portfolio_value": 1.069069
+        },
+        {
+          "date": "2011-10-25",
+          "portfolio_value": 1.069141
+        },
+        {
+          "date": "2011-10-26",
+          "portfolio_value": 1.072194
+        },
+        {
+          "date": "2011-10-27",
+          "portfolio_value": 1.086991
+        },
+        {
+          "date": "2011-10-28",
+          "portfolio_value": 1.088962
+        },
+        {
+          "date": "2011-10-31",
+          "portfolio_value": 1.081695
+        },
+        {
+          "date": "2011-11-01",
+          "portfolio_value": 1.074811
+        },
+        {
+          "date": "2011-11-02",
+          "portfolio_value": 1.081072
+        },
+        {
+          "date": "2011-11-03",
+          "portfolio_value": 1.088218
+        },
+        {
+          "date": "2011-11-04",
+          "portfolio_value": 1.084755
+        },
+        {
+          "date": "2011-11-07",
+          "portfolio_value": 1.090619
+        },
+        {
+          "date": "2011-11-08",
+          "portfolio_value": 1.092836
+        },
+        {
+          "date": "2011-11-09",
+          "portfolio_value": 1.07589
+        },
+        {
+          "date": "2011-11-10",
+          "portfolio_value": 1.076786
+        },
+        {
+          "date": "2011-11-11",
+          "portfolio_value": 1.086955
+        },
+        {
+          "date": "2011-11-14",
+          "portfolio_value": 1.082553
+        },
+        {
+          "date": "2011-11-15",
+          "portfolio_value": 1.083397
+        },
+        {
+          "date": "2011-11-16",
+          "portfolio_value": 1.076305
+        },
+        {
+          "date": "2011-11-17",
+          "portfolio_value": 1.067712
+        },
+        {
+          "date": "2011-11-18",
+          "portfolio_value": 1.068832
+        },
+        {
+          "date": "2011-11-21",
+          "portfolio_value": 1.057139
+        },
+        {
+          "date": "2011-11-22",
+          "portfolio_value": 1.058341
+        },
+        {
+          "date": "2011-11-23",
+          "portfolio_value": 1.048943
+        },
+        {
+          "date": "2011-11-24",
+          "portfolio_value": 1.048946
+        },
+        {
+          "date": "2011-11-25",
+          "portfolio_value": 1.045424
+        },
+        {
+          "date": "2011-11-28",
+          "portfolio_value": 1.06061
+        },
+        {
+          "date": "2011-11-29",
+          "portfolio_value": 1.061096
+        },
+        {
+          "date": "2011-11-30",
+          "portfolio_value": 1.079758
+        },
+        {
+          "date": "2011-12-01",
+          "portfolio_value": 1.077091
+        },
+        {
+          "date": "2011-12-02",
+          "portfolio_value": 1.079463
+        },
+        {
+          "date": "2011-12-05",
+          "portfolio_value": 1.082371
+        },
+        {
+          "date": "2011-12-06",
+          "portfolio_value": 1.080822
+        },
+        {
+          "date": "2011-12-07",
+          "portfolio_value": 1.084954
+        },
+        {
+          "date": "2011-12-08",
+          "portfolio_value": 1.073607
+        },
+        {
+          "date": "2011-12-09",
+          "portfolio_value": 1.079647
+        },
+        {
+          "date": "2011-12-12",
+          "portfolio_value": 1.070331
+        },
+        {
+          "date": "2011-12-13",
+          "portfolio_value": 1.065012
+        },
+        {
+          "date": "2011-12-14",
+          "portfolio_value": 1.061127
+        },
+        {
+          "date": "2011-12-15",
+          "portfolio_value": 1.062699
+        },
+        {
+          "date": "2011-12-16",
+          "portfolio_value": 1.067972
+        },
+        {
+          "date": "2011-12-19",
+          "portfolio_value": 1.065517
+        },
+        {
+          "date": "2011-12-20",
+          "portfolio_value": 1.077523
+        },
+        {
+          "date": "2011-12-21",
+          "portfolio_value": 1.074992
+        },
+        {
+          "date": "2011-12-22",
+          "portfolio_value": 1.079381
+        },
+        {
+          "date": "2011-12-23",
+          "portfolio_value": 1.081126
+        },
+        {
+          "date": "2011-12-27",
+          "portfolio_value": 1.080938
+        },
+        {
+          "date": "2011-12-28",
+          "portfolio_value": 1.0748
+        },
+        {
+          "date": "2011-12-29",
+          "portfolio_value": 1.080068
+        }
+      ],
+      "rebalance_log": [
+        {
+          "date": "2011-01-03",
+          "weights": {
+            "AGGH.MI": 0.1,
+            "CSPX.L": 0.1,
+            "EFA": 0.1,
+            "GLD": 0.1,
+            "TIP": 0.1,
+            "TLT": 0.1,
+            "VNQ": 0.1,
+            "XEON.MI": 0.1,
+            "SPY": 0.1,
+            "AGG": 0.1
+          },
+          "turnover": 0.0,
+          "transaction_cost": 0.0
+        },
+        {
+          "date": "2011-01-31",
+          "weights": {
+            "AGGH.MI": 0.1,
+            "CSPX.L": 0.1,
+            "EFA": 0.1,
+            "GLD": 0.1,
+            "TIP": 0.1,
+            "TLT": 0.1,
+            "VNQ": 0.1,
+            "XEON.MI": 0.1,
+            "SPY": 0.1,
+            "AGG": 0.1
+          },
+          "turnover": 0.0,
+          "transaction_cost": 0.0
+        },
+        {
+          "date": "2011-02-28",
+          "weights": {
+            "AGGH.MI": 0.1,
+            "CSPX.L": 0.1,
+            "EFA": 0.1,
+            "GLD": 0.1,
+            "TIP": 0.1,
+            "TLT": 0.1,
+            "VNQ": 0.1,
+            "XEON.MI": 0.1,
+            "SPY": 0.1,
+            "AGG": 0.1
+          },
+          "turnover": 0.0,
+          "transaction_cost": 0.0
+        },
+        {
+          "date": "2011-03-31",
+          "weights": {
+            "AGGH.MI": 0.1,
+            "CSPX.L": 0.1,
+            "EFA": 0.1,
+            "GLD": 0.1,
+            "TIP": 0.1,
+            "TLT": 0.1,
+            "VNQ": 0.1,
+            "XEON.MI": 0.1,
+            "SPY": 0.1,
+            "AGG": 0.1
+          },
+          "turnover": 0.0,
+          "transaction_cost": 0.0
+        },
+        {
+          "date": "2011-05-31",
+          "weights": {
+            "AGGH.MI": 0.1,
+            "CSPX.L": 0.1,
+            "EFA": 0.1,
+            "GLD": 0.1,
+            "TIP": 0.1,
+            "TLT": 0.1,
+            "VNQ": 0.1,
+            "XEON.MI": 0.1,
+            "SPY": 0.1,
+            "AGG": 0.1
+          },
+          "turnover": 0.0,
+          "transaction_cost": 0.0
+        },
+        {
+          "date": "2011-06-30",
+          "weights": {
+            "AGGH.MI": 0.1,
+            "CSPX.L": 0.1,
+            "EFA": 0.1,
+            "GLD": 0.1,
+            "TIP": 0.1,
+            "TLT": 0.1,
+            "VNQ": 0.1,
+            "XEON.MI": 0.1,
+            "SPY": 0.1,
+            "AGG": 0.1
+          },
+          "turnover": 0.0,
+          "transaction_cost": 0.0
+        },
+        {
+          "date": "2011-08-31",
+          "weights": {
+            "AGGH.MI": 0.1,
+            "CSPX.L": 0.1,
+            "EFA": 0.1,
+            "GLD": 0.1,
+            "TIP": 0.1,
+            "TLT": 0.1,
+            "VNQ": 0.1,
+            "XEON.MI": 0.1,
+            "SPY": 0.1,
+            "AGG": 0.1
+          },
+          "turnover": 0.0,
+          "transaction_cost": 0.0
+        },
+        {
+          "date": "2011-09-30",
+          "weights": {
+            "AGGH.MI": 0.1,
+            "CSPX.L": 0.1,
+            "EFA": 0.1,
+            "GLD": 0.1,
+            "TIP": 0.1,
+            "TLT": 0.1,
+            "VNQ": 0.1,
+            "XEON.MI": 0.1,
+            "SPY": 0.1,
+            "AGG": 0.1
+          },
+          "turnover": 0.0,
+          "transaction_cost": 0.0
+        },
+        {
+          "date": "2011-10-31",
+          "weights": {
+            "AGGH.MI": 0.1,
+            "CSPX.L": 0.1,
+            "EFA": 0.1,
+            "GLD": 0.1,
+            "TIP": 0.1,
+            "TLT": 0.1,
+            "VNQ": 0.1,
+            "XEON.MI": 0.1,
+            "SPY": 0.1,
+            "AGG": 0.1
+          },
+          "turnover": 0.0,
+          "transaction_cost": 0.0
+        },
+        {
+          "date": "2011-11-30",
+          "weights": {
+            "AGGH.MI": 0.1,
+            "CSPX.L": 0.1,
+            "EFA": 0.1,
+            "GLD": 0.1,
+            "TIP": 0.1,
+            "TLT": 0.1,
+            "VNQ": 0.1,
+            "XEON.MI": 0.1,
+            "SPY": 0.1,
+            "AGG": 0.1
+          },
+          "turnover": 0.0,
+          "transaction_cost": 0.0
+        }
+      ]
+    }
+  }
+}
