@@ -2340,7 +2340,7 @@ It is Wednesday evening — `regime_detector.py` was planned for today and remai
 ---
 
 ## P4 — Frontend / LLM / Docs
-**Estimated duration:** [to be confirmed]
+**Estimated duration:** ~1 hour
 
 ### What I did
 
