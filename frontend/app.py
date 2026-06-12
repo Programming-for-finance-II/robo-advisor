@@ -248,6 +248,39 @@ def _run_live_optimization(profile_label: str) -> dict:
             "tickers": list(cov.columns),
             "matrix": np.clip(_corr_mat, -1.0, 1.0).tolist(),
         }
+        # HRP's own ordering (quasi-diagonalisation) + its tightest cluster, so
+        # the matrix view can mirror how HRP actually groups assets by behaviour.
+        try:
+            from scipy.cluster.hierarchy import fcluster, linkage
+            from scipy.spatial.distance import squareform
+
+            from backend.optimizer.hrp import (
+                _corr_to_distance,
+                _cov_to_corr,
+                _get_quasi_diagonal_order,
+            )
+
+            _corr_df = _cov_to_corr(cov)
+            _dist = np.asarray(_corr_to_distance(_corr_df))
+            _link = linkage(squareform(_dist, checks=False), method="ward")
+            _qidx = _get_quasi_diagonal_order(_link, len(cov.columns))
+            correlation["hrp_order"] = [cov.columns[i] for i in _qidx]
+
+            _labels = fcluster(_link, t=4, criterion="maxclust")
+            _groups: dict[int, list[str]] = {}
+            for _t, _lab in zip(cov.columns, _labels):
+                _groups.setdefault(int(_lab), []).append(_t)
+            _hot, _hot_avg = [], -2.0
+            for _members in _groups.values():
+                if len(_members) >= 2:
+                    _pv = [float(_corr_df.loc[a, b])
+                           for _x, a in enumerate(_members) for b in _members[_x + 1:]]
+                    _avg = sum(_pv) / len(_pv) if _pv else 0.0
+                    if _avg > _hot_avg:
+                        _hot_avg, _hot = _avg, _members
+            correlation["hot_cluster"] = _hot
+        except Exception:
+            pass
     except Exception:
         correlation = None
 
@@ -4010,10 +4043,9 @@ _STRATEGY_LABELS: dict[str, str] = {
 }
 
 # US-listed proxies the backtest uses for the EU ETFs that lack price history
-# back to 2008 (CSPX.L→SPY, AGGH.MI→AGG, XEON.MI→BIL). They are shown in a
-# distinct neutral colour and explained in an alert under the donuts.
+# back to 2008 (CSPX.L→SPY, AGGH.MI→AGG, XEON.MI→BIL). They keep their asset-class
+# colour in the donuts but get a diagonal hatch, explained in a note underneath.
 _PROXY_TICKERS: frozenset[str] = frozenset({"SPY", "AGG", "BIL"})
-_PROXY_COLOR: str = "#94a3b8"
 
 
 def render_backtesting() -> None:
@@ -4175,18 +4207,39 @@ def render_backtesting() -> None:
     _dd = _strats[best_dd]["max_drawdown"]
     _sharpe_name = _STRATEGY_LABELS.get(best_sharpe, best_sharpe)
     _dd_name = _STRATEGY_LABELS.get(best_dd, best_dd)
+    # In a real crisis every strategy can post a negative Sharpe; calling a
+    # negative number the "best risk-adjusted return" reads oddly, so when nobody
+    # came out positive we soften the phrasing to "most resilient / lost the
+    # least" and flag that every strategy still lost ground.
+    _positive = _sh > 0
     if best_sharpe == best_dd:
-        _takeaway = (
-            f"<strong>{_sharpe_name}</strong> held up best in this scenario — the "
-            f"highest risk-adjusted return (Sharpe {_sh:.2f}) and the smallest "
-            f"loss (max drawdown {_dd:.1%})."
-        )
+        if _positive:
+            _takeaway = (
+                f"<strong>{_sharpe_name}</strong> held up best in this scenario — the "
+                f"highest risk-adjusted return (Sharpe {_sh:.2f}) and the smallest "
+                f"loss (max drawdown {_dd:.1%})."
+            )
+        else:
+            _takeaway = (
+                f"<strong>{_sharpe_name}</strong> was the most resilient here — the "
+                f"smallest loss (max drawdown {_dd:.1%}) and the best risk-adjusted "
+                f"result of the group, though its Sharpe was still negative "
+                f"({_sh:.2f}): every strategy lost ground in this downturn."
+            )
     else:
-        _takeaway = (
-            f"<strong>{_sharpe_name}</strong> gave the best risk-adjusted return "
-            f"(Sharpe {_sh:.2f}), while <strong>{_dd_name}</strong> had the "
-            f"smallest loss (max drawdown {_dd:.1%})."
-        )
+        if _positive:
+            _takeaway = (
+                f"<strong>{_sharpe_name}</strong> gave the best risk-adjusted return "
+                f"(Sharpe {_sh:.2f}), while <strong>{_dd_name}</strong> had the "
+                f"smallest loss (max drawdown {_dd:.1%})."
+            )
+        else:
+            _takeaway = (
+                f"<strong>{_dd_name}</strong> lost the least in this scenario "
+                f"(max drawdown {_dd:.1%}); <strong>{_sharpe_name}</strong> had the "
+                f"best risk-adjusted result of the group, though every strategy "
+                f"posted a negative Sharpe ({_sh:.2f}) in this downturn."
+            )
     # Light, airy purple wash — no left accent bar and no icon, so the takeaway
     # reads as a plain highlighted note rather than a heavy callout.
     _tw_bg = "rgba(124,77,255,0.05)" if is_light() else "rgba(124,92,252,0.05)"
@@ -4240,14 +4293,25 @@ def render_backtesting() -> None:
                 _fig_alloc.update_traces(textposition="inside",
                                          insidetextorientation="horizontal",
                                          textfont_size=10)
-                # Recolour the US proxy slices (SPY/AGG/BIL) so they stand out from
-                # the primary EU ETFs; the alert below explains why.
+                # Mark the US proxy slices (SPY/AGG/BIL) with a diagonal hatch so
+                # they stand out from the primary EU ETFs *without* breaking the
+                # by-asset-class colour legend below: they keep their category
+                # colour (equity/bonds/cash) and just get a striped overlay. The
+                # alert below explains why.
                 _tk_order = [str(tk) for tk in _fig_alloc.data[0].customdata]
-                _base_colors = list(_fig_alloc.data[0].marker.colors)
-                _fig_alloc.data[0].marker.colors = [
-                    _PROXY_COLOR if tk in _PROXY_TICKERS else c
-                    for tk, c in zip(_tk_order, _base_colors)
-                ]
+                _fig_alloc.data[0].marker.pattern = dict(
+                    shape=["/" if tk in _PROXY_TICKERS else "" for tk in _tk_order],
+                    # "overlay" draws the hatch *on top* of the slice colour;
+                    # without it Plotly's default "replace" mode swaps the colour
+                    # out for the pattern background, so cash (blue) etc. went dark.
+                    fillmode="overlay",
+                    # Light, sparse stripes: the slice keeps its asset-class colour
+                    # (e.g. cash = blue) clearly visible, the hatch just flags "this
+                    # is a US proxy". A heavy/dark pattern muddied the colour.
+                    fgcolor="#0d1220",  # = slice border, so stripes read as thin cuts
+                    size=9,
+                    solidity=0.14,
+                )
                 _fig_alloc.update_layout(height=340, margin=dict(l=10, r=10, t=12, b=38))
                 st.plotly_chart(_fig_alloc, use_container_width=True,
                                 config={"displaylogo": False, "responsive": False})
@@ -4255,7 +4319,7 @@ def render_backtesting() -> None:
         st.markdown(
             f'<div style="font-size:0.84rem;line-height:1.55;'
             f'color:{t["text_secondary"]};margin-top:0.6rem;">'
-            f'<strong style="color:{t["text_primary"]};">About the grey '
+            f'<strong style="color:{t["text_primary"]};">About the striped '
             f'slices (SPY, AGG, BIL):</strong> these are US-listed stand-ins for '
             f'CSPX.L, AGGH.MI and XEON.MI. The backtest uses them for the early '
             f'years because those European ETFs have no price history back to 2008 — '
@@ -4288,31 +4352,78 @@ def render_backtesting() -> None:
     if detail is not None:
         _section_header("3", "How it played out over time")
         st.caption(
-            "The value of each strategy over the scenario (top), and how far it fell "
-            "from its previous peak (bottom) — the result of the mixes shown above."
+            "Both panels share the same timeline. The top shows what €10,000 would "
+            "have been worth; the bottom shows how far each strategy had fallen from "
+            "its previous peak — the result of the mixes shown above."
         )
-        fig = go.Figure()
+
+        # One figure, two stacked panels on a shared x-axis so "the value dropped
+        # here" lines up vertically with "the drawdown was deepest here". The
+        # equity panel is shown as the growth of a €10,000 investment, which reads
+        # more intuitively than an abstract "start = 1.0" index.
+        from plotly.subplots import make_subplots
+        _START = 10_000
+        # Lighter fills + bolder lines: the two drawdown areas overlap heavily, so
+        # a high fill opacity muddied the colours where they cross.
+        _DD_FILL: dict[str, str] = {
+            "HRP": "rgba(124,92,252,0.18)",
+            "MV":  "rgba(248,113,113,0.18)",
+            "1/N": "rgba(148,163,184,0.18)",
+        }
+        fig = make_subplots(
+            rows=2, cols=1, shared_xaxes=True, vertical_spacing=0.08,
+            row_heights=[0.62, 0.38],
+            subplot_titles=("Value of €10,000 invested", "Drawdown from peak (%)"),
+        )
+        # Pin the subplot-title colour to a theme-aware token so it stays readable
+        # in both dark and light mode (make_subplots' default near-white would wash
+        # out on the light surface).
+        for _ann in fig.layout.annotations:
+            _ann.font.update(color=t["text_secondary"], size=13)
+        # Per-strategy stats reused for the takeaway below the chart.
+        _perf: dict[str, dict[str, float]] = {}
         for strat in _BACKTEST_STRATEGIES:
             ec = detail["strategies"][strat]["equity_curve"]
+            dates = [e["date"] for e in ec]
+            vals = np.array([e["portfolio_value"] for e in ec])
+            euro = vals * _START
+            rolling_max = np.maximum.accumulate(vals)
+            dd = (vals - rolling_max) / rolling_max * 100
+            _label = _STRATEGY_LABELS.get(strat, strat)
+            _color = _STRATEGY_COLORS.get(strat, "#64748b")
+            _perf[strat] = {"final_ret": float(vals[-1] - 1.0),
+                            "max_dd": float(dd.min())}
+            # Equity panel (row 1) — carries the legend.
             fig.add_trace(go.Scatter(
-                x=[e["date"] for e in ec],
-                y=[e["portfolio_value"] for e in ec],
-                mode="lines",
-                name=_STRATEGY_LABELS.get(strat, strat),
-                line=dict(color=_STRATEGY_COLORS.get(strat, "#64748b"), width=2),
-                hovertemplate="%{y:.3f}<extra>%{fullData.name}</extra>",
-            ))
-        fig.add_hline(y=1.0, line_dash="dot", line_color="#475569", line_width=1)
+                x=dates, y=euro.tolist(), mode="lines", name=_label,
+                legendgroup=strat,
+                line=dict(color=_color, width=2),
+                hovertemplate="€%{y:,.0f}<extra>%{fullData.name}</extra>",
+            ), row=1, col=1)
+            # Drawdown panel (row 2) — same legend group, hidden from the legend
+            # so each strategy appears once and toggles both panels together.
+            fig.add_trace(go.Scatter(
+                x=dates, y=dd.tolist(), mode="lines", name=_label,
+                legendgroup=strat, showlegend=False,
+                line=dict(color=_color, width=2.2),
+                fill="tozeroy", fillcolor=_DD_FILL.get(strat, "rgba(0,0,0,0)"),
+                hovertemplate="%{y:.1f}%<extra>%{fullData.name}</extra>",
+            ), row=2, col=1)
+        # Break-even reference: the starting €10,000 line.
+        fig.add_hline(y=_START, line_dash="dot", line_color="#475569",
+                      line_width=1, row=1, col=1)
+        fig.update_yaxes(title_text="Value (€)", tickprefix="€", row=1, col=1)
+        fig.update_yaxes(title_text="Drawdown (%)", row=2, col=1)
+        fig.update_xaxes(title_text="Date", row=2, col=1)
         fig.update_layout(
-            title=f"Equity Curve — {_SCENARIO_LABELS[selected]}",
-            xaxis_title="Date",
-            yaxis_title="Portfolio value (start = 1.0)",
-            height=400,
-            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+            height=560,
+            hovermode="x unified",
+            legend=dict(orientation="h", yanchor="bottom", y=1.04,
+                        xanchor="right", x=1),
         )
         fig = apply_plotly_theme(fig)
         fig.update_layout(
-            margin=dict(t=56),
+            margin=dict(t=64),
             modebar_remove=[
                 "select2d", "lasso2d", "autoScale2d",
                 "hoverClosestCartesian", "hoverCompareCartesian",
@@ -4323,47 +4434,39 @@ def render_backtesting() -> None:
         )
         st.plotly_chart(fig, use_container_width=True, config={"displaylogo": False})
 
-        # ── Drawdown chart ───────────────────────────────────────────────────
-        # Stronger fills so the drawdown reads as a coloured area, not thin lines.
-        _DD_FILL: dict[str, str] = {
-            "HRP": "rgba(124,92,252,0.30)",
-            "MV":  "rgba(248,113,113,0.30)",
-            "1/N": "rgba(148,163,184,0.30)",
-        }
-        fig_dd = go.Figure()
-        for strat in _BACKTEST_STRATEGIES:
-            ec = detail["strategies"][strat]["equity_curve"]
-            vals = np.array([e["portfolio_value"] for e in ec])
-            dates_dd = [e["date"] for e in ec]
-            rolling_max = np.maximum.accumulate(vals)
-            dd = (vals - rolling_max) / rolling_max * 100
-            fig_dd.add_trace(go.Scatter(
-                x=dates_dd, y=dd.tolist(),
-                mode="lines", name=_STRATEGY_LABELS.get(strat, strat),
-                line=dict(color=_STRATEGY_COLORS.get(strat, "#64748b"), width=1.5),
-                fill="tozeroy",
-                fillcolor=_DD_FILL.get(strat, "rgba(0,0,0,0)"),
-                hovertemplate="%{y:.1f}%<extra>%{fullData.name}</extra>",
-            ))
-        fig_dd.update_layout(
-            title="Drawdown (%)",
-            xaxis_title="Date",
-            yaxis_title="Drawdown (%)",
-            height=320,
-            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+        # ── Narrative takeaway ───────────────────────────────────────────────
+        # Plain-language closer, consistent with sections 1 and 2: contrast the
+        # gentler vs deeper ride and where each strategy ended the scenario.
+        _shallow = max(_perf, key=lambda s: _perf[s]["max_dd"])  # closest to 0
+        _deep = min(_perf, key=lambda s: _perf[s]["max_dd"])
+        _sh_name = _STRATEGY_LABELS.get(_shallow, _shallow)
+        _dp_name = _STRATEGY_LABELS.get(_deep, _deep)
+        if _shallow == _deep:
+            _ride = (
+                f"Both strategies fell about the same — a worst drop of "
+                f"{_perf[_shallow]['max_dd']:.1f}% from their peak."
+            )
+        else:
+            _ride = (
+                f"<strong>{_sh_name}</strong> had the gentler ride: its worst drop "
+                f"was {_perf[_shallow]['max_dd']:.1f}% from peak, versus "
+                f"{_perf[_deep]['max_dd']:.1f}% for <strong>{_dp_name}</strong> — "
+                f"and a deeper hole needs a bigger gain just to get back to even."
+            )
+        _ends = " ".join(
+            f"{_STRATEGY_LABELS.get(s, s)} ended the scenario "
+            f"{_perf[s]['final_ret']:+.1%}."
+            for s in _BACKTEST_STRATEGIES
         )
-        fig_dd = apply_plotly_theme(fig_dd)
-        fig_dd.update_layout(
-            margin=dict(t=56),
-            modebar_remove=[
-                "select2d", "lasso2d", "autoScale2d",
-                "hoverClosestCartesian", "hoverCompareCartesian",
-                "toggleSpikelines", "zoomIn2d", "zoomOut2d",
-            ],
-            modebar_add=["resetScale2d"],
-            dragmode="pan",
+        _tw3_bg = "rgba(124,77,255,0.05)" if is_light() else "rgba(124,92,252,0.05)"
+        _tw3_border = "rgba(124,77,255,0.18)" if is_light() else "rgba(124,92,252,0.18)"
+        st.markdown(
+            f'<div style="background:{_tw3_bg};border:1px solid {_tw3_border};'
+            f'border-radius:10px;padding:0.8rem 1rem;margin-top:0.6rem;'
+            f'font-size:0.88rem;line-height:1.55;color:{t["text_secondary"]};">'
+            f'{_ride} {_ends}</div>',
+            unsafe_allow_html=True,
         )
-        st.plotly_chart(fig_dd, use_container_width=True, config={"displaylogo": False})
 
     st.caption(
         f"Profile: {profile_label.upper()} · Rebalancing: monthly · TC: 10 bps/rebalance · "
@@ -4843,9 +4946,10 @@ def render_compare() -> None:
     st.markdown(
         f"<p style='color:{thm['text_secondary']};font-size:0.82rem;"
         "line-height:1.55;margin-bottom:0.5rem;'>"
-        "Diversification is not only about holding many ETFs, but about combining assets that "
-        "behave differently. This matrix shows how the ETFs move relative to each other; the "
-        "outlined blocks are the groups HRP clusters together."
+        "HRP and Markowitz build their portfolios from this same correlation matrix — but "
+        "they use it in opposite ways. Here the assets are ordered the way HRP groups them, "
+        "by how they actually move (purple = together, teal = apart), so its real groups sit "
+        "side by side — which can differ from their asset-class labels."
         "</p>",
         unsafe_allow_html=True,
     )
@@ -4871,16 +4975,60 @@ def render_compare() -> None:
         ])
         _corr_is_live = False
 
-    # Order assets by HRP cluster so same-class assets sit together and the
-    # within-cluster blocks become visible on the diagonal.
-    _CLS_ORDER = {"Equity": 0, "Alternatives": 1, "Bonds": 2, "Cash": 3}
-    _order = sorted(
-        range(len(_TICKERS_HM)),
-        key=lambda i: (_CLS_ORDER.get(_HRP_TICKER_CLUSTER.get(_TICKERS_HM[i], "Cash"), 9),
-                       _TICKERS_HM[i]),
-    )
+    # Order assets the way HRP does (quasi-diagonalisation) so its real groups
+    # emerge on the diagonal. Fall back to asset-class order when HRP's order is
+    # unavailable (offline / stylised matrix).
+    _hrp_order = _corr_live.get("hrp_order") if _corr_live else None
+    if _hrp_order and set(_hrp_order) == set(_TICKERS_HM):
+        _pos = {t: i for i, t in enumerate(_TICKERS_HM)}
+        _order = [_pos[t] for t in _hrp_order]
+    else:
+        _CLS_ORDER = {"Equity": 0, "Alternatives": 1, "Bonds": 2, "Cash": 3}
+        _order = sorted(
+            range(len(_TICKERS_HM)),
+            key=lambda i: (_CLS_ORDER.get(_HRP_TICKER_CLUSTER.get(_TICKERS_HM[i], "Cash"), 9),
+                           _TICKERS_HM[i]),
+        )
     _TICKERS_HM = [_TICKERS_HM[i] for i in _order]
     _CORR = _CORR[np.ix_(_order, _order)]
+
+    # The single tightest cluster HRP found — where Markowitz over-concentrates.
+    # Use HRP's own cluster when available; else fall back to the most-correlated
+    # contiguous asset-class block. Only a contiguous run is highlighted.
+    _hot_members = [t for t in ((_corr_live.get("hot_cluster") if _corr_live else None) or [])
+                    if t in _TICKERS_HM]
+    _hot_s = _hot_e = -1
+    if _hot_members:
+        _idxs = sorted(_TICKERS_HM.index(t) for t in _hot_members)
+        if _idxs == list(range(_idxs[0], _idxs[-1] + 1)):
+            _hot_s, _hot_e = _idxs[0], _idxs[-1]
+    else:
+        _best = -2.0
+        _k = 0
+        while _k < len(_TICKERS_HM):
+            _kc = _HRP_TICKER_CLUSTER.get(_TICKERS_HM[_k], "Cash")
+            _ke = _k
+            while (_ke < len(_TICKERS_HM)
+                   and _HRP_TICKER_CLUSTER.get(_TICKERS_HM[_ke], "Cash") == _kc):
+                _ke += 1
+            if _ke - _k >= 2:
+                _vals = [_CORR[a][b] for a in range(_k, _ke) for b in range(_k, _ke) if a != b]
+                _avg = sum(_vals) / len(_vals) if _vals else 0.0
+                if _avg > _best:
+                    _best, _hot_s, _hot_e = _avg, _k, _ke - 1
+            _k = _ke
+    if _hot_s >= 0:
+        _hv = [_CORR[a][b] for a in range(_hot_s, _hot_e + 1)
+               for b in range(_hot_s, _hot_e + 1) if a != b]
+        _hot_avg = sum(_hv) / len(_hv) if _hv else 0.0
+    else:
+        _hot_avg = 0.0
+
+    # Are there real diversifiers (meaningfully negative correlations)? In the
+    # current rate regime stocks and bonds move together, so often there are none.
+    _off = [_CORR[a][b] for a in range(len(_TICKERS_HM))
+            for b in range(len(_TICKERS_HM)) if a != b]
+    _has_diversifiers = (min(_off) <= -0.10) if _off else False
 
     fig_hm = go.Figure(go.Heatmap(
         z=_CORR.tolist(),
@@ -4905,24 +5053,17 @@ def render_compare() -> None:
         ),
     ))
 
-    # Outline each HRP cluster as a block on the diagonal, so the grouping the
-    # intro describes is actually visible on the chart.
-    _outline = "#334155" if is_light() else "#f8fafc"
-    _n = len(_TICKERS_HM)
-    _i = 0
-    while _i < _n:
-        _c = _HRP_TICKER_CLUSTER.get(_TICKERS_HM[_i], "Cash")
-        _j = _i
-        while _j < _n and _HRP_TICKER_CLUSTER.get(_TICKERS_HM[_j], "Cash") == _c:
-            _j += 1
+    # A single highlight on HRP's tightest cluster — no cluster boxes, so we
+    # don't assert hard boundaries. The quasi-diagonal order already makes the
+    # groups visible; this only flags where Markowitz over-concentrates.
+    if _hot_s >= 0:
         fig_hm.add_shape(
             type="rect",
-            x0=_i - 0.5, x1=_j - 0.5, y0=_i - 0.5, y1=_j - 0.5,
-            line=dict(color=_outline, width=2),
+            x0=_hot_s - 0.5, x1=_hot_e + 0.5, y0=_hot_s - 0.5, y1=_hot_e + 0.5,
+            line=dict(color="#fbbf24", width=3),
             fillcolor="rgba(0,0,0,0)",
             layer="above",
         )
-        _i = _j
 
     fig_hm.update_layout(height=440, margin=dict(l=8, r=8, t=8, b=8))
     fig_hm = apply_plotly_theme(fig_hm)
@@ -4937,16 +5078,72 @@ def render_compare() -> None:
         dragmode="pan",
     )
     st.plotly_chart(fig_hm, use_container_width=True, config={"displaylogo": False})
+
+    if _hot_s >= 0 and _hot_avg > 0:
+        st.markdown(
+            f"<p style='color:{thm['text_secondary']};font-size:0.82rem;"
+            "line-height:1.55;margin:0.4rem 0 0.6rem;'>"
+            f"The highlighted block is HRP's tightest cluster — those ETFs move almost "
+            f"together (ρ ≈ {_hot_avg:.2f}). A group of near-identical assets is exactly "
+            "where the two models part ways:"
+            "</p>",
+            unsafe_allow_html=True,
+        )
+
+    st.markdown(
+        f"<div style='display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;"
+        "margin:0 0 0.4rem;'>"
+        f"<div style='background:{thm['bg_card']};border:1px solid {thm['border']};"
+        "border-left:3px solid #f87171;border-radius:10px;padding:0.7rem 0.85rem;'>"
+        "<div style='font-weight:600;color:#f87171;font-size:0.85rem;"
+        "margin-bottom:0.3rem;'>Markowitz</div>"
+        f"<div style='color:{thm['text_secondary']};font-size:0.8rem;line-height:1.5;'>"
+        "Inverts this matrix to find optimal weights. A block of near-identical assets "
+        "makes that maths unstable, so it piles risk into a few positions."
+        "</div></div>"
+        f"<div style='background:{thm['bg_card']};border:1px solid {thm['border']};"
+        "border-left:3px solid #7c5cfc;border-radius:10px;padding:0.7rem 0.85rem;'>"
+        "<div style='font-weight:600;color:#7c5cfc;font-size:0.85rem;"
+        "margin-bottom:0.3rem;'>HRP</div>"
+        f"<div style='color:{thm['text_secondary']};font-size:0.8rem;line-height:1.5;'>"
+        "Never inverts. It groups correlated assets into clusters and splits the budget "
+        "step by step, so it stays robust on the very same data."
+        "</div></div>"
+        "</div>",
+        unsafe_allow_html=True,
+    )
+
+    if _has_diversifiers:
+        _regime = (
+            "The teal cells are the real diversifiers — assets that move against the "
+            "rest (like the stock–bond hedge). Combining them is what lowers risk."
+        )
+    else:
+        _regime = (
+            "Right now almost everything moves together — even stocks and bonds. The "
+            "classic hedge has weakened, so diversification is harder, which is exactly "
+            "when HRP's robustness matters most."
+        )
+    st.markdown(
+        f"<p style='color:{thm['text_secondary']};font-size:0.82rem;"
+        f"line-height:1.55;margin:0.5rem 0 0.2rem;'>{_regime}</p>",
+        unsafe_allow_html=True,
+    )
+
     _hm_note = (
         ""
         if _corr_is_live
         else " Figures shown are a stylised illustration (live prices unavailable)."
     )
+    _legend = (
+        "Teal = assets that hedge each other (diversifying); purple = move together. "
+        if _has_diversifiers
+        else "Purple = assets that move together; teal would mark diversifiers, but "
+             "there are none in the current data. "
+    )
     st.caption(
-        "Correlation of daily returns — the same matrix HRP uses to build its "
-        "cluster tree. Teal = assets that hedge each other (diversifying); "
-        "purple = assets that move together. Outlined blocks are HRP's clusters."
-        + _hm_note
+        _legend + "Assets are ordered by HRP's own grouping; the highlighted block is "
+        "its tightest cluster, where Markowitz over-concentrates." + _hm_note
     )
 
 
