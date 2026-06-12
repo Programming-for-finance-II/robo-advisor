@@ -3225,9 +3225,13 @@ div[class*="st-key-chat_suggest"] button p {
     text-align: left !important;
 }
 [data-testid="stChatMessage"] p:last-child { margin-bottom: 0 !important; }
+/* Zero all margins/padding on Streamlit's markdown wrapper div so the bubble's
+   own padding controls spacing symmetrically — top and bottom equally. */
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarAssistant"])
+[data-testid="stChatMessageContent"] > div,
 [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"])
-[data-testid="stChatMessageContent"] > div:first-child {
-    margin-top: 0 !important; padding-top: 0 !important;
+[data-testid="stChatMessageContent"] > div {
+    margin: 0 !important; padding: 0 !important;
 }
 [data-testid="stChatMessage"] em { color: #6b7689 !important; font-size: 0.82rem !important; }
 [data-testid="stChatMessage"] h1,
@@ -3350,9 +3354,11 @@ div[class*="st-key-chat_suggest"] button::after { color: #7C4DFF !important; }
 [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"])
 [data-testid="stChatMessageContent"]::before { color: #6d4deb !important; }
 [data-testid="stChatMessage"] p { color: #334155 !important; margin-top: 0 !important; }
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarAssistant"])
+[data-testid="stChatMessageContent"] > div,
 [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"])
-[data-testid="stChatMessageContent"] > div:first-child {
-    margin-top: 0 !important; padding-top: 0 !important;
+[data-testid="stChatMessageContent"] > div {
+    margin: 0 !important; padding: 0 !important;
 }
 [data-testid="stChatMessage"] h1,
 [data-testid="stChatMessage"] h2,
