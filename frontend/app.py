@@ -4797,68 +4797,71 @@ def render_compare() -> None:
         unsafe_allow_html=True,
     )
 
-    # ── Comparison cards: one per metric, each with a head-to-head bar pair ──
+    # ── Comparison table — same idiom as the Backtesting "Results" table:
+    # uppercase eyebrow column headers, clean rows, the winning cell tinted in
+    # its method's colour (purple = HRP, red = Markowitz) with a ★.
     _HRP_C, _MV_C = "#7c5cfc", "#f87171"
-    _track = "rgba(124,77,255,0.12)" if is_light() else "rgba(148,163,184,0.16)"
+    _hrp_win_bg = "rgba(124,77,255,0.10)" if is_light() else "rgba(124,92,252,0.13)"
+    _mv_win_bg = "rgba(248,113,113,0.09)" if is_light() else "rgba(248,113,113,0.12)"
 
-    def _mrow(name: str, text: str, val, mx: float, side: str, winner) -> str:
-        base = _HRP_C if side == "hrp" else _MV_C
-        is_win = winner == side
-        numeric = isinstance(val, (int, float))
-        frac = (abs(val) / mx) if numeric and mx > 0 else 0.0
-        width = max(3.0, min(100.0, frac * 100)) if numeric else 0.0
-        bar_col = base if is_win else thm["border"]
-        val_col = base if is_win else thm["text_secondary"]
-        check = (f'<span style="color:{base};margin-left:0.3rem;">&#10003;</span>'
-                 if is_win else "")
-        bar = (
-            f'<div style="flex:1;height:7px;border-radius:99px;background:{_track};">'
-            f'<div style="width:{width}%;height:100%;border-radius:99px;'
-            f'background:{bar_col};"></div></div>'
-            if numeric else '<div style="flex:1;height:7px;"></div>'
-        )
+    _cols3 = [("Metric", ""), ("HRP", "recommended"), ("Markowitz", "benchmark")]
+    _head = "".join(
+        f'<th style="padding:0.6rem 0.95rem;text-align:{"left" if i == 0 else "right"};'
+        f'vertical-align:bottom;white-space:nowrap;">'
+        f'<span style="font-family:\'Space Grotesk\',sans-serif;font-size:0.7rem;'
+        f'font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:'
+        f'{_HRP_C if c == "HRP" else (_MV_C if c == "Markowitz" else thm["accent_text"])};">'
+        f'{c}</span>'
+        + (f'<span style="display:block;font-size:0.63rem;font-weight:400;'
+           f'text-transform:none;letter-spacing:0;color:{thm["text_muted"]};'
+           f'margin-top:0.12rem;">{sub}</span>' if sub else "")
+        + "</th>"
+        for i, (c, sub) in enumerate(_cols3)
+    )
+
+    def _vcell(text: str, win: bool, color: str, bg: str) -> str:
+        if win:
+            return (
+                f'<td style="padding:0.6rem 0.95rem;text-align:right;font-size:0.92rem;'
+                f"font-family:'Space Grotesk',sans-serif;font-weight:700;color:{color};"
+                f'background:{bg};border-top:1px solid {thm["border"]};'
+                f'white-space:nowrap;">{text}'
+                f'<span style="margin-left:0.35rem;">&#9733;</span></td>'
+            )
+        _c = thm["text_secondary"] if text != "—" else thm["text_muted"]
         return (
-            f'<div style="display:flex;align-items:center;gap:0.6rem;margin:0.45rem 0;">'
-            f'<span style="width:72px;font-size:0.78rem;font-weight:600;'
-            f'color:{thm["text_secondary"]};">{name}</span>{bar}'
-            f'<span style="min-width:52px;text-align:right;font-family:'
-            f"'Space Grotesk',sans-serif;font-weight:700;font-size:0.95rem;"
-            f'color:{val_col};white-space:nowrap;">{text}{check}</span></div>'
+            f'<td style="padding:0.6rem 0.95rem;text-align:right;font-size:0.92rem;'
+            f"font-family:'Space Grotesk',sans-serif;font-weight:600;color:{_c};"
+            f'border-top:1px solid {thm["border"]};white-space:nowrap;">{text}</td>'
         )
 
-    _cards = ""
+    _body = ""
     for _lab, _hint, _hv, _mval, _ht, _mt, _wn in _metrics:
-        _mx = max(
-            abs(_hv) if isinstance(_hv, (int, float)) else 0.0,
-            abs(_mval) if isinstance(_mval, (int, float)) else 0.0,
-        ) or 1.0
-        _win_label = (
-            f'<span style="font-size:0.62rem;font-weight:700;letter-spacing:0.05em;'
-            f'text-transform:uppercase;color:{_HRP_C if _wn == "hrp" else _MV_C};'
-            f'background:{"rgba(124,92,252,0.12)" if _wn == "hrp" else "rgba(248,113,113,0.12)"};'
-            f'border-radius:999px;padding:0.12rem 0.5rem;">'
-            f'{"HRP" if _wn == "hrp" else "Markowitz"}</span>'
-            if _wn else ""
+        _metric_cell = (
+            f'<td style="padding:0.6rem 0.95rem;border-top:1px solid {thm["border"]};">'
+            f'<div style="font-size:0.88rem;font-weight:600;color:{thm["text_primary"]};'
+            f'line-height:1.2;">{_lab}</div>'
+            f'<div style="font-size:0.7rem;color:{thm["text_muted"]};margin-top:0.1rem;">'
+            f'{_hint}</div></td>'
         )
-        _cards += (
-            f'<div style="background:{thm["bg_card"]};border:1px solid {thm["border"]};'
-            f'border-radius:14px;padding:0.95rem 1.05rem;box-shadow:{thm["shadow"]};">'
-            f'<div style="display:flex;justify-content:space-between;'
-            f'align-items:center;margin-bottom:0.15rem;">'
-            f'<span style="font-family:\'Space Grotesk\',sans-serif;font-size:0.72rem;'
-            f'font-weight:700;letter-spacing:0.07em;text-transform:uppercase;'
-            f'color:{thm["accent_text"]};">{_lab}</span>{_win_label}</div>'
-            f'<div style="font-size:0.7rem;color:{thm["text_muted"]};'
-            f'margin-bottom:0.45rem;">{_hint}</div>'
-            f'{_mrow("HRP", _ht, _hv, _mx, "hrp", _wn)}'
-            f'{_mrow("Markowitz", _mt, _mval, _mx, "mv", _wn)}'
-            f'</div>'
+        _body += (
+            f'<tr>{_metric_cell}'
+            f'{_vcell(_ht, _wn == "hrp", _HRP_C, _hrp_win_bg)}'
+            f'{_vcell(_mt, _wn == "mv", _MV_C, _mv_win_bg)}</tr>'
         )
 
+    _head_bg = (
+        "linear-gradient(135deg,#f8fafc 0%,#ede9fe 55%,#f1f4fa 100%)"
+        if is_light() else
+        "linear-gradient(135deg,#0f172a 0%,#1e1b4b 55%,#0d1220 100%)"
+    )
     st.markdown(
-        f'<div style="display:grid;'
-        f'grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:0.85rem;">'
-        f'{_cards}</div>',
+        f'<div style="overflow-x:auto;border:1px solid {thm["border"]};'
+        f'border-radius:12px;">'
+        f'<table style="width:100%;border-collapse:collapse;margin:0;">'
+        f'<thead><tr style="background:{_head_bg};'
+        f'border-bottom:1px solid {thm["border"]};">{_head}</tr></thead>'
+        f'<tbody>{_body}</tbody></table></div>',
         unsafe_allow_html=True,
     )
 
