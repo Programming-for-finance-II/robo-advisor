@@ -9,9 +9,473 @@ Consolidated session logs, ordered by date and grouped by day, then by role (P1,
 - **P3 — Matteo** — ML / Risk Profiling
 - **P4 — Elena** — Frontend / LLM / Docs
 
-> Note: the session-level logs in this folder begin in Week 2 (May). Week 1 (late April) is captured in the per-week summary table at the end, drawn from the consolidated team memory. A separate per-day diary exists for the April sessions.
+> Note: the session-level logs begin on 27 April (Week 1, late April) and run through to mid-June. The per-week summary table at the end provides a consolidated milestone snapshot of the core deliverables (W1–W4).
 
 > **Project phasing.** From the start the team planned the work in two phases. **Weeks 1–4 (27 April – 24 May)** were dedicated to building the *core* of the project — the full pipeline end to end: data layer, ML risk profiler, HRP optimizer, LLM narrator + validator, API, frontend, deployment and academic documentation. By the end of Week 4 the system was feature-complete, tested and deployed (v1.0). The **subsequent weeks (Week 5 onwards, late May – June)** were intentionally reserved for *refinement*: UI/UX polish, bug fixes, theme work (Dark/Light), documentation cleanup and post-submission detail work. The per-week summary table below therefore reports the core deliverables (W1–W4) as the milestone snapshot; the dated entries continue into Weeks 5–7 with the refinement work.
+
+---
+
+# 27 April 2026 — Week 1 (Monday)
+
+## P3 — ML / Risk Profiling
+**Estimated duration:** 1h30
+
+### What I did
+
+- Defined the full questionnaire structure: 10 questions split into 3 sections (Who You Are Financially, How You Invest, How You React)
+- Chose the Grable & Lytton (1999) methodology as the academic basis for the questions
+- Defined the scoring system (0–30) with confidence zones and the Q7 override rule
+- Produced `docs/questionnaire_schema.md` with questions, answer options, per-question rationale and bibliographic references
+- Configured Git locally, cloned the repo, created branch `feature/p3-questionnaire-schema`
+- Pushed the file and opened PR #1 toward main
+
+### How I did it
+
+- Used Claude as an advisor for the questionnaire structure and the methodological choice
+- Discussed each question and its mapping to the three profiles (CONSERVATIVE, MODERATE, AGGRESSIVE)
+- Ran the Git commands from the terminal (Mac) for clone, branch, add, commit, push
+- Opened the PR manually on GitHub
+
+### Difficulties
+
+- Initial `git add` error because the file was not yet in the `docs/` folder — solved by copying it from Downloads with `cp`
+- First-time understanding of the Git flow (branch, PR, main) — clarified during the session
+
+### Achievements / Key decisions
+
+- **Questionnaire completed and committed** — first P3 deliverable on GitHub
+- **PR #1 opened** on `feature/p3-questionnaire-schema` → main
+- Key choice: Q7 has an override rule — if the user answers "safety net", the profile is capped to CONSERVATIVE regardless of total score
+- Key choice: Q9 placed last to reduce social-desirability bias — academically defensible
+- Confidence zones defined: borderline at 8–9, 10–11, 18–19, 20–21 → `low_confidence_flag = True`
+
+### Next steps
+
+- Wait for P1's review on PR #1
+- Start `backend/ml/profiler/rule_based.py` (Wed–Thu W1): scoring logic, Q7 override, output `profile_label` + `confidence` + `low_confidence_flag`
+- Verify that `AGENTS.md` has been pushed by P4
+
+### Notes for the academic PDF
+
+- The questionnaire follows the **Grable & Lytton (1999) Risk Tolerance Scale** — citation ready
+- The behavioural questions (Q8, Q9) use first-person framing to reduce social-desirability bias — defensible motivation
+- Q6 + Q5 together identify asymmetric profiles (people who know but never invested, or vice versa) — interesting point for the ML Risk Profiler section
+- Bibliographic references already in the file: Grable & Lytton 1999, Guiso et al. 2018, Fed SCF 2022, MiFID II Art. 25
+
+---
+
+# 28 April 2026 — Week 1 (Tuesday)
+
+## P1 — Backend / Data Engineering
+**Estimated duration:** ~1 hour
+
+### What I did
+
+- Configured `ci.yml` in `.github/workflows/` — GitHub Actions with lint (ruff) + pytest on every push and PR
+- Resolved the CI "collected 0 items" error by adding `tests/test_placeholder.py`
+- Resolved the CI "E501 line too long" error by setting `line-length = 100` in `pyproject.toml`
+- Reviewed and approved Emma's (P2) PR #2 (`universe_config.py`): corrected `ASSET_WEIGHT_MIN` from `0.03` to `0.05` to align with design v3.1
+- Merged PR #2 (universe_config.py) and PR #3 (ci.yml) into `main`
+- Created `backend/data/schema.sql` — DB schema v3.1 with tables `users`, `recommendations`, `market_data_snapshots` and their indexes
+- Created `backend/data/loader.py` — complete `ValidatedDataLoader` with NaN gate, ffill, SHA-256 hash, UCITS fallback logic, `DataQualityReport`
+- Configured branch protection on `main`: require PR + 1 review + green CI before merge
+
+### How I did it
+
+- All work done directly on GitHub (web interface), no local git
+- CI configured with `astral-sh/setup-uv@v5` for dependency management via `uv`
+- Reviewed Emma's code against the canonical v3.1 design before approving the merge
+- `ValidatedDataLoader` written per v3.1: `load()` returns `(pd.DataFrame, DataQualityReport)`, fallback ticker resolved before the main download, SHA-256 hash computed on `prices.to_csv()`
+- Branch protection configured via Settings → Branches → Add ruleset
+
+### Difficulties
+
+- CI failed with exit code 5 (zero tests found) — solved by adding `test_placeholder.py`
+- CI failed with E501 (long lines in ETF rationale) — solved by raising `line-length` to 100
+- GitHub navigation not immediate for someone without platform experience (branch switching, committing to a specific branch)
+- `loader.py` already existed as an empty placeholder (initial commit) — modified rather than recreated
+
+### Achievements / Key decisions
+
+- **W1 ~85% complete** in a single session
+- **Green CI** on `main` — every future PR gets automatic feedback
+- **Branch protection active** — professional process visible in the repo history
+- **`universe_config.py` aligned to design v3.1** — `ASSET_WEIGHT_MIN = 0.05`, 8 ETFs, 4 clusters, 3 UCITS tickers, integrity assertions at import time
+- **DB schema v3.1 complete** with all required fields: `ucits_tickers_used`, `fallback_tickers_applied`, `regulatory_context`, `etf_universe_version`, `market_data_hash`
+- **`ValidatedDataLoader` scaffold** ready — complete interface, UCITS fallback logic implemented, `DataQualityReport` with `to_dict()` for DB serialization
+
+### Next steps
+
+- `snapshots.py` — `market_data_snapshots` audit-trail logic (Fri W1)
+- `test_data_loader.py` — at least 2 happy-path tests (Fri W1)
+- FastAPI skeleton — 5 stub endpoints `/profile`, `/optimize`, `/compare`, `/advice`, `/backtest` (start W2)
+- Rate limiting with `slowapi` + API key header auth (W2)
+- ADR-001 — SQLite vs PostgreSQL document (W2)
+- Verify P3 delivers an importable `rule_based.py` by Monday W2 — otherwise prepare a 3-cluster stub
+
+### Notes for the academic PDF
+
+- The choice of `uv` as package manager is defensible as a modern, reproducible alternative to classic `pip` — install speed and deterministic lockfile
+- Branch protection with mandatory CI is an element of the agentic process documentable in the Lessons Learned section (Section 7)
+- The `market_data_hash` field (SHA-256 of `prices.to_csv()`) deserves a note in the DB section: it guarantees bit-for-bit reproducibility of recommendations even if yfinance retroactively adjusts historical data (splits, dividends)
+- The UCITS/US tension in `universe_config.py` (EFA, GLD, VNQ with no liquid UCITS equivalent) is direct material for the Limitations and Failure Modes section
+
+---
+
+## P2 — Quant / Portfolio Optimization (session 1)
+**Estimated duration:** ~1.5 hours
+
+### What I did
+
+- Checked the shared repo state: `backend/data/` already initialized by P1, `universe_config.py` present but empty
+- Cloned the repo locally (`git clone`)
+- Created branch `feature/p2-universe-config`
+- Pasted and committed the `universe_config.py` code on GitHub (first via browser, then synced locally)
+- Ran the import test from the terminal (`get_primary_tickers()`)
+- Opened Pull Request #2 toward `main` with a review request to P1 (Sabrina15072002)
+
+### How I did it
+
+- Code generated with AI support (Claude), aligned to the canonical v3.1 design
+- File structured with `dataclass(frozen=True)` for configuration immutability
+- Helper functions implemented for direct compatibility with `ValidatedDataLoader` (P1) and `hrp.py` (P2 W2)
+- Integrity assertions run at import time (`_validate_universe()`) to guard against accidental misconfiguration
+- Git workflow: clone → branch → commit on GitHub browser → pull locally → test → PR
+
+### Difficulties
+
+- First experience with Git and GitHub: browser vs terminal flow unclear at first
+- Commit on GitHub via browser not saved the first time (missed clicking "Commit changes")
+- `cd robo-advisor` run twice by mistake (already inside the folder after clone)
+- `git pull origin main` did not download the file because the commit was on a separate branch — solved with `git pull origin feature/p2-universe-config`
+
+### Achievements / Key decisions
+
+- **W1 task #1 complete:** `universe_config.py` written, tested, PR opened
+- **P1 dependency unblocked:** P1 can now implement `ValidatedDataLoader` with fallback logic
+- **Design choice:** `EFA` keeps the same ticker as primary and fallback (no UCITS equivalent with adequate yfinance coverage) — documented in the `rationale` field
+- **Design choice:** `XEON.MI` as EUR cash instead of `BIL` USD — more consistent for an EU investor, with `BIL` fallback if yfinance returns excessive NaNs
+- **Design choice:** `AGGH.MI` as EUR-hedged aggregate bond instead of `AGG` USD — reduces FX risk for an EU investor, cluster `safe_haven`
+- Import-time assertions verify: exactly 8 ETFs, no duplicates, 4 clusters present, ≥3 UCITS
+
+### Next steps
+
+- W1 task #2: scaffold `backend/optimizer/hrp.py` with the `OptimizationResult` TypedDict/dataclass
+- W1 task #3: stub `tests/test_optimizer.py` with at least 2–3 structural tests
+- Start Ledoit-Wolf with `pypfopt.CovarianceShrinkage` on synthetic data
+- Wait for P1 to merge the PR before importing `universe_config` into `hrp.py`
+
+### Notes for the academic PDF
+
+- **Hybrid UCITS/US universe:** keeping primary UCITS and US fallback is motivated by MiFID II compliance for EU investors. Cite in Section 3 (Portfolio Optimization) as a conscious design — not technical — choice
+- **AGGH.MI vs AGG:** the substitution introduces slightly reduced correlation with TLT (different denomination currency) — the HRP dendrogram will reflect this in the cluster C structure. Expected and didactically relevant result
+- **Cluster D (cash):** minimum allocation guaranteed across all profiles via `ASSET_WEIGHT_MIN` — ensures a liquidity buffer. Mention as a risk-management choice in the guardrail section
+- Limitation to cite: `EFA` has no UCITS equivalent with comparable liquidity and data coverage on yfinance — geographic gap of the chosen ETF universe
+
+---
+
+## P2 — Quant / Portfolio Optimization (session 2)
+**Estimated duration:** ~30 minutes
+
+### What I did
+
+- Generated and pasted the `OptimizationResult` TypedDict in `backend/optimizer/hrp.py`
+- Verified the import from terminal with `python3 -c "from backend.optimizer.hrp import OptimizationResult; print('OK')"` → OK
+- Opened PR #4 toward `main` from branch `feature/p2-optimizer-scaffold`
+- Requested review from Sabrina15072002 (P1)
+- Fixed a ruff lint error in `hrp.py` (unordered imports)
+- Fixed a ruff lint error in `backend/data/loader.py` (unused `Optional` import — P1's file)
+- Green CI: "All checks have passed"
+
+### How I did it
+
+- `OptimizationResult` code generated with AI support (Claude), aligned to the canonical v3.1 design
+- Structure: `TypedDict` with `Literal` for enum-like fields (`algorithm`, `solver_status`)
+- File created directly from the GitHub browser editor to avoid local-branch problems
+- Lint fix also done from the GitHub browser editor
+- Import verification run from the local terminal after `git pull origin feature/p2-optimizer-scaffold`
+
+### Difficulties
+
+- **VS Code would not save the file** — Cmd+S had no visible effect, the "M" (modified) marker stayed on the tab. Worked around by editing directly on the GitHub browser
+- **`code` command unavailable in the terminal** — `zsh: command not found: code`. Worked around with the browser editor
+- **Local branch not aligned with remote** — `git push` failed with "src refspec does not match any" because the branch was created first on the GitHub browser. Solved with `git checkout -b feature/p2-optimizer-scaffold` + `git pull`
+- **CI failed on a P1 file** — `backend/data/loader.py` had an unused `from typing import Optional`. Fixed directly on the branch with a browser commit
+
+### Achievements / Key decisions
+
+- **W1 task #2 complete:** `OptimizationResult` TypedDict written, verified, PR #4 opened with green CI
+- **Fields included:** `algorithm`, `weights`, `expected_return`, `expected_volatility`, `sharpe_ratio`, `risk_contributions`, `optimizer_version`, `solver_status`, `ucits_tickers_used`, `fallback_tickers_applied`
+- The `ucits_tickers_used` and `fallback_tickers_applied` fields are v3.1 additions — needed for the audit trail and the UI
+- The `risk_contributions` field is P0 mandatory: consumed by the LLM narrator (P4) and the validator
+
+### Next steps
+
+- W1 task #3: stub `tests/test_optimizer.py` with at least 2–3 structural tests
+- Wait for Sabrina (P1) to merge PR #4 before importing `OptimizationResult` into other modules
+- Install the VS Code command-line tools (`Shell Command: Install 'code' command in PATH`) to avoid future issues
+
+### Notes for the academic PDF
+
+- `OptimizationResult` as an interface contract is a defensible design choice: it guarantees all modules (P1, P3, P4) receive structured, typed data, reducing integration errors
+- The `risk_contributions` field deserves mention in the Portfolio Optimization section: it is the direct link between the optimizer and the XAI/LLM layer
+- The UCITS fields are motivated by MiFID II compliance — citable in the EU Investor Note section
+
+---
+
+## P3 — ML / Risk Profiling
+**Estimated duration:** ~2.5 hours
+
+### What I did
+
+- Reviewed the full W1 tasks and identified the state of progress
+- Decided the canonical naming for `profile_label`: **CONSERVATIVE / MODERATE / AGGRESSIVE** (EN, UPPER) — to propagate across the whole codebase
+- Wrote the complete `backend/ml/profiler/rule_based.py` (Phase A profiler)
+- Applied two fixes from external code review:
+  - Fix #1: "validate at the boundary" — extracted a private `_compute_score_unchecked` to avoid double validation in the `profile_user → compute_score` path
+  - Fix #2: normalized `top_drivers` against the maximum **possible** deviation (constant 1.5) instead of the observed one — avoids inflated importance on uniformly lukewarm answers
+- Ran a smoke test on all 14 scoring-table boundaries + Q7 override + all-equal-responses case
+- Committed on branch `feature/p3-rule-based-profiler` and pushed
+- Opened PR #6 toward `main`
+- Identified a naming conflict in P1's `schema.sql` (IT vs EN)
+- Left a comment on PR #6 notifying P1 (@emmaerba) of the conflict
+
+### How I did it
+
+- Code written with Claude as pair programmer, starting from the existing `questionnaire_schema.md` v1.0
+- Approach: strict type hints, named constants (zero magic numbers), NumPy-style docstrings, pure functions with no side effects
+- Fixes identified via a second AI review and critically evaluated before applying
+- Smoke test run directly in Python before commit
+- Git operations from the macOS terminal (`zsh`)
+- PR opened manually on the GitHub browser
+
+### Difficulties
+
+- Terminal initially opened in the home `~` instead of the repo folder — solved with `cd ~/robo-advisor`
+- `compare/base` branches inverted in the GitHub UI on the first attempt — fixed manually
+- `profile_label` naming conflict discovered while reading P1's `schema.sql` (IT vs EN) — flagged in the PR, awaiting P1's fix
+
+### Achievements / Key decisions
+
+- **`rule_based.py` complete and committed** — PR #6 opened, awaiting P1 review
+- **Canonical naming fixed**: `CONSERVATIVE / MODERATE / AGGRESSIVE` (EN, UPPER) — decision to propagate to P1 (`schema.sql`) and P4 (Ground Truth JSON)
+- **`ProfilerOutput` schema stable**: identical to what the GBM will produce in W3, no downstream refactor needed
+- **Q7 override documented as a hard MiFID II rule** (confidence = 1.0, not probabilistic) — academically relevant distinction for the PDF
+- **Phase A `top_drivers`**: documented deterministic heuristic, schema identical to SHAP Phase B
+
+### Next steps
+
+- Wait for P1's review/merge on PR #6 (must fix `schema.sql` naming IT→EN)
+- Create the `backend/ml/profiler/scf_pipeline.py` scaffold (W1 priority)
+- Create a draft `docs/adr/ADR-002-scf-preprocessing.md` (W1 priority, by Sunday)
+- W2: write `tests/test_profiler.py` with ≥3 tests per label + the identified edge cases (boundaries 7/8, 9/10, 17/18, 21/22; Q7 override; all-equal responses)
+
+### Notes for the academic PDF
+
+- **Q7 override**: describe it as a MiFID II Art. 25 regulatory constraint (suitability assessment), not an algorithmic choice. The "hard rule vs probabilistic estimate" distinction is relevant for the ML Risk Profiler section
+- **Phase A `top_drivers`**: document honestly as a deterministic heuristic (proxy for SHAP). The schema was designed to be identical to Phase B — this demonstrates architectural thinking, not a patch
+- **Naming decision**: could warrant a mini-ADR to document the EN vs IT choice — the kind of decision-trail documentation the professor values (coding-style criterion)
+- **Citations already used in code**: Grable & Lytton (1999), MiFID II Directive 2014/65/EU Art. 25 — to reuse verbatim in the LaTeX section
+
+---
+
+## P4 — Frontend / LLM / Docs
+**Estimated duration:** ~1h 30min
+
+### What I did
+
+- Wrote `AGENTS.md`: definition of the project's agent roles (Code Review Agent, Test Generation Agent, Documentation Agent), description of the agentic workflow, plan for the automated PR via GitHub Actions + Claude API, evidence log for the professor's criterion 5
+- Reviewed and approved `frontend/app.py` (Streamlit scaffold with 4 pages: Questionnaire, Profile Result, Portfolio Dashboard, Chat Advisor)
+- Added the `render_profile()` page with `profile_label`, `confidence` and a `top_drivers` placeholder
+- Wrote the complete `README.md`: header + badges, project structure, installation, usage flow, API docs (3 endpoints with JSON examples), Technical Highlights table, EU Awareness section, disclaimer, academic documentation section
+- Resolved a merge conflict on `backend/data/loader.py` (source: P1's parallel change)
+- Fixed ruff F401: removed the unused `from typing import Optional` in `loader.py`
+- Opened PR #5 `feature/p4-docs` → `main`, green CI, merge completed
+
+### How I did it
+
+- VS Code for direct file editing
+- Integrated terminal for `git fetch`, `git merge`, `py_compile`, `pip install ruff`, `ruff check --fix`
+- GitHub Desktop / GitHub web for PR management and CI verification
+- Claude as technical advisor to verify consistency with design v3.1 and for step-by-step operational guidance
+
+### Difficulties
+
+- Merge conflict on `backend/data/loader.py`: resolved keeping P1's version (their file)
+- CI failing on an unused import (`typing.Optional`) flagged by ruff: solved with `ruff check --fix`
+- `uv` unavailable in the local PATH: solved by activating the venv and using `pip install ruff` directly
+
+### Achievements / Key decisions
+
+- W1 P4 closed with all deliverables foreseen by design v3.1
+- `app.py` already includes HRP/Markowitz tabs, an EU Investor Note placeholder, session_state for the profile — structure ready for W2 without refactoring
+- `README.md` covers all the professor's minimum requirements (installation, usage, API docs, user guide outline) — to update with the real URL and docker-compose once P1 completes them
+- PR #5 merged into main with green CI: clean and traceable commit history
+
+### Next steps
+
+- **W2 (4–10 May):** implement the complete questionnaire UI (7–10 Grable-Lytton questions), profile page with `confidence` and `top_drivers`, portfolio dashboard with weights and base metrics, connection with mock output or P1 API
+- Update the `README.md` Docker section once `docker-compose.yml` is ready (P1)
+- Verify with P1 that `agent_pr.yml` is planned — the professor's criterion 5, mandatory
+
+### Notes for the academic PDF
+
+- The merge-conflict and ruff-linter resolution process is documentable in the Lessons Learned section as a concrete example of a collaborative GitHub workflow with active CI
+- Structuring `app.py` with autonomous mock data (no backend dependency) ensures the frontend is always demonstrable — the "Phase A always works" pattern, consistent with design v3.1
+- Using ruff as a CI-enforced linter guarantees a uniform coding style across the team (the professor's criterion 4)
+
+---
+
+# 29 April 2026 — Week 1 (Wednesday)
+
+## P2 — Quant / Portfolio Optimization
+**Estimated duration:** ~2 hours
+
+### What I did
+
+- Analyzed PR #4 (`define OptimizationResult interface`) and replied to Sabrina's (P1) comment on the `ERC` vs `BL` conflict in the `Literal`
+- Corrected `Literal["HRP", "MV", "ERC"]` → `Literal["HRP", "MV", "BL"]` in `hrp.py` before the merge
+- Wrote and posted a technical comment on GitHub PR #4 for Sabrina explaining the architectural choice (ERC = internal component, BL = standalone exposed algorithm)
+- Merged PR #4 into `main` with a formal description
+- Created branch `feature/p2-hrp-optimizer`
+- Added the `compute_covariance` stub (Ledoit-Wolf, W1) in `hrp.py`
+- Created `tests/test_optimizer.py` with 3 structural tests
+- Resolved a CI ruff error (F821 missing imports `np`, `pd`)
+- Resolved a CI ruff error (I001 unordered imports)
+- Opened PR #5 on `feature/p2-hrp-optimizer`, awaiting review
+
+### How I did it
+
+- All work via the GitHub web interface (edit file, commit on branch, PR)
+- `compute_covariance` stub with defensive asserts on empty input, NaNs, and minimum number of assets
+- Explicit `NotImplementedError` to signal that the real implementation is deferred to W2
+- Tests written to cover the interface (`OptimizationResult` fields) and the stub behaviour (AssertionError on invalid input, NotImplementedError on valid input)
+- Lint fix: ruff-compliant import order (`from __future__` → `from typing` → `import numpy` → `import pandas`)
+
+### Difficulties
+
+- CI failed twice: first for missing imports (`np`, `pd`), then for ruff-non-compliant import order (I001)
+- Risk of committing directly to `main` out of habit — avoided thanks to the branch-protection check
+
+### Achievements / Key decisions
+
+- **Architectural decision confirmed:** `ERC` is an internal component (aggressive tilt + regime fallback), not an exposed algorithm. `Literal["HRP", "MV", "BL"]` is the correct contract for design v3.1
+- **W1 P2 complete:** all 3 weekly tasks closed (universe_config, OptimizationResult, Ledoit-Wolf stub + tests)
+- **Dependencies unblocked:** P1 has `OptimizationResult` on `main`, P3 and P4 can start integrating the interface
+- **Green CI** on `feature/p2-hrp-optimizer` after the lint fixes
+
+### Next steps
+
+- Wait for Sabrina to merge PR #5
+- **W2 (from Monday):** implement the real `compute_covariance` with `CovarianceShrinkage(prices).ledoit_wolf()` from PyPortfolioOpt
+- W2: complete `hrp.py` with log returns, Ward clustering, recursive bisection, profile tilt, box constraints
+- W2: implement `risk_metrics.py` and `markowitz.py`
+- W2: add ≥3 functional tests in `test_optimizer.py`
+
+### Notes for the academic PDF
+
+- **ERC vs BL in the Literal:** the distinction between ERC as an internal component and BL as a standalone algorithm is a documentable architectural choice for the Portfolio Optimization section. ERC requires no μ estimate (consistent with the HRP philosophy), while BL is exposed as an explicit alternative with views derived from the profiler
+- **Ledoit-Wolf shrinkage:** the stub is already documented with a reference to Ledoit & Wolf (2004). The academic motivation (reduction of covariance estimation error on finite samples) belongs in Section 3 of the PDF and in the Ledoit-Wolf ADR
+- **Defensive assertions:** every public function opens with explicit preconditions — documentable as a software-engineering choice in the Lessons Learned section
+
+---
+
+## P3 — ML / Risk Profiling
+**Estimated duration:** ~1 hour
+
+### What I did
+
+- Recovered the full project context at the start of the session: PR #6 state (rule_based.py, P1 review pending), IT/EN label conflict resolved and pushed in the previous session
+- Produced `progetto_overview_narrativo.md` — an Italian document for personal orientation, useful for the presentation to the professor
+- Created the complete `scf_pipeline.py` scaffold with the definitive structure: `load_scf()`, `select_features()`, `standardise_features()`, `build_pipeline()`. English type hints and docstrings. `load_scf()` is a stub with `NotImplementedError` — real implementation deferred to W2
+- Downloaded and inspected `SCFP2022.csv` directly from the Fed to verify the real column names. Discovered that `RISKSCALE` does not exist in the Summary Extract — replaced with `YESFINRISK` and `NOFINRISK`. Also corrected the allocation columns (`CASH` → `CASHLI`, `REAL` removed)
+- Translated the whole file to English (docstrings, comments, error messages)
+- Wrote `ADR-002-scf-preprocessing.md` in English, documenting 4 decisions: SCF 2022 version, implicate=1, feature selection with questionnaire mapping, mandatory use of WGT
+- Committed and pushed both files on branch `feature/p3-scf-pipeline`
+- Opened a PR: "feat: SCF pipeline scaffold + ADR-002 preprocessing decisions" — 3 commits, all checks passed, no conflicts
+- Explored the GitHub connector and custom MCP server topic
+
+### How I did it
+
+- Used Claude as a technical and academic advisor throughout the session. The flow was collaborative: Claude generated code and documents, I verified the content against the real dataset (downloaded and inspected `SCFP2022.csv` from the Fed), and committed manually from the terminal on iPhone. The `RISKSCALE` correction emerged precisely from direct verification on the file — not from assumptions. Claude explained each choice before writing code
+
+### Difficulties
+
+- Initially did not know where the repo was (wrong terminal directory) — solved with `ls` and `cd robo-advisor`
+- The GitHub connector shows as "Connected" in the Claude UI but exposes no interactive MCP tools — Claude cannot navigate the repo autonomously. The manual flow (cp + git add/commit/push) works fine anyway
+- `RISKSCALE` does not exist in the SCF 2022 Summary Extract: discovered by directly checking the CSV. Corrected before the final commit
+
+### Achievements / Key decisions
+
+- W1 fully closed: `scf_pipeline.py` + `ADR-002` on a dedicated branch, PR opened and green
+- Empirically verified the SCF 2022 dataset: 22,975 rows (4,595 households × 5 imputations), 357 columns. Key columns confirmed: `YESFINRISK`, `NOFINRISK`, `WGT`, `EQUITY`, `BOND`, `CASHLI`, `STOCKS`
+- Understood and documented why `WGT` is mandatory: the SCF over-samples wealthy households, each row has a weight representing N real families (e.g. 3027.96 → ~3,028 families). Without WGT the model mainly learns from the behaviour of the wealthy
+- Discussed the potential of a custom MCP server for Criterion 5 (AI Agents): an MCP server exposing GitHub tools would let Claude open PRs automatically — exactly the agentic workflow the professor wants documented in `AGENTS.md`. To explore next session
+
+### Next steps
+
+- Wait for P1's review on PR #6 (rule_based.py) before merging both PRs
+- Verify that P1 resolved the IT/EN label conflict in `schema.sql`
+- W2 (4–10 May): implement `load_scf()` with the real dataset, `clustering.py` with K-Means/GMM, label assignment on the clusters
+- Place `SCFP2022.csv` in the repo's `data/scf/` folder (or handle it via `.gitignore` + README instructions if too large for GitHub)
+- Explore building a custom GitHub MCP server next session — useful both for the dev workflow and for Criterion 5
+
+### Notes for the academic PDF
+
+- The `implicate=1` choice is a simplification vs Rubin's Rules (5 imputations) — document it honestly in the Limitations section. The motivation is that 4,595 observations are sufficient for a robust GBM and the added complexity is not justified for this scope
+- `RISKSCALE` does not exist in the SCF 2022 Summary Extract. The SCF measures risk attitude via binary variables (`YESFINRISK`, `NOFINRISK`), not a continuous scale. Relevant for the ML section: the questionnaire-to-SCF-feature mapping is not always 1:1 — some variables must be adapted
+- The WGT value (e.g. 3027.96) has a concrete interpretation to cite in the PDF: each household in the sample represents thousands of real American families. Using the weights is not optional if the model is to be representative of the population, not just the sample
+
+---
+
+## P4 — Frontend / LLM / Docs
+**Estimated duration:** ~1 hour
+
+### What I did
+
+- Verified the existence of `docs/` and `docs/adr/` in the local repo
+- Verified the content of `frontend/app.py` (already complete with 3 pages + disclaimer)
+- Created `docs/architecture.md` with data flow, component boundaries, LLM safety pipeline, failure modes and an ADR table
+- Created empty placeholders for ADR-001, ADR-002, ADR-003, ADR-004
+- Renamed `ADR-001-db-schema.md` (P1's, empty) to `ADR-005-db-schema.md` to avoid a numbering conflict
+- Committed and pushed on `feature/p4-docs`
+- Created branch `feature/p4-streamlit-ui` (empty — app.py was already on main)
+- Opened a PR on `feature/p4-docs` with Sabrina (P1) as reviewer
+- Left a note in the PR about the ADR rename
+
+### How I did it
+
+- Terminal navigation with `git branch -a`, `ls`, `cat` to inspect the repo state
+- `architecture.md` content generated with Claude and reviewed manually
+- Decision to differentiate `architecture.md` from `README.md` after directly comparing the two files
+- Used `git add`, `git commit`, `git push` from the terminal
+- Verified branch and PR state on GitHub
+
+### Difficulties
+
+- `code` unavailable from the terminal (VS Code not in PATH) — worked around by opening files manually from VS Code
+- `feature/p4-streamlit-ui` created but empty because `app.py` was already on `main` — no PR opened (no diff)
+- First attempt at `architecture.md` was too similar to the README — rewritten in a complementary way
+
+### Achievements / Key decisions
+
+- W1 P4 complete: README, AGENTS.md, app.py scaffold, docs/architecture.md, ADR placeholders
+- `architecture.md` correctly differentiated from the README: it covers internal data flow, component boundaries, LLM safety pipeline, failure modes — content not present in the README
+- ADR numbering convention established and communicated to the team via a PR comment
+- PR `feature/p4-docs` opened with P1 as reviewer
+
+### Next steps
+
+- Wait for review and merge of PR `feature/p4-docs`
+- W2 (from Monday): complete questionnaire UI, profile page with `profile_label` / `confidence` / `top_drivers`, portfolio dashboard with weights and metrics, connection with mock output or P1 API
+- Install `code` in the PATH to open files from the terminal
+- Coordinate ADR numbering and the ADR-005 content with P1
+
+### Notes for the academic PDF
+
+- Separating `architecture.md` from the README reflects a conscious design distinction: README for the external user, architecture for the internal developer. Citable in the Frontend/UX section as an example of structured documentation
+- The Component Boundaries table (architecture.md section 3) is directly reusable in the LLM Narrator section of the PDF to justify the narrator pattern: "the LLM must not create new numbers or recommendations"
+- The ADR-001 → ADR-005 rename and the team communication is a concrete example of agentic coordination documentable in the Lessons Learned section
 
 ---
 
@@ -1876,7 +2340,7 @@ It is Wednesday evening — `regime_detector.py` was planned for today and remai
 ---
 
 ## P4 — Frontend / LLM / Docs
-**Estimated duration:** [to be confirmed]
+**Estimated duration:** ~1 hour
 
 ### What I did
 
@@ -2065,7 +2529,7 @@ It is Wednesday evening — `regime_detector.py` was planned for today and remai
 
 ## P1 — Backend / Data Engineering
 
-**Estimated duration:** not specified
+**Estimated duration:** ~1 hour
 
 ### What I did
 
@@ -2124,7 +2588,7 @@ It is Wednesday evening — `regime_detector.py` was planned for today and remai
 
 ## P4 — Frontend / LLM / Docs
 
-**Estimated duration:** not specified
+**Estimated duration:** ~1 hour
 
 ### What I did
 
@@ -2206,7 +2670,7 @@ It is Wednesday evening — `regime_detector.py` was planned for today and remai
 
 ## P4 — Frontend / LLM / Docs
 
-**Estimated duration:** not specified
+**Estimated duration:** ~1 hour
 **Branch:** `p4/fix-main-ui-polish`
 
 ### What I did
@@ -2451,7 +2915,7 @@ It is Wednesday evening — `regime_detector.py` was planned for today and remai
 
 ## P1 — Backend / Data Engineering
 
-**Estimated duration:** not specified
+**Estimated duration:** ~1 hour
 **Focus:** Frontend polish — Portfolio Dashboard
 
 ### What I did
@@ -2497,7 +2961,7 @@ It is Wednesday evening — `regime_detector.py` was planned for today and remai
 
 ## P4 — Frontend / LLM / Docs
 
-**Estimated duration:** not specified
+**Estimated duration:** ~1 hour
 **Branch:** `fix/p4-compare-markowitz-explanation`
 
 ### What I did
