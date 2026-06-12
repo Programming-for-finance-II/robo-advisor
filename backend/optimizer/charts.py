@@ -22,6 +22,10 @@ _TICKER_CLUSTER: dict[str, str] = {
     "TLT":     "Bonds",
     "TIP":     "Bonds",
     "XEON.MI": "Cash",
+    # US-listed tickers used by the historical backtest universe.
+    "SPY":     "Equity",
+    "AGG":     "Bonds",
+    "BIL":     "Cash",
 }
 
 # Short, plain-language names for chart labels. Full names live in the
@@ -36,6 +40,9 @@ _TICKER_SHORT_NAME: dict[str, str] = {
     "TLT":     "US Treasuries",
     "TIP":     "Inflation Bonds",
     "XEON.MI": "Euro Cash",
+    "SPY":     "US Equity",
+    "AGG":     "US Agg Bonds",
+    "BIL":     "US T-Bills",
 }
 
 

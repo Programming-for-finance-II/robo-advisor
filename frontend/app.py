@@ -4160,12 +4160,23 @@ _STRATEGY_COLORS: dict[str, str] = {
     "1/N": "#94a3b8",
 }
 
+# Strategies surfaced on this page, in display order. 1/N stays in the data as
+# an internal benchmark but is not shown — we only compare our HRP allocation
+# against the classic Markowitz method, consistent with the rest of the app.
+_BACKTEST_STRATEGIES: tuple[str, ...] = ("HRP", "MV")
+
+# Display label per strategy (the underlying data keys stay "HRP" / "MV").
+_STRATEGY_LABELS: dict[str, str] = {
+    "HRP": "HRP",
+    "MV":  "Markowitz",
+}
+
 
 def render_backtesting() -> None:
     _restore_persisted_profile()
     if not st.session_state.get("profile"):
         _render_profile_required_gate(
-            "Backtesting", "Walk-forward simulation · HRP vs MV vs 1/N", "📈",
+            "Backtesting", "Walk-forward simulation · HRP vs Markowitz", "📈",
             "The backtesting results are tailored to your risk profile (Conservative, "
             "Moderate or Aggressive). Complete the questionnaire and the historical "
             "stress-scenario analysis will appear here.",
@@ -4174,7 +4185,7 @@ def render_backtesting() -> None:
         return
 
     t = get_theme_tokens()
-    page_header("Backtesting", "Walk-forward simulation · HRP vs MV vs 1/N", icon="📈")
+    page_header("Backtesting", "Walk-forward simulation · HRP vs Markowitz", icon="📈")
 
     st.markdown(
         """
@@ -4186,8 +4197,8 @@ def render_backtesting() -> None:
           <div class="qs-info-body">
             Backtesting replays each strategy on real historical prices to see how
             it would have performed in the past — including during market crashes.
-            Pick a stress scenario below to compare how HRP, Mean-Variance (MV) and
-            an equal-weight (1/N) portfolio held up.
+            Pick a stress scenario below to compare how your HRP allocation and
+            the classic Markowitz (Mean-Variance) method would have held up.
           </div>
         </details>
         """,
@@ -4228,26 +4239,64 @@ def render_backtesting() -> None:
 
     st.markdown("---")
 
+    # Load the per-strategy equity curves once: used both for the headline
+    # "total return over the scenario" figure and for the charts further down.
+    scenario_file = _BACKTEST_DIR / f"backtest_{selected}_{profile_label}.json"
+    detail = None
+    period_return: dict[str, float] = {}
+    if scenario_file.exists():
+        with open(scenario_file) as fh:
+            detail = json.load(fh)
+        for _s, _sd in detail["strategies"].items():
+            _ec = _sd.get("equity_curve")
+            if _ec:
+                # Curves start at 1.0, so (final value − 1) is the total return
+                # over the scenario window — i.e. how the portfolio would have
+                # changed end to end. Clearer than an annualised CAGR on a short
+                # crisis period.
+                period_return[_s] = _ec[-1]["portfolio_value"] - 1.0
+
     # ── Metrics comparison table ─────────────────────────────────────────────
-    st.markdown("**Strategy comparison**")
+    st.markdown(
+        f'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:1.3rem;'
+        f'font-weight:700;color:{t["text_primary"]};margin:0.5rem 0 0.15rem;">'
+        f'Strategy comparison</div>',
+        unsafe_allow_html=True,
+    )
     rows = []
-    for strat, m in summary[selected]["strategies"].items():
+    for strat in _BACKTEST_STRATEGIES:
+        m = summary[selected]["strategies"][strat]
+        _ret = period_return.get(strat, m["cagr"])
         rows.append({
-            "Strategy":   strat,
-            "CAGR":       f"{m['cagr']:.1%}",
-            "Volatility": f"{m['annualised_volatility']:.1%}",
-            "Sharpe":     f"{m['sharpe_ratio']:.2f}",
-            "Max DD":     f"{m['max_drawdown']:.1%}",
-            "Calmar":     f"{m['calmar_ratio']:.2f}",
-            "TC (bps)":   f"{m['total_transaction_cost']*10_000:.1f}",
+            "Strategy":     _STRATEGY_LABELS.get(strat, strat),
+            "Total return": f"{_ret:+.1%}",
+            "Volatility":   f"{m['annualised_volatility']:.1%}",
+            "Sharpe":       f"{m['sharpe_ratio']:.2f}",
+            "Max drawdown": f"{m['max_drawdown']:.1%}",
         })
-    _cols = ["Strategy", "CAGR", "Volatility", "Sharpe", "Max DD", "Calmar", "TC (bps)"]
+    _cols = ["Strategy", "Total return", "Volatility", "Sharpe", "Max drawdown"]
+    # Plain-language hint shown under each metric header so the table is
+    # readable without prior finance knowledge.
+    _col_hint = {
+        "Total return": "over the scenario",
+        "Volatility":   "size of the swings",
+        "Sharpe":       "return per unit of risk",
+        "Max drawdown": "worst drop from a peak",
+    }
     _head = "".join(
-        f'<th style="padding:0.6rem 0.85rem;'
+        f'<th style="padding:0.55rem 0.85rem;'
         f'text-align:{"left" if i == 0 else "right"};'
-        f'font-family:\'Space Grotesk\',sans-serif;font-size:0.7rem;'
+        f'vertical-align:bottom;white-space:nowrap;">'
+        f'<span style="font-family:\'Space Grotesk\',sans-serif;font-size:0.7rem;'
         f'font-weight:700;letter-spacing:0.06em;text-transform:uppercase;'
-        f'color:{t["accent_text"]};white-space:nowrap;">{c}</th>'
+        f'color:{t["accent_text"]};">{c}</span>'
+        + (
+            f'<span style="display:block;font-size:0.66rem;font-weight:400;'
+            f'text-transform:none;letter-spacing:0;color:{t["text_secondary"]};'
+            f'margin-top:0.15rem;">{_col_hint[c]}</span>'
+            if c in _col_hint else ""
+        )
+        + "</th>"
         for i, c in enumerate(_cols)
     )
     _body = ""
@@ -4276,38 +4325,27 @@ def render_backtesting() -> None:
         unsafe_allow_html=True,
     )
 
-    # ── Key metrics for HRP ──────────────────────────────────────────────────
-    hrp = summary[selected]["strategies"]["HRP"]
-    mv  = summary[selected]["strategies"]["MV"]
-    m_cols = st.columns(4)
-    m_cols[0].metric("HRP CAGR",       f"{hrp['cagr']:.1%}",
-                     delta=f"{(hrp['cagr'] - mv['cagr']):.1%} vs MV")
-    m_cols[1].metric("HRP Sharpe",     f"{hrp['sharpe_ratio']:.2f}",
-                     delta=f"{(hrp['sharpe_ratio'] - mv['sharpe_ratio']):.2f} vs MV")
-    m_cols[2].metric("HRP Max DD",     f"{hrp['max_drawdown']:.1%}",
-                     delta=f"{(hrp['max_drawdown'] - mv['max_drawdown']):.1%} vs MV",
-                     delta_color="inverse")
-    m_cols[3].metric("HRP Volatility", f"{hrp['annualised_volatility']:.1%}")
-
     # ── Best-strategy takeaway ───────────────────────────────────────────────
     # Plain-language summary of which strategy held up best in this scenario:
     # the highest Sharpe (best risk-adjusted return) and the smallest loss
     # (max drawdown closest to zero, since drawdowns are negative).
-    _strats = summary[selected]["strategies"]
+    _strats = {s: summary[selected]["strategies"][s] for s in _BACKTEST_STRATEGIES}
     best_sharpe = max(_strats, key=lambda s: _strats[s]["sharpe_ratio"])
     best_dd = max(_strats, key=lambda s: _strats[s]["max_drawdown"])
     _sh = _strats[best_sharpe]["sharpe_ratio"]
     _dd = _strats[best_dd]["max_drawdown"]
+    _sharpe_name = _STRATEGY_LABELS.get(best_sharpe, best_sharpe)
+    _dd_name = _STRATEGY_LABELS.get(best_dd, best_dd)
     if best_sharpe == best_dd:
         _takeaway = (
-            f"<strong>{best_sharpe}</strong> held up best in this scenario — the "
+            f"<strong>{_sharpe_name}</strong> held up best in this scenario — the "
             f"highest risk-adjusted return (Sharpe {_sh:.2f}) and the smallest "
             f"loss (max drawdown {_dd:.1%})."
         )
     else:
         _takeaway = (
-            f"<strong>{best_sharpe}</strong> gave the best risk-adjusted return "
-            f"(Sharpe {_sh:.2f}), while <strong>{best_dd}</strong> had the "
+            f"<strong>{_sharpe_name}</strong> gave the best risk-adjusted return "
+            f"(Sharpe {_sh:.2f}), while <strong>{_dd_name}</strong> had the "
             f"smallest loss (max drawdown {_dd:.1%})."
         )
     st.markdown(
@@ -4322,20 +4360,91 @@ def render_backtesting() -> None:
 
     st.markdown("---")
 
-    # ── Equity curve chart ───────────────────────────────────────────────────
-    scenario_file = _BACKTEST_DIR / f"backtest_{selected}_{profile_label}.json"
-    if scenario_file.exists():
-        with open(scenario_file) as fh:
-            detail = json.load(fh)
+    # ── Allocation each strategy held ────────────────────────────────────────
+    # Two donuts (HRP vs Markowitz) showing the average mix each strategy held
+    # across the scenario's rebalances — this is *what* drove the results above.
+    if detail is not None:
+        st.markdown(
+            f'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:1.3rem;'
+            f'font-weight:700;color:{t["text_primary"]};margin:0.5rem 0 0.15rem;">'
+            f'What each strategy held</div>',
+            unsafe_allow_html=True,
+        )
+        st.caption(
+            "Average allocation across the scenario's monthly rebalances — what "
+            "actually drove the results above. A more defensive mix tends to move "
+            "less, in both directions."
+        )
+        from backend.optimizer.charts import plot_weights_donut
+        _alloc_cols = st.columns(len(_BACKTEST_STRATEGIES))
+        for _i, _strat in enumerate(_BACKTEST_STRATEGIES):
+            _log = detail["strategies"][_strat].get("rebalance_log", [])
+            if not _log:
+                continue
+            _avg: dict[str, float] = {}
+            for _snap in _log:
+                for _tk, _w in _snap["weights"].items():
+                    _avg[_tk] = _avg.get(_tk, 0.0) + _w
+            # Average over rebalances, drop dust (<0.5%), then renormalise to 100%.
+            _avg = {tk: v / len(_log) for tk, v in _avg.items() if v / len(_log) >= 0.005}
+            _tot = sum(_avg.values())
+            if _tot:
+                _avg = {tk: v / _tot for tk, v in _avg.items()}
+            with _alloc_cols[_i]:
+                st.markdown(
+                    f'<div style="text-align:center;font-family:\'Space Grotesk\','
+                    f'sans-serif;font-weight:600;font-size:0.95rem;'
+                    f'color:{t["text_primary"]};">'
+                    f'{_STRATEGY_LABELS.get(_strat, _strat)}</div>',
+                    unsafe_allow_html=True,
+                )
+                _fig_alloc = plot_weights_donut(_avg)
+                _fig_alloc = apply_plotly_theme(_fig_alloc)
+                # Keep every ticker label + % inside its slice (no leader lines).
+                _fig_alloc.update_traces(textposition="inside",
+                                         insidetextorientation="horizontal",
+                                         textfont_size=10)
+                _fig_alloc.update_layout(height=340, margin=dict(l=10, r=10, t=12, b=38))
+                st.plotly_chart(_fig_alloc, use_container_width=True,
+                                config={"displaylogo": False, "responsive": False})
 
+        st.markdown(
+            f'<div style="background:{t["accent_soft"]};border:1px solid '
+            f'{t["accent_border"]};border-radius:10px;padding:0.85rem 1.05rem;'
+            f'margin-top:0.5rem;font-size:0.88rem;line-height:1.6;'
+            f'color:{t["text_secondary"]};">'
+            f'<strong style="color:{t["text_primary"]};">Why these mixes?</strong> '
+            f'HRP (Hierarchical Risk Parity) balances how much risk each asset '
+            f'contributes, so it leans on the calmest assets — cash and short-term '
+            f'bonds — and keeps volatile ones like equities small. Markowitz '
+            f'(Mean-Variance) optimises for the best past risk/return trade-off, so '
+            f'its mix shifts toward whatever looked most efficient over the recent '
+            f'window — which changes from one scenario to the next.</div>',
+            unsafe_allow_html=True,
+        )
+
+    st.markdown("---")
+
+    # ── Performance charts ───────────────────────────────────────────────────
+    if detail is not None:
+        st.markdown(
+            f'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:1.3rem;'
+            f'font-weight:700;color:{t["text_primary"]};margin:0.5rem 0 0.15rem;">'
+            f'How the portfolio would have moved</div>',
+            unsafe_allow_html=True,
+        )
+        st.caption(
+            "The value of each strategy over the scenario (top), and how far it fell "
+            "from its previous peak (bottom) — the result of the mixes shown above."
+        )
         fig = go.Figure()
-        for strat, strat_data in detail["strategies"].items():
-            ec = strat_data["equity_curve"]
+        for strat in _BACKTEST_STRATEGIES:
+            ec = detail["strategies"][strat]["equity_curve"]
             fig.add_trace(go.Scatter(
                 x=[e["date"] for e in ec],
                 y=[e["portfolio_value"] for e in ec],
                 mode="lines",
-                name=strat,
+                name=_STRATEGY_LABELS.get(strat, strat),
                 line=dict(color=_STRATEGY_COLORS.get(strat, "#64748b"), width=2),
                 hovertemplate="%{y:.3f}<extra>%{fullData.name}</extra>",
             ))
@@ -4361,21 +4470,22 @@ def render_backtesting() -> None:
         st.plotly_chart(fig, use_container_width=True, config={"displaylogo": False})
 
         # ── Drawdown chart ───────────────────────────────────────────────────
+        # Stronger fills so the drawdown reads as a coloured area, not thin lines.
         _DD_FILL: dict[str, str] = {
-            "HRP": "rgba(124,92,252,0.08)",
-            "MV":  "rgba(248,113,113,0.08)",
-            "1/N": "rgba(148,163,184,0.08)",
+            "HRP": "rgba(124,92,252,0.30)",
+            "MV":  "rgba(248,113,113,0.30)",
+            "1/N": "rgba(148,163,184,0.30)",
         }
         fig_dd = go.Figure()
-        for strat, strat_data in detail["strategies"].items():
-            ec = strat_data["equity_curve"]
+        for strat in _BACKTEST_STRATEGIES:
+            ec = detail["strategies"][strat]["equity_curve"]
             vals = np.array([e["portfolio_value"] for e in ec])
             dates_dd = [e["date"] for e in ec]
             rolling_max = np.maximum.accumulate(vals)
             dd = (vals - rolling_max) / rolling_max * 100
             fig_dd.add_trace(go.Scatter(
                 x=dates_dd, y=dd.tolist(),
-                mode="lines", name=strat,
+                mode="lines", name=_STRATEGY_LABELS.get(strat, strat),
                 line=dict(color=_STRATEGY_COLORS.get(strat, "#64748b"), width=1.5),
                 fill="tozeroy",
                 fillcolor=_DD_FILL.get(strat, "rgba(0,0,0,0)"),
