@@ -4842,9 +4842,9 @@ def render_compare() -> None:
     st.markdown(
         f"<p style='color:{thm['text_secondary']};font-size:0.82rem;"
         "line-height:1.55;margin-bottom:0.5rem;'>"
-        "Diversification is not only about holding many ETFs, but about combining assets that "
-        "behave differently. This matrix shows how the ETFs move relative to each other; the "
-        "outlined blocks are the groups HRP clusters together."
+        "HRP and Markowitz build their portfolios from this same correlation matrix — but "
+        "they use it in opposite ways, and that is what makes their allocations differ. Each "
+        "cell shows how two ETFs move: together (purple) or apart (teal)."
         "</p>",
         unsafe_allow_html=True,
     )
@@ -4881,6 +4881,29 @@ def render_compare() -> None:
     _TICKERS_HM = [_TICKERS_HM[i] for i in _order]
     _CORR = _CORR[np.ix_(_order, _order)]
 
+    # Identify the most-correlated cluster block (>= 2 assets). That block is
+    # where Markowitz's matrix inversion becomes unstable and over-concentrates,
+    # so the contrast with HRP is sharpest there — drives the highlight + text.
+    _CLS_WORD = {"Equity": "equity", "Alternatives": "real-asset",
+                 "Bonds": "bond", "Cash": "cash"}
+    _spans = []
+    _k = 0
+    while _k < len(_TICKERS_HM):
+        _kc = _HRP_TICKER_CLUSTER.get(_TICKERS_HM[_k], "Cash")
+        _ke = _k
+        while _ke < len(_TICKERS_HM) and _HRP_TICKER_CLUSTER.get(_TICKERS_HM[_ke], "Cash") == _kc:
+            _ke += 1
+        _spans.append((_kc, _k, _ke - 1))
+        _k = _ke
+    _hot_cls, _hot_s, _hot_e, _hot_avg = None, -1, -1, -1.0
+    for _cls, _s, _e in _spans:
+        if _e > _s:
+            _vals = [_CORR[a][b] for a in range(_s, _e + 1)
+                     for b in range(_s, _e + 1) if a != b]
+            _avg = sum(_vals) / len(_vals) if _vals else 0.0
+            if _avg > _hot_avg:
+                _hot_cls, _hot_s, _hot_e, _hot_avg = _cls, _s, _e, _avg
+
     fig_hm = go.Figure(go.Heatmap(
         z=_CORR.tolist(),
         x=_TICKERS_HM,
@@ -4914,10 +4937,11 @@ def render_compare() -> None:
         _j = _i
         while _j < _n and _HRP_TICKER_CLUSTER.get(_TICKERS_HM[_j], "Cash") == _c:
             _j += 1
+        _hot = (_i == _hot_s and _j - 1 == _hot_e)
         fig_hm.add_shape(
             type="rect",
             x0=_i - 0.5, x1=_j - 0.5, y0=_i - 0.5, y1=_j - 0.5,
-            line=dict(color=_outline, width=2),
+            line=dict(color="#fbbf24" if _hot else _outline, width=3 if _hot else 2),
             fillcolor="rgba(0,0,0,0)",
             layer="above",
         )
@@ -4936,16 +4960,51 @@ def render_compare() -> None:
         dragmode="pan",
     )
     st.plotly_chart(fig_hm, use_container_width=True, config={"displaylogo": False})
+
+    _hot_word = _CLS_WORD.get(_hot_cls, "most-correlated") if _hot_cls else "most-correlated"
+    if _hot_cls and _hot_avg > 0:
+        st.markdown(
+            f"<p style='color:{thm['text_secondary']};font-size:0.82rem;"
+            "line-height:1.55;margin:0.4rem 0 0.6rem;'>"
+            f"The {_hot_word} ETFs move almost together (ρ ≈ {_hot_avg:.2f}) — the "
+            "highlighted block. A cluster of near-identical assets is exactly where the "
+            "two models part ways:"
+            "</p>",
+            unsafe_allow_html=True,
+        )
+
+    st.markdown(
+        f"<div style='display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;"
+        "margin:0 0 0.4rem;'>"
+        f"<div style='background:{thm['bg_card']};border:1px solid {thm['border']};"
+        "border-left:3px solid #f87171;border-radius:10px;padding:0.7rem 0.85rem;'>"
+        "<div style='font-weight:600;color:#f87171;font-size:0.85rem;"
+        "margin-bottom:0.3rem;'>Markowitz</div>"
+        f"<div style='color:{thm['text_secondary']};font-size:0.8rem;line-height:1.5;'>"
+        "Inverts this matrix to find optimal weights. A block of near-identical assets "
+        "makes that maths unstable, so it piles risk into a few positions."
+        "</div></div>"
+        f"<div style='background:{thm['bg_card']};border:1px solid {thm['border']};"
+        "border-left:3px solid #7c5cfc;border-radius:10px;padding:0.7rem 0.85rem;'>"
+        "<div style='font-weight:600;color:#7c5cfc;font-size:0.85rem;"
+        "margin-bottom:0.3rem;'>HRP</div>"
+        f"<div style='color:{thm['text_secondary']};font-size:0.8rem;line-height:1.5;'>"
+        "Never inverts. It groups correlated assets into clusters and splits the budget "
+        "step by step, so it stays robust on the very same data."
+        "</div></div>"
+        "</div>",
+        unsafe_allow_html=True,
+    )
+
     _hm_note = (
         ""
         if _corr_is_live
         else " Figures shown are a stylised illustration (live prices unavailable)."
     )
     st.caption(
-        "Correlation of daily returns — the same matrix HRP uses to build its "
-        "cluster tree. Teal = assets that hedge each other (diversifying); "
-        "purple = assets that move together. Outlined blocks are HRP's clusters."
-        + _hm_note
+        "Teal = assets that hedge each other (diversifying); purple = assets that move "
+        "together. Outlined blocks are the asset clusters; the highlighted one is the "
+        "most correlated." + _hm_note
     )
 
 
