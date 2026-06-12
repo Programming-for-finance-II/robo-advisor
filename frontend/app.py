@@ -3032,111 +3032,132 @@ def _render_hrp_tab(portfolio: dict) -> None:
 _CHAT_CSS = """
 <style>
 /* ════════════════════════════════════════════════════════════════════════
-   Chat Advisor — minimal & focused redesign.
-   One signature accent (purple #7c5cfc); teal only for the validated tick.
-   No heavy chrome — the conversation is the product.
+   Chat Advisor — framed "screen" with colour-coded roles.
+   Purple = you, teal = assistant. Everything lives inside one bordered shell.
    ════════════════════════════════════════════════════════════════════════ */
 @keyframes ca-rise {
     from { opacity: 0; transform: translateY(6px); }
     to   { opacity: 1; transform: translateY(0); }
 }
 
-/* ── Trust / about strip (collapsible — replaces the old side panel) ─────── */
-.ca-about {
-    border: 1px solid #1c2336; border-radius: 12px;
-    background: rgba(16,23,42,0.55);
-    margin: 0 0 1.6rem; overflow: hidden;
+/* ── The screen frame (st.container(border=True, key="ca_screen")) ───────── */
+div[class*="st-key-ca_screen"] {
+    border: 1px solid rgba(124,92,252,0.30) !important;
+    border-radius: 18px !important;
+    background:
+        radial-gradient(135% 80% at 50% -12%, rgba(124,92,252,0.13) 0%, transparent 55%),
+        linear-gradient(180deg, #111a2e 0%, #0d1322 100%) !important;
+    box-shadow: 0 18px 48px rgba(7,11,22,0.55),
+                inset 0 1px 0 rgba(255,255,255,0.04) !important;
+    padding: 1.1rem 1.15rem !important;
 }
-.ca-about > summary {
-    list-style: none; cursor: pointer; user-select: none;
-    display: flex; align-items: center; gap: 0.55rem;
-    padding: 0.6rem 0.9rem;
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 0.79rem; color: #8a97ad;
+
+/* ── Header bar: identity + colour-coded status pills ───────────────────── */
+.ca-head {
+    display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap;
+    padding: 0.7rem 0.85rem; margin-bottom: 1rem;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #15203f 0%, #1d1944 55%, #111a35 100%);
+    border: 1px solid rgba(124,92,252,0.22);
 }
-.ca-about > summary::-webkit-details-marker { display: none; }
-.ca-tick {
+.ca-orb {
+    flex-shrink: 0; width: 2.25rem; height: 2.25rem; border-radius: 10px;
     display: inline-flex; align-items: center; justify-content: center;
-    width: 18px; height: 18px; border-radius: 50%; flex-shrink: 0;
-    background: rgba(13,207,176,0.16); color: #0dcfb0;
+    font-size: 1.1rem; color: #ffffff;
+    background: linear-gradient(135deg, #7c5cfc, #5b8def);
+    box-shadow: 0 6px 16px rgba(124,92,252,0.42);
 }
-.ca-about summary b { color: #d6deea; font-weight: 600; }
-.ca-about summary .ca-meta { color: #5b6678; }
-.ca-sep { color: #39435a; margin: 0 0.15rem; }
-.ca-about summary .ca-caret {
-    margin-left: auto; color: #4a5670; font-size: 0.68rem;
-    transition: transform 0.2s ease;
+.ca-head-meta { display: flex; flex-direction: column; min-width: 0; }
+.ca-head-name {
+    font-family: 'Space Grotesk', sans-serif; font-size: 0.95rem; font-weight: 700;
+    color: #f3f6fb; line-height: 1.2; letter-spacing: -0.01em;
 }
-.ca-about[open] summary .ca-caret { transform: rotate(180deg); }
-.ca-about-body { padding: 0.4rem 1rem 1.05rem; border-top: 1px solid #1c2336; }
-.ca-cols { display: flex; gap: 1.5rem; flex-wrap: wrap; margin-top: 0.75rem; }
-.ca-col { flex: 1; min-width: 150px; }
-.ca-col-h {
-    font-family: 'Space Grotesk', sans-serif; font-size: 0.61rem;
-    letter-spacing: 0.13em; text-transform: uppercase; color: #566179;
-    font-weight: 600; margin-bottom: 0.5rem;
+.ca-head-sub { font-size: 0.73rem; color: #8a97ad; margin-top: 0.12rem; }
+.ca-pills { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-left: auto; }
+.ca-pill {
+    display: inline-flex; align-items: center; gap: 0.34rem;
+    font-family: 'Space Grotesk', sans-serif; font-size: 0.7rem; font-weight: 600;
+    border-radius: 999px; padding: 0.26rem 0.62rem; white-space: nowrap;
+    border: 1px solid transparent;
 }
-.ca-li {
-    display: flex; align-items: center; gap: 0.5rem; padding: 0.22rem 0;
-    font-size: 0.83rem; color: #b6c0d0;
+.ca-pill::before { content: ""; width: 6px; height: 6px; border-radius: 50%; }
+.ca-pill--profile {
+    color: #c4b5fd; background: rgba(124,92,252,0.15);
+    border-color: rgba(124,92,252,0.36);
 }
-.ca-li svg { flex-shrink: 0; }
-.ca-pipe {
+.ca-pill--profile::before { background: #a78bfa; }
+.ca-pill--model {
+    color: #93c5fd; background: rgba(59,130,246,0.14);
+    border-color: rgba(59,130,246,0.34);
+}
+.ca-pill--model::before { background: #3b82f6; }
+.ca-pill--guard {
+    color: #5eead4; background: rgba(13,207,176,0.14);
+    border-color: rgba(13,207,176,0.34);
+}
+.ca-pill--guard::before { background: #0dcfb0; }
+
+/* ── Footer: always-visible safety pipeline ─────────────────────────────── */
+.ca-foot {
     display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;
-    margin-top: 0.95rem; padding-top: 0.9rem; border-top: 1px solid #1c2336;
+    margin-top: 1rem; padding: 0.62rem 0.85rem;
+    border-radius: 10px;
+    border: 1px solid rgba(124,92,252,0.16);
+    background: rgba(10,15,28,0.45);
 }
 .ca-step {
-    font-family: 'Space Grotesk', sans-serif; font-size: 0.66rem; color: #aab4c5;
-    background: rgba(124,92,252,0.09); border: 1px solid rgba(124,92,252,0.22);
-    border-radius: 6px; padding: 0.22rem 0.5rem;
+    font-family: 'Space Grotesk', sans-serif; font-size: 0.66rem; font-weight: 600;
+    color: #aab4c5; background: rgba(124,92,252,0.1);
+    border: 1px solid rgba(124,92,252,0.24);
+    border-radius: 6px; padding: 0.18rem 0.46rem;
 }
-.ca-arrow { color: #475569; font-size: 0.72rem; }
-.ca-pipe-note { font-size: 0.73rem; color: #5b6678; margin-left: 0.25rem; }
+.ca-arrow { color: #5b6678; font-size: 0.72rem; }
+.ca-foot-note { font-size: 0.72rem; color: #6b7689; margin-left: 0.3rem; }
 
 /* ── Empty-state hero ───────────────────────────────────────────────────── */
-.ca-hero { text-align: center; padding: 1.8rem 0 0.4rem; animation: ca-rise 0.4s ease; }
+.ca-hero { text-align: center; padding: 1.4rem 0 0.3rem; animation: ca-rise 0.4s ease; }
 .ca-mark {
     display: inline-flex; align-items: center; justify-content: center;
-    width: 54px; height: 54px; border-radius: 16px; margin-bottom: 1.05rem;
+    width: 54px; height: 54px; border-radius: 16px; margin-bottom: 1rem;
     font-size: 1.55rem; color: #ffffff;
     background: linear-gradient(135deg, #7c5cfc 0%, #5b8def 100%);
-    box-shadow: 0 10px 26px rgba(124,92,252,0.36);
+    box-shadow: 0 10px 26px rgba(124,92,252,0.38);
 }
 .ca-hero-title {
-    font-family: 'Space Grotesk', sans-serif; font-size: 1.5rem; font-weight: 700;
-    color: #f1f5f9; letter-spacing: -0.02em; margin-bottom: 0.5rem;
+    font-family: 'Space Grotesk', sans-serif; font-size: 1.4rem; font-weight: 700;
+    color: #f1f5f9; letter-spacing: -0.02em; margin-bottom: 0.45rem;
 }
 .ca-hero-sub {
-    font-size: 0.93rem; color: #8a97ad; max-width: 450px;
+    font-size: 0.91rem; color: #8a97ad; max-width: 440px;
     margin: 0 auto; line-height: 1.6;
 }
 .ca-eyebrow {
     font-family: 'Space Grotesk', sans-serif; font-size: 0.61rem; font-weight: 600;
-    letter-spacing: 0.16em; text-transform: uppercase; color: #566179;
-    text-align: left; margin: 1.7rem 0 0.85rem;
+    letter-spacing: 0.16em; text-transform: uppercase; color: #6b7689;
+    text-align: left; margin: 1.5rem 0 0.8rem;
 }
 
 /* ── Suggestions (stacked, minimal) — targeted by st-key ────────────────── */
 div[class*="st-key-chat_suggest"] button {
     position: relative; width: 100%;
-    background: rgba(16,23,42,0.5) !important;
-    border: 1px solid #1c2336 !important; border-radius: 11px !important;
-    color: #c4cdda !important; font-family: 'DM Sans', sans-serif !important;
+    background: rgba(124,92,252,0.06) !important;
+    border: 1px solid rgba(124,92,252,0.2) !important; border-radius: 11px !important;
+    color: #cdd6e3 !important; font-family: 'DM Sans', sans-serif !important;
     font-size: 0.88rem !important; font-weight: 500 !important;
     text-align: left !important; white-space: normal !important;
-    padding: 0.78rem 2.5rem 0.78rem 1rem !important; line-height: 1.4 !important;
+    padding: 0.72rem 2.5rem 0.72rem 1rem !important; line-height: 1.4 !important;
     min-height: 0 !important;
     transition: border-color 0.16s ease, background 0.16s ease,
                 transform 0.16s ease, color 0.16s ease !important;
 }
 div[class*="st-key-chat_suggest"] button::after {
     content: "→"; position: absolute; right: 1rem; top: 50%;
-    transform: translateY(-50%); color: #5b6678; font-size: 0.95rem;
+    transform: translateY(-50%); color: #7c5cfc; font-size: 0.95rem;
     transition: transform 0.16s ease, color 0.16s ease;
 }
 div[class*="st-key-chat_suggest"] button:hover {
-    border-color: rgba(124,92,252,0.45) !important;
-    background: rgba(124,92,252,0.08) !important; color: #e9d5ff !important;
+    border-color: rgba(124,92,252,0.55) !important;
+    background: rgba(124,92,252,0.13) !important; color: #e9d5ff !important;
     transform: translateY(-1px) !important;
 }
 div[class*="st-key-chat_suggest"] button:hover::after {
@@ -3146,11 +3167,11 @@ div[class*="st-key-chat_suggest"] button p {
     text-align: left !important; margin: 0 !important; font-weight: 500 !important;
 }
 
-/* ── Conversation thread ────────────────────────────────────────────────── */
-.ca-thread { padding: 0.4rem 0 0.2rem; }
+/* ── Conversation thread — boxed, colour-coded, labelled ────────────────── */
+.ca-thread { padding: 0.3rem 0 0.2rem; }
 [data-testid="stChatMessage"] {
     background: transparent !important; border: none !important; box-shadow: none !important;
-    padding: 0.1rem 0 !important; margin-bottom: 1.15rem !important;
+    padding: 0.1rem 0 !important; margin-bottom: 0.95rem !important;
     width: 100% !important; max-width: 100% !important; display: block !important;
     animation: ca-rise 0.25s ease;
 }
@@ -3158,35 +3179,49 @@ div[class*="st-key-chat_suggest"] button p {
 [data-testid="stChatMessageAvatarAssistant"],
 [data-testid="stChatMessageAvatarCustom"] { display: none !important; }
 
-/* Assistant: plain text, no bubble — maximum readability */
+/* Assistant: LEFT, teal-accented box + label */
 [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarAssistant"])
 [data-testid="stChatMessageContent"] {
-    background: transparent !important; border: none !important; padding: 0 !important;
-    width: 100% !important; box-sizing: border-box !important;
+    width: 92% !important; margin-left: 0 !important; margin-right: auto !important;
+    background: linear-gradient(135deg,
+        rgba(13,207,176,0.09), rgba(16,26,42,0.65)) !important;
+    border: 1px solid rgba(13,207,176,0.22) !important;
+    border-left: 3px solid #0dcfb0 !important;
+    border-radius: 4px 13px 13px 13px !important;
+    padding: 0.7rem 1rem !important; box-sizing: border-box !important;
     overflow-wrap: break-word !important; word-break: break-word !important;
 }
 [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarAssistant"])
 [data-testid="stChatMessageContent"]::before {
     content: "✦ Assistant"; display: block;
-    font-family: 'Space Grotesk', sans-serif; font-size: 0.63rem; font-weight: 600;
-    letter-spacing: 0.09em; text-transform: uppercase; color: #6d7891;
-    margin-bottom: 0.45rem;
+    font-family: 'Space Grotesk', sans-serif; font-size: 0.64rem; font-weight: 700;
+    letter-spacing: 0.08em; text-transform: uppercase; color: #5eead4;
+    margin-bottom: 0.4rem;
 }
-/* User: compact pill, right-aligned, hugs its text */
+/* User: RIGHT, purple-accented box + label, hugs its text */
 [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"])
 [data-testid="stChatMessageContent"] {
-    width: fit-content !important; max-width: 80% !important;
+    width: fit-content !important; max-width: 82% !important;
     margin-left: auto !important; margin-right: 0 !important;
-    background: rgba(124,92,252,0.13) !important;
-    border: 1px solid rgba(124,92,252,0.22) !important;
-    border-radius: 15px 15px 4px 15px !important;
-    padding: 0.6rem 0.92rem !important; box-sizing: border-box !important;
+    background: linear-gradient(135deg,
+        rgba(124,92,252,0.2), rgba(124,92,252,0.11)) !important;
+    border: 1px solid rgba(124,92,252,0.32) !important;
+    border-left: 3px solid #7c5cfc !important;
+    border-radius: 13px 13px 4px 13px !important;
+    padding: 0.65rem 0.95rem !important; box-sizing: border-box !important;
     overflow-wrap: break-word !important; word-break: break-word !important;
 }
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"])
+[data-testid="stChatMessageContent"]::before {
+    content: "You"; display: block;
+    font-family: 'Space Grotesk', sans-serif; font-size: 0.64rem; font-weight: 700;
+    letter-spacing: 0.08em; text-transform: uppercase; color: #c4b5fd;
+    margin-bottom: 0.4rem;
+}
 [data-testid="stChatMessage"] p {
-    font-family: 'DM Sans', sans-serif !important; font-size: 0.94rem !important;
-    line-height: 1.7 !important; color: #d3dbe6 !important;
-    margin-bottom: 0.6rem !important; text-align: left !important;
+    font-family: 'DM Sans', sans-serif !important; font-size: 0.93rem !important;
+    line-height: 1.66 !important; color: #d6dee9 !important;
+    margin-bottom: 0.55rem !important; text-align: left !important;
 }
 [data-testid="stChatMessage"] p:last-child { margin-bottom: 0 !important; }
 [data-testid="stChatMessage"] em { color: #6b7689 !important; font-size: 0.82rem !important; }
@@ -3199,7 +3234,7 @@ div[class*="st-key-chat_suggest"] button p {
 }
 [data-testid="stChatMessage"] strong { color: #ede9fe !important; }
 [data-testid="stChatMessage"] code {
-    background: rgba(124,92,252,0.12) !important; color: #c4b5fd !important;
+    background: rgba(124,92,252,0.14) !important; color: #c4b5fd !important;
     padding: 0.05rem 0.35rem !important; border-radius: 4px !important;
     font-size: 0.85rem !important;
 }
@@ -3208,11 +3243,11 @@ div[class*="st-key-chat_suggest"] button p {
 }
 [data-testid="stChatMessage"] th,
 [data-testid="stChatMessage"] td {
-    border: 1px solid #1c2336 !important; padding: 0.35rem 0.7rem !important;
+    border: 1px solid rgba(124,92,252,0.2) !important; padding: 0.35rem 0.7rem !important;
     font-size: 0.84rem !important; color: #9aa6b8 !important;
 }
 [data-testid="stChatMessage"] th {
-    background: rgba(124,92,252,0.08) !important; color: #a78bfa !important;
+    background: rgba(124,92,252,0.1) !important; color: #a78bfa !important;
     font-family: 'Space Grotesk', sans-serif !important; font-weight: 600 !important;
 }
 
@@ -3221,18 +3256,18 @@ div[class*="st-key-chat_suggest"] button p {
     background: transparent !important; border: none !important; padding-top: 0.5rem !important;
 }
 [data-testid="stChatInput"] > div {
-    background: #0e1424 !important; border: 1px solid #1c2336 !important;
-    border-radius: 14px !important;
+    background: #0c1120 !important; border: 1px solid rgba(124,92,252,0.24) !important;
+    border-radius: 13px !important;
     transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
 }
 [data-testid="stChatInput"] > div:focus-within {
-    border-color: rgba(124,92,252,0.55) !important;
-    box-shadow: 0 0 0 3px rgba(124,92,252,0.12) !important;
+    border-color: rgba(124,92,252,0.6) !important;
+    box-shadow: 0 0 0 3px rgba(124,92,252,0.14) !important;
 }
 [data-testid="stChatInput"] textarea {
     background: transparent !important; color: #e2e8f0 !important;
     font-family: 'DM Sans', sans-serif !important;
-    font-size: 0.94rem !important; line-height: 1.55 !important;
+    font-size: 0.93rem !important; line-height: 1.55 !important;
 }
 [data-testid="stChatInput"] textarea::placeholder { color: #5b6678 !important; }
 [data-testid="stChatInput"] button {
@@ -3243,7 +3278,7 @@ div[class*="st-key-chat_suggest"] button p {
 
 /* ── Clear conversation (ghost link) ────────────────────────────────────── */
 div[class*="st-key-ca_clear"] button {
-    background: transparent !important; border: none !important; color: #5b6678 !important;
+    background: transparent !important; border: none !important; color: #6b7689 !important;
     font-family: 'DM Sans', sans-serif !important; font-size: 0.77rem !important;
     font-weight: 500 !important; padding: 0.25rem 0 !important;
     min-height: 0 !important; box-shadow: none !important;
@@ -3258,39 +3293,51 @@ div[class*="st-key-ca_clear"] button:hover {
 # borders, and near-white text to readable light-mode values.
 _CHAT_CSS_LIGHT = """
 <style>
-.ca-about {
-    background: #ffffff; border-color: #D8DEE9;
-    box-shadow: 0 2px 10px rgba(15,23,42,0.05);
+div[class*="st-key-ca_screen"] {
+    border-color: #D8DEE9 !important;
+    background:
+        radial-gradient(135% 80% at 50% -12%, rgba(124,77,255,0.07) 0%, transparent 55%),
+        #ffffff !important;
+    box-shadow: 0 10px 30px rgba(15,23,42,0.08) !important;
 }
-.ca-about > summary { color: #64748B; }
-.ca-about summary b { color: #1f2937; }
-.ca-about summary .ca-meta { color: #94a3b8; }
-.ca-sep { color: #cbd5e1; }
-.ca-about-body { border-top-color: #E5E9F0; }
-.ca-col-h { color: #94a3b8; }
-.ca-li { color: #334155; }
-.ca-pipe { border-top-color: #E5E9F0; }
+.ca-head {
+    background: linear-gradient(135deg, #f8fafc 0%, #ede9fe 55%, #f1f4fa 100%);
+    border-color: #ddd6fe;
+}
+.ca-head-name { color: #111827; }
+.ca-head-sub { color: #64748B; }
+.ca-pill--profile { color: #6d4deb; background: #efeafe; border-color: #ddd6fe; }
+.ca-pill--model { color: #2563eb; background: #e7effe; border-color: #c7dafc; }
+.ca-pill--guard { color: #0f9e87; background: #e3faf5; border-color: #bdf0e6; }
+.ca-foot { background: #f8fafc; border-color: #E5E9F0; }
 .ca-step { color: #4b5563; background: #f4f1fe; border-color: #ddd6fe; }
 .ca-arrow { color: #94a3b8; }
-.ca-pipe-note { color: #64748B; }
+.ca-foot-note { color: #64748B; }
 .ca-hero-title { color: #111827; }
 .ca-hero-sub { color: #64748B; }
 .ca-eyebrow { color: #94a3b8; }
 div[class*="st-key-chat_suggest"] button {
-    background: #ffffff !important; border-color: #D8DEE9 !important; color: #334155 !important;
+    background: #faf9ff !important; border-color: #e4ddfb !important; color: #334155 !important;
 }
 div[class*="st-key-chat_suggest"] button:hover {
-    background: #f4f1fe !important;
-    border-color: rgba(124,77,255,0.4) !important; color: #5b2bd9 !important;
+    background: #f1ecfe !important;
+    border-color: rgba(124,77,255,0.45) !important; color: #5b2bd9 !important;
 }
-div[class*="st-key-chat_suggest"] button::after { color: #94a3b8 !important; }
-div[class*="st-key-chat_suggest"] button:hover::after { color: #7C4DFF !important; }
+div[class*="st-key-chat_suggest"] button::after { color: #7C4DFF !important; }
 [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarAssistant"])
-[data-testid="stChatMessageContent"]::before { color: #94a3b8 !important; }
+[data-testid="stChatMessageContent"] {
+    background: #f3fdfb !important; border-color: rgba(13,207,176,0.3) !important;
+    border-left-color: #0f9e87 !important;
+}
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarAssistant"])
+[data-testid="stChatMessageContent"]::before { color: #0f9e87 !important; }
 [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"])
 [data-testid="stChatMessageContent"] {
-    background: #EEE8FF !important; border-color: rgba(124,77,255,0.25) !important;
+    background: #f1ecfe !important; border-color: rgba(124,77,255,0.32) !important;
+    border-left-color: #7C4DFF !important;
 }
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"])
+[data-testid="stChatMessageContent"]::before { color: #6d4deb !important; }
 [data-testid="stChatMessage"] p { color: #334155 !important; }
 [data-testid="stChatMessage"] h1,
 [data-testid="stChatMessage"] h2,
@@ -3552,71 +3599,39 @@ def _chat_stream_reply(
     return display_text
 
 
-def _chat_about_html(profile_label: str, model_label: str = "Claude Sonnet 4.6") -> str:
-    """Collapsible trust strip: advisor scope + 5-step safety pipeline.
+def _chat_header_html(profile_label: str, model_label: str = "Claude Sonnet 4.6") -> str:
+    """Top bar of the chat screen: assistant identity + colour-coded status pills.
 
-    Replaces the old right-hand side panel. Pure HTML <details> so it expands
-    in place with no Streamlit rerun. Shown collapsed above the conversation;
-    keeps the safety story one click away without cluttering every reply.
+    Replaces the old collapsible dropdown with the status pills the user
+    preferred — profile (purple), model (blue), validator (teal).
     """
-    chk = (
-        '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" '
-        'stroke="#0dcfb0" stroke-width="2.6" stroke-linecap="round" '
-        'stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>'
-    )
-    xmk = (
-        '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" '
-        'stroke="#f6798e" stroke-width="2.6" stroke-linecap="round" '
-        'stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/>'
-        '<line x1="6" y1="6" x2="18" y2="18"/></svg>'
-    )
-    tick = (
-        '<span class="ca-tick"><svg width="10" height="10" viewBox="0 0 24 24" '
-        'fill="none" stroke="currentColor" stroke-width="3.5" '
-        'stroke-linecap="round" stroke-linejoin="round">'
-        '<polyline points="20 6 9 17 4 12"/></svg></span>'
-    )
-
-    can_items = [
-        "Portfolio weights & clusters",
-        "Risk & historical drawdowns",
-        "EU / UCITS caveats",
-    ]
-    cant_items = [
-        "Buy / sell recommendations",
-        "Future return predictions",
-    ]
-    can_rows = "".join(
-        f'<div class="ca-li">{chk}<span>{x}</span></div>' for x in can_items
-    )
-    cant_rows = "".join(
-        f'<div class="ca-li">{xmk}<span>{x}</span></div>' for x in cant_items
-    )
-
     return (
-        '<details class="ca-about">'
-        '<summary>'
-        f'{tick}<b>Validated</b>'
-        '<span class="ca-meta">'
-        f'<span class="ca-sep">·</span>{model_label}'
-        f'<span class="ca-sep">·</span>Profile: {profile_label}'
-        '</span>'
-        '<span class="ca-caret">▾</span>'
-        '</summary>'
-        '<div class="ca-about-body">'
-        '<div class="ca-cols">'
-        f'<div class="ca-col"><div class="ca-col-h">Can explain</div>{can_rows}</div>'
-        f'<div class="ca-col"><div class="ca-col-h">Will not do</div>{cant_rows}</div>'
+        '<div class="ca-head">'
+        '<span class="ca-orb">✦</span>'
+        '<div class="ca-head-meta">'
+        '<span class="ca-head-name">RoboAdvisor Assistant</span>'
+        '<span class="ca-head-sub">Grounded in your portfolio · '
+        'here to explain, never to advise</span>'
         '</div>'
-        '<div class="ca-pipe">'
+        '<div class="ca-pills">'
+        f'<span class="ca-pill ca-pill--profile">{profile_label}</span>'
+        f'<span class="ca-pill ca-pill--model">{model_label}</span>'
+        '<span class="ca-pill ca-pill--guard">Validated · 5 checks</span>'
+        '</div>'
+        '</div>'
+    )
+
+
+def _chat_footer_html() -> str:
+    """Bottom bar of the chat screen: always-visible 5-step safety pipeline."""
+    return (
+        '<div class="ca-foot">'
         '<span class="ca-step">Sanitise</span><span class="ca-arrow">›</span>'
         '<span class="ca-step">Narrate</span><span class="ca-arrow">›</span>'
         '<span class="ca-step">Validate</span>'
-        '<span class="ca-pipe-note">every reply passes a 5-step safety check '
+        '<span class="ca-foot-note">every reply passes a 5-step safety check '
         'before display</span>'
         '</div>'
-        '</div>'
-        '</details>'
     )
 
 
@@ -3858,12 +3873,11 @@ def render_chat() -> None:
     if pending:
         history.append({"role": "user", "content": pending})
 
-    # Minimal & focused: one centered column — the conversation is the product.
+    # Centered column holding one bordered "screen" that frames the whole chat.
     _, mid, _ = st.columns([1, 5, 1])
-    with mid:
-        # Collapsible trust strip (scope + 5-step safety pipeline). Replaces the
-        # old status strip and side panel; stays one click away while chatting.
-        st.markdown(_chat_about_html(raw_label), unsafe_allow_html=True)
+    with mid, st.container(border=True, key="ca_screen"):
+        # Header bar: assistant identity + colour-coded status pills.
+        st.markdown(_chat_header_html(raw_label), unsafe_allow_html=True)
 
         if not history:
             st.markdown(
@@ -3909,13 +3923,14 @@ def render_chat() -> None:
                 st.session_state["chat_history"] = []
                 st.rerun()
 
-        # Inline chat input — kept inside the column so Streamlit renders it in
-        # normal flow (right below the conversation) instead of pinning it to
-        # the viewport bottom.
+        # Inline chat input — kept inside the screen so it renders in normal flow.
         typed = st.chat_input("Ask about your portfolio…")
         if typed:
             st.session_state["_pending_prompt"] = typed
             st.rerun()
+
+        # Footer bar: always-visible safety pipeline (replaces the dropdown).
+        st.markdown(_chat_footer_html(), unsafe_allow_html=True)
 
 
 # ---------------------------------------------------------------------------
