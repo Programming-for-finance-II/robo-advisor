@@ -232,6 +232,22 @@ def _run_live_optimization(profile_label: str) -> dict:
             "mv_expected_return": mv_result["expected_return"],
             "mv_sharpe_ratio": mv_result["sharpe_ratio"],
         }
+        # Historical max drawdown of the MV portfolio, same method as HRP's, so
+        # the compare scorecard can show a real figure for both methods.
+        try:
+            import numpy as np
+
+            _mw = mv_result["weights"]
+            _mc = [t for t in _mw if t in prices.columns]
+            _mr = prices[_mc].pct_change().dropna()
+            _mwv = np.array([_mw[t] for t in _mc], dtype=float)
+            _mwv = _mwv / _mwv.sum() if _mwv.sum() > 0 else _mwv
+            _meq = np.cumprod(1.0 + (_mr.to_numpy() @ _mwv))
+            mv_fields["mv_max_drawdown"] = float(
+                (_meq / np.maximum.accumulate(_meq) - 1.0).min()
+            )
+        except Exception:
+            pass
     except Exception:
         mv_fields = {}
 
@@ -279,6 +295,9 @@ def _run_live_optimization(profile_label: str) -> dict:
                     if _avg > _hot_avg:
                         _hot_avg, _hot = _avg, _members
             correlation["hot_cluster"] = _hot
+            correlation["hrp_clusters"] = {
+                str(_t): int(_lab) for _t, _lab in zip(cov.columns, _labels)
+            }
         except Exception:
             pass
     except Exception:
@@ -501,7 +520,7 @@ def main() -> None:
     if is_light():
         nav_bg = ("linear-gradient(180deg,"
                   "rgba(255,255,255,0.90) 0%, rgba(255,255,255,0.84) 100%)")
-        nav_shadow = "0 8px 24px rgba(15,23,42,0.08)"
+        nav_shadow = "0 8px 24px rgba(91,52,214,0.10)"
         nav_hairline = ("linear-gradient(90deg,"
                         "transparent 0%, rgba(124,77,255,0.35) 50%, transparent 100%)")
         nav_brand_grad = "linear-gradient(92deg, #1e1b4b 0%, #7c4dff 100%)"
@@ -1166,7 +1185,11 @@ def _render_profile_result_card(result: dict, show_dashboard_button: bool = True
 # ---------------------------------------------------------------------------
 
 def render_questionnaire() -> None:
-    page_header("Investor Profile Questionnaire", "Grable-Lytton Scale · 10 questions", icon="🧭")
+    page_header(
+        "Investor Profile Questionnaire",
+        "Grable-Lytton Scale · 10 questions",
+        eyebrow=_PAGE_EYEBROW["Investor Profile Questionnaire"],
+    )
 
     # Info card — Grable-Lytton explanation (native <details> for full style control)
     st.markdown(
@@ -1268,7 +1291,7 @@ def render_questionnaire() -> None:
     # gradient lines perfectly centred on the circles (circle height = 2.8rem,
     # centre = 1.4rem from top) regardless of the label below each circle.
     tk = get_theme_tokens()
-    _step_bg = "#f1f4fa" if is_light() else "rgba(15,23,42,0.55)"
+    _step_bg = "#EFEDF9" if is_light() else "rgba(15,23,42,0.55)"
     _c_blue = "#2563eb" if is_light() else "#60a5fa"
     _c_purple = "#6d4deb" if is_light() else "#a78bfa"
     _c_amber = "#b45309" if is_light() else "#fbbf24"
@@ -1552,21 +1575,21 @@ _GATE_CSS = """
 _GATE_CSS_LIGHT = """
 <style>
 .pg-wrap {
-    border: 1px solid #D8DEE9;
+    border: 1px solid #E5E2F1;
     background:
         radial-gradient(120% 90% at 50% -10%, rgba(124,77,255,0.10) 0%, transparent 55%),
-        linear-gradient(180deg, #ffffff 0%, #f1f4fa 100%);
-    box-shadow: 0 12px 32px rgba(15,23,42,0.08);
+        linear-gradient(180deg, #ffffff 0%, #EFEDF9 100%);
+    box-shadow: 0 12px 32px rgba(91,52,214,0.10);
 }
 .pg-eyebrow { color: #6d4deb; }
 .pg-title { color: #0f172a; }
 .pg-body { color: #334155; }
 .pg-step {
     background: #ffffff;
-    border: 1px solid #D8DEE9;
-    box-shadow: 0 4px 16px rgba(15,23,42,0.05);
+    border: 1px solid #E5E2F1;
+    box-shadow: 0 4px 16px rgba(91,52,214,0.07);
 }
-.pg-step-num { color: #6d4deb; background: #EEE8FF; border-color: rgba(124,77,255,0.4); }
+.pg-step-num { color: #6d4deb; background: #EFEAFE; border-color: rgba(124,77,255,0.4); }
 .pg-step--active .pg-step-num {
     color: #ffffff; background: linear-gradient(135deg,#8b6bff,#7c4dff);
     border-color: transparent;
@@ -1577,7 +1600,7 @@ _GATE_CSS_LIGHT = """
 .pg-chip {
     color: #334155;
     background: #ffffff;
-    border: 1px solid #D8DEE9;
+    border: 1px solid #E5E2F1;
 }
 </style>
 """
@@ -1602,6 +1625,17 @@ _PG_ICON_SHIELD = (
 )
 
 
+# Uppercase "kicker" shown above each page title. Single source of truth so the
+# gate empty-state and the real page render the same eyebrow for a given title.
+_PAGE_EYEBROW: dict[str, str] = {
+    "Investor Profile Questionnaire": "Risk Profiling",
+    "Portfolio Dashboard": "Allocation",
+    "Backtesting": "Validation",
+    "Compare Markowitz": "Benchmark",
+    "Chat Advisor": "AI Assistant",
+}
+
+
 def _render_profile_required_gate(
     title: str,
     subtitle: str,
@@ -1616,7 +1650,7 @@ def _render_profile_required_gate(
     (questionnaire → profile → this page) and a styled call-to-action that
     routes to the questionnaire.
     """
-    page_header(title, subtitle, icon=icon)
+    page_header(title, subtitle, eyebrow=_PAGE_EYEBROW.get(title, ""))
     st.markdown(_GATE_CSS, unsafe_allow_html=True)
     if is_light():
         st.markdown(_GATE_CSS_LIGHT, unsafe_allow_html=True)
@@ -1701,7 +1735,7 @@ def render_portfolio() -> None:
     page_header(
         "Portfolio Dashboard",
         f"HRP optimization · {profile_label.capitalize()} profile",
-        icon="📊",
+        eyebrow=_PAGE_EYEBROW["Portfolio Dashboard"],
     )
 
     _ic_cluster = (
@@ -2633,7 +2667,7 @@ def _render_etf_explorer() -> None:
     # Per-pill CSS: cluster-coloured dot + active (navy) / inactive (grey).
     # Streamlit tags each keyed widget's container with `st-key-<key>`.
     _pill_bg = "#f1f4fa" if is_light() else "rgba(255,255,255,0.05)"
-    _pill_border = "#D8DEE9" if is_light() else "rgba(255,255,255,0.10)"
+    _pill_border = "#E5E2F1" if is_light() else "rgba(255,255,255,0.10)"
     _pill_color = "#334155" if is_light() else "#94a3b8"
     css_rules = [
         'div[class*="st-key-pill_"] button {'
@@ -2729,7 +2763,7 @@ def _render_etf_explorer() -> None:
                 ),
                 yaxis=dict(
                     side="right", showgrid=True,
-                    gridcolor="#e2e8f0" if is_light() else "rgba(255,255,255,0.05)",
+                    gridcolor="#EAE7F4" if is_light() else "rgba(255,255,255,0.05)",
                     color="#64748b",
                     range=[y_lo - y_pad, y_hi + y_pad], fixedrange=False,
                 ),
@@ -2944,7 +2978,7 @@ def _render_hrp_tab(portfolio: dict) -> None:
     pills_html += "</div>"
     st.markdown(pills_html, unsafe_allow_html=True)
 
-    col_donut, col_table = st.columns([1.05, 1], gap="large")
+    col_donut, col_table = st.columns([1.05, 1], gap="large", vertical_alignment="center")
 
     with col_donut:
         try:
@@ -2954,10 +2988,14 @@ def _render_hrp_tab(portfolio: dict) -> None:
             # Re-assert the donut's own layout: apply_plotly_theme()
             # overwrites margin (and would clip the bottom colour legend) and
             # the layout font. The per-slice textfont set in charts.py is not
-            # touched, so the white in-slice labels survive.
+            # touched, so the white in-slice labels survive. The paper/plot
+            # backgrounds are cleared to transparent so the donut sits directly
+            # on the page with no dark panel behind it.
             fig_donut.update_layout(
-                height=360,
-                margin=dict(l=10, r=10, t=12, b=38),
+                height=460,
+                margin=dict(l=10, r=10, t=30, b=124),
+                paper_bgcolor="rgba(0,0,0,0)",
+                plot_bgcolor="rgba(0,0,0,0)",
             )
             st.plotly_chart(
                 fig_donut,
@@ -3217,6 +3255,13 @@ div[class*="st-key-chat_suggest"] button:hover::after {
 div[class*="st-key-chat_suggest"] button p {
     text-align: left !important; margin: 0 !important; font-weight: 500 !important;
 }
+/* When the first message is sent, the empty-state suggestions are no longer
+   rendered. Streamlit keeps the now-stale buttons on screen and fades them out
+   slowly (~1s) while the reply streams, so they appear to linger and drift down.
+   Hiding stale suggestion containers makes them vanish instantly instead. */
+[data-testid="stElementContainer"][data-stale="true"][class*="st-key-chat_suggest"] {
+    display: none !important;
+}
 
 /* ── Conversation thread — boxed, colour-coded, labelled ────────────────── */
 .ca-thread { padding: 0.3rem 0 0.2rem; }
@@ -3236,13 +3281,15 @@ div[class*="st-key-chat_suggest"] button p {
 [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarAssistant"])
 [data-testid="stChatMessageContent"] {
     position: relative !important;
+    display: flex !important; flex-direction: column !important;
+    justify-content: center !important;
     width: 92% !important; margin-left: 0 !important; margin-right: auto !important;
     background: linear-gradient(135deg,
         rgba(13,207,176,0.09), rgba(16,26,42,0.65)) !important;
     border: 1px solid rgba(13,207,176,0.22) !important;
     border-left: 3px solid #0dcfb0 !important;
     border-radius: 4px 13px 13px 13px !important;
-    padding: 0.7rem 1rem !important; box-sizing: border-box !important;
+    padding: 1rem 1.2rem !important; box-sizing: border-box !important;
     overflow-wrap: break-word !important; word-break: break-word !important;
 }
 /* Label floats above the top-left corner of the box — outside the flow */
@@ -3258,6 +3305,8 @@ div[class*="st-key-chat_suggest"] button p {
 [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"])
 [data-testid="stChatMessageContent"] {
     position: relative !important;
+    display: flex !important; flex-direction: column !important;
+    justify-content: center !important;
     width: fit-content !important; max-width: 82% !important;
     margin-left: auto !important; margin-right: 0 !important;
     background: linear-gradient(135deg,
@@ -3265,7 +3314,7 @@ div[class*="st-key-chat_suggest"] button p {
     border: 1px solid rgba(124,92,252,0.32) !important;
     border-left: 3px solid #7c5cfc !important;
     border-radius: 13px 13px 4px 13px !important;
-    padding: 0.65rem 0.95rem !important; box-sizing: border-box !important;
+    padding: 0.8rem 1.05rem !important; box-sizing: border-box !important;
     overflow-wrap: break-word !important; word-break: break-word !important;
 }
 /* Label floats above the top-right corner of the box — outside the flow */
@@ -3284,6 +3333,13 @@ div[class*="st-key-chat_suggest"] button p {
     text-align: left !important;
 }
 [data-testid="stChatMessage"] p:last-child { margin-bottom: 0 !important; }
+/* Neutralise Streamlit's markdown-wrapper margins/padding so the flex parent
+   can centre the text block with no hidden vertical offset. */
+[data-testid="stChatMessageContent"] > div,
+[data-testid="stChatMessageContent"] [data-testid="stMarkdownContainer"],
+[data-testid="stChatMessageContent"] [data-testid="stMarkdown"] {
+    margin: 0 !important; padding: 0 !important; width: 100% !important;
+}
 [data-testid="stChatMessage"] em { color: #6b7689 !important; font-size: 0.82rem !important; }
 [data-testid="stChatMessage"] h1,
 [data-testid="stChatMessage"] h2,
@@ -3363,14 +3419,14 @@ div[class*="st-key-ca_clear"] button:hover {
 _CHAT_CSS_LIGHT = """
 <style>
 div[class*="st-key-ca_screen"] {
-    border-color: #D8DEE9 !important;
+    border-color: #E5E2F1 !important;
     background:
         radial-gradient(135% 80% at 50% -12%, rgba(124,77,255,0.07) 0%, transparent 55%),
         #ffffff !important;
-    box-shadow: 0 10px 30px rgba(15,23,42,0.08) !important;
+    box-shadow: 0 10px 30px rgba(91,52,214,0.10) !important;
 }
 .ca-head {
-    background: linear-gradient(135deg, #f8fafc 0%, #ede9fe 55%, #f1f4fa 100%);
+    background: linear-gradient(135deg, #F4F2FB 0%, #ede9fe 55%, #EFEDF9 100%);
     border-color: #ddd6fe;
 }
 .ca-head-name { color: #111827; }
@@ -3378,7 +3434,7 @@ div[class*="st-key-ca_screen"] {
 .ca-pill--profile { color: #6d4deb; background: #efeafe; border-color: #ddd6fe; }
 .ca-pill--model { color: #2563eb; background: #e7effe; border-color: #c7dafc; }
 .ca-pill--guard { color: #0f9e87; background: #e3faf5; border-color: #bdf0e6; }
-.ca-foot { background: #f8fafc; border-color: #E5E9F0; }
+.ca-foot { background: #F4F2FB; border-color: #EEECF7; }
 .ca-step { color: #4b5563; background: #f4f1fe; border-color: #ddd6fe; }
 .ca-arrow { color: #94a3b8; }
 .ca-foot-note { color: #64748B; }
@@ -3417,10 +3473,10 @@ div[class*="st-key-chat_suggest"] button::after { color: #7C4DFF !important; }
 [data-testid="stChatMessage"] strong { color: #5b2bd9 !important; }
 [data-testid="stChatMessage"] code { background: #f4f1fe !important; color: #6d4deb !important; }
 [data-testid="stChatMessage"] th,
-[data-testid="stChatMessage"] td { border-color: #D8DEE9 !important; color: #334155 !important; }
+[data-testid="stChatMessage"] td { border-color: #E5E2F1 !important; color: #334155 !important; }
 [data-testid="stChatMessage"] th { color: #6d4deb !important; background: #f4f1fe !important; }
 [data-testid="stChatInput"] > div {
-    background: #ffffff !important; border-color: #D8DEE9 !important;
+    background: #ffffff !important; border-color: #E5E2F1 !important;
 }
 [data-testid="stChatInput"] textarea { background: #ffffff !important; color: #111827 !important; }
 [data-testid="stChatInput"] textarea::placeholder { color: #94a3b8 !important; }
@@ -3514,6 +3570,13 @@ def _build_chat_payload(profile_key: str):
 
         cluster_structure = live.get("cluster_structure") or base.cluster_structure
 
+        # Recompute the currency exposure from the live weights so the advisor's
+        # USD/EUR figures match the actual portfolio, not the mock baseline.
+        from backend.schemas.mock_data import regulatory_context_for_weights
+        regulatory_context = regulatory_context_for_weights(
+            base.regulatory_context, weights
+        )
+
         # Rebuild the allowed-number whitelist from the overridden payload.
         partial = {
             "metadata": base.metadata.model_dump(),
@@ -3523,7 +3586,7 @@ def _build_chat_payload(profile_key: str):
             "cluster_structure": cluster_structure.model_dump(),
             "stress_scenarios": base.stress_scenarios.model_dump(),
             "backtest_summary": base.backtest_summary.model_dump(),
-            "regulatory_context": base.regulatory_context.model_dump(),
+            "regulatory_context": regulatory_context.model_dump(),
         }
         constraints = LLMConstraints(
             allowed_numbers=build_allowed_numbers(partial),
@@ -3540,7 +3603,7 @@ def _build_chat_payload(profile_key: str):
             stress_scenarios=base.stress_scenarios,
             backtest_summary=base.backtest_summary,
             llm_constraints=constraints,
-            regulatory_context=base.regulatory_context,
+            regulatory_context=regulatory_context,
         )
     except Exception:
         # Any mismatch in live data shape must never break the chat.
@@ -3715,190 +3778,6 @@ def _chat_footer_html() -> str:
     )
 
 
-def _render_mv_tab(portfolio: dict, profile_key: str) -> None:
-    """
-    Markowitz tab: HRP vs MV weight comparison, efficient frontier,
-    stress scenario table, backtest summary.
-
-    Phase A: uses mock MV weights + synthetic frontier for illustration.
-    Phase B: runs optimize_markowitz() on live prices for real comparison.
-    """
-    from backend.optimizer.charts import plot_efficient_frontier
-
-    st.subheader("Markowitz Mean-Variance — Benchmark Comparison")
-
-    mv_weights: dict[str, float] | None = None
-    mv_vol: float | None = None
-    mv_ret: float | None = None
-    mv_sharpe: float | None = None
-
-    if portfolio.get("source") == "live":
-        try:
-            from datetime import date
-
-            from backend.data.loader import ValidatedDataLoader
-            from backend.data.universe_config import get_primary_tickers
-            from backend.optimizer.markowitz import optimize_markowitz
-
-            tickers = get_primary_tickers()
-            loader = ValidatedDataLoader()
-            prices, _ = loader.load(
-                tickers=tickers,
-                start=_DATA_START,
-                end=date.today().isoformat(),
-            )
-            mv_result = optimize_markowitz(prices)
-            mv_weights = mv_result["weights"]
-            mv_vol = mv_result["expected_volatility"]
-            mv_ret = mv_result["expected_return"]
-            mv_sharpe = mv_result["sharpe_ratio"]
-        except Exception as exc:
-            st.caption(f"Live MV optimizer unavailable: {exc}. Showing mock comparison.")
-
-    if mv_weights is None:
-        hrp_w = portfolio.get("weights", {})
-        mv_weights = {t: 0.0 for t in hrp_w}
-        if hrp_w:
-            tickers_list = list(hrp_w.keys())
-            for t in tickers_list:
-                if t in {"AGGH.MI", "TLT", "TIP"}:
-                    mv_weights[t] = min(0.40, hrp_w.get(t, 0.10) * 1.8)
-                elif t in {"CSPX.L", "EFA"}:
-                    mv_weights[t] = max(0.03, hrp_w.get(t, 0.20) * 0.7)
-                else:
-                    mv_weights[t] = hrp_w.get(t, 0.10)
-            total = sum(mv_weights.values()) or 1.0
-            mv_weights = {t: round(w / total, 4) for t, w in mv_weights.items()}
-        mv_vol = portfolio.get("expected_volatility", 0.08) * 0.92
-        mv_ret = None
-        mv_sharpe = None
-
-    hrp_vol = portfolio.get("expected_volatility", 0.0)
-    hrp_ret = portfolio.get("expected_return")
-    hrp_sharpe = portfolio.get("sharpe_ratio")
-
-    st.markdown("**Key Metrics — HRP vs Markowitz**")
-    col1, col2, col3 = st.columns(3)
-    col1.metric(
-        "Annual Volatility",
-        f"{hrp_vol:.1%}" if hrp_vol else "—",
-        delta=f"MV: {mv_vol:.1%}" if mv_vol else None,
-        delta_color="inverse",
-    )
-    col2.metric(
-        "Expected Return",
-        f"{hrp_ret:.1%}" if hrp_ret else "HRP: N/A",
-        delta=f"MV: {mv_ret:.1%}" if mv_ret else None,
-    )
-    col3.metric(
-        "Sharpe Ratio",
-        f"{hrp_sharpe:.2f}" if hrp_sharpe else "HRP: N/A",
-        delta=f"MV: {mv_sharpe:.2f}" if mv_sharpe else None,
-    )
-    st.caption(
-        "HRP does not produce a reliable expected return estimate (no μ). "
-        "MV maximises Sharpe explicitly but is sensitive to estimation error."
-    )
-
-    st.markdown("---")
-
-    st.markdown("**Weight Comparison — HRP vs Markowitz**")
-    hrp_weights = portfolio.get("weights", {})
-    tickers_sorted = sorted(hrp_weights.keys(), key=lambda t: -hrp_weights.get(t, 0))
-    comparison_rows = []
-    for ticker in tickers_sorted:
-        h = hrp_weights.get(ticker, 0.0)
-        m = mv_weights.get(ticker, 0.0)
-        comparison_rows.append({
-            "Ticker": ticker,
-            "HRP": f"{h:.1%}",
-            "Markowitz": f"{m:.1%}",
-            "Difference": f"{abs(h - m):.1%}",
-            "UCITS": "EU" if ticker in _UCITS_TICKERS else "—",
-        })
-    st.dataframe(pd.DataFrame(comparison_rows), hide_index=True, use_container_width=True)
-    st.caption(
-        "Markowitz typically produces more concentrated portfolios. "
-        "HRP avoids corner solutions by construction."
-    )
-
-    st.markdown("---")
-
-    st.markdown("**Efficient Frontier — HRP vs Markowitz**")
-    try:
-        frontier_vols = list(np.linspace(0.04, 0.20, 30))
-        frontier_rets = [v * 0.5 + 0.01 for v in frontier_vols]
-        fig_frontier = plot_efficient_frontier(
-            frontier_vols=frontier_vols,
-            frontier_rets=frontier_rets,
-            hrp_vol=hrp_vol or 0.10,
-            hrp_ret=hrp_ret,
-            mv_vol=mv_vol or 0.08,
-            mv_ret=mv_ret,
-        )
-        fig_frontier = apply_plotly_theme(fig_frontier)
-        st.plotly_chart(fig_frontier, use_container_width=True)
-        if portfolio.get("source") != "live":
-            st.caption(
-                "Frontier shown is illustrative (Phase A mock). "
-                "Enable live data for real frontier."
-            )
-    except Exception as exc:
-        st.caption(f"Frontier chart unavailable: {exc}")
-
-    st.markdown("---")
-
-    stress = portfolio.get("stress_scenarios")
-    if stress is None:
-        try:
-            payload = get_mock_payload(profile_key)
-            stress = payload.stress_scenarios
-        except Exception:
-            stress = None
-
-    if stress is not None:
-        st.markdown("**Historical Stress Scenarios — HRP drawdown vs benchmark**")
-        scenario_rows = [
-            {
-                "Scenario": "COVID-19 crash (Mar 2020)",
-                "HRP drawdown": f"{stress.covid_march_2020.portfolio_drawdown:.1%}",
-                "Benchmark": f"{stress.covid_march_2020.benchmark_drawdown:.1%}",
-            },
-            {
-                "Scenario": "Ukraine invasion (Feb 2022)",
-                "HRP drawdown": f"{stress.ukraine_feb_2022.portfolio_drawdown:.1%}",
-                "Benchmark": f"{stress.ukraine_feb_2022.benchmark_drawdown:.1%}",
-            },
-            {
-                "Scenario": "Rate hike cycle (2022)",
-                "HRP drawdown": f"{stress.rates_hike_2022.portfolio_drawdown:.1%}",
-                "Benchmark": f"{stress.rates_hike_2022.benchmark_drawdown:.1%}",
-            },
-        ]
-        st.dataframe(pd.DataFrame(scenario_rows), hide_index=True, use_container_width=True)
-        st.caption(
-            "Benchmark = equal-weight 60/40 portfolio. "
-            "Phase A values are from mock data. "
-            "Phase B will use real backtested values from backtest.py."
-        )
-
-    backtest = portfolio.get("backtest")
-    if backtest is None:
-        try:
-            payload = get_mock_payload(profile_key)
-            backtest = payload.backtest_summary
-        except Exception:
-            backtest = None
-
-    if backtest is not None:
-        st.markdown("**Backtest Summary (mock — Phase A)**")
-        bt_cols = st.columns(4)
-        bt_cols[0].metric("Period", backtest.period)
-        bt_cols[1].metric("CAGR", f"{backtest.cagr:.1%}")
-        bt_cols[2].metric("Sharpe", f"{backtest.sharpe:.2f}")
-        bt_cols[3].metric("Max DD", f"{backtest.max_drawdown:.1%}")
-
-
 # ---------------------------------------------------------------------------
 # Page 3 -- Chat Advisor
 # ---------------------------------------------------------------------------
@@ -3925,7 +3804,7 @@ def render_chat() -> None:
     page_header(
         "Chat Advisor",
         "Grounded in your portfolio · validated answers",
-        icon="💬",
+        eyebrow=_PAGE_EYEBROW["Chat Advisor"],
     )
     st.markdown(_CHAT_CSS, unsafe_allow_html=True)
     if is_light():
@@ -4021,7 +3900,11 @@ _BACKTEST_DIR = Path(__file__).parent.parent / "backtest_output"
 
 _SCENARIO_LABELS: dict[str, str] = {
     "gfc_2008":       "Global Financial Crisis (2008)",
+    "euro_debt_2011": "Eurozone Debt Crisis (2011)",
+    "selloff_2018":   "Rate-Fear Selloff (2018)",
     "covid_2020":     "COVID-19 Crash (2020)",
+    "recovery_2021":  "Post-COVID Bull (2021)",
+    "ukraine_2022":   "Ukraine Invasion Shock (2022)",
     "rate_hike_2022": "Rate Hike Cycle (2022)",
 }
 
@@ -4042,10 +3925,88 @@ _STRATEGY_LABELS: dict[str, str] = {
     "MV":  "Markowitz",
 }
 
-# US-listed proxies the backtest uses for the EU ETFs that lack price history
-# back to 2008 (CSPX.L→SPY, AGGH.MI→AGG, XEON.MI→BIL). They keep their asset-class
-# colour in the donuts but get a diagonal hatch, explained in a note underneath.
-_PROXY_TICKERS: frozenset[str] = frozenset({"SPY", "AGG", "BIL"})
+# One-sentence, factual context per stress scenario (no advice) — shown under the
+# selector with the period so the backtest reads as a story, not just numbers.
+_SCENARIO_CONTEXT: dict[str, str] = {
+    "gfc_2008": (
+        "Lehman Brothers' collapse froze global credit markets; equities fell "
+        "sharply into early 2009 as the financial system seized up."
+    ),
+    "euro_debt_2011": (
+        "Fears that Greece, Italy and Spain might default — alongside a first-ever "
+        "US credit downgrade — drove a sharp risk-off selloff in mid-2011."
+    ),
+    "selloff_2018": (
+        "Rising interest rates and trade-war tensions weighed on markets through "
+        "2018, culminating in a steep fourth-quarter drop."
+    ),
+    "covid_2020": (
+        "A global pandemic triggered one of the fastest crashes on record in early "
+        "2020, followed by an equally sharp, policy-driven recovery."
+    ),
+    "recovery_2021": (
+        "Large fiscal and monetary stimulus fuelled a strong, low-volatility equity "
+        "rally through 2021 as economies reopened."
+    ),
+    "ukraine_2022": (
+        "Russia's invasion of Ukraine in February 2022 jolted markets and spiked "
+        "energy and commodity prices, adding to an already fragile start to the year."
+    ),
+    "rate_hike_2022": (
+        "Central banks raised interest rates aggressively to curb inflation, pulling "
+        "both equities and bonds lower through 2022."
+    ),
+}
+
+
+def _bt_period_label(start: str, end: str) -> str:
+    """Format an ISO date range as 'Jan – Dec 2020' / 'Sep 2008 – Mar 2009'."""
+    from datetime import datetime
+    s = datetime.strptime(start, "%Y-%m-%d")
+    e = datetime.strptime(end, "%Y-%m-%d")
+    if s.year == e.year:
+        return f"{s.strftime('%b')} – {e.strftime('%b %Y')}"
+    return f"{s.strftime('%b %Y')} – {e.strftime('%b %Y')}"
+
+
+def _bt_section(eyebrow: str, title: str) -> None:
+    """Section header in the page-header 'eyebrow + accent bar' idiom, so the
+    backtesting sections match the new header style instead of '1. 2. 3.'."""
+    t = get_theme_tokens()
+    st.markdown(
+        f'<div style="display:flex;align-items:stretch;gap:0.8rem;margin:0 0 0.7rem;">'
+        f'<div style="width:3px;flex-shrink:0;border-radius:99px;'
+        f'background:linear-gradient(180deg,{t["accent"]} 0%,#0dcfb0 100%);"></div>'
+        f'<div>'
+        f'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:0.66rem;'
+        f'font-weight:700;letter-spacing:0.15em;text-transform:uppercase;'
+        f'color:{t["accent_text"]};margin-bottom:0.2rem;">{eyebrow}</div>'
+        f'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:1.2rem;'
+        f'font-weight:700;color:{t["text_primary"]};letter-spacing:-0.01em;'
+        f'line-height:1.2;">{title}</div>'
+        f'</div></div>',
+        unsafe_allow_html=True,
+    )
+
+
+def _bt_takeaway(html: str, color: str, icon: str) -> None:
+    """Section-closing note with a coloured left edge and a small icon chip, so the
+    three takeaways read differently instead of three identical purple washes.
+
+    ``color`` is a #rrggbb hex; ``icon`` is inner SVG markup (0..18 viewBox).
+    """
+    t = get_theme_tokens()
+    st.markdown(
+        f'<div style="display:flex;gap:0.7rem;align-items:flex-start;'
+        f'background:{color}14;border:1px solid {color}33;border-left:3px solid {color};'
+        f'border-radius:10px;padding:0.8rem 1rem;margin-top:1rem;">'
+        f'<svg width="17" height="17" viewBox="0 0 18 18" fill="none" stroke="{color}" '
+        f'stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" '
+        f'style="flex-shrink:0;margin-top:1px;">{icon}</svg>'
+        f'<div style="font-size:0.88rem;line-height:1.55;color:{t["text_secondary"]};">'
+        f'{html}</div></div>',
+        unsafe_allow_html=True,
+    )
 
 
 def render_backtesting() -> None:
@@ -4061,23 +4022,20 @@ def render_backtesting() -> None:
         return
 
     t = get_theme_tokens()
-    page_header("Backtesting", "Walk-forward simulation · HRP vs Markowitz", icon="📈")
+    page_header(
+        "Backtesting",
+        "Walk-forward simulation · HRP vs Markowitz",
+        eyebrow=_PAGE_EYEBROW["Backtesting"],
+    )
 
     st.markdown(
-        """
-        <details class="qs-info-card">
-          <summary>
-            <span class="qs-info-title">What is backtesting?</span>
-            <span class="qs-info-chevron">▾</span>
-          </summary>
-          <div class="qs-info-body">
-            Backtesting replays each strategy on real historical prices to see how
-            it would have performed in the past — including during market crashes.
-            Pick a stress scenario below to compare how your HRP allocation and
-            the classic Markowitz (Mean-Variance) method would have held up.
-          </div>
-        </details>
-        """,
+        f'<div style="font-size:0.95rem;line-height:1.6;color:{t["text_secondary"]};'
+        f'margin:0.2rem 0 1.3rem;max-width:60rem;">'
+        f'Backtesting replays each strategy on real historical prices to see how it '
+        f'would have held up in the past. Pick a stress scenario below to compare '
+        f'your <strong style="color:{t["text_primary"]};">HRP</strong> allocation '
+        f'against the classic <strong style="color:{t["text_primary"]};">Markowitz'
+        f'</strong> method through a real market crisis.</div>',
         unsafe_allow_html=True,
     )
 
@@ -4103,20 +4061,17 @@ def render_backtesting() -> None:
     with open(summary_file) as fh:
         summary = json.load(fh)
 
-    selected = st.segmented_control(
+    selected = st.selectbox(
         "Stress scenario",
         options=list(_SCENARIO_LABELS.keys()),
         format_func=lambda k: _SCENARIO_LABELS[k],
-        default=list(_SCENARIO_LABELS.keys())[0],
-        required=True,
+        index=0,
     )
     if selected is None:
         return
 
-    st.markdown("---")
-
-    # Load the per-strategy equity curves once: used both for the headline
-    # "total return over the scenario" figure and for the charts further down.
+    # Load the per-strategy equity curves once: used by the verdict band, the
+    # headline "total return over the scenario" figure and the charts below.
     scenario_file = _BACKTEST_DIR / f"backtest_{selected}_{profile_label}.json"
     detail = None
     period_return: dict[str, float] = {}
@@ -4132,19 +4087,85 @@ def render_backtesting() -> None:
                 # crisis period.
                 period_return[_s] = _ec[-1]["portfolio_value"] - 1.0
 
+    # ── Scenario context: period + one-line "what happened" ──────────────────
+    _sc = summary[selected]
+    _period = _bt_period_label(_sc["test_start"], _sc["test_end"])
+    _ctx = _SCENARIO_CONTEXT.get(selected, "")
+    st.markdown(
+        f'<div style="display:flex;gap:0.75rem;align-items:baseline;flex-wrap:wrap;'
+        f'margin:0.4rem 0 1.25rem;">'
+        f'<span style="font-family:\'Space Grotesk\',sans-serif;font-weight:700;'
+        f'font-size:0.8rem;letter-spacing:0.02em;color:{t["accent_text"]};'
+        f'white-space:nowrap;">{_period}</span>'
+        f'<span style="font-size:0.9rem;line-height:1.55;color:{t["text_secondary"]};'
+        f'flex:1;min-width:240px;">{_ctx}</span></div>',
+        unsafe_allow_html=True,
+    )
+
+    # ── Verdict band: who held up best + your HRP outcome, at a glance ────────
+    _vstrats = {s: _sc["strategies"][s] for s in _BACKTEST_STRATEGIES}
+    _v_resilient = max(_vstrats, key=lambda s: _vstrats[s]["max_drawdown"])  # ~0 best
+    _v_sharpe = max(_vstrats, key=lambda s: _vstrats[s]["sharpe_ratio"])
+    _hrp_ret = period_return.get("HRP")
+    _hrp_final = (1.0 + _hrp_ret) * 10_000 if _hrp_ret is not None else None
+    _gain = _hrp_ret is not None and _hrp_ret >= 0
+    _money_accent = "#22c55e" if _gain else "#f87171"
+    _money_bg = "rgba(34,197,94,0.13)" if _gain else "rgba(248,113,113,0.13)"
+    _money_icon = (
+        '<polyline points="2,13 7,8 11,11 16,4"/><polyline points="12,4 16,4 16,8"/>'
+        if _gain else
+        '<polyline points="2,4 7,9 11,6 16,13"/><polyline points="12,13 16,13 16,9"/>'
+    )
+    _kpi_cards([
+        {
+            "label": "Most resilient",
+            "value": _STRATEGY_LABELS.get(_v_resilient, _v_resilient),
+            "accent": "#0dcfb0", "bg": "rgba(13,207,176,0.13)",
+            "icon": '<path d="M9 16s6-3 6-7.5V4L9 1.5 3 4v4.5C3 13 9 16 9 16z"/>',
+            "hint": f"smallest drop · {_vstrats[_v_resilient]['max_drawdown']:.1%} "
+                    "from peak",
+        },
+        {
+            "label": "Best risk-adjusted",
+            "value": _STRATEGY_LABELS.get(_v_sharpe, _v_sharpe),
+            "accent": "#7c5cfc", "bg": "rgba(124,92,252,0.13)",
+            "icon": '<polygon points="9,2 4,10 8,10 7,16 13,8 9,8"/>',
+            "hint": f"Sharpe {_vstrats[_v_sharpe]['sharpe_ratio']:.2f} · return per "
+                    "unit of risk",
+        },
+        {
+            "label": "HRP · €10,000 became",
+            "value": f"€{_hrp_final:,.0f}" if _hrp_final is not None else "—",
+            "accent": _money_accent, "bg": _money_bg, "icon": _money_icon,
+            "hint": f"{_hrp_ret:+.1%} over the period" if _hrp_ret is not None
+                    else "scenario detail unavailable",
+        },
+    ])
+
+    _v_spacer(0.6)
+    st.markdown("---")
+
     # ── Metrics comparison table ─────────────────────────────────────────────
-    _section_header("1", "Which strategy held up best?")
+    _bt_section("Results", "Which strategy held up best?")
     rows = []
     for strat in _BACKTEST_STRATEGIES:
         m = summary[selected]["strategies"][strat]
         _ret = period_return.get(strat, m["cagr"])
         rows.append({
+            "strat":        strat,
+            "_ret":         _ret,
             "Strategy":     _STRATEGY_LABELS.get(strat, strat),
             "Total return": f"{_ret:+.1%}",
             "Volatility":   f"{m['annualised_volatility']:.1%}",
             "Sharpe":       f"{m['sharpe_ratio']:.2f}",
             "Max drawdown": f"{m['max_drawdown']:.1%}",
         })
+    # The strategy that held up best — highest Sharpe — is tinted and badged so
+    # the winner is obvious without reading every cell.
+    _winner = max(
+        _BACKTEST_STRATEGIES,
+        key=lambda s: summary[selected]["strategies"][s]["sharpe_ratio"],
+    )
     _cols = ["Strategy", "Total return", "Volatility", "Sharpe", "Max drawdown"]
     # Plain-language hint shown under each metric header so the table is
     # readable without prior finance knowledge.
@@ -4170,17 +4191,39 @@ def render_backtesting() -> None:
         + "</th>"
         for i, c in enumerate(_cols)
     )
+    # Sign colours for the Total-return column (theme-aware for contrast).
+    _pos = "#16a34a" if is_light() else "#34d399"
+    _neg = "#dc2626" if is_light() else "#f87171"
+    _win_bg = "rgba(124,77,255,0.06)" if is_light() else "rgba(124,92,252,0.08)"
+    _win_pill = (
+        f'<span style="display:inline-block;margin-left:0.5rem;'
+        f'font-family:\'Space Grotesk\',sans-serif;font-size:0.58rem;font-weight:700;'
+        f'letter-spacing:0.05em;text-transform:uppercase;color:{t["accent_text"]};'
+        f'background:{t["accent_soft"]};border:1px solid {t["accent_border"]};'
+        f'border-radius:99px;padding:0.1rem 0.42rem;vertical-align:middle;">'
+        f'★ Best</span>'
+    )
     _body = ""
     for r in rows:
-        cells = "".join(
-            f'<td style="padding:0.55rem 0.85rem;'
-            f'text-align:{"left" if i == 0 else "right"};font-size:0.82rem;'
-            f'color:{t["text_primary"] if i == 0 else t["text_secondary"]};'
-            f'font-weight:{"600" if i == 0 else "400"};'
-            f'border-top:1px solid {t["border"]};white-space:nowrap;">{r[c]}</td>'
-            for i, c in enumerate(_cols)
-        )
-        _body += f"<tr>{cells}</tr>"
+        _is_win = r["strat"] == _winner
+        cells = ""
+        for i, c in enumerate(_cols):
+            _align = "left" if i == 0 else "right"
+            if i == 0:
+                _val = f'{r[c]}{_win_pill if _is_win else ""}'
+                _color, _weight = t["text_primary"], "700" if _is_win else "600"
+            elif c == "Total return":
+                _color = _pos if r["_ret"] >= 0 else _neg
+                _val, _weight = r[c], "600"
+            else:
+                _color, _val, _weight = t["text_secondary"], r[c], "400"
+            cells += (
+                f'<td style="padding:0.55rem 0.85rem;text-align:{_align};'
+                f'font-size:0.82rem;color:{_color};font-weight:{_weight};'
+                f'border-top:1px solid {t["border"]};white-space:nowrap;">{_val}</td>'
+            )
+        _row_style = f'background:{_win_bg};' if _is_win else ""
+        _body += f'<tr style="{_row_style}">{cells}</tr>'
     _head_bg = (
         "linear-gradient(135deg,#f8fafc 0%,#ede9fe 55%,#f1f4fa 100%)"
         if is_light() else
@@ -4240,16 +4283,13 @@ def render_backtesting() -> None:
                 f"best risk-adjusted result of the group, though every strategy "
                 f"posted a negative Sharpe ({_sh:.2f}) in this downturn."
             )
-    # Light, airy purple wash — no left accent bar and no icon, so the takeaway
-    # reads as a plain highlighted note rather than a heavy callout.
-    _tw_bg = "rgba(124,77,255,0.05)" if is_light() else "rgba(124,92,252,0.05)"
-    _tw_border = "rgba(124,77,255,0.18)" if is_light() else "rgba(124,92,252,0.18)"
-    st.markdown(
-        f'<div style="background:{_tw_bg};border:1px solid {_tw_border};'
-        f'border-radius:10px;padding:0.8rem 1rem;margin-top:1.25rem;'
-        f'font-size:0.88rem;line-height:1.55;color:{t["text_secondary"]};">'
-        f'{_takeaway}</div>',
-        unsafe_allow_html=True,
+    # Purple "verdict" note with a trophy icon — the takeaway for the results.
+    _bt_takeaway(
+        _takeaway,
+        "#7c5cfc",
+        '<path d="M5 3h8v3a4 4 0 0 1-8 0V3z"/><path d="M5 5H3v1a2 2 0 0 0 2 2"/>'
+        '<path d="M13 5h2v1a2 2 0 0 1-2 2"/><line x1="9" y1="10" x2="9" y2="13"/>'
+        '<path d="M6.5 15h5l-.5-2h-4l-.5 2z"/>',
     )
 
     st.markdown("---")
@@ -4258,79 +4298,77 @@ def render_backtesting() -> None:
     # Two donuts (HRP vs Markowitz) showing the average mix each strategy held
     # across the scenario's rebalances — this is *what* drove the results above.
     if detail is not None:
-        _section_header("2", "Why — what each strategy held")
+        _bt_section("Allocation", "What each strategy held")
         st.caption(
-            "Average allocation across the scenario's monthly rebalances — what "
-            "actually drove the results above. A more defensive mix tends to move "
-            "less, in both directions."
+            "Average allocation across the scenario's monthly rebalances, grouped "
+            "by asset class — what actually drove the results above. A more "
+            "defensive mix (more bonds and cash) tends to move less, in both "
+            "directions."
         )
-        from backend.optimizer.charts import plot_weights_donut
-        _alloc_cols = st.columns(len(_BACKTEST_STRATEGIES))
-        for _i, _strat in enumerate(_BACKTEST_STRATEGIES):
+        from backend.optimizer.charts import _CLUSTER_COLORS, _TICKER_CLUSTER
+
+        _CLASS_ORDER = ["Equity", "Alternatives", "Bonds", "Cash"]
+        # Aggregate each strategy's average per-ticker weights into asset classes.
+        _class_w: dict[str, dict[str, float]] = {}
+        for _strat in _BACKTEST_STRATEGIES:
             _log = detail["strategies"][_strat].get("rebalance_log", [])
-            if not _log:
-                continue
-            _avg: dict[str, float] = {}
-            for _snap in _log:
-                for _tk, _w in _snap["weights"].items():
-                    _avg[_tk] = _avg.get(_tk, 0.0) + _w
-            # Average over rebalances, drop dust (<0.5%), then renormalise to 100%.
-            _avg = {tk: v / len(_log) for tk, v in _avg.items() if v / len(_log) >= 0.005}
-            _tot = sum(_avg.values())
-            if _tot:
-                _avg = {tk: v / _tot for tk, v in _avg.items()}
-            with _alloc_cols[_i]:
-                st.markdown(
-                    f'<div style="text-align:center;font-family:\'Space Grotesk\','
-                    f'sans-serif;font-weight:600;font-size:0.95rem;'
-                    f'color:{t["text_primary"]};">'
-                    f'{_STRATEGY_LABELS.get(_strat, _strat)}</div>',
-                    unsafe_allow_html=True,
-                )
-                _fig_alloc = plot_weights_donut(_avg)
-                _fig_alloc = apply_plotly_theme(_fig_alloc)
-                # Keep every ticker label + % inside its slice (no leader lines).
-                _fig_alloc.update_traces(textposition="inside",
-                                         insidetextorientation="horizontal",
-                                         textfont_size=10)
-                # Mark the US proxy slices (SPY/AGG/BIL) with a diagonal hatch so
-                # they stand out from the primary EU ETFs *without* breaking the
-                # by-asset-class colour legend below: they keep their category
-                # colour (equity/bonds/cash) and just get a striped overlay. The
-                # alert below explains why.
-                _tk_order = [str(tk) for tk in _fig_alloc.data[0].customdata]
-                _fig_alloc.data[0].marker.pattern = dict(
-                    shape=["/" if tk in _PROXY_TICKERS else "" for tk in _tk_order],
-                    # "overlay" draws the hatch *on top* of the slice colour;
-                    # without it Plotly's default "replace" mode swaps the colour
-                    # out for the pattern background, so cash (blue) etc. went dark.
-                    fillmode="overlay",
-                    # Light, sparse stripes: the slice keeps its asset-class colour
-                    # (e.g. cash = blue) clearly visible, the hatch just flags "this
-                    # is a US proxy". A heavy/dark pattern muddied the colour.
-                    fgcolor="#0d1220",  # = slice border, so stripes read as thin cuts
-                    size=9,
-                    solidity=0.14,
-                )
-                _fig_alloc.update_layout(height=340, margin=dict(l=10, r=10, t=12, b=38))
-                st.plotly_chart(_fig_alloc, use_container_width=True,
-                                config={"displaylogo": False, "responsive": False})
+            _agg: dict[str, float] = dict.fromkeys(_CLASS_ORDER, 0.0)
+            if _log:
+                _avg: dict[str, float] = {}
+                for _snap in _log:
+                    for _tk, _w in _snap["weights"].items():
+                        _avg[_tk] = _avg.get(_tk, 0.0) + _w
+                _tot = sum(_avg.values()) or 1.0
+                for _tk, _w in _avg.items():
+                    _cls = _TICKER_CLUSTER.get(_tk, "Alternatives")
+                    _agg[_cls] = _agg.get(_cls, 0.0) + _w / _tot
+            _class_w[_strat] = _agg
+
+        # Two horizontal 100%-stacked bars (HRP on top, Markowitz below): one
+        # coloured segment per asset class, so the two mixes are directly
+        # comparable at a glance instead of two separate pies.
+        _ystrats = list(_BACKTEST_STRATEGIES)[::-1]  # render HRP on top
+        _ylabels = [_STRATEGY_LABELS.get(s, s) for s in _ystrats]
+        _alloc_fig = go.Figure()
+        for _cls in _CLASS_ORDER:
+            _xs = [_class_w[s].get(_cls, 0.0) * 100 for s in _ystrats]
+            _alloc_fig.add_trace(go.Bar(
+                y=_ylabels, x=_xs, name=_cls, orientation="h",
+                marker_color=_CLUSTER_COLORS[_cls],
+                text=[f"{v:.0f}%" if v >= 7 else "" for v in _xs],
+                textposition="inside", insidetextanchor="middle",
+                textfont=dict(size=12, color="#ffffff"),
+                hovertemplate="%{y} · " + _cls + ": %{x:.1f}%<extra></extra>",
+            ))
+        _alloc_fig.update_layout(
+            barmode="stack", height=210, bargap=0.45,
+            margin=dict(l=8, r=8, t=42, b=20),
+            legend=dict(orientation="h", yanchor="bottom", y=1.02,
+                        xanchor="left", x=0, title_text=""),
+            xaxis=dict(range=[0, 100], ticksuffix="%", showgrid=False,
+                       zeroline=False),
+            yaxis=dict(showgrid=False),
+        )
+        _alloc_fig = apply_plotly_theme(_alloc_fig)
+        _alloc_fig.update_layout(
+            yaxis=dict(tickfont=dict(
+                family="Space Grotesk", size=14, color=t["text_primary"])),
+        )
+        st.plotly_chart(_alloc_fig, use_container_width=True,
+                        config={"displaylogo": False})
 
         st.markdown(
-            f'<div style="font-size:0.84rem;line-height:1.55;'
-            f'color:{t["text_secondary"]};margin-top:0.6rem;">'
-            f'<strong style="color:{t["text_primary"]};">About the striped '
-            f'slices (SPY, AGG, BIL):</strong> these are US-listed stand-ins for '
-            f'CSPX.L, AGGH.MI and XEON.MI. The backtest uses them for the early '
-            f'years because those European ETFs have no price history back to 2008 — '
-            f'the real ETFs take over once available. They track the same exposures '
-            f'(US equity, aggregate bonds, cash).</div>',
+            f'<div style="font-size:0.82rem;line-height:1.55;'
+            f'color:{t["text_secondary"]};margin-top:0.2rem;">'
+            f'For windows before the EU UCITS ETFs existed, the backtest stands '
+            f'them in with US-listed equivalents (CSPX.L→SPY, AGGH.MI→AGG, '
+            f'XEON.MI→BIL) — same exposures, real prices.</div>',
             unsafe_allow_html=True,
         )
 
         _v_spacer(0.75)
 
-        with st.expander("💡 Why these mixes?"):
+        with st.expander("How HRP and Markowitz pick their mix"):
             st.markdown(
                 f'<div style="font-size:0.88rem;line-height:1.6;'
                 f'color:{t["text_secondary"]};">'
@@ -4350,7 +4388,7 @@ def render_backtesting() -> None:
 
     # ── Performance charts ───────────────────────────────────────────────────
     if detail is not None:
-        _section_header("3", "How it played out over time")
+        _bt_section("Over time", "How it played out")
         st.caption(
             "Both panels share the same timeline. The top shows what €10,000 would "
             "have been worth; the bottom shows how far each strategy had fallen from "
@@ -4458,14 +4496,12 @@ def render_backtesting() -> None:
             f"{_perf[s]['final_ret']:+.1%}."
             for s in _BACKTEST_STRATEGIES
         )
-        _tw3_bg = "rgba(124,77,255,0.05)" if is_light() else "rgba(124,92,252,0.05)"
-        _tw3_border = "rgba(124,77,255,0.18)" if is_light() else "rgba(124,92,252,0.18)"
-        st.markdown(
-            f'<div style="background:{_tw3_bg};border:1px solid {_tw3_border};'
-            f'border-radius:10px;padding:0.8rem 1rem;margin-top:0.6rem;'
-            f'font-size:0.88rem;line-height:1.55;color:{t["text_secondary"]};">'
-            f'{_ride} {_ends}</div>',
-            unsafe_allow_html=True,
+        # Teal "trajectory" note with a trend icon — distinct from the purple
+        # results verdict above so the two takeaways don't blur together.
+        _bt_takeaway(
+            f"{_ride} {_ends}",
+            "#0dcfb0",
+            '<polyline points="2,12 6,8 9,11 16,4"/><polyline points="11,4 16,4 16,9"/>',
         )
 
     st.caption(
@@ -4504,7 +4540,11 @@ def render_compare() -> None:
         return
 
     thm = get_theme_tokens()
-    page_header("Compare Markowitz", "Deep-dive analysis · HRP vs Markowitz", icon="🆚")
+    page_header(
+        "Compare Markowitz",
+        "Deep-dive analysis · HRP vs Markowitz",
+        eyebrow=_PAGE_EYEBROW["Compare Markowitz"],
+    )
 
     _badge = (
         f"width:2.4rem;height:2.4rem;flex-shrink:0;border-radius:50%;"
@@ -4594,9 +4634,13 @@ def render_compare() -> None:
     # figures), so a stale session upgrades itself without a manual restart.
     portfolio = st.session_state.get("portfolio_data", {})
     _cached_label = st.session_state.get("portfolio_profile", "")
+    _MV_EXPECTED = (
+        "mv_risk_contributions", "mv_expected_volatility",
+        "mv_sharpe_ratio", "mv_max_drawdown", "correlation",
+    )
     _stale_mv = (
         portfolio.get("source") == "live"
-        and "mv_risk_contributions" not in portfolio
+        and any(_k not in portfolio for _k in _MV_EXPECTED)
         and not st.session_state.get("_compare_mv_retry")
     )
     if not portfolio or _cached_label != profile_label or _stale_mv:
@@ -4609,17 +4653,18 @@ def render_compare() -> None:
             st.session_state["portfolio_data"] = portfolio
             st.session_state["portfolio_profile"] = profile_label
             st.session_state["recommendation_id"] = portfolio["recommendation_id"]
-    hrp_weights: dict[str, float] = portfolio["weights"]
     hrp_rc: dict[str, float] = portfolio["risk_contributions"]
-    _MAX_DD_FALLBACK = {"CONSERVATIVE": -0.112, "MODERATE": -0.187, "AGGRESSIVE": -0.312}
-    hrp_vol: float = portfolio.get("expected_volatility") or 0.094
-    hrp_ret: float = portfolio.get("expected_return") or 0.068
-    hrp_max_dd: float = portfolio.get("max_drawdown") or _MAX_DD_FALLBACK.get(profile_label, -0.187)
+    # Offline fallbacks derive from the same backtest-sourced payload everything
+    # else uses, so a degraded (no-live) state stays consistent with the app.
+    _fallback_rm = get_mock_payload(profile_key).risk_metrics
+    hrp_vol: float = portfolio.get("expected_volatility") or _fallback_rm.annual_volatility
+    hrp_max_dd: float = (
+        portfolio.get("max_drawdown") or _fallback_rm.max_drawdown_historical
+    )
 
+    # Mock MV weights are kept only as the offline fallback for the risk-contribution
+    # chart below; the scorecard and section 2 use the real Markowitz figures.
     mv_weights: dict[str, float] = _MOCK_MV_WEIGHTS
-    mv_vol: float = hrp_vol * 0.92
-    mv_ret: float = hrp_ret * 0.78
-    mv_max_dd: float = hrp_max_dd * 0.85
 
     _CLUSTER_VOL: dict[str, float] = {
         "CSPX.L": 0.162, "EFA": 0.162,
@@ -4642,169 +4687,200 @@ def render_compare() -> None:
     st.markdown(f"**Active profile: {profile_label}**")
     st.markdown("---")
 
-    # ── 1. Radar chart ────────────────────────────────────────────────────────
-    _section_header("1", "Portfolio Quality Comparison")
+    # ── 1. Key metrics scorecard ──────────────────────────────────────────────
+    _section_header("1", "Key Metrics")
     st.markdown(
         f"<p style='color:{thm['text_secondary']};font-size:0.82rem;"
         "line-height:1.55;margin-bottom:0.5rem;'>"
-        "This chart summarizes the trade-offs between the recommended HRP portfolio and the "
-        "classical Markowitz benchmark. Each dimension is normalized from 0 to 1, where higher "
-        "values indicate a stronger result. The goal is to help users understand whether the HRP "
-        "allocation is more diversified, more defensive, or more robust than the traditional "
-        "mean-variance alternative."
+        "A side-by-side scorecard on real numbers. Markowitz optimises the in-sample "
+        "figures directly, while HRP trades a little of that efficiency for a more robust, "
+        "less concentrated portfolio."
         "</p>",
         unsafe_allow_html=True,
     )
 
-    def _hhi(w: dict) -> float:
-        return sum(v ** 2 for v in w.values())
+    # Real metrics for both methods. Markowitz scalars come from the live optimizer;
+    # HRP has no Sharpe/return by design. Concentration metrics use the same risk
+    # contributions shown in section 2 (real when live, offline estimate otherwise).
+    def _eff_bets(rc: dict) -> float:
+        _ss = sum(v * v for v in rc.values())
+        return (1.0 / _ss) if _ss > 0 else 0.0
 
-    def _ucits_cov(w: dict) -> float:
-        return sum(v for t, v in w.items() if t in _UCITS_TICKERS)
+    def _top_risk(rc: dict) -> float:
+        return max(rc.values()) * 100 if rc else 0.0
 
-    hrp_scores = [
-        max(0.0, 1.0 - (hrp_vol - 0.03) / 0.17),
-        1.0 - _hhi(hrp_weights),
-        _ucits_cov(hrp_weights),
-        max(0.0, 1.0 + hrp_max_dd),
-        min(1.0, hrp_ret / 0.12),
-    ]
-    mv_scores = [
-        max(0.0, 1.0 - (mv_vol - 0.03) / 0.17),
-        1.0 - _hhi(mv_weights),
-        _ucits_cov(mv_weights),
-        max(0.0, 1.0 + mv_max_dd),
-        min(1.0, mv_ret / 0.12),
+    hrp_bets, mv_bets = _eff_bets(hrp_rc), _eff_bets(mv_rc)
+    hrp_top, mv_top = _top_risk(hrp_rc), _top_risk(mv_rc)
+    mv_vol = portfolio.get("mv_expected_volatility")
+    mv_dd = portfolio.get("mv_max_drawdown")
+    mv_sharpe = portfolio.get("mv_sharpe_ratio")
+
+    def _num(v, fmt):
+        return fmt.format(v) if isinstance(v, (int, float)) else "—"
+
+    # (label, sublabel, hrp_text, mv_text, winner) — winner in {"hrp", "mv", None}.
+    _rows = [
+        ("Annual volatility", "lower is better",
+         _num(hrp_vol, "{:.1%}"), _num(mv_vol, "{:.1%}"),
+         ("hrp" if hrp_vol < mv_vol else "mv") if isinstance(mv_vol, (int, float)) else None),
+        ("Max drawdown", "less negative is better",
+         _num(hrp_max_dd, "{:.1%}"), _num(mv_dd, "{:.1%}"),
+         ("hrp" if hrp_max_dd > mv_dd else "mv") if isinstance(mv_dd, (int, float)) else None),
+        ("Largest single-asset risk", "lower = less concentrated",
+         f"{hrp_top:.0f}%", f"{mv_top:.0f}%",
+         "hrp" if hrp_top < mv_top else "mv"),
+        ("Diversification score", "higher = more diversified",
+         f"{hrp_bets:.1f}", f"{mv_bets:.1f}",
+         "hrp" if hrp_bets > mv_bets else "mv"),
+        ("Sharpe ratio", "return per unit of risk",
+         "—", _num(mv_sharpe, "{:.2f}"), None),
     ]
 
-    categories = [
-        "Low Risk",
-        "Diversification",
-        "UCITS Coverage",
-        "Drawdown Protection",
-        "Return Potential",
-    ]
+    # Value cell: the better value is circled in its method's colour (purple for
+    # HRP, red for Markowitz); the loser is muted and N/A is dimmed.
+    def _cell(text, side, winner):
+        if text == "—":
+            return f'<span style="color:{thm["text_muted"]};">—</span>'
+        if winner == side:
+            _col = "#7c5cfc" if side == "hrp" else "#f87171"
+            return (f'<span style="border:1.5px solid {_col};border-radius:999px;'
+                    f'padding:2px 11px;color:{_col};">{text}</span>')
+        if winner is None:
+            return f'<span style="color:{thm["text_primary"]};">{text}</span>'
+        return f'<span style="color:{thm["text_secondary"]};">{text}</span>'
 
-    # Stronger fills on the light surface — 15% opacity washes out to almost
-    # nothing on white, so the two shapes are hard to tell apart.
-    _hrp_fill = "rgba(124,92,252,0.30)" if is_light() else "rgba(124,92,252,0.15)"
-    _mv_fill = "rgba(248,113,113,0.28)" if is_light() else "rgba(248,113,113,0.15)"
-    fig_radar = go.Figure()
-    fig_radar.add_trace(go.Scatterpolar(
-        r=hrp_scores + [hrp_scores[0]],
-        theta=categories + [categories[0]],
-        fill="toself",
-        name="HRP (default)",
-        line=dict(color="#7c5cfc", width=2.5),
-        fillcolor=_hrp_fill,
-    ))
-    fig_radar.add_trace(go.Scatterpolar(
-        r=mv_scores + [mv_scores[0]],
-        theta=categories + [categories[0]],
-        fill="toself",
-        name="Markowitz MV",
-        line=dict(color="#f87171", width=2.5),
-        fillcolor=_mv_fill,
-    ))
-    fig_radar.update_layout(
-        polar=dict(
-            bgcolor="rgba(0,0,0,0)",
-            radialaxis=dict(
-                visible=True,
-                range=[0, 1],
-                tickvals=[0.5, 1.0],
-                color="#475569",
-                gridcolor="#1e2640",
-                tickfont=dict(size=8, color="#475569"),
-            ),
-            angularaxis=dict(color="#94a3b8", gridcolor="#1e2640"),
-        ),
-        legend=dict(orientation="h", yanchor="bottom", y=1.06, xanchor="center", x=0.5),
-        height=440,
-        margin=dict(l=40, r=40, t=60, b=40),
-    )
-    fig_radar = apply_plotly_theme(fig_radar)
-    _grid = "#cbd5e1" if is_light() else "#1e2640"
-    fig_radar.update_layout(
-        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-        polar=dict(
-            radialaxis=dict(gridcolor=_grid),
-            angularaxis=dict(gridcolor=_grid),
-        ),
-        modebar_remove=[
-            "select2d", "lasso2d", "autoScale2d",
-            "hoverClosestCartesian", "hoverCompareCartesian",
-            "toggleSpikelines", "zoomIn2d", "zoomOut2d",
-        ],
-        modebar_add=["resetScale2d"],
-        dragmode="pan",
-    )
-    _indicators = [
-        ("#34d399", _ICON_BARS, "Diversification"),
-        ("#94a3b8", _ICON_SHIELD, "Low Risk (Volatility)"),
-        ("#a78bfa", _ICON_TREND, "Return Potential"),
-        ("#f87171", _ICON_SHIELD, "Drawdown Protection"),
-        ("#60a5fa", _ICON_GLOBE, "UCITS Coverage"),
-    ]
-    _ind_rows = "".join(
-        f'<div style="display:flex;align-items:center;gap:0.55rem;'
-        f'padding:0.5rem 0;border-top:1px solid {thm["border"]};">'
-        f'<span style="width:1.7rem;height:1.7rem;flex-shrink:0;border-radius:7px;'
-        f'display:inline-flex;align-items:center;justify-content:center;'
-        f'background:{color}1a;border:1px solid {color}40;color:{color};">{icon}</span>'
-        f'<span style="flex:1;font-size:0.8rem;color:{thm["text_secondary"]};">{label}</span>'
-        f'<span style="font-size:0.72rem;font-weight:600;color:{thm["text_muted"]};">Higher</span>'
+    _hdr = (
+        f'<div style="display:flex;align-items:center;padding:0 0.4rem 0.6rem;'
+        f'border-bottom:1px solid {thm["border"]};margin-bottom:0.1rem;">'
+        f'<div style="flex:1.7;font-size:0.72rem;font-weight:600;letter-spacing:0.08em;'
+        f'text-transform:uppercase;color:{thm["text_muted"]};">Metric</div>'
+        f'<div style="flex:0.9;font-size:0.72rem;font-weight:600;letter-spacing:0.08em;'
+        f'text-transform:uppercase;color:#7c5cfc;text-align:right;">HRP</div>'
+        f'<div style="flex:0.9;font-size:0.72rem;font-weight:600;letter-spacing:0.08em;'
+        f'text-transform:uppercase;color:#f87171;text-align:right;">Markowitz</div>'
         f'</div>'
-        for color, icon, label in _indicators
+    )
+    _val = ('flex:0.9;text-align:right;font-family:\'Space Grotesk\',sans-serif;'
+            'font-size:0.95rem;font-weight:600;')
+    _body = "".join(
+        f'<div style="display:flex;align-items:center;padding:0.62rem 0.4rem;'
+        f'border-bottom:1px solid {thm["border_soft"]};">'
+        f'<div style="flex:1.7;min-width:0;">'
+        f'<div style="font-size:0.9rem;font-weight:600;color:{thm["text_primary"]};'
+        f'line-height:1.25;">{_lab}</div>'
+        f'<div style="font-size:0.72rem;color:{thm["text_muted"]};">{_sub}</div></div>'
+        f'<div style="{_val}">{_cell(_h, "hrp", _w)}</div>'
+        f'<div style="{_val}">{_cell(_m, "mv", _w)}</div>'
+        f'</div>'
+        for _lab, _sub, _h, _m, _w in _rows
+    )
+    # Verdict cards beside the table: keyword chips for fast scanning plus one
+    # data-driven line each. Readable, no fading captions.
+    if mv_rc_is_live and isinstance(mv_sharpe, (int, float)):
+        _hrp_line = (f"Risk across <b>{hrp_bets:.1f}</b> effective bets; "
+                     f"adapts to your profile.")
+        _mv_line = (f"<b>{mv_sharpe:.2f}</b> Sharpe, lower volatility — but "
+                    f"<b>{mv_top:.0f}%</b> of risk in one asset.")
+    else:
+        _hrp_line = "Risk spread across more positions; adapts to your profile."
+        _mv_line = "More efficient in-sample, but concentrated in a few positions."
+
+    def _chips(words, bg, col):
+        return "".join(
+            f'<span style="display:inline-block;font-size:0.66rem;font-weight:600;'
+            f'padding:2px 7px;border-radius:999px;margin:0 0.25rem 0.3rem 0;'
+            f'background:{bg};color:{col};">{w}</span>'
+            for w in words
+        )
+
+    _hrp_chips = _chips(("Robust", "Diversified", "Adapts to you"),
+                        "rgba(124,92,252,0.16)", "#a78bfa")
+    _mv_chips = _chips(("Efficient", "Higher Sharpe", "Concentrated"),
+                       "rgba(248,113,113,0.16)", "#f87171")
+
+    # One-line, data-driven verdict above the scorecard so the reader gets the
+    # answer before decoding the table — mirrors the takeaway banner in §2.
+    # Wins are tallied from the same _rows the table renders; Sharpe (a draw by
+    # design, HRP reports none) is excluded from the head-to-head count and
+    # called out separately.
+    _hrp_wins = sum(1 for _r in _rows if _r[4] == "hrp")
+    _mv_wins = sum(1 for _r in _rows if _r[4] == "mv")
+    _comparable = _hrp_wins + _mv_wins
+    _sharpe_txt = _num(mv_sharpe, "{:.2f}")
+    if _comparable == 0:
+        _verdict = (
+            "Live figures are still loading — the head-to-head comparison will "
+            "appear once market data is available."
+        )
+    elif _hrp_wins > _mv_wins:
+        _verdict = (
+            f"<b>HRP wins {_hrp_wins} of {_comparable}</b> head-to-head metrics — "
+            f"lower risk and better diversification. Markowitz's only edge is its "
+            f"in-sample Sharpe ({_sharpe_txt}), which HRP does not chase by design."
+        )
+    elif _mv_wins > _hrp_wins:
+        _verdict = (
+            f"<b>Markowitz wins {_mv_wins} of {_comparable}</b> head-to-head metrics "
+            f"here, including a higher Sharpe ({_sharpe_txt}) — but at the cost of a "
+            f"more concentrated portfolio."
+        )
+    else:
+        _verdict = (
+            f"HRP and Markowitz each take {_hrp_wins} of {_comparable} comparable "
+            f"metrics; Markowitz adds a higher in-sample Sharpe ({_sharpe_txt})."
+        )
+
+    st.markdown(
+        f"<div style='display:flex;gap:0.55rem;align-items:flex-start;"
+        f"background:{thm['accent_soft']};border:1px solid {thm['accent_border']};"
+        f"border-radius:12px;padding:0.7rem 0.9rem;margin-bottom:0.9rem;'>"
+        f"<span style='color:{thm['accent_text']};font-size:1.1rem;line-height:1.3;"
+        f"flex-shrink:0;'>&#9679;</span>"
+        f"<span style='color:{thm['text_primary']};font-size:0.9rem;"
+        f"line-height:1.5;'>{_verdict}</span>"
+        "</div>",
+        unsafe_allow_html=True,
     )
 
-    _col_chart, _col_ind = st.columns(
-        [2, 1], gap="medium", vertical_alignment="center"
-    )
-    with _col_chart:
-        st.plotly_chart(
-            fig_radar, use_container_width=True, config={"displaylogo": False}
-        )
-    with _col_ind:
-        _ind_head_bg = (
-            "linear-gradient(135deg,#f8fafc 0%,#ede9fe 55%,#f1f4fa 100%)"
-            if is_light() else
-            "linear-gradient(135deg,#0f172a 0%,#1e1b4b 55%,#0d1220 100%)"
-        )
+    _col_tbl, _col_sum = st.columns([1.8, 1], gap="medium", vertical_alignment="center")
+    with _col_tbl:
         st.markdown(
             f'<div style="background:{thm["bg_card"]};border:1px solid {thm["border"]};'
-            f'border-radius:14px;overflow:hidden;box-shadow:{thm["shadow"]};">'
-            f'<div style="display:flex;align-items:center;gap:0.65rem;'
-            f'padding:0.85rem 1.05rem;background:{_ind_head_bg};'
-            f'border-bottom:1px solid {thm["border"]};">'
-            f'<span style="font-family:\'Space Grotesk\',sans-serif;'
-            f'font-size:0.78rem;font-weight:700;color:{thm["accent_text"]};'
-            f'background:rgba(124,92,252,0.18);'
-            f'border:1px solid rgba(124,92,252,0.3);border-radius:6px;'
-            f'min-width:1.85rem;height:1.85rem;display:inline-flex;'
-            f'align-items:center;justify-content:center;flex-shrink:0;">i</span>'
-            f'<span style="font-family:\'Space Grotesk\',sans-serif;'
-            f'font-size:0.92rem;font-weight:600;color:{thm["text_primary"]};">Indicators</span>'
-            f'</div>'
-            f'<div style="padding:0.9rem 1.05rem 1rem;">'
-            f'<div style="display:flex;align-items:center;'
-            f'justify-content:space-between;font-family:\'Space Grotesk\',sans-serif;'
-            f'font-size:0.62rem;letter-spacing:0.14em;text-transform:uppercase;'
-            f'color:{thm["text_muted"]};font-weight:600;margin-bottom:0.2rem;">'
-            f'<span>Indicator</span><span>Better</span></div>'
-            f'{_ind_rows}'
-            f'<div style="font-size:0.68rem;color:{thm["text_muted"]};margin-top:0.6rem;'
-            f'line-height:1.45;">Scores normalised to [0, 1]; 1 = best.</div>'
-            f'</div></div>',
+            f'border-radius:12px;padding:0.9rem 1rem;box-shadow:{thm["shadow"]};">'
+            + _hdr + _body + '</div>',
+            unsafe_allow_html=True,
+        )
+    with _col_sum:
+        st.markdown(
+            f'<div style="background:{thm["bg_card"]};border:1px solid {thm["border"]};'
+            f'border-left:3px solid #7c5cfc;border-radius:10px;padding:0.7rem 0.85rem;'
+            f'margin-bottom:0.6rem;">'
+            f'<div style="font-weight:600;color:#7c5cfc;font-size:0.9rem;'
+            f'margin-bottom:0.4rem;">HRP</div>'
+            f'<div style="margin-bottom:0.4rem;">{_hrp_chips}</div>'
+            f'<div style="color:{thm["text_secondary"]};font-size:0.8rem;'
+            f'line-height:1.45;">{_hrp_line}</div></div>'
+            f'<div style="background:{thm["bg_card"]};border:1px solid {thm["border"]};'
+            f'border-left:3px solid #f87171;border-radius:10px;padding:0.7rem 0.85rem;">'
+            f'<div style="font-weight:600;color:#f87171;font-size:0.9rem;'
+            f'margin-bottom:0.4rem;">Markowitz</div>'
+            f'<div style="margin-bottom:0.4rem;">{_mv_chips}</div>'
+            f'<div style="color:{thm["text_secondary"]};font-size:0.8rem;'
+            f'line-height:1.45;">{_mv_line}</div></div>',
             unsafe_allow_html=True,
         )
 
-    st.caption(
-        "All axes normalised to [0, 1]. "
-        "Low Risk = 1 − σ (normalised). "
-        "Diversification = 1 − HHI (Herfindahl index). "
-        "Drawdown Protection = 1 − |max DD|. "
-        "Figures shown are illustrative."
+    _sc_extra = (
+        "" if mv_rc_is_live
+        else " · figures are an illustrative offline estimate"
+    )
+    st.markdown(
+        f'<div style="margin:0.6rem 0 0;font-size:0.78rem;color:{thm["text_muted"]};'
+        f'line-height:1.5;">The circled value wins each metric (purple = HRP, '
+        f'red = Markowitz). HRP shows no Sharpe — '
+        f"by design it doesn't estimate returns, which keeps it from over-concentrating "
+        f'like Markowitz{_sc_extra}.</div>',
+        unsafe_allow_html=True,
     )
 
     # ── 2. Risk contributions ─────────────────────────────────────────────────
@@ -4949,7 +5025,7 @@ def render_compare() -> None:
         "HRP and Markowitz build their portfolios from this same correlation matrix — but "
         "they use it in opposite ways. Here the assets are ordered the way HRP groups them, "
         "by how they actually move (purple = together, teal = apart), so its real groups sit "
-        "side by side — which can differ from their asset-class labels."
+        "side by side."
         "</p>",
         unsafe_allow_html=True,
     )
@@ -5030,16 +5106,62 @@ def render_compare() -> None:
             for b in range(len(_TICKERS_HM)) if a != b]
     _has_diversifiers = (min(_off) <= -0.10) if _off else False
 
+    # Data-driven "surprise": which assets HRP groups against their asset-class
+    # label (e.g. real estate moving with equities, gold standing on its own).
+    _NICE_HM = {
+        "CSPX.L": "US equity", "EFA": "intl equity", "GLD": "gold",
+        "VNQ": "real estate", "AGGH.MI": "euro bonds", "TLT": "long Treasuries",
+        "TIP": "inflation bonds", "XEON.MI": "cash",
+    }
+    _CLASS_PLAIN = {"Equity": "equities", "Alternatives": "real assets",
+                    "Bonds": "bonds", "Cash": "cash"}
+    _insight = ""
+    _hrp_clusters = _corr_live.get("hrp_clusters") if _corr_live else None
+    if _hrp_clusters:
+        from collections import Counter
+
+        _byc: dict[int, list[str]] = {}
+        for _t, _cid in _hrp_clusters.items():
+            _byc.setdefault(_cid, []).append(_t)
+        _cls_size: dict[str, int] = {}
+        for _t in _hrp_clusters:
+            _cc = _HRP_TICKER_CLUSTER.get(_t, "Cash")
+            _cls_size[_cc] = _cls_size.get(_cc, 0) + 1
+        _finds: list[str] = []
+        for _members in _byc.values():
+            if len(_members) >= 2:
+                _dom = Counter(
+                    _HRP_TICKER_CLUSTER.get(t, "Cash") for t in _members
+                ).most_common(1)[0][0]
+                for t in _members:
+                    if _HRP_TICKER_CLUSTER.get(t, "Cash") != _dom:
+                        _finds.append(
+                            f"{_NICE_HM.get(t, t)} ({t}) moves with "
+                            f"{_CLASS_PLAIN.get(_dom, 'the rest')}"
+                        )
+            elif _members:
+                t = _members[0]
+                if _cls_size.get(_HRP_TICKER_CLUSTER.get(t, "Cash"), 0) > 1:
+                    _finds.append(f"{_NICE_HM.get(t, t)} ({t}) stands on its own")
+        if _finds:
+            _insight = "HRP groups by behaviour, not labels — " + "; ".join(_finds[:2]) + "."
+
+    # Colour scale: full diverging only when there are negatives to show;
+    # otherwise clip to [0, 1] so the legend matches what is on screen.
+    _neutral = "#eef1f6" if is_light() else "#0e1626"
+    if _has_diversifiers:
+        _cscale = [[0.0, "#0dcfb0"], [0.5, _neutral], [1.0, "#7c5cfc"]]
+        _zmin, _ticks = -1, [-1, -0.5, 0, 0.5, 1]
+    else:
+        _cscale = [[0.0, _neutral], [1.0, "#7c5cfc"]]
+        _zmin, _ticks = 0, [0, 0.25, 0.5, 0.75, 1]
+
     fig_hm = go.Figure(go.Heatmap(
         z=_CORR.tolist(),
         x=_TICKERS_HM,
         y=_TICKERS_HM,
-        colorscale=[
-            [0.00, "#0dcfb0"],   # negative correlation — assets hedge (diversifying)
-            [0.50, "#eef1f6" if is_light() else "#0e1626"],  # ~zero
-            [1.00, "#7c5cfc"],   # positive correlation — assets move together
-        ],
-        zmin=-1,
+        colorscale=_cscale,
+        zmin=_zmin,
         zmax=1,
         text=[[f"{v:.2f}" for v in row] for row in _CORR],
         texttemplate="%{text}",
@@ -5047,7 +5169,7 @@ def render_compare() -> None:
         hovertemplate="%{y} / %{x}: %{z:.2f}<extra></extra>",
         colorbar=dict(
             title="ρ",
-            tickvals=[-1, -0.5, 0, 0.5, 1],
+            tickvals=_ticks,
             thickness=12,
             len=0.85,
         ),
@@ -5077,7 +5199,17 @@ def render_compare() -> None:
         modebar_add=["resetScale2d"],
         dragmode="pan",
     )
+    # Keep cells square so the matrix reads as a matrix, not a stretched grid.
+    fig_hm.update_xaxes(constrain="domain")
+    fig_hm.update_yaxes(scaleanchor="x", scaleratio=1, constrain="domain")
     st.plotly_chart(fig_hm, use_container_width=True, config={"displaylogo": False})
+
+    if _insight:
+        st.markdown(
+            f"<p style='color:{thm['text_primary']};font-size:0.84rem;font-weight:500;"
+            f"line-height:1.5;margin:0.5rem 0 0.4rem;'>{_insight}</p>",
+            unsafe_allow_html=True,
+        )
 
     if _hot_s >= 0 and _hot_avg > 0:
         st.markdown(
@@ -5136,14 +5268,13 @@ def render_compare() -> None:
         else " Figures shown are a stylised illustration (live prices unavailable)."
     )
     _legend = (
-        "Teal = assets that hedge each other (diversifying); purple = move together. "
+        "Purple = move together, teal = move apart. "
         if _has_diversifiers
-        else "Purple = assets that move together; teal would mark diversifiers, but "
-             "there are none in the current data. "
+        else "Purple = move together (darker = weaker correlation). "
     )
     st.caption(
-        _legend + "Assets are ordered by HRP's own grouping; the highlighted block is "
-        "its tightest cluster, where Markowitz over-concentrates." + _hm_note
+        _legend + "Ordered by HRP's grouping; the highlighted block is its tightest "
+        "cluster, where Markowitz over-concentrates." + _hm_note
     )
 
 

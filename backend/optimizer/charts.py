@@ -101,11 +101,22 @@ def plot_weights_donut(weights: dict[str, float]) -> go.Figure:
         rotation=0,
         marker=dict(colors=colors, line=dict(color="#0d1220", width=2.5)),
         texttemplate="%{text}<br>%{percent}",
-        # "auto" keeps labels inside roomy slices but pushes them outside the
-        # thin ones, so every percentage stays visible instead of being clipped.
+        # "auto" keeps the ticker+percentage inside whenever the slice is wide
+        # enough and only pushes the label outside for the very thin slices
+        # (e.g. the sub-1% positions in a conservative profile), where nothing
+        # would fit inside. `automargin` then shrinks the ring so those outside
+        # labels are never clipped at the figure edge.
         textposition="auto",
+        automargin=True,
         insidetextorientation="horizontal",
-        textfont=dict(size=12, color="#ffffff", family="Space Grotesk, sans-serif"),
+        # A slightly smaller inside font lets the ~6-7% slices (e.g. AGGH.MI in
+        # an aggressive profile) keep their label inside the ring; only the
+        # sub-~3% slices of a conservative profile still get pushed outside.
+        textfont=dict(size=11, color="#ffffff", family="Space Grotesk, sans-serif"),
+        # Outside labels (thin slices) render in a smaller, neutral colour so
+        # they read clearly off the dark page and take less room, reducing the
+        # chance of two adjacent outside labels touching.
+        outsidetextfont=dict(size=10, color="#cbd5e1", family="Space Grotesk, sans-serif"),
         hovertemplate="<b>%{label}</b> (%{customdata})<br>Weight: %{percent}<extra></extra>",
     ))
 
@@ -134,7 +145,10 @@ def plot_weights_donut(weights: dict[str, float]) -> go.Figure:
             ),
             dict(
                 text=cluster_legend,
-                x=0.5, y=-0.04,
+                # Sit the legend well clear of the ring: thin-slice outside
+                # labels can reach the bottom of the donut, so the legend is
+                # pushed well below them to avoid touching at any viewport width.
+                x=0.5, y=-0.30,
                 xanchor="center", yanchor="top",
                 showarrow=False,
                 font=dict(size=11),

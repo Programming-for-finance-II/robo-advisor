@@ -313,6 +313,35 @@ def _apply_box_constraints(
 # ---------------------------------------------------------------------------
 # Main Entry Point
 # ---------------------------------------------------------------------------
+def _augment_cluster_map_with_fallbacks(cluster_map: dict[str, str]) -> dict[str, str]:
+    """Return ``cluster_map`` extended so fallback tickers inherit their primary's
+    cluster.
+
+    The optimiser receives a ``cluster_map`` keyed by *primary* tickers
+    (CSPX.L, XEON.MI, AGGH.MI …). But price columns can arrive under a
+    *fallback* label whenever the primary lacks data — e.g. BIL for XEON.MI,
+    SPY for CSPX.L, AGG for AGGH.MI in pre-2010 backtest windows where the EU
+    UCITS ETFs did not yet exist. When that happens the fallback-labelled
+    columns match no key in the cluster map, so the per-cluster bounds in
+    ``PROFILE_CONSTRAINTS`` silently do not bind and HRP is free to pile into
+    the lowest-volatility asset (cash) up to ``asset_max`` — producing an
+    artificially defensive portfolio that barely moves in a crash.
+
+    Mapping each fallback ticker to its primary's cluster makes the bounds bind
+    regardless of which label the data arrives under. Inert when no fallback is
+    active (the live system at current dates), since those keys match no column.
+    """
+    try:
+        from backend.data.universe_config import get_fallback_map
+    except Exception:  # keep the optimiser usable in isolation / tests
+        return cluster_map
+    augmented = dict(cluster_map)
+    for primary, fallback in get_fallback_map().items():
+        if primary in cluster_map and fallback not in augmented:
+            augmented[fallback] = cluster_map[primary]
+    return augmented
+
+
 def optimize(
     prices: pd.DataFrame,
     profile: ProfileLabel,
@@ -323,6 +352,8 @@ def optimize(
     assert profile in ("CONSERVATIVE", "MODERATE", "AGGRESSIVE"), \
         f"Unknown profile: {profile!r}"
     constraints = PROFILE_CONSTRAINTS[profile]
+    # Make per-cluster bounds bind even when prices arrive under fallback tickers.
+    cluster_map = _augment_cluster_map_with_fallbacks(cluster_map)
     returns = compute_log_returns(prices)
     cov = compute_covariance(prices)
     mu = returns.mean() * TRADING_DAYS_PER_YEAR

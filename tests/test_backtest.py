@@ -248,3 +248,95 @@ def test_export_results_json_creates_files(tmp_path: Path) -> None:
 
     assert (tmp_path / "backtest_covid_2020_moderate.json").exists()
     assert (tmp_path / "backtest_summary_moderate.json").exists()
+
+
+# ---------------------------------------------------------------------------
+# Consistency: the chat/dashboard mock payload must quote the SAME stress
+# drawdowns as the real backtest, so the Chat Advisor never contradicts the
+# Backtesting page (regression guard for the mock-vs-real drift bug).
+# ---------------------------------------------------------------------------
+
+import json as _json  # noqa: E402
+
+from backend.schemas.mock_data import get_mock_payload  # noqa: E402
+
+_BT_DIR = Path(__file__).resolve().parents[1] / "backtest_output"
+_PROFILE_PAIRS = [
+    ("conservative", "conservative"),
+    ("balanced", "moderate"),
+    ("aggressive", "aggressive"),
+]
+# (payload stress field, backtest scenario key)
+_STRESS_FIELDS = [
+    ("covid_march_2020", "covid_2020"),
+    ("ukraine_feb_2022", "ukraine_2022"),
+    ("rates_hike_2022", "rate_hike_2022"),
+]
+_STRESS_PAIRS = [
+    (mp, bp, field, scen)
+    for mp, bp in _PROFILE_PAIRS
+    for field, scen in _STRESS_FIELDS
+]
+
+
+@pytest.mark.parametrize("mock_p, bt_p, field, scenario", _STRESS_PAIRS)
+def test_mock_stress_matches_real_backtest(mock_p, bt_p, field, scenario) -> None:
+    summary = _json.loads((_BT_DIR / f"backtest_summary_{bt_p}.json").read_text())
+    real_dd = summary[scenario]["strategies"]["HRP"]["max_drawdown"]
+    payload = get_mock_payload(mock_p)
+    quoted = getattr(payload.stress_scenarios, field).portfolio_drawdown
+    assert abs(quoted - round(min(real_dd, 0.0), 4)) < 1e-6, (
+        f"{mock_p}/{field}: chat payload quotes {quoted:+.4f} but the backtest "
+        f"shows {real_dd:+.4f} — the Chat Advisor would contradict the "
+        "Backtesting page"
+    )
+
+
+@pytest.mark.parametrize("mock_p, bt_p", _PROFILE_PAIRS)
+def test_mock_headline_metrics_match_full_period_backtest(mock_p, bt_p) -> None:
+    """risk_metrics and backtest_summary in the chat payload must equal the real
+    full-history HRP backtest, so the advisor never invents headline figures."""
+    hrp = _json.loads(
+        (_BT_DIR / f"backtest_summary_{bt_p}.json").read_text()
+    )["full_period"]["strategies"]["HRP"]
+    payload = get_mock_payload(mock_p)
+    rm, bs = payload.risk_metrics, payload.backtest_summary
+
+    checks = {
+        "expected_return": (rm.expected_annual_return, hrp["cagr"]),
+        "volatility": (rm.annual_volatility, hrp["annualised_volatility"]),
+        "sharpe": (rm.sharpe_ratio, hrp["sharpe_ratio"]),
+        "max_drawdown": (rm.max_drawdown_historical, hrp["max_drawdown"]),
+        "var_95": (rm.var_95_daily, hrp["var_95_daily"]),
+        "cvar_95": (rm.cvar_95_daily, hrp["cvar_95_daily"]),
+        "summary_cagr": (bs.cagr, hrp["cagr"]),
+        "summary_maxdd": (bs.max_drawdown, hrp["max_drawdown"]),
+    }
+    for name, (quoted, real) in checks.items():
+        assert abs(quoted - round(float(real), 6)) < 1e-6, (
+            f"{mock_p}/{name}: payload {quoted} != backtest {real}"
+        )
+
+
+# ---------------------------------------------------------------------------
+# Consistency: the regulatory currency exposure quoted by the chat advisor must
+# track the *actual* portfolio weights, not the mock baseline.
+# ---------------------------------------------------------------------------
+
+from backend.schemas.mock_data import regulatory_context_for_weights  # noqa: E402
+
+
+def test_regulatory_currency_recomputed_from_weights() -> None:
+    base = get_mock_payload("balanced").regulatory_context
+    # 45% in the two EUR-denominated tickers, 55% USD.
+    weights = {
+        "CSPX.L": 0.20, "EFA": 0.05, "GLD": 0.07, "VNQ": 0.03,
+        "AGGH.MI": 0.30, "TLT": 0.10, "TIP": 0.10, "XEON.MI": 0.15,
+    }
+    rc = regulatory_context_for_weights(base, weights)
+    assert abs(rc.portfolio_eur_denominated_pct - 0.45) < 1e-9
+    assert abs(rc.portfolio_usd_denominated_pct - 0.55) < 1e-9
+    assert "55%" in rc.currency_risk_note
+    # Static regulatory facts are preserved.
+    assert rc.etf_ucits_eligible == base.etf_ucits_eligible
+    assert rc.profiler_training_geography == base.profiler_training_geography

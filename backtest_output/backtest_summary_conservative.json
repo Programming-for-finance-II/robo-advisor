@@ -6,31 +6,160 @@
     "profile": "CONSERVATIVE",
     "strategies": {
       "HRP": {
-        "cagr": -0.018724,
-        "annualised_volatility": 0.09084,
-        "sharpe_ratio": -0.206117,
-        "max_drawdown": -0.128823,
-        "calmar_ratio": -0.145345,
-        "total_transaction_cost": 0.001074,
+        "cagr": 0.005357,
+        "annualised_volatility": 0.05543,
+        "sharpe_ratio": 0.096651,
+        "max_drawdown": -0.071707,
+        "calmar_ratio": 0.074711,
+        "var_95_daily": -0.004471,
+        "cvar_95_daily": -0.007218,
+        "total_transaction_cost": 0.001635,
         "n_rebalances": 12
       },
       "MV": {
-        "cagr": -0.10238,
-        "annualised_volatility": 0.121292,
-        "sharpe_ratio": -0.844078,
-        "max_drawdown": -0.214971,
-        "calmar_ratio": -0.476249,
-        "total_transaction_cost": 0.002949,
+        "cagr": -0.092561,
+        "annualised_volatility": 0.118205,
+        "sharpe_ratio": -0.783056,
+        "max_drawdown": -0.214972,
+        "calmar_ratio": -0.430574,
+        "var_95_daily": -0.011544,
+        "cvar_95_daily": -0.01681,
+        "total_transaction_cost": 0.003571,
         "n_rebalances": 12
       },
       "1/N": {
         "cagr": -0.048814,
         "annualised_volatility": 0.165589,
-        "sharpe_ratio": -0.294791,
+        "sharpe_ratio": -0.294792,
         "max_drawdown": -0.232254,
         "calmar_ratio": -0.210176,
+        "var_95_daily": -0.016143,
+        "cvar_95_daily": -0.023128,
         "total_transaction_cost": 0.0,
         "n_rebalances": 12
+      }
+    }
+  },
+  "euro_debt_2011": {
+    "scenario_label": "Eurozone Debt Crisis (2011)",
+    "test_start": "2011-01-03",
+    "test_end": "2011-12-30",
+    "profile": "CONSERVATIVE",
+    "strategies": {
+      "HRP": {
+        "cagr": 0.046233,
+        "annualised_volatility": 0.020749,
+        "sharpe_ratio": 2.228173,
+        "max_drawdown": -0.010391,
+        "calmar_ratio": 4.449382,
+        "var_95_daily": -0.002147,
+        "cvar_95_daily": -0.002895,
+        "total_transaction_cost": 0.001378,
+        "n_rebalances": 10
+      },
+      "MV": {
+        "cagr": 0.092542,
+        "annualised_volatility": 0.080783,
+        "sharpe_ratio": 1.145557,
+        "max_drawdown": -0.069088,
+        "calmar_ratio": 1.339472,
+        "var_95_daily": -0.008025,
+        "cvar_95_daily": -0.011915,
+        "total_transaction_cost": 0.00261,
+        "n_rebalances": 10
+      },
+      "1/N": {
+        "cagr": 0.078451,
+        "annualised_volatility": 0.08777,
+        "sharpe_ratio": 0.893827,
+        "max_drawdown": -0.055178,
+        "calmar_ratio": 1.421786,
+        "var_95_daily": -0.008113,
+        "cvar_95_daily": -0.012374,
+        "total_transaction_cost": 0.0,
+        "n_rebalances": 10
+      }
+    }
+  },
+  "selloff_2018": {
+    "scenario_label": "Rate-Fear Selloff (2018)",
+    "test_start": "2018-01-02",
+    "test_end": "2018-12-31",
+    "profile": "CONSERVATIVE",
+    "strategies": {
+      "HRP": {
+        "cagr": -0.009554,
+        "annualised_volatility": 0.021923,
+        "sharpe_ratio": -0.435808,
+        "max_drawdown": -0.02787,
+        "calmar_ratio": -0.34281,
+        "var_95_daily": -0.002189,
+        "cvar_95_daily": -0.003918,
+        "total_transaction_cost": 0.001371,
+        "n_rebalances": 9
+      },
+      "MV": {
+        "cagr": -0.036948,
+        "annualised_volatility": 0.086447,
+        "sharpe_ratio": -0.427403,
+        "max_drawdown": -0.071162,
+        "calmar_ratio": -0.519204,
+        "var_95_daily": -0.009473,
+        "cvar_95_daily": -0.015324,
+        "total_transaction_cost": 0.002047,
+        "n_rebalances": 9
+      },
+      "1/N": {
+        "cagr": -0.034145,
+        "annualised_volatility": 0.057045,
+        "sharpe_ratio": -0.598564,
+        "max_drawdown": -0.066852,
+        "calmar_ratio": -0.510761,
+        "var_95_daily": -0.006071,
+        "cvar_95_daily": -0.008606,
+        "total_transaction_cost": 0.0,
+        "n_rebalances": 9
+      }
+    }
+  },
+  "ukraine_2022": {
+    "scenario_label": "Ukraine Invasion Shock (2022)",
+    "test_start": "2022-02-01",
+    "test_end": "2022-06-30",
+    "profile": "CONSERVATIVE",
+    "strategies": {
+      "HRP": {
+        "cagr": -0.113097,
+        "annualised_volatility": 0.03436,
+        "sharpe_ratio": -3.291583,
+        "max_drawdown": -0.056099,
+        "calmar_ratio": -2.016034,
+        "var_95_daily": -0.003846,
+        "cvar_95_daily": -0.004996,
+        "total_transaction_cost": 0.00122,
+        "n_rebalances": 4
+      },
+      "MV": {
+        "cagr": -0.166955,
+        "annualised_volatility": 0.135153,
+        "sharpe_ratio": -1.235305,
+        "max_drawdown": -0.105333,
+        "calmar_ratio": -1.585027,
+        "var_95_daily": -0.015543,
+        "cvar_95_daily": -0.019862,
+        "total_transaction_cost": 0.002233,
+        "n_rebalances": 4
+      },
+      "1/N": {
+        "cagr": -0.225395,
+        "annualised_volatility": 0.11465,
+        "sharpe_ratio": -1.965941,
+        "max_drawdown": -0.124645,
+        "calmar_ratio": -1.808293,
+        "var_95_daily": -0.012008,
+        "cvar_95_daily": -0.01746,
+        "total_transaction_cost": 0.0,
+        "n_rebalances": 4
       }
     }
   },
@@ -41,31 +170,78 @@
     "profile": "CONSERVATIVE",
     "strategies": {
       "HRP": {
-        "cagr": 0.05765,
-        "annualised_volatility": 0.065106,
-        "sharpe_ratio": 0.885473,
-        "max_drawdown": -0.093762,
-        "calmar_ratio": 0.614851,
-        "total_transaction_cost": 0.001002,
+        "cagr": 0.045108,
+        "annualised_volatility": 0.049269,
+        "sharpe_ratio": 0.915551,
+        "max_drawdown": -0.070457,
+        "calmar_ratio": 0.640228,
+        "var_95_daily": -0.003053,
+        "cvar_95_daily": -0.008048,
+        "total_transaction_cost": 0.001287,
         "n_rebalances": 9
       },
       "MV": {
-        "cagr": 0.060726,
-        "annualised_volatility": 0.117374,
-        "sharpe_ratio": 0.517372,
-        "max_drawdown": -0.15088,
-        "calmar_ratio": 0.402479,
-        "total_transaction_cost": 0.002538,
+        "cagr": 0.063909,
+        "annualised_volatility": 0.117251,
+        "sharpe_ratio": 0.545062,
+        "max_drawdown": -0.149505,
+        "calmar_ratio": 0.427469,
+        "var_95_daily": -0.010822,
+        "cvar_95_daily": -0.021113,
+        "total_transaction_cost": 0.001649,
         "n_rebalances": 9
       },
       "1/N": {
         "cagr": 0.10882,
         "annualised_volatility": 0.111936,
-        "sharpe_ratio": 0.972157,
+        "sharpe_ratio": 0.97216,
         "max_drawdown": -0.149505,
-        "calmar_ratio": 0.727864,
+        "calmar_ratio": 0.727865,
+        "var_95_daily": -0.008327,
+        "cvar_95_daily": -0.018927,
         "total_transaction_cost": 0.0,
         "n_rebalances": 9
+      }
+    }
+  },
+  "recovery_2021": {
+    "scenario_label": "Post-COVID Bull (2021)",
+    "test_start": "2021-01-04",
+    "test_end": "2021-12-31",
+    "profile": "CONSERVATIVE",
+    "strategies": {
+      "HRP": {
+        "cagr": 0.009479,
+        "annualised_volatility": 0.017243,
+        "sharpe_ratio": 0.5497,
+        "max_drawdown": -0.017419,
+        "calmar_ratio": 0.544145,
+        "var_95_daily": -0.001886,
+        "cvar_95_daily": -0.002418,
+        "total_transaction_cost": 0.001309,
+        "n_rebalances": 8
+      },
+      "MV": {
+        "cagr": 0.077356,
+        "annualised_volatility": 0.082595,
+        "sharpe_ratio": 0.936567,
+        "max_drawdown": -0.080868,
+        "calmar_ratio": 0.956569,
+        "var_95_daily": -0.009767,
+        "cvar_95_daily": -0.012332,
+        "total_transaction_cost": 0.002566,
+        "n_rebalances": 8
+      },
+      "1/N": {
+        "cagr": 0.087029,
+        "annualised_volatility": 0.052729,
+        "sharpe_ratio": 1.650509,
+        "max_drawdown": -0.03349,
+        "calmar_ratio": 2.598618,
+        "var_95_daily": -0.005365,
+        "cvar_95_daily": -0.007313,
+        "total_transaction_cost": 0.0,
+        "n_rebalances": 8
       }
     }
   },
@@ -76,31 +252,78 @@
     "profile": "CONSERVATIVE",
     "strategies": {
       "HRP": {
-        "cagr": -0.089522,
-        "annualised_volatility": 0.067553,
-        "sharpe_ratio": -1.325203,
-        "max_drawdown": -0.126721,
-        "calmar_ratio": -0.706451,
-        "total_transaction_cost": 0.000948,
+        "cagr": -0.068225,
+        "annualised_volatility": 0.038214,
+        "sharpe_ratio": -1.785351,
+        "max_drawdown": -0.090763,
+        "calmar_ratio": -0.751687,
+        "var_95_daily": -0.003798,
+        "cvar_95_daily": -0.005063,
+        "total_transaction_cost": 0.001392,
         "n_rebalances": 10
       },
       "MV": {
-        "cagr": -0.120099,
-        "annualised_volatility": 0.103709,
-        "sharpe_ratio": -1.158045,
-        "max_drawdown": -0.152093,
-        "calmar_ratio": -0.789644,
-        "total_transaction_cost": 0.00267,
+        "cagr": -0.106127,
+        "annualised_volatility": 0.101403,
+        "sharpe_ratio": -1.046583,
+        "max_drawdown": -0.139106,
+        "calmar_ratio": -0.762922,
+        "var_95_daily": -0.00988,
+        "cvar_95_daily": -0.016067,
+        "total_transaction_cost": 0.002233,
         "n_rebalances": 10
       },
       "1/N": {
         "cagr": -0.137494,
         "annualised_volatility": 0.119492,
-        "sharpe_ratio": -1.150655,
+        "sharpe_ratio": -1.150656,
         "max_drawdown": -0.195792,
         "calmar_ratio": -0.702245,
+        "var_95_daily": -0.011723,
+        "cvar_95_daily": -0.015417,
         "total_transaction_cost": 0.0,
         "n_rebalances": 10
+      }
+    }
+  },
+  "full_period": {
+    "scenario_label": "Full History (2008\u20132025)",
+    "test_start": "2008-01-02",
+    "test_end": "2025-12-31",
+    "profile": "CONSERVATIVE",
+    "strategies": {
+      "HRP": {
+        "cagr": 0.029827,
+        "annualised_volatility": 0.030455,
+        "sharpe_ratio": 0.979397,
+        "max_drawdown": -0.090615,
+        "calmar_ratio": 0.329163,
+        "var_95_daily": -0.002726,
+        "cvar_95_daily": -0.004343,
+        "total_transaction_cost": 0.010147,
+        "n_rebalances": 154
+      },
+      "MV": {
+        "cagr": 0.063686,
+        "annualised_volatility": 0.079673,
+        "sharpe_ratio": 0.799345,
+        "max_drawdown": -0.214972,
+        "calmar_ratio": 0.296254,
+        "var_95_daily": -0.007471,
+        "cvar_95_daily": -0.012197,
+        "total_transaction_cost": 0.030657,
+        "n_rebalances": 154
+      },
+      "1/N": {
+        "cagr": 0.058539,
+        "annualised_volatility": 0.080632,
+        "sharpe_ratio": 0.726003,
+        "max_drawdown": -0.232254,
+        "calmar_ratio": 0.252048,
+        "var_95_daily": -0.007098,
+        "cvar_95_daily": -0.012013,
+        "total_transaction_cost": 0.0,
+        "n_rebalances": 154
       }
     }
   }

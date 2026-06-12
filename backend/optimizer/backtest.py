@@ -35,15 +35,43 @@ SCENARIOS: dict[str, dict[str, str]] = {
         "test_start": "2008-01-02",
         "test_end": "2009-06-30",
     },
+    "euro_debt_2011": {
+        "label": "Eurozone Debt Crisis (2011)",
+        "test_start": "2011-01-03",
+        "test_end": "2011-12-30",
+    },
+    "selloff_2018": {
+        "label": "Rate-Fear Selloff (2018)",
+        "test_start": "2018-01-02",
+        "test_end": "2018-12-31",
+    },
+    "ukraine_2022": {
+        "label": "Ukraine Invasion Shock (2022)",
+        "test_start": "2022-02-01",
+        "test_end": "2022-06-30",
+    },
     "covid_2020": {
         "label": "COVID-19 Crash (2020)",
         "test_start": "2020-01-02",
         "test_end": "2020-12-31",
     },
+    "recovery_2021": {
+        "label": "Post-COVID Bull (2021)",
+        "test_start": "2021-01-04",
+        "test_end": "2021-12-31",
+    },
     "rate_hike_2022": {
         "label": "Rate Hike Cycle (2022)",
         "test_start": "2022-01-03",
         "test_end": "2022-12-30",
+    },
+    # Long continuous backtest used to source the dashboard/chat headline stats
+    # (CAGR, vol, Sharpe, historical max drawdown, VaR/CVaR). Not shown in the
+    # Backtesting page's scenario picker — it is a full-history reference run.
+    "full_period": {
+        "label": "Full History (2008–2025)",
+        "test_start": "2008-01-02",
+        "test_end": "2025-12-31",
     },
 }
 
@@ -77,6 +105,8 @@ class StrategyResult:
     n_rebalances: int
     equity_curve: list[DailyReturn]
     rebalance_log: list[RebalanceEvent]
+    var_95_daily: float = 0.0
+    cvar_95_daily: float = 0.0
 
 
 @dataclass
@@ -292,6 +322,13 @@ def _run_strategy_backtest(
     daily_rets_series = pd.Series(daily_ret_list, index=test_prices.index)
     cagr, vol, sharpe, max_dd, calmar = _compute_performance_metrics(daily_rets_series)
 
+    # Historical 1-day VaR/CVaR at 95% from the realised daily returns. Needs a
+    # reasonable sample; short crisis windows fall back to 0.0 (not reported).
+    var_95 = cvar_95 = 0.0
+    if len(daily_rets_series) >= 30:
+        from backend.optimizer.risk_metrics import compute_var_cvar
+        var_95, cvar_95 = compute_var_cvar(daily_rets_series, confidence=0.95)
+
     return StrategyResult(
         strategy=strategy,
         cagr=round(cagr, 6),
@@ -303,6 +340,8 @@ def _run_strategy_backtest(
         n_rebalances=n_rebalances,
         equity_curve=equity_curve,
         rebalance_log=rebalance_log,
+        var_95_daily=round(var_95, 6),
+        cvar_95_daily=round(cvar_95, 6),
     )
 
 
@@ -425,6 +464,8 @@ def export_results_json(
                     "sharpe_ratio": sr.sharpe_ratio,
                     "max_drawdown": sr.max_drawdown,
                     "calmar_ratio": sr.calmar_ratio,
+                    "var_95_daily": sr.var_95_daily,
+                    "cvar_95_daily": sr.cvar_95_daily,
                     "total_transaction_cost": sr.total_transaction_cost,
                     "n_rebalances": sr.n_rebalances,
                 }

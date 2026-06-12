@@ -17,8 +17,10 @@ Usage:
 
 from __future__ import annotations
 
+import json
 import uuid
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Literal
 
 from backend.schemas.ground_truth import (
@@ -204,11 +206,18 @@ def _make_portfolio(profile: ProfileLabel) -> Portfolio:
 
 
 def _make_risk_metrics(profile: ProfileLabel) -> RiskMetrics:
-    metrics: dict[ProfileLabel, dict] = {
+    """Headline risk metrics.
+
+    Sourced from the REAL full-history HRP backtest (2008–2025) so the chat
+    advisor and dashboard quote the same figures the engine computes. The
+    hardcoded values below are only a fallback for when the backtest artefacts
+    are unavailable, so the payload can always be built.
+    """
+    fallback: dict[ProfileLabel, dict] = {
         "conservative": {
             "annual_volatility":       0.062,
-            "expected_annual_return":  0.042,   # da _BACKTEST["conservative"].cagr
-            "sharpe_ratio":            0.61,     # da _BACKTEST["conservative"].sharpe
+            "expected_annual_return":  0.042,
+            "sharpe_ratio":            0.61,
             "max_drawdown_historical": -0.112,
             "var_95_daily":            -0.0058,
             "cvar_95_daily":           -0.0089,
@@ -230,14 +239,21 @@ def _make_risk_metrics(profile: ProfileLabel) -> RiskMetrics:
             "cvar_95_daily":           -0.0213,
         },
     }
-    m = metrics[profile]
+    m = fallback[profile]
+    real = _real_hrp_stats(profile, "full_period")
+
+    def _pick(real_key: str, fb_key: str) -> float:
+        if real is not None and real.get(real_key) is not None:
+            return round(float(real[real_key]), 6)
+        return m[fb_key]
+
     return RiskMetrics(
-        expected_annual_return=m["expected_annual_return"],
-        annual_volatility=m["annual_volatility"],
-        sharpe_ratio=m["sharpe_ratio"],
-        max_drawdown_historical=m["max_drawdown_historical"],
-        var_95_daily=m["var_95_daily"],
-        cvar_95_daily=m["cvar_95_daily"],
+        expected_annual_return=_pick("cagr", "expected_annual_return"),
+        annual_volatility=_pick("annualised_volatility", "annual_volatility"),
+        sharpe_ratio=_pick("sharpe_ratio", "sharpe_ratio"),
+        max_drawdown_historical=_pick("max_drawdown", "max_drawdown_historical"),
+        var_95_daily=_pick("var_95_daily", "var_95_daily"),
+        cvar_95_daily=_pick("cvar_95_daily", "cvar_95_daily"),
     )
 
 
@@ -275,37 +291,116 @@ def _make_cluster_structure(profile: ProfileLabel) -> ClusterStructure:
     )
 
 
+# ---------------------------------------------------------------------------
+# Stress scenarios — portfolio drawdowns are sourced from the REAL backtest so
+# the chat advisor and dashboard quote the same figures the Backtesting page
+# shows. Previously these were hand-set mock numbers that drifted from the
+# computed backtest (e.g. the rate-hike drawdown was off by ~7pp), which made
+# the chatbot contradict the Backtesting page.
+#
+# benchmark_drawdown stays a factual market constant (the broad equity index
+# fall for that event) — it is not a profile-specific portfolio figure.
+# ukraine_feb_2022 has no backtest scenario, so it keeps an illustrative value.
+# ---------------------------------------------------------------------------
+
+_BACKTEST_DIR = Path(__file__).resolve().parents[2] / "backtest_output"
+# mock_data uses "balanced"; the backtest files use "moderate".
+_PROFILE_TO_BACKTEST: dict[ProfileLabel, str] = {
+    "conservative": "conservative",
+    "balanced": "moderate",
+    "aggressive": "aggressive",
+}
+
+
+def _real_hrp_stats(profile: ProfileLabel, scenario_key: str) -> dict | None:
+    """The HRP strategy metrics block for (profile, scenario) from the real
+    backtest summary, or None if the artefacts are unavailable.
+
+    This is the single bridge that lets the chat advisor and dashboard quote the
+    exact figures the Backtesting page computes, instead of hand-set mock values.
+    """
+    bt_profile = _PROFILE_TO_BACKTEST.get(profile, "moderate")
+    path = _BACKTEST_DIR / f"backtest_summary_{bt_profile}.json"
+    try:
+        data = json.loads(path.read_text())
+        return data[scenario_key]["strategies"]["HRP"]
+    except Exception:
+        return None
+
+
+def _real_hrp_drawdown(profile: ProfileLabel, scenario_key: str) -> float | None:
+    """HRP max drawdown for (profile, scenario), <= 0, or None if unavailable."""
+    stats = _real_hrp_stats(profile, scenario_key)
+    if not stats:
+        return None
+    try:
+        return round(min(float(stats["max_drawdown"]), 0.0), 4)
+    except Exception:
+        return None
+
+
+def _stress_for(
+    profile: ProfileLabel,
+    covid_fallback: float,
+    ukraine_fallback: float,
+    rates_fallback: float,
+) -> StressScenarios:
+    covid = _real_hrp_drawdown(profile, "covid_2020")
+    ukraine = _real_hrp_drawdown(profile, "ukraine_2022")
+    rates = _real_hrp_drawdown(profile, "rate_hike_2022")
+    return StressScenarios(
+        covid_march_2020=ScenarioResult(
+            portfolio_drawdown=covid if covid is not None else covid_fallback,
+            benchmark_drawdown=-0.338,
+        ),
+        ukraine_feb_2022=ScenarioResult(
+            portfolio_drawdown=ukraine if ukraine is not None else ukraine_fallback,
+            benchmark_drawdown=-0.127,
+        ),
+        rates_hike_2022=ScenarioResult(
+            portfolio_drawdown=rates if rates is not None else rates_fallback,
+            benchmark_drawdown=-0.183,
+        ),
+    )
+
+
 _STRESS: dict[ProfileLabel, StressScenarios] = {
-    "conservative": StressScenarios(
-        covid_march_2020=ScenarioResult(portfolio_drawdown=-0.078,  benchmark_drawdown=-0.338),
-        ukraine_feb_2022=ScenarioResult(portfolio_drawdown=-0.042,  benchmark_drawdown=-0.127),
-        rates_hike_2022=ScenarioResult(portfolio_drawdown=-0.061,  benchmark_drawdown=-0.183),
-    ),
-    "balanced": StressScenarios(
-        covid_march_2020=ScenarioResult(portfolio_drawdown=-0.142,  benchmark_drawdown=-0.338),
-        ukraine_feb_2022=ScenarioResult(portfolio_drawdown=-0.071,  benchmark_drawdown=-0.127),
-        rates_hike_2022=ScenarioResult(portfolio_drawdown=-0.089,  benchmark_drawdown=-0.183),
-    ),
-    "aggressive": StressScenarios(
-        covid_march_2020=ScenarioResult(portfolio_drawdown=-0.241,  benchmark_drawdown=-0.338),
-        ukraine_feb_2022=ScenarioResult(portfolio_drawdown=-0.108,  benchmark_drawdown=-0.127),
-        rates_hike_2022=ScenarioResult(portfolio_drawdown=-0.139,  benchmark_drawdown=-0.183),
-    ),
+    "conservative": _stress_for("conservative", -0.078, -0.042, -0.061),
+    "balanced": _stress_for("balanced", -0.142, -0.071, -0.089),
+    "aggressive": _stress_for("aggressive", -0.241, -0.108, -0.139),
 }
  
+def _backtest_summary_for(
+    profile: ProfileLabel,
+    cagr_fb: float,
+    sharpe_fb: float,
+    dd_fb: float,
+    calmar_fb: float,
+) -> BacktestSummary:
+    """Backtest summary sourced from the REAL full-history HRP run (2008–2025),
+    falling back to illustrative values if the artefacts are unavailable."""
+    real = _real_hrp_stats(profile, "full_period")
+    if real is not None:
+        try:
+            return BacktestSummary(
+                period="2008-2025",
+                cagr=round(float(real["cagr"]), 6),
+                sharpe=round(float(real["sharpe_ratio"]), 6),
+                max_drawdown=round(float(real["max_drawdown"]), 6),
+                calmar_ratio=round(float(real["calmar_ratio"]), 6),
+            )
+        except Exception:
+            pass
+    return BacktestSummary(
+        period="2019-2026", cagr=cagr_fb, sharpe=sharpe_fb,
+        max_drawdown=dd_fb, calmar_ratio=calmar_fb,
+    )
+
+
 _BACKTEST: dict[ProfileLabel, BacktestSummary] = {
-    "conservative": BacktestSummary(
-        period="2019-2026", cagr=0.042, sharpe=0.61,
-        max_drawdown=-0.114, calmar_ratio=0.37,
-    ),
-    "balanced": BacktestSummary(
-        period="2019-2026", cagr=0.068, sharpe=0.71,
-        max_drawdown=-0.194, calmar_ratio=0.35,
-    ),
-    "aggressive": BacktestSummary(
-        period="2019-2026", cagr=0.091, sharpe=0.62,
-        max_drawdown=-0.318, calmar_ratio=0.29,
-    ),
+    "conservative": _backtest_summary_for("conservative", 0.042, 0.61, -0.114, 0.37),
+    "balanced": _backtest_summary_for("balanced", 0.068, 0.71, -0.194, 0.35),
+    "aggressive": _backtest_summary_for("aggressive", 0.091, 0.62, -0.318, 0.29),
 }
 
 def _make_regulatory_context(profile: ProfileLabel) -> RegulatoryContext:
@@ -334,6 +429,29 @@ def _make_regulatory_context(profile: ProfileLabel) -> RegulatoryContext:
             "assessment has been performed."
         ),
     )
+
+
+def regulatory_context_for_weights(
+    base: RegulatoryContext, weights: dict[str, float]
+) -> RegulatoryContext:
+    """Return a copy of ``base`` with the currency-exposure fields recomputed from
+    the given weights.
+
+    The mock regulatory context derives its USD/EUR split from the mock baseline
+    weights. When a live portfolio is in use its weights differ, so the chat
+    advisor would otherwise quote a currency exposure that does not match the
+    actual portfolio shown on the dashboard. Recomputing keeps them consistent.
+    """
+    usd = _usd_pct(weights)
+    eur = _eur_pct(weights)
+    data = base.model_dump()
+    data["portfolio_usd_denominated_pct"] = usd
+    data["portfolio_eur_denominated_pct"] = eur
+    data["currency_risk_note"] = (
+        f"Approximately {int(round(usd * 100))}% of the portfolio is denominated "
+        "in USD. EUR-based investors are exposed to EUR/USD currency risk."
+    )
+    return RegulatoryContext(**data)
 
 
 # ---------------------------------------------------------------------------

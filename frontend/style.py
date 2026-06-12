@@ -40,37 +40,41 @@ _DARK_TOKENS = {
     "question_block_bg": "transparent",
 }
 
+# Light theme — a deliberate "soft lavender" system rather than a neutral grey
+# inversion of the dark theme. Surfaces carry a faint violet tint, borders and
+# shadows are warmed toward the brand purple (so cards lift with a subtle branded
+# glow), text stays crisp and high-contrast, and the accent palette is vivid.
 _LIGHT_TOKENS = {
-    "bg_main": "#F6F7FB",
+    "bg_main": "#F4F2FB",
     "bg_surface": "#FFFFFF",
-    "bg_surface_alt": "#F1F4FA",
+    "bg_surface_alt": "#EFEDF9",
     "bg_card": "#FFFFFF",
     "bg_card_solid": "#FFFFFF",
-    "bg_nav": "rgba(255,255,255,0.88)",
-    "text_primary": "#111827",
-    "text_secondary": "#334155",
-    "text_muted": "#64748B",
-    "border": "#D8DEE9",
-    "border_soft": "#E5E9F0",
+    "bg_nav": "rgba(255,255,255,0.90)",
+    "text_primary": "#1A1726",
+    "text_secondary": "#43425A",
+    "text_muted": "#76748F",
+    "border": "#E5E2F1",
+    "border_soft": "#EEECF7",
     "accent": "#7C4DFF",
-    "accent_text": "#6d4deb",
-    "accent_soft": "#EEE8FF",
-    "accent_border": "rgba(124,77,255,0.3)",
-    "shadow": "0 4px 16px rgba(15,23,42,0.06)",
-    "shadow_lg": "0 12px 32px rgba(15,23,42,0.10)",
+    "accent_text": "#6A3CE6",
+    "accent_soft": "#EFEAFE",
+    "accent_border": "rgba(124,77,255,0.28)",
+    "shadow": "0 4px 18px rgba(91,52,214,0.08)",
+    "shadow_lg": "0 16px 40px rgba(91,52,214,0.13)",
     "button_bg": "#FFFFFF",
-    "button_border": "#CBD5E1",
-    "button_text": "#334155",
-    "button_bg_hover": "#F8FAFC",
-    "button_border_hover": "#94A3B8",
+    "button_border": "#D9D5E8",
+    "button_text": "#43425A",
+    "button_bg_hover": "#F5F2FD",
+    "button_border_hover": "#A78BFA",
     "input_bg": "#FFFFFF",
-    "input_border": "#CBD5E1",
-    "input_text": "#111827",
-    "input_placeholder": "#94A3B8",
-    "chart_font": "#334155",
-    "chart_grid": "#E2E8F0",
-    "divider": "#E5EAF3",
-    "question_block_bg": "#F8FAFC",
+    "input_border": "#D9D5E8",
+    "input_text": "#1A1726",
+    "input_placeholder": "#9A98B0",
+    "chart_font": "#43425A",
+    "chart_grid": "#EAE7F4",
+    "divider": "#EAE7F4",
+    "question_block_bg": "#F4F2FB",
 }
 
 
@@ -747,7 +751,7 @@ html, body, [class*="css"] {
 [data-testid="stMain"],
 [data-testid="stMainBlockContainer"],
 .main .block-container {
-    background-color: #f8fafc !important;
+    background-color: #F4F2FB !important;
 }
 
 [data-testid="stMarkdownContainer"] p,
@@ -859,8 +863,8 @@ header [role="button"] {
 
 section[data-testid="stSidebar"],
 [data-testid="stSidebar"] {
-    background: #f1f5f9 !important;
-    border-right: 1px solid #e2e8f0 !important;
+    background: #EFEDF9 !important;
+    border-right: 1px solid #EAE7F4 !important;
     min-width: 260px !important;
     width: 260px !important;
 }
@@ -876,7 +880,7 @@ section[data-testid="stSidebar"],
     width: 2rem !important;
     height: 2rem !important;
     background: transparent !important;
-    border: 1px solid #e2e8f0 !important;
+    border: 1px solid #EAE7F4 !important;
     border-radius: 50% !important;
     color: #94a3b8 !important;
     box-shadow: none !important;
@@ -906,7 +910,7 @@ section[data-testid="stSidebar"],
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.2s ease;
-    border: 1px solid #e2e8f0;
+    border: 1px solid #EAE7F4;
     z-index: 9999;
 }
 [data-testid="stSidebar"] button:not(:has(p)):hover::after {
@@ -916,10 +920,10 @@ section[data-testid="stSidebar"],
 /* ── Metrics ──────────────────────────────────────────────────────────────── */
 [data-testid="stMetric"] {
     background: #ffffff !important;
-    border: 1px solid #D8DEE9 !important;
+    border: 1px solid #E5E2F1 !important;
     border-radius: 12px !important;
     padding: 1rem 1.1rem !important;
-    box-shadow: 0 4px 16px rgba(15,23,42,0.05) !important;
+    box-shadow: 0 4px 16px rgba(91,52,214,0.07) !important;
 }
 [data-testid="stMetricLabel"] {
     font-size: 0.72rem !important;
@@ -937,7 +941,7 @@ section[data-testid="stSidebar"],
 /* ── Tabs ─────────────────────────────────────────────────────────────────── */
 .stTabs [data-baseweb="tab-list"] {
     background: transparent !important;
-    border-bottom: 1px solid #e2e8f0 !important;
+    border-bottom: 1px solid #EAE7F4 !important;
 }
 .stTabs [data-baseweb="tab"] {
     background: transparent !important;
@@ -959,26 +963,26 @@ section[data-testid="stSidebar"],
 /* ── Buttons ──────────────────────────────────────────────────────────────── */
 .stButton > button {
     background: #FFFFFF !important;
-    border: 1px solid #CBD5E1 !important;
+    border: 1px solid #D9D5E8 !important;
     color: #334155 !important;
     border-radius: 8px !important;
     font-size: 0.75rem !important;
     font-weight: 600 !important;
-    box-shadow: 0 1px 2px rgba(15,23,42,0.04) !important;
+    box-shadow: 0 1px 2px rgba(91,52,214,0.06) !important;
     transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease !important;
 }
 .stButton > button:hover {
-    background: #F8FAFC !important;
+    background: #F4F2FB !important;
     border-color: #94A3B8 !important;
     color: #1e293b !important;
 }
 .stButton > button[kind="primary"] {
-    background: #EEE8FF !important;
+    background: #EFEAFE !important;
     border-color: #7C4DFF !important;
     color: #5B34D6 !important;
 }
 .stButton > button[kind="primary"]:hover {
-    background: #e3d9ff !important;
+    background: #E4DBFE !important;
     border-color: #6d28d9 !important;
     color: #4c1d95 !important;
 }
@@ -986,18 +990,18 @@ section[data-testid="stSidebar"],
 /* ── Segmented control (Backtesting scenario tabs) ───────────────────────── */
 [data-testid="stButtonGroup"] [data-testid="stBaseButton-segmented_control"] {
     background: #FFFFFF !important;
-    border: 1px solid #CBD5E1 !important;
+    border: 1px solid #D9D5E8 !important;
     color: #334155 !important;
     font-weight: 600 !important;
 }
 [data-testid="stButtonGroup"] [data-testid="stBaseButton-segmented_control"]:hover {
-    background: #F8FAFC !important;
+    background: #F4F2FB !important;
     border-color: #94A3B8 !important;
     color: #1e293b !important;
 }
 [data-testid="stButtonGroup"]
 [data-testid="stBaseButton-segmented_controlActive"] {
-    background: #EEE8FF !important;
+    background: #EFEAFE !important;
     border: 1px solid #7C4DFF !important;
     color: #5B34D6 !important;
     font-weight: 600 !important;
@@ -1010,14 +1014,14 @@ section[data-testid="stSidebar"],
 [data-baseweb="input"],
 [data-baseweb="textarea"] {
     background: #FFFFFF !important;
-    border-color: #CBD5E1 !important;
+    border-color: #D9D5E8 !important;
     color: #111827 !important;
 }
 [data-testid="stTextInput"] div[data-baseweb="input"],
 [data-testid="stNumberInput"] div[data-baseweb="input"],
 [data-testid="stTextArea"] div[data-baseweb="textarea"] {
     background: #FFFFFF !important;
-    border-color: #CBD5E1 !important;
+    border-color: #D9D5E8 !important;
 }
 [data-testid="stTextInput"] input::placeholder,
 [data-testid="stTextArea"] textarea::placeholder {
@@ -1029,7 +1033,43 @@ section[data-testid="stSidebar"],
     box-shadow: 0 0 0 3px rgba(124,77,255,0.12) !important;
 }
 
-hr { border-color: #e2e8f0 !important; }
+/* ── Selectbox (dropdown) — light surface to match inputs ───────────────── */
+div[data-baseweb="select"] > div {
+    background: #FFFFFF !important;
+    border-color: #D9D5E8 !important;
+    color: #1A1726 !important;
+}
+div[data-baseweb="select"] [data-testid="stMarkdownContainer"],
+div[data-baseweb="select"] span,
+div[data-baseweb="select"] div {
+    color: #1A1726 !important;
+}
+div[data-baseweb="select"] svg {
+    fill: #76748F !important; color: #76748F !important;
+}
+div[data-baseweb="select"]:focus-within > div {
+    border-color: #7C4DFF !important;
+    box-shadow: 0 0 0 3px rgba(124,77,255,0.12) !important;
+}
+/* Dropdown menu (rendered in a body-level portal) */
+div[data-baseweb="popover"] ul,
+div[data-baseweb="popover"] div[data-baseweb="menu"],
+ul[data-testid="stSelectboxVirtualDropdown"] {
+    background: #FFFFFF !important;
+}
+div[data-baseweb="popover"] li,
+ul[data-testid="stSelectboxVirtualDropdown"] li,
+div[data-baseweb="popover"] [role="option"] {
+    background: #FFFFFF !important;
+    color: #1A1726 !important;
+}
+div[data-baseweb="popover"] li:hover,
+ul[data-testid="stSelectboxVirtualDropdown"] li:hover,
+div[data-baseweb="popover"] [role="option"]:hover {
+    background: #F4F2FB !important;
+}
+
+hr { border-color: #EAE7F4 !important; }
 
 /* ── Questionnaire ──────────────────────────────────────────────────────── */
 [data-testid="stForm"] {
@@ -1040,10 +1080,10 @@ hr { border-color: #e2e8f0 !important; }
 }
 [data-testid="stVerticalBlockBorderWrapper"] {
     overflow: hidden !important;
-    border: 1px solid #D8DEE9 !important;
+    border: 1px solid #E5E2F1 !important;
     border-radius: 20px !important;
     background: #ffffff !important;
-    box-shadow: 0 10px 30px rgba(15,23,42,0.06) !important;
+    box-shadow: 0 10px 30px rgba(91,52,214,0.08) !important;
 }
 .qs-header {
     display: flex;
@@ -1153,7 +1193,7 @@ hr { border-color: #e2e8f0 !important; }
 [data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stRadio"] label {
     width: 100% !important;
     background: rgba(248,250,252,0.8) !important;
-    border: 1px solid #e2e8f0 !important;
+    border: 1px solid #EAE7F4 !important;
     border-left: 3px solid transparent !important;
     border-radius: 0 8px 8px 0 !important;
     padding: 0.72rem 1.1rem !important;
@@ -1214,7 +1254,7 @@ div[data-testid="stRadio"] label:has(input:checked) p {
 
 /* ── Section colour accents ──────────────────────────────────────────────── */
 .qs-s1 {
-    background: linear-gradient(135deg, #f8fafc 0%, #dbeafe 55%, #f1f5f9 100%) !important;
+    background: linear-gradient(135deg, #F4F2FB 0%, #dbeafe 55%, #EFEDF9 100%) !important;
     border-bottom-color: #bfdbfe !important;
 }
 .qs-s1 .qs-num {
@@ -1223,7 +1263,7 @@ div[data-testid="stRadio"] label:has(input:checked) p {
     border-color: rgba(59,130,246,0.25) !important;
 }
 .qs-s3 {
-    background: linear-gradient(135deg, #f8fafc 0%, #fef3c7 55%, #f1f5f9 100%) !important;
+    background: linear-gradient(135deg, #F4F2FB 0%, #fef3c7 55%, #EFEDF9 100%) !important;
     border-bottom-color: #fde68a !important;
 }
 .qs-s3 .qs-num {
@@ -1274,7 +1314,7 @@ details.qs-info-card {
     border-radius: 14px;
     overflow: hidden;
     margin-bottom: 1.25rem;
-    box-shadow: 0 6px 20px rgba(15,23,42,0.06);
+    box-shadow: 0 6px 20px rgba(91,52,214,0.08);
 }
 details.qs-info-card > summary {
     display: flex;
@@ -1323,7 +1363,7 @@ details.qs-info-card[open] .qs-info-chevron { transform: rotate(180deg); }
 [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stPills"] button,
 [data-testid="stVerticalBlockBorderWrapper"] button[data-testid="stPills-pill"] {
     background: rgba(248,250,252,0.9) !important;
-    border: 1px solid #e2e8f0 !important;
+    border: 1px solid #EAE7F4 !important;
     border-radius: 9px !important;
     color: #475569 !important;
     font-family: 'DM Sans', sans-serif !important;
@@ -1388,7 +1428,7 @@ button[data-testid="stPills-pill"][aria-pressed="true"],
 }
 [data-testid="stRadio"] label[data-baseweb="radio"]:has(input:checked)
 > div:first-child {
-    background-color: #EEE8FF !important;
+    background-color: #EFEAFE !important;
     border-color: #7C4DFF !important;
 }
 [data-testid="stRadio"] label[data-baseweb="radio"]:has(input:checked)
@@ -1403,10 +1443,10 @@ button[data-testid="stPills-pill"][aria-pressed="true"],
 /* surface the dropdown is almost invisible. Give it a real border, a white    */
 /* card background and a coloured chevron so users see it can be opened.        */
 [data-testid="stExpander"] details {
-    border: 1px solid #D8DEE9 !important;
+    border: 1px solid #E5E2F1 !important;
     background: #FFFFFF !important;
     border-radius: 10px !important;
-    box-shadow: 0 1px 3px rgba(15,23,42,0.05) !important;
+    box-shadow: 0 1px 3px rgba(91,52,214,0.07) !important;
 }
 [data-testid="stExpander"] details:hover {
     border-color: #7C4DFF !important;
@@ -1540,29 +1580,42 @@ def render_stress_banner() -> None:
     st.markdown(STRESS_BANNER_HTML, unsafe_allow_html=True)
 
 
-def page_header(title: str, subtitle: str = "", icon: str = "") -> None:
-    """Render a styled page header with Space Grotesk font and optional icon."""
+def page_header(
+    title: str,
+    subtitle: str = "",
+    eyebrow: str = "",
+    icon: str = "",  # deprecated — kept for backward compatibility, no longer rendered
+) -> None:
+    """Render a styled page header: an accent bar, an optional uppercase eyebrow
+    (kicker) and the title, with an optional subtitle.
+
+    The previous emoji-in-a-box icon has been replaced by a typographic,
+    editorial header. The ``icon`` argument is accepted but ignored so existing
+    callers keep working.
+    """
     t = get_theme_tokens()
+
+    eyebrow_html = (
+        f'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:0.7rem;'
+        f'font-weight:700;letter-spacing:0.16em;text-transform:uppercase;'
+        f'color:{t["accent_text"]};margin-bottom:0.45rem;">{eyebrow}</div>'
+        if eyebrow else ""
+    )
     sub_html = (
         f'<div style="font-size:0.95rem;color:{t["text_secondary"]};margin-top:7px;'
         f'letter-spacing:0.01em;font-weight:400;">{subtitle}</div>'
         if subtitle else ""
     )
-    icon_html = (
-        f'<div style="'
-        f'width:2.8rem;height:2.8rem;'
-        f'background:{t["accent_soft"]};'
-        f'border:1px solid {t["accent_border"]};'
-        f'border-radius:10px;'
-        f'display:inline-flex;align-items:center;justify-content:center;'
-        f'font-size:1.2rem;flex-shrink:0;">{icon}</div>'
-        if icon else ""
+    # Vertical gradient accent bar (purple -> teal) on the left of the block.
+    bar = (
+        f'<div style="width:4px;flex-shrink:0;border-radius:99px;'
+        f'background:linear-gradient(180deg,{t["accent"]} 0%,#0dcfb0 100%);"></div>'
     )
-    layout = "display:flex;align-items:center;gap:1rem;" if icon else ""
     st.markdown(
-        f'<div style="{layout}margin-bottom:1.5rem;">'
-        f'{icon_html}'
+        f'<div style="display:flex;align-items:stretch;gap:1rem;margin-bottom:1.5rem;">'
+        f'{bar}'
         f'<div>'
+        f'{eyebrow_html}'
         f'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:2.0rem;'
         f'font-weight:700;color:{t["text_primary"]};letter-spacing:-0.02em;line-height:1.15;">'
         f'{title}</div>{sub_html}'
@@ -1583,8 +1636,10 @@ PLOTLY_LIGHT = {
     "template": "plotly_white",
     "paper_bgcolor": "#ffffff",
     "plot_bgcolor": "#ffffff",
-    "font": {"family": "DM Sans", "color": "#334155", "size": 11},
-    "colorway": ["#7c5cfc", "#0dcfb0", "#3b82f6", "#f59e0b", "#f87171"],
+    "font": {"family": "DM Sans", "color": "#43425A", "size": 11},
+    # Slightly deepened colourway so each series keeps its punch on a white
+    # background (the dark-mode tints can wash out on light surfaces).
+    "colorway": ["#7C4DFF", "#0bb89c", "#2563eb", "#e08600", "#ef4444"],
     "margin": {"l": 8, "r": 8, "t": 24, "b": 8},
 }
 
