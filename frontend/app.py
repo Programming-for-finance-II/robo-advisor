@@ -3236,10 +3236,11 @@ _CHAT_CSS = """
     letter-spacing: 0.06em; text-transform: uppercase;
     color: #5eead4; margin-bottom: 0.4rem; opacity: 0.9;
 }
-/* User bubble: RIGHT-aligned, compact — purple accent */
+/* User bubble: RIGHT-aligned, hugs its text (caps at 70%) — purple accent */
 [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"])
 [data-testid="stChatMessageContent"] {
-    width: 70% !important;
+    width: fit-content !important;
+    max-width: 70% !important;
     margin-left: auto !important;
     margin-right: 0 !important;
     background: rgba(124,92,252,0.1) !important;
