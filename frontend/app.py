@@ -4029,13 +4029,7 @@ def render_backtesting() -> None:
     )
 
     st.markdown(
-        f'<div style="font-size:0.95rem;line-height:1.6;color:{t["text_secondary"]};'
-        f'margin:0.2rem 0 1.3rem;max-width:60rem;">'
-        f'Backtesting replays each strategy on real historical prices to see how it '
-        f'would have held up in the past. Pick a stress scenario below to compare '
-        f'your <strong style="color:{t["text_primary"]};">HRP</strong> allocation '
-        f'against the classic <strong style="color:{t["text_primary"]};">Markowitz'
-        f'</strong> method through a real market crisis.</div>',
+        f'<div style="font-size:0.95rem;line-height:1.6;color:{t["text_secondary"]};margin:0.2rem 0 1.3rem;">Backtesting replays each strategy on real historical prices to see how it would have held up in the past. Pick a stress scenario below to compare your <strong style="color:{t["text_primary"]};">HRP</strong> allocation against the classic <strong style="color:{t["text_primary"]};">Markowitz</strong> method through a real market crisis.</div>',
         unsafe_allow_html=True,
     )
 
@@ -4409,7 +4403,7 @@ def render_backtesting() -> None:
             "1/N": "rgba(148,163,184,0.18)",
         }
         fig = make_subplots(
-            rows=2, cols=1, shared_xaxes=True, vertical_spacing=0.08,
+            rows=2, cols=1, shared_xaxes=True, vertical_spacing=0.12,
             row_heights=[0.62, 0.38],
             subplot_titles=("Value of €10,000 invested", "Drawdown from peak (%)"),
         )
