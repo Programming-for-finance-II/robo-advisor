@@ -3570,6 +3570,13 @@ def _build_chat_payload(profile_key: str):
 
         cluster_structure = live.get("cluster_structure") or base.cluster_structure
 
+        # Recompute the currency exposure from the live weights so the advisor's
+        # USD/EUR figures match the actual portfolio, not the mock baseline.
+        from backend.schemas.mock_data import regulatory_context_for_weights
+        regulatory_context = regulatory_context_for_weights(
+            base.regulatory_context, weights
+        )
+
         # Rebuild the allowed-number whitelist from the overridden payload.
         partial = {
             "metadata": base.metadata.model_dump(),
@@ -3579,7 +3586,7 @@ def _build_chat_payload(profile_key: str):
             "cluster_structure": cluster_structure.model_dump(),
             "stress_scenarios": base.stress_scenarios.model_dump(),
             "backtest_summary": base.backtest_summary.model_dump(),
-            "regulatory_context": base.regulatory_context.model_dump(),
+            "regulatory_context": regulatory_context.model_dump(),
         }
         constraints = LLMConstraints(
             allowed_numbers=build_allowed_numbers(partial),
@@ -3596,7 +3603,7 @@ def _build_chat_payload(profile_key: str):
             stress_scenarios=base.stress_scenarios,
             backtest_summary=base.backtest_summary,
             llm_constraints=constraints,
-            regulatory_context=base.regulatory_context,
+            regulatory_context=regulatory_context,
         )
     except Exception:
         # Any mismatch in live data shape must never break the chat.
@@ -4647,9 +4654,13 @@ def render_compare() -> None:
             st.session_state["portfolio_profile"] = profile_label
             st.session_state["recommendation_id"] = portfolio["recommendation_id"]
     hrp_rc: dict[str, float] = portfolio["risk_contributions"]
-    _MAX_DD_FALLBACK = {"CONSERVATIVE": -0.112, "MODERATE": -0.187, "AGGRESSIVE": -0.312}
-    hrp_vol: float = portfolio.get("expected_volatility") or 0.094
-    hrp_max_dd: float = portfolio.get("max_drawdown") or _MAX_DD_FALLBACK.get(profile_label, -0.187)
+    # Offline fallbacks derive from the same backtest-sourced payload everything
+    # else uses, so a degraded (no-live) state stays consistent with the app.
+    _fallback_rm = get_mock_payload(profile_key).risk_metrics
+    hrp_vol: float = portfolio.get("expected_volatility") or _fallback_rm.annual_volatility
+    hrp_max_dd: float = (
+        portfolio.get("max_drawdown") or _fallback_rm.max_drawdown_historical
+    )
 
     # Mock MV weights are kept only as the offline fallback for the risk-contribution
     # chart below; the scorecard and section 2 use the real Markowitz figures.

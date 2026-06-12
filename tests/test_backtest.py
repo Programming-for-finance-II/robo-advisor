@@ -316,3 +316,27 @@ def test_mock_headline_metrics_match_full_period_backtest(mock_p, bt_p) -> None:
         assert abs(quoted - round(float(real), 6)) < 1e-6, (
             f"{mock_p}/{name}: payload {quoted} != backtest {real}"
         )
+
+
+# ---------------------------------------------------------------------------
+# Consistency: the regulatory currency exposure quoted by the chat advisor must
+# track the *actual* portfolio weights, not the mock baseline.
+# ---------------------------------------------------------------------------
+
+from backend.schemas.mock_data import regulatory_context_for_weights  # noqa: E402
+
+
+def test_regulatory_currency_recomputed_from_weights() -> None:
+    base = get_mock_payload("balanced").regulatory_context
+    # 45% in the two EUR-denominated tickers, 55% USD.
+    weights = {
+        "CSPX.L": 0.20, "EFA": 0.05, "GLD": 0.07, "VNQ": 0.03,
+        "AGGH.MI": 0.30, "TLT": 0.10, "TIP": 0.10, "XEON.MI": 0.15,
+    }
+    rc = regulatory_context_for_weights(base, weights)
+    assert abs(rc.portfolio_eur_denominated_pct - 0.45) < 1e-9
+    assert abs(rc.portfolio_usd_denominated_pct - 0.55) < 1e-9
+    assert "55%" in rc.currency_risk_note
+    # Static regulatory facts are preserved.
+    assert rc.etf_ucits_eligible == base.etf_ucits_eligible
+    assert rc.profiler_training_geography == base.profiler_training_geography

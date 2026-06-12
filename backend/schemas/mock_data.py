@@ -431,6 +431,29 @@ def _make_regulatory_context(profile: ProfileLabel) -> RegulatoryContext:
     )
 
 
+def regulatory_context_for_weights(
+    base: RegulatoryContext, weights: dict[str, float]
+) -> RegulatoryContext:
+    """Return a copy of ``base`` with the currency-exposure fields recomputed from
+    the given weights.
+
+    The mock regulatory context derives its USD/EUR split from the mock baseline
+    weights. When a live portfolio is in use its weights differ, so the chat
+    advisor would otherwise quote a currency exposure that does not match the
+    actual portfolio shown on the dashboard. Recomputing keeps them consistent.
+    """
+    usd = _usd_pct(weights)
+    eur = _eur_pct(weights)
+    data = base.model_dump()
+    data["portfolio_usd_denominated_pct"] = usd
+    data["portfolio_eur_denominated_pct"] = eur
+    data["currency_risk_note"] = (
+        f"Approximately {int(round(usd * 100))}% of the portfolio is denominated "
+        "in USD. EUR-based investors are exposed to EUR/USD currency risk."
+    )
+    return RegulatoryContext(**data)
+
+
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
