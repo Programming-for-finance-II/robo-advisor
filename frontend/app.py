@@ -395,9 +395,9 @@ def _mock_optimization(profile_key: str) -> dict:
 PAGES = [
     "Questionnaire",
     "Portfolio Dashboard",
-    "Compare Markowitz",
     "Chat Advisor",
     "Backtesting",
+    "Compare Markowitz",
     "Settings",
 ]
 
