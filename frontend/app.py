@@ -3578,6 +3578,34 @@ def _build_chat_payload(profile_key: str):
         return base
 
 
+# First sentence of MANDATORY_DISCLAIMER — used to detect and strip the legal
+# footer from chat bubbles. Specific enough never to appear in a real answer.
+_CHAT_DISCLAIMER_MARKER: str = "This is an educational prototype"
+
+
+def _strip_chat_disclaimer(text: str) -> str:
+    """Remove the trailing MiFID II disclaimer from a chat reply for display.
+
+    The disclaimer is still enforced by the validator (it stays in the validated
+    text) and is shown once via the page-level footer (render_global_footer), so
+    repeating it inside every chat bubble only lengthens the conversation. This
+    strips the final disclaimer block — and any partial prefix still arriving
+    mid-stream — so bubbles stay focused on the answer.
+    """
+    marker = _CHAT_DISCLAIMER_MARKER
+    idx = text.find(marker)
+    if idx != -1:
+        return text[:idx].rstrip(" \n*")
+    # While streaming, the disclaimer arrives token-by-token at the very end.
+    # Hide a partial prefix of the marker still sitting at the tail so it does
+    # not flash into view and then vanish. Require >= 8 chars to avoid false cuts.
+    overlap_max = min(len(text), len(marker))
+    for n in range(overlap_max, 7, -1):
+        if text[-n:] == marker[:n]:
+            return text[:-n].rstrip(" \n*")
+    return text
+
+
 def _chat_stream_reply(
     text: str,
     profile_key: str,
@@ -3640,7 +3668,7 @@ def _chat_stream_reply(
         try:
             for chunk in narrator.narrate_stream(payload, san.sanitised_input):
                 full_text += chunk
-                placeholder.markdown(full_text + "▌")
+                placeholder.markdown(_strip_chat_disclaimer(full_text) + "▌")
             streamed = bool(full_text)
         except Exception:  # noqa: BLE001 — any streaming failure → blocking path
             full_text = ""
@@ -3668,15 +3696,18 @@ def _chat_stream_reply(
             return msg
         full_text = nresp.raw_text
 
-    # Validate the complete response, then display the final safe text.
+    # Validate the complete response (disclaimer stays enforced in safe_text),
+    # then display a decluttered version: the legal footer is dropped from the
+    # bubble because the page already shows it once via render_global_footer().
     result = validate(
         response_text=full_text,
         allowed_numbers=payload.llm_constraints.allowed_numbers,
         forbidden_phrases=payload.llm_constraints.forbidden_phrases,
         eu_awareness_required=False,
     )
-    placeholder.markdown(result.safe_text)
-    return result.safe_text
+    display_text = _strip_chat_disclaimer(result.safe_text)
+    placeholder.markdown(display_text)
+    return display_text
 
 
 def _render_chat_info_panel() -> None:
