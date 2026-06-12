@@ -5034,8 +5034,7 @@ def render_compare() -> None:
         "line-height:1.55;margin-bottom:0.5rem;'>"
         "HRP and Markowitz build their portfolios from this same correlation matrix — but "
         "they use it in opposite ways. Here the assets are ordered the way HRP groups them, "
-        "by how they actually move (purple = together, teal = apart), so its real groups sit "
-        "side by side."
+        "so its real groups sit side by side."
         "</p>",
         unsafe_allow_html=True,
     )
@@ -5221,71 +5220,36 @@ def render_compare() -> None:
             unsafe_allow_html=True,
         )
 
-    if _hot_s >= 0 and _hot_avg > 0:
-        st.markdown(
-            f"<p style='color:{thm['text_secondary']};font-size:0.82rem;"
-            "line-height:1.55;margin:0.4rem 0 0.6rem;'>"
-            f"The highlighted block is HRP's tightest cluster — those ETFs move almost "
-            f"together (ρ ≈ {_hot_avg:.2f}). A group of near-identical assets is exactly "
-            "where the two models part ways:"
-            "</p>",
-            unsafe_allow_html=True,
-        )
-
-    st.markdown(
-        f"<div style='display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;"
-        "margin:0 0 0.4rem;'>"
-        f"<div style='background:{thm['bg_card']};border:1px solid {thm['border']};"
-        "border-left:3px solid #f87171;border-radius:10px;padding:0.7rem 0.85rem;'>"
-        "<div style='font-weight:600;color:#f87171;font-size:0.85rem;"
-        "margin-bottom:0.3rem;'>Markowitz</div>"
-        f"<div style='color:{thm['text_secondary']};font-size:0.8rem;line-height:1.5;'>"
-        "Inverts this matrix to find optimal weights. A block of near-identical assets "
-        "makes that maths unstable, so it piles risk into a few positions."
-        "</div></div>"
-        f"<div style='background:{thm['bg_card']};border:1px solid {thm['border']};"
-        "border-left:3px solid #7c5cfc;border-radius:10px;padding:0.7rem 0.85rem;'>"
-        "<div style='font-weight:600;color:#7c5cfc;font-size:0.85rem;"
-        "margin-bottom:0.3rem;'>HRP</div>"
-        f"<div style='color:{thm['text_secondary']};font-size:0.8rem;line-height:1.5;'>"
-        "Never inverts. It groups correlated assets into clusters and splits the budget "
-        "step by step, so it stays robust on the very same data."
-        "</div></div>"
-        "</div>",
-        unsafe_allow_html=True,
-    )
-
-    if _has_diversifiers:
-        _regime = (
-            "The teal cells are the real diversifiers — assets that move against the "
-            "rest (like the stock–bond hedge). Combining them is what lowers risk."
-        )
-    else:
-        _regime = (
-            "Right now almost everything moves together — even stocks and bonds. The "
-            "classic hedge has weakened, so diversification is harder, which is exactly "
-            "when HRP's robustness matters most."
-        )
-    st.markdown(
-        f"<p style='color:{thm['text_secondary']};font-size:0.82rem;"
-        f"line-height:1.55;margin:0.5rem 0 0.2rem;'>{_regime}</p>",
-        unsafe_allow_html=True,
-    )
-
-    _hm_note = (
-        ""
-        if _corr_is_live
-        else " Figures shown are a stylised illustration (live prices unavailable)."
-    )
-    _legend = (
-        "Purple = move together, teal = move apart. "
+    # The "how to read it" explanation lives in a collapsible panel so the
+    # section stays clean; inside it is schematic, with the key words in bold.
+    _hot_rho = f" (ρ ≈ {_hot_avg:.2f})" if _hot_s >= 0 and _hot_avg > 0 else ""
+    _regime_pt = (
+        "**Teal cells** are the real **diversifiers** — assets that move against the "
+        "rest (like the stock–bond hedge); combining them lowers risk."
         if _has_diversifiers
-        else "Purple = move together (darker = weaker correlation). "
+        else "**Right now** almost everything moves **together** — even stocks and bonds. "
+        "The classic hedge has weakened, so diversification is harder, which is exactly "
+        "when **HRP's robustness** matters most."
     )
-    st.caption(
-        _legend + "Ordered by HRP's grouping; the highlighted block is its tightest "
-        "cluster, where Markowitz over-concentrates." + _hm_note
+    _offline_pt = (
+        "" if _corr_is_live
+        else "\n\n_Figures shown are a stylised illustration (live prices unavailable)._"
     )
+    with st.expander("How to interpret this graph"):
+        st.markdown(
+            "**Each cell** — how two ETFs have moved together over time:\n\n"
+            "- **Purple** → they move **together** (little diversification)\n"
+            "- **Teal** → they move **apart** (a genuine hedge)\n"
+            "- **Dark** → barely related\n\n"
+            "**The order** — assets are arranged the way **HRP groups** them, so similar "
+            "ETFs sit side by side and the clusters appear as **blocks on the diagonal**.\n\n"
+            f"**The highlighted block** — HRP's **tightest cluster**{_hot_rho}, where the "
+            "two methods **part ways**:\n\n"
+            "- **Markowitz** inverts this matrix → a block of near-identical assets makes "
+            "the maths **unstable**, so it **over-concentrates** risk.\n"
+            "- **HRP** never inverts → it **clusters** these assets and stays **robust**.\n\n"
+            f"{_regime_pt}{_offline_pt}"
+        )
 
 
 # ---------------------------------------------------------------------------
