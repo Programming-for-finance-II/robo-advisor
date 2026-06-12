@@ -248,3 +248,38 @@ def test_export_results_json_creates_files(tmp_path: Path) -> None:
 
     assert (tmp_path / "backtest_covid_2020_moderate.json").exists()
     assert (tmp_path / "backtest_summary_moderate.json").exists()
+
+
+# ---------------------------------------------------------------------------
+# Consistency: the chat/dashboard mock payload must quote the SAME stress
+# drawdowns as the real backtest, so the Chat Advisor never contradicts the
+# Backtesting page (regression guard for the mock-vs-real drift bug).
+# ---------------------------------------------------------------------------
+
+import json as _json  # noqa: E402
+
+from backend.schemas.mock_data import get_mock_payload  # noqa: E402
+
+_BT_DIR = Path(__file__).resolve().parents[1] / "backtest_output"
+# (mock profile, backtest profile, payload field, backtest scenario key)
+_STRESS_PAIRS = [
+    ("conservative", "conservative", "covid_march_2020", "covid_2020"),
+    ("balanced", "moderate", "covid_march_2020", "covid_2020"),
+    ("aggressive", "aggressive", "covid_march_2020", "covid_2020"),
+    ("conservative", "conservative", "rates_hike_2022", "rate_hike_2022"),
+    ("balanced", "moderate", "rates_hike_2022", "rate_hike_2022"),
+    ("aggressive", "aggressive", "rates_hike_2022", "rate_hike_2022"),
+]
+
+
+@pytest.mark.parametrize("mock_p, bt_p, field, scenario", _STRESS_PAIRS)
+def test_mock_stress_matches_real_backtest(mock_p, bt_p, field, scenario) -> None:
+    summary = _json.loads((_BT_DIR / f"backtest_summary_{bt_p}.json").read_text())
+    real_dd = summary[scenario]["strategies"]["HRP"]["max_drawdown"]
+    payload = get_mock_payload(mock_p)
+    quoted = getattr(payload.stress_scenarios, field).portfolio_drawdown
+    assert abs(quoted - round(min(real_dd, 0.0), 4)) < 1e-6, (
+        f"{mock_p}/{field}: chat payload quotes {quoted:+.4f} but the backtest "
+        f"shows {real_dd:+.4f} — the Chat Advisor would contradict the "
+        "Backtesting page"
+    )
