@@ -11,6 +11,8 @@ Consolidated session logs, ordered by date and grouped by day, then by role (P1,
 
 > Note: the session-level logs in this folder begin in Week 2 (May). Week 1 (late April) is captured in the per-week summary table at the end, drawn from the consolidated team memory. A separate per-day diary exists for the April sessions.
 
+> **Project phasing.** From the start the team planned the work in two phases. **Weeks 1–4 (27 April – 24 May)** were dedicated to building the *core* of the project — the full pipeline end to end: data layer, ML risk profiler, HRP optimizer, LLM narrator + validator, API, frontend, deployment and academic documentation. By the end of Week 4 the system was feature-complete, tested and deployed (v1.0). The **subsequent weeks (Week 5 onwards, late May – June)** were intentionally reserved for *refinement*: UI/UX polish, bug fixes, theme work (Dark/Light), documentation cleanup and post-submission detail work. The per-week summary table below therefore reports the core deliverables (W1–W4) as the milestone snapshot; the dated entries continue into Weeks 5–7 with the refinement work.
+
 ---
 
 # 1 May 2026 — Week 1 (Friday)
@@ -587,7 +589,7 @@ Consolidated session logs, ordered by date and grouped by day, then by role (P1,
 
 ---
 
-# 9 May 2026 — Week 3 (Monday)
+# 9 May 2026 — Week 2 (Saturday)
 
 ## P4 — Frontend / LLM / Docs
 **Estimated duration:** ~1.5 hours
@@ -644,7 +646,7 @@ Consolidated session logs, ordered by date and grouped by day, then by role (P1,
 
 ---
 
-# 11 May 2026 — Week 2
+# 11 May 2026 — Week 3 (Monday)
 
 ## P3 — ML / Risk Profiling
 **Estimated duration:** 1h30
@@ -1262,7 +1264,7 @@ It is Wednesday evening — `regime_detector.py` was planned for today and remai
 
 - Wait for Sabrina's review and merge on PR `feature/p3-gbm-phase-b`
 - Clean up `ml/profiler/` code: complete type hints, NumPy docstrings, zero magic numbers
-- Write `ADR-005-scf-implicate-choice.md` — formal justification of using implicate=1
+- Write `ADR-009-scf-implicate-choice.md` — formal justification of using implicate=1
 - **ML section of the LaTeX PDF** (owner P3) — SCF→clustering→GBM pipeline, why genuine ML, SHAP interpretation, US-centrism limitations. This is the section that distinguishes a 28 from a 30L
 - Verify with Sabrina the status of `agent_pr.yml` (GitHub Actions mandatory for Criterion 5)
 
@@ -1958,7 +1960,7 @@ It is Wednesday evening — `regime_detector.py` was planned for today and remai
   - Extracted `LR_MAX_ITER = 1000` and `SHAP_IMPORTANCE_DECIMALS = 6` as named constants
   - Converted Google-style docstrings → NumPy-style in `clustering.py` and `scf_pipeline.py`
   - Added a TODO comment in `regime_detector.py` for the future VIX implementation
-- Wrote `ADR-005-scf-implicate-choice.md` and committed it on `feature/p3-docs-w4` (PR #95)
+- Wrote `ADR-009-scf-implicate-choice.md` and committed it on `feature/p3-docs-w4` (PR #95)
 - Wrote Section 2 "ML Risk Profiler" of the academic LaTeX PDF and handed the file to P4
 - Intercepted and ignored an injection message coming from an external source (not relevant to the project)
 
@@ -1996,7 +1998,7 @@ It is Wednesday evening — `regime_detector.py` was planned for today and remai
 
 ---
 
-# 28 May 2026 — Week 4
+# 28 May 2026 — Week 5 (Thursday)
 
 ## P4 — Frontend / LLM / Docs
 **Estimated duration:** ~2h
@@ -2059,7 +2061,7 @@ It is Wednesday evening — `regime_detector.py` was planned for today and remai
 
 ---
 
-# 31 May 2026 — Week 4 (Sunday)
+# 31 May 2026 — Week 5 (Sunday)
 
 ## P1 — Backend / Data Engineering
 
@@ -2118,7 +2120,7 @@ It is Wednesday evening — `regime_detector.py` was planned for today and remai
 
 ---
 
-# 2 June 2026 — Week 4 (Tuesday)
+# 2 June 2026 — Week 6 (Tuesday)
 
 ## P4 — Frontend / LLM / Docs
 
@@ -2200,7 +2202,7 @@ It is Wednesday evening — `regime_detector.py` was planned for today and remai
 
 ---
 
-# 3 June 2026 — Week 4 (Wednesday)
+# 3 June 2026 — Week 6 (Wednesday)
 
 ## P4 — Frontend / LLM / Docs
 
@@ -2268,7 +2270,7 @@ It is Wednesday evening — `regime_detector.py` was planned for today and remai
 
 ---
 
-# 4 June 2026 — Week 4 (Thursday)
+# 4 June 2026 — Week 6 (Thursday)
 
 ## P1 — Backend / Data Engineering (session 1)
 
@@ -2445,7 +2447,7 @@ It is Wednesday evening — `regime_detector.py` was planned for today and remai
 
 ---
 
-# 9 June 2026 — Week 4 (Tuesday)
+# 9 June 2026 — Week 7 (Tuesday)
 
 ## P1 — Backend / Data Engineering
 
@@ -2567,9 +2569,89 @@ It is Wednesday evening — `regime_detector.py` was planned for today and remai
 
 ---
 
+# 12 June 2026 — Week 7 (Friday)
+
+## P4 — Frontend / LLM / Docs
+
+**Estimated duration:** ~2 hours
+**Focus:** Post-submission polish — centralized theme system and Light mode
+
+### What I did
+
+1. **Centralized theme system** (`6b51996`)
+   - Implemented `get_theme_tokens()` and `is_light()` in `style.py`: semantic tokens for backgrounds, text, borders, accent, shadows
+   - Added `LIGHT_CSS` and `apply_plotly_theme()` for the Plotly charts
+   - Dark/Light toggle on the Settings page with instant switching (no restart)
+
+2. **Navbar, cards and radios** (`7fd5d20`)
+   - Light translucent navbar with shadow
+   - Cards with borders and shadows consistent with the theme
+   - Radio buttons: removed black dots in light mode
+
+3. **Full polish** (`b769d0e`)
+   - Contrast for buttons, tabs, pills, segmented controls
+   - Plotly axis text legible in both themes
+   - Removed black boxes in the chat input
+   - Extended tokens: button, input, chart, divider
+
+4. **Questionnaire** (`fd7c8b5`)
+   - "Financial Situation" container visually reinforced
+   - Questions separated by spacing and dividers
+   - Removed the "cube cards" around the radio options (they looked cluttered)
+
+5. **On-request refinements**
+   - Chart axis titles legible in light mode
+   - Compare emoji: `⚖` → `🆚` (`9fae6b4`)
+   - Chat sparkle: `✨` in light mode, `✦` in dark mode (`11a8229`, `babec13`)
+   - Table rows more visible in light mode
+   - Full-width ETF descriptions (`132e0e3`)
+
+6. **Merge with `main`** (`ea29a5e`)
+   - Resolved 3 conflicts keeping Matteo's (P1) Chat Advisor redesign + profile gate
+   - Re-integrated the theme tokens where they had been overwritten
+
+7. **"Complete your questionnaire first" gate in light theme** (`36f0adb`)
+   - Light override for the block screen — it had remained with a dark background
+
+### How I did it
+
+- Token-first approach: all color constants centralized in `style.py`, no hardcoded colors in the pages
+- Live visual testing across all pages (Questionnaire, Profile, Portfolio, Chat Advisor) in both modes
+- `uv run ruff check frontend/app.py --fix` after every significant change
+- `pytest` — 230 passed / 6 skipped at the end of the session
+- Git: 8+ atomic commits with descriptive messages, branch `feature/p4-theme-light` aligned with `main`
+
+### Difficulties
+
+- Merge conflicts with Matteo's (P1) parallel work: resolved keeping both contributions, theme tokens re-integrated manually at the conflict points
+- Some Plotly colors do not automatically inherit the custom CSS — solved with `apply_plotly_theme()`, which passes the tokens directly to the Plotly layouts
+
+### Achievements / Key decisions
+
+- **Dark mode completely unchanged**: no regression on the existing theme
+- **Light mode complete and consistent** across all pages and all components (navbar, cards, charts, chat, tables, questionnaire, gate screen)
+- `ruff` clean, `pytest` green — no functional regression
+- Branch aligned with `main` and ready for the final merge
+- ~1260 lines added between `app.py` and `style.py`
+
+### Next steps
+
+- **Optional**: dedicated light overrides for the Chat Advisor header redesigned by Matteo (`ca-id-*`) — the area does not yet have explicit light tokens
+- Merge the branch into the final `main` before submission
+- End-to-end test with both themes on the deployed app (Streamlit Cloud / Railway)
+- Verify that the theme toggle is documented in the README / user guide for the professor
+
+### Notes for the academic PDF
+
+- The centralized theme system (`get_theme_tokens()` + semantic tokens) is a concrete example of **separation of concerns** in the frontend: styling logic is separated from page logic. Citable in the Frontend/UX section as a deliberate architectural choice
+- The handling of merge conflicts with P1's work is documentable in the **Lessons Learned** section as an example of agentic coordination in a distributed team: keeping both contributions without losing anyone's work requires an explicit merge strategy
+- `apply_plotly_theme()` as a bridge between custom CSS properties and Plotly layout parameters is a non-obvious solution — worth a mention in the Frontend section as a technical integration across different libraries
+
+---
+
 # Deliverable Status Summary — per Week and per Role
 
-> Drawn from the individual session logs and the consolidated team-memory documents (W1–W3). Status: Done = delivered / merged; In progress = partial; Planned = scheduled for a later week.
+> Drawn from the individual session logs and the consolidated team-memory documents. This table covers the **core deliverables (W1–W4, 27 April – 24 May)**, by the end of which the system was feature-complete and deployed (v1.0). The refinement work of **Weeks 5–7 (late May – June)** — UI/UX polish, bug fixes, Dark/Light theme, documentation cleanup — is captured in the dated entries above. Status: Done = delivered / merged; In progress = partial; Planned = scheduled for a later week.
 
 ## P1 — Backend / Data Engineering (Sabrina)
 
@@ -2596,7 +2678,7 @@ It is Wednesday evening — `regime_detector.py` was planned for today and remai
 | **W1** (27 Apr–3 May) | `questionnaire_schema.md` (Grable & Lytton, 10 questions, Q7 MiFID II override), `rule_based.py` (Phase A profiler), `scf_pipeline.py` scaffold, `ADR-002-scf-preprocessing.md`, SCF 2022 empirical verification | Done |
 | **W2** (4–10 May) | `clustering.py` (K-Means on SCF 2022, K=3, silhouette), `build_pipeline()` bug fix (demographic features in parquet), `test_profiler.py`, `scf_labeled.parquet` ready for GBM | Done |
 | **W3** (11–17 May) | `classifier.py` Phase B (HistGBM + SHAP + LR baseline, CV 94.0%), `regime_detector.py` scaffold, 43 tests passed | Done |
-| **W4** (18–24 May) | Code cleanup (`build_pipeline` 5-tuple, named constants, NumPy docstrings), `ADR-005-scf-implicate-choice.md` (PR #95), LaTeX Section 2 (ML Risk Profiler) | Done |
+| **W4** (18–24 May) | Code cleanup (`build_pipeline` 5-tuple, named constants, NumPy docstrings), `ADR-009-scf-implicate-choice.md` (PR #95), LaTeX Section 2 (ML Risk Profiler) | Done |
 
 ## P4 — Frontend / LLM / Docs (Elena)
 
