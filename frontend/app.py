@@ -4782,9 +4782,10 @@ def render_compare() -> None:
         else " Markowitz figures shown are an illustrative offline estimate."
     )
     st.caption(
-        "The coloured value is better on each metric. HRP reports no Sharpe because it "
-        "deliberately doesn't estimate returns — avoiding the unstable estimate that makes "
-        "Markowitz over-concentrate in the first place." + _sc_note
+        "The coloured value is better on each metric. Markowitz produces one portfolio for "
+        "everyone — HRP adapts to your risk profile, so only HRP's column changes when you "
+        "switch profile. HRP also reports no Sharpe because it deliberately doesn't estimate "
+        "returns, avoiding the unstable estimate that makes Markowitz over-concentrate." + _sc_note
     )
 
     # ── 2. Risk contributions ─────────────────────────────────────────────────
