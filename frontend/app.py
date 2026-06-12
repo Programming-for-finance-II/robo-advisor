@@ -4728,94 +4728,32 @@ def render_compare() -> None:
     def _num(v, fmt):
         return fmt.format(v) if isinstance(v, (int, float)) else "—"
 
-    # (label, sublabel, hrp_text, mv_text, winner) — winner in {"hrp", "mv", None}.
-    _rows = [
-        ("Annual volatility", "lower is better",
-         _num(hrp_vol, "{:.1%}"), _num(mv_vol, "{:.1%}"),
-         ("hrp" if hrp_vol < mv_vol else "mv") if isinstance(mv_vol, (int, float)) else None),
-        ("Max drawdown", "less negative is better",
+    # Head-to-head metrics with numeric values (for the comparison bars).
+    # (label, hint, hrp_val, mv_val, hrp_text, mv_text, winner) — winner in
+    # {"hrp", "mv", None}. mv_* may be None until live figures load.
+    def _win_lower(a, b):  # smaller value wins
+        return ("hrp" if a < b else "mv") if isinstance(b, (int, float)) else None
+
+    _metrics = [
+        ("Annual volatility", "lower is better", hrp_vol, mv_vol,
+         _num(hrp_vol, "{:.1%}"), _num(mv_vol, "{:.1%}"), _win_lower(hrp_vol, mv_vol)),
+        ("Max drawdown", "less negative is better", hrp_max_dd, mv_dd,
          _num(hrp_max_dd, "{:.1%}"), _num(mv_dd, "{:.1%}"),
-         ("hrp" if hrp_max_dd > mv_dd else "mv") if isinstance(mv_dd, (int, float)) else None),
-        ("Largest single-asset risk", "lower = less concentrated",
-         f"{hrp_top:.0f}%", f"{mv_top:.0f}%",
-         "hrp" if hrp_top < mv_top else "mv"),
-        ("Diversification score", "higher = more diversified",
-         f"{hrp_bets:.1f}", f"{mv_bets:.1f}",
-         "hrp" if hrp_bets > mv_bets else "mv"),
-        ("Sharpe ratio", "return per unit of risk",
+         ("hrp" if hrp_max_dd > mv_dd else "mv") if isinstance(mv_dd, (int, float))
+         else None),
+        ("Largest single-asset risk", "lower = less concentrated", hrp_top, mv_top,
+         f"{hrp_top:.0f}%", f"{mv_top:.0f}%", "hrp" if hrp_top < mv_top else "mv"),
+        ("Diversification score", "higher = more diversified", hrp_bets, mv_bets,
+         f"{hrp_bets:.1f}", f"{mv_bets:.1f}", "hrp" if hrp_bets > mv_bets else "mv"),
+        ("Sharpe ratio", "return per unit of risk", None, mv_sharpe,
          "—", _num(mv_sharpe, "{:.2f}"), None),
     ]
 
-    # Value cell: the better value is circled in its method's colour (purple for
-    # HRP, red for Markowitz); the loser is muted and N/A is dimmed.
-    def _cell(text, side, winner):
-        if text == "—":
-            return f'<span style="color:{thm["text_muted"]};">—</span>'
-        if winner == side:
-            _col = "#7c5cfc" if side == "hrp" else "#f87171"
-            return (f'<span style="border:1.5px solid {_col};border-radius:999px;'
-                    f'padding:2px 11px;color:{_col};">{text}</span>')
-        if winner is None:
-            return f'<span style="color:{thm["text_primary"]};">{text}</span>'
-        return f'<span style="color:{thm["text_secondary"]};">{text}</span>'
-
-    _hdr_bg = (
-        "linear-gradient(135deg,#ede9fe 0%,#ddd6fe 100%)"
-        if is_light() else
-        "linear-gradient(135deg,#1e1b4b 0%,#2d1f6e 100%)"
-    )
-    _hdr_metric_col = "#4c1d95" if is_light() else "#c4b5fd"
-    _hdr = (
-        f'<div style="display:flex;align-items:center;'
-        f'padding:0.65rem 1rem;margin:-0.9rem -1rem 0.5rem;'
-        f'background:{_hdr_bg};border-radius:11px 11px 0 0;">'
-        f'<div style="flex:1.7;font-size:0.72rem;font-weight:700;letter-spacing:0.1em;'
-        f'text-transform:uppercase;color:{_hdr_metric_col};">Metric</div>'
-        f'<div style="flex:0.9;text-align:right;">'
-        f'<span style="font-size:0.7rem;font-weight:700;letter-spacing:0.08em;'
-        f'text-transform:uppercase;color:#fff;background:#7c5cfc;'
-        f'padding:3px 11px;border-radius:999px;">HRP</span></div>'
-        f'<div style="flex:0.9;text-align:right;">'
-        f'<span style="font-size:0.7rem;font-weight:700;letter-spacing:0.08em;'
-        f'text-transform:uppercase;color:#fff;background:#f87171;'
-        f'padding:3px 11px;border-radius:999px;">Markowitz</span></div>'
-        f'</div>'
-    )
-    _val = ('flex:0.9;text-align:right;font-family:\'Space Grotesk\',sans-serif;'
-            'font-size:0.95rem;font-weight:600;')
-    _body = "".join(
-        f'<div style="display:flex;align-items:center;padding:0.62rem 0.4rem;'
-        f'border-bottom:1px solid {thm["border_soft"]};">'
-        f'<div style="flex:1.7;min-width:0;">'
-        f'<div style="font-size:0.9rem;font-weight:600;color:{thm["text_primary"]};'
-        f'line-height:1.25;">{_lab}</div>'
-        f'<div style="font-size:0.72rem;color:{thm["text_muted"]};">{_sub}</div></div>'
-        f'<div style="{_val}">{_cell(_h, "hrp", _w)}</div>'
-        f'<div style="{_val}">{_cell(_m, "mv", _w)}</div>'
-        f'</div>'
-        for _lab, _sub, _h, _m, _w in _rows
-    )
-    # Verdict cards beside the table: just keyword chips for fast scanning.
-    def _chips(words, bg, col):
-        return "".join(
-            f'<span style="display:inline-block;font-size:0.66rem;font-weight:600;'
-            f'padding:2px 7px;border-radius:999px;margin:0 0.25rem 0.3rem 0;'
-            f'background:{bg};color:{col};">{w}</span>'
-            for w in words
-        )
-
-    _hrp_chips = _chips(("Robust", "Diversified", "Adapts to you"),
-                        "rgba(124,92,252,0.16)", "#a78bfa")
-    _mv_chips = _chips(("Efficient", "Higher Sharpe", "Concentrated"),
-                       "rgba(248,113,113,0.16)", "#f87171")
-
-    # One-line, data-driven verdict above the scorecard so the reader gets the
-    # answer before decoding the table — mirrors the takeaway banner in §2.
-    # Wins are tallied from the same _rows the table renders; Sharpe (a draw by
-    # design, HRP reports none) is excluded from the head-to-head count and
-    # called out separately.
-    _hrp_wins = sum(1 for _r in _rows if _r[4] == "hrp")
-    _mv_wins = sum(1 for _r in _rows if _r[4] == "mv")
+    # One-line, data-driven verdict above the cards so the reader gets the answer
+    # first. Sharpe is excluded from the head-to-head count (HRP reports none by
+    # design) and called out separately.
+    _hrp_wins = sum(1 for _r in _metrics if _r[6] == "hrp")
+    _mv_wins = sum(1 for _r in _metrics if _r[6] == "mv")
     _comparable = _hrp_wins + _mv_wins
     _sharpe_txt = _num(mv_sharpe, "{:.2f}")
     if _comparable == 0:
@@ -4844,7 +4782,7 @@ def render_compare() -> None:
     st.markdown(
         f"<div style='display:flex;gap:0.55rem;align-items:flex-start;"
         f"background:{thm['accent_soft']};border:1px solid {thm['accent_border']};"
-        f"border-radius:12px;padding:0.7rem 0.9rem;margin-bottom:0.9rem;'>"
+        f"border-radius:12px;padding:0.7rem 0.9rem;margin-bottom:1rem;'>"
         f"<span style='color:{thm['accent_text']};font-size:1.1rem;line-height:1.3;"
         f"flex-shrink:0;'>&#9679;</span>"
         f"<span style='color:{thm['text_primary']};font-size:0.9rem;"
@@ -4853,40 +4791,83 @@ def render_compare() -> None:
         unsafe_allow_html=True,
     )
 
-    _col_tbl, _col_sum = st.columns([1.8, 1], gap="medium", vertical_alignment="center")
-    with _col_tbl:
-        st.markdown(
-            f'<div style="background:{thm["bg_card"]};border:1px solid {thm["border"]};'
-            f'border-radius:12px;padding:0.9rem 1rem;box-shadow:{thm["shadow"]};">'
-            + _hdr + _body + '</div>',
-            unsafe_allow_html=True,
+    # ── Comparison cards: one per metric, each with a head-to-head bar pair ──
+    _HRP_C, _MV_C = "#7c5cfc", "#f87171"
+    _track = "rgba(124,77,255,0.12)" if is_light() else "rgba(148,163,184,0.16)"
+
+    def _mrow(name: str, text: str, val, mx: float, side: str, winner) -> str:
+        base = _HRP_C if side == "hrp" else _MV_C
+        is_win = winner == side
+        numeric = isinstance(val, (int, float))
+        frac = (abs(val) / mx) if numeric and mx > 0 else 0.0
+        width = max(3.0, min(100.0, frac * 100)) if numeric else 0.0
+        bar_col = base if is_win else thm["border"]
+        val_col = base if is_win else thm["text_secondary"]
+        check = (f'<span style="color:{base};margin-left:0.3rem;">&#10003;</span>'
+                 if is_win else "")
+        bar = (
+            f'<div style="flex:1;height:7px;border-radius:99px;background:{_track};">'
+            f'<div style="width:{width}%;height:100%;border-radius:99px;'
+            f'background:{bar_col};"></div></div>'
+            if numeric else '<div style="flex:1;height:7px;"></div>'
         )
-    with _col_sum:
-        st.markdown(
-            f'<div style="background:{thm["bg_card"]};border:1px solid {thm["border"]};'
-            f'border-left:3px solid #7c5cfc;border-radius:10px;padding:0.7rem 0.85rem;'
-            f'margin-bottom:0.6rem;">'
-            f'<div style="font-weight:600;color:#7c5cfc;font-size:0.9rem;'
-            f'margin-bottom:0.45rem;">HRP</div>'
-            f'<div>{_hrp_chips}</div></div>'
-            f'<div style="background:{thm["bg_card"]};border:1px solid {thm["border"]};'
-            f'border-left:3px solid #f87171;border-radius:10px;padding:0.7rem 0.85rem;">'
-            f'<div style="font-weight:600;color:#f87171;font-size:0.9rem;'
-            f'margin-bottom:0.45rem;">Markowitz</div>'
-            f'<div>{_mv_chips}</div></div>',
-            unsafe_allow_html=True,
+        return (
+            f'<div style="display:flex;align-items:center;gap:0.6rem;margin:0.45rem 0;">'
+            f'<span style="width:72px;font-size:0.78rem;font-weight:600;'
+            f'color:{thm["text_secondary"]};">{name}</span>{bar}'
+            f'<span style="min-width:52px;text-align:right;font-family:'
+            f"'Space Grotesk',sans-serif;font-weight:700;font-size:0.95rem;"
+            f'color:{val_col};white-space:nowrap;">{text}{check}</span></div>'
         )
+
+    _cards = ""
+    for _lab, _hint, _hv, _mval, _ht, _mt, _wn in _metrics:
+        _mx = max(
+            abs(_hv) if isinstance(_hv, (int, float)) else 0.0,
+            abs(_mval) if isinstance(_mval, (int, float)) else 0.0,
+        ) or 1.0
+        _win_label = (
+            f'<span style="font-size:0.62rem;font-weight:700;letter-spacing:0.05em;'
+            f'text-transform:uppercase;color:{_HRP_C if _wn == "hrp" else _MV_C};'
+            f'background:{"rgba(124,92,252,0.12)" if _wn == "hrp" else "rgba(248,113,113,0.12)"};'
+            f'border-radius:999px;padding:0.12rem 0.5rem;">'
+            f'{"HRP" if _wn == "hrp" else "Markowitz"}</span>'
+            if _wn else ""
+        )
+        _cards += (
+            f'<div style="background:{thm["bg_card"]};border:1px solid {thm["border"]};'
+            f'border-radius:14px;padding:0.95rem 1.05rem;box-shadow:{thm["shadow"]};">'
+            f'<div style="display:flex;justify-content:space-between;'
+            f'align-items:center;margin-bottom:0.15rem;">'
+            f'<span style="font-family:\'Space Grotesk\',sans-serif;font-size:0.72rem;'
+            f'font-weight:700;letter-spacing:0.07em;text-transform:uppercase;'
+            f'color:{thm["accent_text"]};">{_lab}</span>{_win_label}</div>'
+            f'<div style="font-size:0.7rem;color:{thm["text_muted"]};'
+            f'margin-bottom:0.45rem;">{_hint}</div>'
+            f'{_mrow("HRP", _ht, _hv, _mx, "hrp", _wn)}'
+            f'{_mrow("Markowitz", _mt, _mval, _mx, "mv", _wn)}'
+            f'</div>'
+        )
+
+    st.markdown(
+        f'<div style="display:grid;'
+        f'grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:0.85rem;">'
+        f'{_cards}</div>',
+        unsafe_allow_html=True,
+    )
 
     _sc_extra = (
         "" if mv_rc_is_live
         else " · figures are an illustrative offline estimate"
     )
     st.markdown(
-        f'<div style="margin:0.6rem 0 0;font-size:0.78rem;color:{thm["text_muted"]};'
-        f'line-height:1.5;">The circled value wins each metric (purple = HRP, '
-        f'red = Markowitz). HRP shows no Sharpe — '
-        f"by design it doesn't estimate returns, which keeps it from over-concentrating "
-        f'like Markowitz{_sc_extra}.</div>',
+        f'<div style="margin:0.9rem 0 0;font-size:0.78rem;color:{thm["text_muted"]};'
+        f'line-height:1.55;"><span style="color:#7c5cfc;font-weight:700;">HRP</span> '
+        f'trades a little efficiency for robustness and diversification; '
+        f'<span style="color:#f87171;font-weight:700;">Markowitz</span> maximises the '
+        f"in-sample Sharpe but concentrates risk. HRP reports no Sharpe — by design it "
+        f'does not estimate returns, which keeps it from over-concentrating'
+        f'{_sc_extra}.</div>',
         unsafe_allow_html=True,
     )
 
