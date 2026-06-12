@@ -211,6 +211,30 @@ def _run_live_optimization(profile_label: str) -> dict:
         fallback_tickers=list(report.fallback_tickers_applied.keys()),
     )
 
+    # Markowitz Max-Sharpe benchmark, computed from the SAME prices already
+    # downloaded above. This guarantees HRP and MV are compared on identical
+    # input data (same Ledoit-Wolf covariance) and costs no extra network call.
+    # Risk contributions use the same marginal formula as HRP, so the two are
+    # directly comparable. Defensive: a failure here must not break the HRP
+    # recommendation — the comparison views fall back to an offline estimate.
+    try:
+        from backend.optimizer.markowitz import optimize_markowitz
+
+        mv_result = optimize_markowitz(
+            prices,
+            ucits_tickers=report.ucits_tickers_used,
+            fallback_tickers=list(report.fallback_tickers_applied.keys()),
+        )
+        mv_fields = {
+            "mv_weights": mv_result["weights"],
+            "mv_risk_contributions": mv_result["risk_contributions"],
+            "mv_expected_volatility": mv_result["expected_volatility"],
+            "mv_expected_return": mv_result["expected_return"],
+            "mv_sharpe_ratio": mv_result["sharpe_ratio"],
+        }
+    except Exception:
+        mv_fields = {}
+
     # Real cluster structure for the "How your money is grouped" view.
     # Defensive: a failure here must not break the whole live path — the
     # grouping view falls back gracefully when this is absent.
@@ -248,6 +272,7 @@ def _run_live_optimization(profile_label: str) -> dict:
         "avg_correlation": regime_result.avg_correlation,
         "cluster_structure": cluster_structure,
         "source": "live",
+        **mv_fields,
     }
 
 
@@ -4467,6 +4492,14 @@ def render_compare() -> None:
     mv_total = sum(mv_raw_rc.values()) or 1.0
     mv_rc: dict[str, float] = {t: v / mv_total for t, v in mv_raw_rc.items()}
 
+    # Prefer the real Markowitz risk contributions computed on live prices
+    # (same covariance and same marginal formula as HRP — a fair comparison).
+    # The weight x cluster-vol figures above remain only as an offline fallback.
+    _mv_rc_live = portfolio.get("mv_risk_contributions")
+    mv_rc_is_live = bool(_mv_rc_live)
+    if mv_rc_is_live:
+        mv_rc = _mv_rc_live
+
     st.markdown(f"**Active profile: {profile_label}**")
     st.markdown("---")
 
@@ -4687,10 +4720,16 @@ def render_compare() -> None:
         dragmode="pan",
     )
     st.plotly_chart(fig_rc, use_container_width=True, config={"displaylogo": False})
+    _rc_note = (
+        ""
+        if mv_rc_is_live
+        else " Markowitz figures shown are an illustrative offline estimate."
+    )
     st.caption(
         "HRP targets equal risk contributions across assets. "
         "MV concentrates risk in low-volatility assets (bonds), "
         "which can reduce diversification benefits in a stress regime."
+        + _rc_note
     )
 
     # ── 3. Correlation heatmap ────────────────────────────────────────────────
