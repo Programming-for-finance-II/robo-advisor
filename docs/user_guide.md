@@ -41,7 +41,7 @@ The platform combines four technical components:
 
 | Component | Technology | Role |
 |---|---|---|
-| Risk Profiler | Rule-based (Phase A) / GBM on Fed SCF 2022 (Phase B) | Classifies investor risk tolerance |
+| Risk Profiler | Rule-based engine (live) + GBM on Fed SCF 2022 | Classifies investor risk tolerance |
 | Portfolio Optimizer | Hierarchical Risk Parity (HRP) + Ledoit-Wolf shrinkage | Builds diversified UCITS-aware portfolio |
 | LLM Narrator | Claude API (Anthropic) | Explains results in natural language |
 | LLM Validator | 5-step post-generation filter | Ensures narrator does not hallucinate or give advice |
@@ -154,9 +154,9 @@ Dashboard and Chat Advisor pages.
 ### Top drivers
 
 The result also includes the three questions that most influenced your classification
-(called *top drivers*). In Phase A (rule-based), these are the questions whose answers
-deviated most from the neutral midpoint. In Phase B (GBM + SHAP), they are replaced by
-SHAP TreeExplainer values from the trained gradient boosting model.
+(called *top drivers*). In the rule-based engine these are the questions whose answers
+deviated most from the neutral midpoint; the GBM model instead derives them from
+SHAP TreeExplainer values over the trained gradient boosting model.
 
 ---
 
@@ -178,7 +178,7 @@ Shows the Hierarchical Risk Parity portfolio:
 
 - **Portfolio weights** — allocation per ETF ticker
 - **Active profile and confidence** — your investor classification
-- *(Phase B)* Risk contribution bar chart, dendrogram, and full metrics table
+- Risk contribution bar chart, dendrogram, and full metrics table
 
 #### Markowitz Benchmark tab
 
@@ -273,7 +273,7 @@ If `ANTHROPIC_API_KEY` is not set, the Chat Advisor displays:
 > *"ANTHROPIC_API_KEY is not configured. Add it to `.streamlit/secrets.toml`..."*
 
 The Questionnaire and Portfolio Dashboard pages remain fully functional without an API key
-(Phase A mock data is always available).
+(mock data is always available).
 
 ---
 
@@ -385,8 +385,8 @@ Returns HRP-optimised portfolio weights and risk metrics.
   "algorithm": "HRP",
   "weights": {"CSPX.L": 0.22, "EFA": 0.15, "AGGH.MI": 0.18, ...},
   "expected_volatility": 0.094,
-  "expected_return": null,
-  "sharpe_ratio": null,
+  "expected_return": 0.061,
+  "sharpe_ratio": 0.65,
   "risk_contributions": {"CSPX.L": 0.31, ...},
   "recommendation_id": "uuid-v4",
   "market_data_hash": "sha256:...",

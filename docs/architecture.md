@@ -163,7 +163,7 @@ The LLM layer is therefore not trusted by default. Every response must pass vali
 |---|---|
 | UCITS ticker unavailable | Use US-listed fallback and log it |
 | Too many missing market values | Raise data quality error or use last valid snapshot |
-| High correlation regime | Switch to ERC-style fallback |
+| High correlation regime | Flag HIGH_STRESS and show an investor warning banner (ERC fallback available, not auto-applied) |
 | Low profiler confidence | Use rule-based fallback or clarification questions |
 | LLM invents numbers | Block response and retry or fallback |
 | LLM uses forbidden advice language | Block response |
