@@ -3236,6 +3236,13 @@ div[class*="st-key-chat_suggest"] button:hover::after {
 div[class*="st-key-chat_suggest"] button p {
     text-align: left !important; margin: 0 !important; font-weight: 500 !important;
 }
+/* When the first message is sent, the empty-state suggestions are no longer
+   rendered. Streamlit keeps the now-stale buttons on screen and fades them out
+   slowly (~1s) while the reply streams, so they appear to linger and drift down.
+   Hiding stale suggestion containers makes them vanish instantly instead. */
+[data-testid="stElementContainer"][data-stale="true"][class*="st-key-chat_suggest"] {
+    display: none !important;
+}
 
 /* ── Conversation thread — boxed, colour-coded, labelled ────────────────── */
 .ca-thread { padding: 0.3rem 0 0.2rem; }
