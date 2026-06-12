@@ -3991,6 +3991,12 @@ _STRATEGY_LABELS: dict[str, str] = {
     "MV":  "Markowitz",
 }
 
+# US-listed proxies the backtest uses for the EU ETFs that lack price history
+# back to 2008 (CSPX.L→SPY, AGGH.MI→AGG, XEON.MI→BIL). They are shown in a
+# distinct neutral colour and explained in an alert under the donuts.
+_PROXY_TICKERS: frozenset[str] = frozenset({"SPY", "AGG", "BIL"})
+_PROXY_COLOR: str = "#94a3b8"
+
 
 def render_backtesting() -> None:
     _restore_persisted_profile()
@@ -4224,9 +4230,31 @@ def render_backtesting() -> None:
                 _fig_alloc.update_traces(textposition="inside",
                                          insidetextorientation="horizontal",
                                          textfont_size=10)
+                # Recolour the US proxy slices (SPY/AGG/BIL) so they stand out from
+                # the primary EU ETFs; the alert below explains why.
+                _tk_order = [str(tk) for tk in _fig_alloc.data[0].customdata]
+                _base_colors = list(_fig_alloc.data[0].marker.colors)
+                _fig_alloc.data[0].marker.colors = [
+                    _PROXY_COLOR if tk in _PROXY_TICKERS else c
+                    for tk, c in zip(_tk_order, _base_colors)
+                ]
                 _fig_alloc.update_layout(height=340, margin=dict(l=10, r=10, t=12, b=38))
                 st.plotly_chart(_fig_alloc, use_container_width=True,
                                 config={"displaylogo": False, "responsive": False})
+
+        st.markdown(
+            f'<div style="background:{t["bg_card"]};border:1px solid {t["border"]};'
+            f'border-left:3px solid {_PROXY_COLOR};border-radius:10px;'
+            f'padding:0.75rem 1rem;margin-top:0.6rem;font-size:0.84rem;'
+            f'line-height:1.55;color:{t["text_secondary"]};">'
+            f'<span style="color:{_PROXY_COLOR};font-weight:700;">ℹ️ About the grey '
+            f'slices (SPY, AGG, BIL):</span> these are US-listed stand-ins for '
+            f'CSPX.L, AGGH.MI and XEON.MI. The backtest uses them for the early '
+            f'years because those European ETFs have no price history back to 2008 — '
+            f'the real ETFs take over once available. They track the same exposures '
+            f'(US equity, aggregate bonds, cash).</div>',
+            unsafe_allow_html=True,
+        )
 
         st.markdown(
             f'<div style="background:{t["accent_soft"]};border:1px solid '
