@@ -4759,15 +4759,26 @@ def render_compare() -> None:
             return f'<span style="color:{thm["text_primary"]};">{text}</span>'
         return f'<span style="color:{thm["text_secondary"]};">{text}</span>'
 
+    _hdr_bg = (
+        "linear-gradient(135deg,#ede9fe 0%,#ddd6fe 100%)"
+        if is_light() else
+        "linear-gradient(135deg,#1e1b4b 0%,#2d1f6e 100%)"
+    )
+    _hdr_metric_col = "#4c1d95" if is_light() else "#c4b5fd"
     _hdr = (
-        f'<div style="display:flex;align-items:center;padding:0 0.4rem 0.6rem;'
-        f'border-bottom:1px solid {thm["border"]};margin-bottom:0.1rem;">'
-        f'<div style="flex:1.7;font-size:0.72rem;font-weight:600;letter-spacing:0.08em;'
-        f'text-transform:uppercase;color:{thm["text_muted"]};">Metric</div>'
-        f'<div style="flex:0.9;font-size:0.72rem;font-weight:600;letter-spacing:0.08em;'
-        f'text-transform:uppercase;color:#7c5cfc;text-align:right;">HRP</div>'
-        f'<div style="flex:0.9;font-size:0.72rem;font-weight:600;letter-spacing:0.08em;'
-        f'text-transform:uppercase;color:#f87171;text-align:right;">Markowitz</div>'
+        f'<div style="display:flex;align-items:center;'
+        f'padding:0.65rem 1rem;margin:-0.9rem -1rem 0.5rem;'
+        f'background:{_hdr_bg};border-radius:11px 11px 0 0;">'
+        f'<div style="flex:1.7;font-size:0.72rem;font-weight:700;letter-spacing:0.1em;'
+        f'text-transform:uppercase;color:{_hdr_metric_col};">Metric</div>'
+        f'<div style="flex:0.9;text-align:right;">'
+        f'<span style="font-size:0.7rem;font-weight:700;letter-spacing:0.08em;'
+        f'text-transform:uppercase;color:#fff;background:#7c5cfc;'
+        f'padding:3px 11px;border-radius:999px;">HRP</span></div>'
+        f'<div style="flex:0.9;text-align:right;">'
+        f'<span style="font-size:0.7rem;font-weight:700;letter-spacing:0.08em;'
+        f'text-transform:uppercase;color:#fff;background:#f87171;'
+        f'padding:3px 11px;border-radius:999px;">Markowitz</span></div>'
         f'</div>'
     )
     _val = ('flex:0.9;text-align:right;font-family:\'Space Grotesk\',sans-serif;'
