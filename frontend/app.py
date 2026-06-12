@@ -3074,6 +3074,7 @@ _CHAT_CSS = """
     padding: 0.3rem 0 !important; margin-bottom: 0.7rem !important;
     animation: ca-fade 0.28s ease-out;
     width: 100% !important; max-width: 100% !important;
+    display: flex !important; flex-direction: column !important;
 }
 [data-testid="stChatMessageAvatarUser"],
 [data-testid="stChatMessageAvatarAssistant"],
@@ -3084,12 +3085,14 @@ _CHAT_CSS = """
     border: 1px solid #1e2640 !important;
     border-radius: 12px !important;
     padding: 0.8rem 1.05rem 0.8rem 1.1rem !important;
-    width: 100% !important; box-sizing: border-box !important;
+    box-sizing: border-box !important;
     overflow-wrap: break-word !important; word-break: break-word !important;
 }
-/* Assistant bubble: subtle gradient + teal accent + label */
+/* Assistant bubble: right-aligned, wider — subtle gradient + teal accent + label */
 [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarAssistant"])
 [data-testid="stChatMessageContent"] {
+    align-self: flex-end !important;
+    width: 88% !important;
     background: linear-gradient(135deg,
         rgba(19,28,48,0.95), rgba(15,22,40,0.95)) !important;
     border-left: 3px solid #0dcfb0 !important;
@@ -3102,9 +3105,11 @@ _CHAT_CSS = """
     letter-spacing: 0.06em; text-transform: uppercase;
     color: #5eead4; margin-bottom: 0.4rem; opacity: 0.9;
 }
-/* User bubble: purple accent + label */
+/* User bubble: left-aligned, compact — purple accent + label */
 [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"])
 [data-testid="stChatMessageContent"] {
+    align-self: flex-start !important;
+    max-width: 70% !important;
     background: rgba(124,92,252,0.1) !important;
     border-color: rgba(124,92,252,0.24) !important;
     border-left: 3px solid #7c5cfc !important;
@@ -3418,8 +3423,79 @@ def _chat_get_reply(text: str, raw_label: str, profile_key: str) -> str:
         response_text=nresp.raw_text,
         allowed_numbers=payload.llm_constraints.allowed_numbers,
         forbidden_phrases=payload.llm_constraints.forbidden_phrases,
-        eu_awareness_required=payload.regulatory_context.profiler_us_centric_caveat,
+        eu_awareness_required=False,
     )
+    return result.safe_text
+
+
+def _chat_stream_reply(
+    text: str,
+    profile_key: str,
+    placeholder: "st.delta_generator.DeltaGenerator",
+) -> str:
+    """
+    Stream a validated advisor reply token-by-token into a Streamlit placeholder.
+
+    Runs the same pipeline as _chat_get_reply() — input sanitiser → streaming
+    NarratorClient → 5-step validator — but yields tokens live so the user sees
+    the response appear word-by-word instead of waiting for the full round trip.
+
+    The placeholder is updated on every chunk with a blinking-cursor suffix (▌).
+    After the stream ends, the validator runs on the full collected text and the
+    placeholder is replaced with the final validated output (cursor removed).
+
+    Args:
+        text:        Raw user message from the chat input.
+        profile_key: Mock-data key for the active profile ("balanced", etc.).
+        placeholder: A ``st.empty()`` element inside a ``st.chat_message`` block.
+
+    Returns:
+        The final validated response string (also already written to placeholder).
+    """
+    from backend.llm.input_sanitiser import sanitise
+    from backend.llm.narrator import NarratorError
+
+    san = sanitise(text)
+    if san.blocked:
+        msg = (
+            "Your question could not be processed — it looked like an unsafe "
+            "instruction. Please rephrase it."
+        )
+        placeholder.markdown(msg)
+        return msg
+
+    try:
+        narrator = NarratorClient()
+    except NarratorError:
+        msg = (
+            "⚠️ The chat advisor is not configured: no `ANTHROPIC_API_KEY` was "
+            "found. Add it under **Manage app → Settings → Secrets** on Streamlit "
+            "Cloud, or in a local `.streamlit/secrets.toml`, then reload the page."
+        )
+        placeholder.markdown(msg)
+        return msg
+
+    payload = _build_chat_payload(profile_key)
+
+    # Stream tokens into the placeholder, appending a cursor on each update.
+    full_text = ""
+    try:
+        for chunk in narrator.narrate_stream(payload, san.sanitised_input):
+            full_text += chunk
+            placeholder.markdown(full_text + "▌")
+    except NarratorError:
+        msg = "⚠️ The chat advisor is not configured."
+        placeholder.markdown(msg)
+        return msg
+
+    # Validate the complete response, then display the final safe text.
+    result = validate(
+        response_text=full_text,
+        allowed_numbers=payload.llm_constraints.allowed_numbers,
+        forbidden_phrases=payload.llm_constraints.forbidden_phrases,
+        eu_awareness_required=False,
+    )
+    placeholder.markdown(result.safe_text)
     return result.safe_text
 
 
@@ -3727,14 +3803,12 @@ def render_chat() -> None:
         st.session_state["chat_history"] = []
     history: list[dict] = st.session_state["chat_history"]
 
-    # Process any pending prompt (submitted via the inline input below or a
-    # suggestion chip) before rendering the thread, so messages appear in order.
+    # Grab any pending prompt (submitted via the inline input or a suggestion chip).
+    # The user message is added to history immediately so it appears in the thread.
+    # The assistant response is streamed live inside col_chat below.
     pending = st.session_state.pop("_pending_prompt", None)
     if pending:
         history.append({"role": "user", "content": pending})
-        with st.spinner("Thinking…"):
-            reply = _chat_get_reply(pending, raw_label, profile_key)
-        history.append({"role": "assistant", "content": reply})
 
     # Status strip: profile + model + validator
     st.markdown(
@@ -3742,7 +3816,7 @@ def render_chat() -> None:
         f'<span class="ca-pill ca-pill--profile"><span class="ca-dot"></span>'
         f'Active profile · {raw_label}</span>'
         f'<span class="ca-pill ca-pill--model"><span class="ca-dot"></span>'
-        f'Claude Sonnet 4</span>'
+        f'Claude Sonnet 4.6</span>'
         f'<span class="ca-pill ca-pill--guard"><span class="ca-dot"></span>'
         f'Validator · 5 checks</span>'
         f'</div>',
@@ -3814,6 +3888,16 @@ def render_chat() -> None:
                     msg["role"], avatar=_CHAT_AVATARS.get(msg["role"])
                 ):
                     st.markdown(msg["content"])
+
+            # If a new user message was just submitted, stream the reply live.
+            if pending:
+                with st.chat_message(
+                    "assistant", avatar=_CHAT_AVATARS.get("assistant")
+                ):
+                    _stream_placeholder = st.empty()
+                reply = _chat_stream_reply(pending, profile_key, _stream_placeholder)
+                history.append({"role": "assistant", "content": reply})
+
             st.markdown('</div>', unsafe_allow_html=True)
 
             # Ghost "Clear chat" button below the thread
