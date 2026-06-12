@@ -3893,7 +3893,10 @@ _BACKTEST_DIR = Path(__file__).parent.parent / "backtest_output"
 
 _SCENARIO_LABELS: dict[str, str] = {
     "gfc_2008":       "Global Financial Crisis (2008)",
+    "euro_debt_2011": "Eurozone Debt Crisis (2011)",
+    "selloff_2018":   "Rate-Fear Selloff (2018)",
     "covid_2020":     "COVID-19 Crash (2020)",
+    "recovery_2021":  "Post-COVID Bull (2021)",
     "rate_hike_2022": "Rate Hike Cycle (2022)",
 }
 
@@ -3926,9 +3929,21 @@ _SCENARIO_CONTEXT: dict[str, str] = {
         "Lehman Brothers' collapse froze global credit markets; equities fell "
         "sharply into early 2009 as the financial system seized up."
     ),
+    "euro_debt_2011": (
+        "Fears that Greece, Italy and Spain might default — alongside a first-ever "
+        "US credit downgrade — drove a sharp risk-off selloff in mid-2011."
+    ),
+    "selloff_2018": (
+        "Rising interest rates and trade-war tensions weighed on markets through "
+        "2018, culminating in a steep fourth-quarter drop."
+    ),
     "covid_2020": (
         "A global pandemic triggered one of the fastest crashes on record in early "
         "2020, followed by an equally sharp, policy-driven recovery."
+    ),
+    "recovery_2021": (
+        "Large fiscal and monetary stimulus fuelled a strong, low-volatility equity "
+        "rally through 2021 as economies reopened."
     ),
     "rate_hike_2022": (
         "Central banks raised interest rates aggressively to curb inflation, pulling "

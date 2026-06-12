@@ -35,10 +35,25 @@ SCENARIOS: dict[str, dict[str, str]] = {
         "test_start": "2008-01-02",
         "test_end": "2009-06-30",
     },
+    "euro_debt_2011": {
+        "label": "Eurozone Debt Crisis (2011)",
+        "test_start": "2011-01-03",
+        "test_end": "2011-12-30",
+    },
+    "selloff_2018": {
+        "label": "Rate-Fear Selloff (2018)",
+        "test_start": "2018-01-02",
+        "test_end": "2018-12-31",
+    },
     "covid_2020": {
         "label": "COVID-19 Crash (2020)",
         "test_start": "2020-01-02",
         "test_end": "2020-12-31",
+    },
+    "recovery_2021": {
+        "label": "Post-COVID Bull (2021)",
+        "test_start": "2021-01-04",
+        "test_end": "2021-12-31",
     },
     "rate_hike_2022": {
         "label": "Rate Hike Cycle (2022)",
