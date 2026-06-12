@@ -205,6 +205,18 @@ HRP consistently delivers lower volatility and smaller drawdowns than both bench
 \textbf{SQLite persistence.} The audit trail resets on Streamlit Cloud redeploy. A managed PostgreSQL instance would be required in production (ADR-005).
 
 % ─────────────────────────────────────────────────────────────
+\section{Lessons Learned}
+% ─────────────────────────────────────────────────────────────
+
+\textbf{Process over product: the agentic workflow.} The mandatory AI-agent criterion was satisfied by a GitHub Actions workflow that opens pull requests autonomously through the LLM API (PR~\#43). The main obstacle was infrastructural: in a private organisation the default \texttt{GITHUB\_TOKEN} cannot open pull requests, which we resolved with a scoped Personal Access Token. Pairing branch protection with mandatory CI turned the agentic process into a reviewable, auditable record rather than an opaque automation --- precisely the ``process over product'' the brief asks for.
+
+\textbf{Architecture as a safety mechanism.} The central design choice --- a strict separation between a deterministic ``calculator'' (the backend) and an LLM ``narrator'' constrained to a Ground Truth JSON contract --- made hallucination prevention \emph{structural} rather than instructional. The narrator is stateless: the payload is re-injected on every call, so the model stays anchored to current data and cannot drift across turns. This proved far more robust than relying on prompt wording alone.
+
+\textbf{Tests and CI catch real bugs.} A covariance-frequency bug (\texttt{CovarianceShrinkage(frequency=1)} without an explicit annualisation factor) would have inflated reported volatility by $\sqrt{252}\approx 15.9\times$; it surfaced only because the risk-metrics layer annualises explicitly and a regression test pinned the expected value. Smaller edge cases (e.g.\ integer-valued floats slipping through the validator's number check) emerged the same way. Coverage was governed through a shared GitHub issue rather than by unilaterally excluding untested modules, lifting the project from 77\,\% to 81\,\%.
+
+\textbf{Collaboration, honesty and reproducibility.} Parallel work across four roles produced classic distributed-Git frictions: long-lived branches drifting tens of commits behind \texttt{main}, cross-team review of optimiser fixes, and the consolidation of every schema into a single \texttt{backend/schemas} source of truth. A pre-publication secrets audit (scanning the full history for API-key patterns before the repository was made public) and an honest accounting of what is and is not wired into the live serving path --- the trained GBM and the ERC stress fallback are implemented but not on the live path --- were treated as part of the deliverable, not an afterthought.
+
+% ─────────────────────────────────────────────────────────────
 \section{Conclusions}
 % ─────────────────────────────────────────────────────────────
 
