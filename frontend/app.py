@@ -3255,13 +3255,15 @@ div[class*="st-key-chat_suggest"] button p {
 [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarAssistant"])
 [data-testid="stChatMessageContent"] {
     position: relative !important;
+    display: flex !important; flex-direction: column !important;
+    justify-content: center !important;
     width: 92% !important; margin-left: 0 !important; margin-right: auto !important;
     background: linear-gradient(135deg,
         rgba(13,207,176,0.09), rgba(16,26,42,0.65)) !important;
     border: 1px solid rgba(13,207,176,0.22) !important;
     border-left: 3px solid #0dcfb0 !important;
     border-radius: 4px 13px 13px 13px !important;
-    padding: 0.7rem 1rem !important; box-sizing: border-box !important;
+    padding: 1rem 1.2rem !important; box-sizing: border-box !important;
     overflow-wrap: break-word !important; word-break: break-word !important;
 }
 /* Label floats above the top-left corner of the box — outside the flow */
@@ -3277,6 +3279,8 @@ div[class*="st-key-chat_suggest"] button p {
 [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"])
 [data-testid="stChatMessageContent"] {
     position: relative !important;
+    display: flex !important; flex-direction: column !important;
+    justify-content: center !important;
     width: fit-content !important; max-width: 82% !important;
     margin-left: auto !important; margin-right: 0 !important;
     background: linear-gradient(135deg,
@@ -3284,7 +3288,7 @@ div[class*="st-key-chat_suggest"] button p {
     border: 1px solid rgba(124,92,252,0.32) !important;
     border-left: 3px solid #7c5cfc !important;
     border-radius: 13px 13px 4px 13px !important;
-    padding: 0.65rem 0.95rem !important; box-sizing: border-box !important;
+    padding: 0.8rem 1.05rem !important; box-sizing: border-box !important;
     overflow-wrap: break-word !important; word-break: break-word !important;
 }
 /* Label floats above the top-right corner of the box — outside the flow */
@@ -3303,6 +3307,13 @@ div[class*="st-key-chat_suggest"] button p {
     text-align: left !important;
 }
 [data-testid="stChatMessage"] p:last-child { margin-bottom: 0 !important; }
+/* Neutralise Streamlit's markdown-wrapper margins/padding so the flex parent
+   can centre the text block with no hidden vertical offset. */
+[data-testid="stChatMessageContent"] > div,
+[data-testid="stChatMessageContent"] [data-testid="stMarkdownContainer"],
+[data-testid="stChatMessageContent"] [data-testid="stMarkdown"] {
+    margin: 0 !important; padding: 0 !important; width: 100% !important;
+}
 [data-testid="stChatMessage"] em { color: #6b7689 !important; font-size: 0.82rem !important; }
 [data-testid="stChatMessage"] h1,
 [data-testid="stChatMessage"] h2,
