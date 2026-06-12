@@ -229,7 +229,7 @@ header [role="button"] {
     opacity: 1 !important;
     pointer-events: auto !important;
 }
-.block-container { padding-top: 1.5rem !important; }
+.block-container { padding-top: 1.5rem !important; padding-bottom: 1rem !important; }
 
 section[data-testid="stSidebar"],
 [data-testid="stSidebar"] {
@@ -859,7 +859,7 @@ header [role="button"] {
     opacity: 1 !important;
     pointer-events: auto !important;
 }
-.block-container { padding-top: 1.5rem !important; }
+.block-container { padding-top: 1.5rem !important; padding-bottom: 1rem !important; }
 
 section[data-testid="stSidebar"],
 [data-testid="stSidebar"] {
