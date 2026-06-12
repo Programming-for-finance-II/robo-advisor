@@ -4567,16 +4567,20 @@ def render_compare() -> None:
         unsafe_allow_html=True,
     )
 
+    st.caption(
+        "Risk contribution of each asset as a share of total portfolio risk, "
+        "grouped by asset class."
+    )
+
     # ── Overview: 100%-stacked risk, one row per method ──────────────────────
-    # An immediate read of concentration: a wide segment (Markowitz on gold) vs
-    # many slices (HRP). Coloured by the Portfolio Dashboard's asset-class
-    # palette so the two pages stay visually consistent; same-class neighbours
-    # are split by a thin separator and each asset is labelled inside its
-    # segment. The legend sits above so it never overlaps the % axis below.
-    _SEG_SHORT: dict[str, str] = {
-        "CSPX.L": "US equity", "EFA": "Intl equity", "VNQ": "Real estate",
-        "GLD": "Gold", "AGGH.MI": "Euro bonds", "TLT": "Treasuries",
-        "TIP": "Infl. bonds", "XEON.MI": "Cash",
+    # An immediate read of concentration: a wide segment vs many slices. Coloured
+    # by a slightly softened version of the dashboard's asset-class palette;
+    # same-class neighbours are split by a thin separator and each asset is
+    # labelled (ticker + %) inside its segment. Rounded ends and the legend above
+    # keep it in line with the rest of the project.
+    _SOFT_CLASS_COLOR: dict[str, str] = {
+        "Equity": "#8a7fe0", "Alternatives": "#e0a23a",
+        "Bonds": "#2fb9a3", "Cash": "#4f86e0",
     }
     _CLASS_ORDER = {"Equity": 0, "Alternatives": 1, "Bonds": 2, "Cash": 3}
     _seg_order = sorted(
@@ -4589,15 +4593,14 @@ def render_compare() -> None:
     fig_stack = go.Figure()
     for t in _seg_order:
         cls = _HRP_TICKER_CLUSTER.get(t, "Cash")
-        color = _HRP_CLUSTER_COLOR.get(cls, "#64748b")
+        color = _SOFT_CLASS_COLOR.get(cls, "#64748b")
         h = hrp_rc.get(t, 0.0) * 100
         m = mv_rc.get(t, 0.0) * 100
-        short = _SEG_SHORT.get(t, t)
         disp = _TICKER_DISPLAY_NAME.get(t, t)
-        # Label a segment inline only when it is wide enough to hold the text.
+        # Ticker + % inside a segment only when it is wide enough to hold them.
         seg_text = [
-            f"{short} {h:.0f}%" if h >= 11 else "",
-            f"{short} {m:.0f}%" if m >= 11 else "",
+            f"{t} {h:.0f}%" if h >= 6 else "",
+            f"{t} {m:.0f}%" if m >= 6 else "",
         ]
         fig_stack.add_trace(go.Bar(
             name=cls,
@@ -4618,9 +4621,10 @@ def render_compare() -> None:
     fig_stack = apply_plotly_theme(fig_stack)
     fig_stack.update_layout(
         barmode="stack",
-        height=220,
+        barcornerradius=6,
+        height=185,
         margin=dict(l=8, r=8, t=44, b=44),
-        legend=dict(orientation="h", yanchor="bottom", y=1.04,
+        legend=dict(orientation="h", yanchor="bottom", y=1.05,
                     xanchor="center", x=0.5, font=dict(size=11)),
         paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
         modebar_remove=[
@@ -4633,10 +4637,10 @@ def render_compare() -> None:
     fig_stack.update_xaxes(range=[0, 100], ticksuffix="%")
     fig_stack.update_yaxes(autorange="reversed")  # HRP row on top
     st.plotly_chart(fig_stack, use_container_width=True, config={"displaylogo": False})
+
     st.caption(
-        "Each bar is 100% of that method's risk, split by asset and coloured by "
-        "asset class — a wide segment means risk is piled into one holding. "
-        "Below: the same figures per asset."
+        "Per-asset detail: each ETF's risk contribution, HRP versus Markowitz "
+        "side by side."
     )
 
     n_assets = len(all_tickers)
@@ -4648,7 +4652,7 @@ def render_compare() -> None:
         y=all_tickers,
         x=hrp_rc_vals,
         orientation="h",
-        marker_color="#7c5cfc",
+        marker_color="#8a7fe0",
         text=[f"{v:.1f}%" for v in hrp_rc_vals],
         textposition="outside",
         textfont=dict(size=11),
@@ -4660,7 +4664,7 @@ def render_compare() -> None:
         y=all_tickers,
         x=mv_rc_vals,
         orientation="h",
-        marker_color="#f87171",
+        marker_color="#e0896a",
         text=[f"{v:.1f}%" for v in mv_rc_vals],
         textposition="outside",
         textfont=dict(size=11),
@@ -4669,8 +4673,9 @@ def render_compare() -> None:
     ))
     fig_rc.update_layout(
         barmode="group",
+        barcornerradius=4,
         xaxis_title="Share of total portfolio risk (%)",
-        height=380,
+        height=350,
         margin=dict(l=8, r=48, t=24, b=40),
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
     )
