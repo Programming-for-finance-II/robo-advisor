@@ -3999,7 +3999,7 @@ def _bt_takeaway(html: str, color: str, icon: str) -> None:
     st.markdown(
         f'<div style="display:flex;gap:0.7rem;align-items:flex-start;'
         f'background:{color}14;border:1px solid {color}33;border-left:3px solid {color};'
-        f'border-radius:10px;padding:0.8rem 1rem;margin-top:1rem;">'
+        f'border-radius:10px;padding:0.8rem 1rem;margin-top:1rem;margin-bottom:1.2rem;">'
         f'<svg width="17" height="17" viewBox="0 0 18 18" fill="none" stroke="{color}" '
         f'stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" '
         f'style="flex-shrink:0;margin-top:1px;">{icon}</svg>'
