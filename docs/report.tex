@@ -32,10 +32,10 @@
   Programming in Finance II — USI, 2026
 }
 \author{%
-  P1 (Backend/Data) \quad P2 (Quant/Optimizer)\\
-  P3 (ML/Profiling) \quad P4 (Frontend/LLM/Docs)
+  Sabrina Virgillito (P1 — Backend/Data) \quad Emma Erba (P2 — Quant/Optimizer)\\
+  Matteo Buttiglieri (P3 — ML/Profiling) \quad Elena Trombini (P4 — Frontend/LLM/Docs)
 }
-\date{May 2026}
+\date{June 2026}
 
 \begin{document}
 
@@ -58,7 +58,7 @@ Source code and Architecture Decision Records: \url{https://github.com/Programmi
 % ─────────────────────────────────────────────────────────────
 
 \subsection{API Layer}
-The backend is a \textbf{FastAPI} service exposing five endpoints: \texttt{/profile} (risk profiler), \texttt{/optimize} (portfolio optimiser), \texttt{/advice} (LLM narrator), \texttt{/backtest} (historical scenario analysis), and \texttt{/compare} (HRP vs.\ MVO side-by-side). All protected endpoints require an \texttt{X-API-Key} header validated on every request. Rate limiting is enforced via \texttt{slowapi} at 10 requests per minute per IP address; requests exceeding the limit receive a \texttt{429 Too Many Requests} response without consuming any computation. All responses are Pydantic-validated, ensuring schema consistency between the backend and the Streamlit frontend.
+The backend is a \textbf{FastAPI} service exposing five endpoints: \texttt{/profile} (risk profiler), \texttt{/optimize} (portfolio optimiser), \texttt{/advice} (LLM narrator), \texttt{/backtest} (historical scenario analysis), and \texttt{/compare} (HRP vs.\ MVO side-by-side). All protected endpoints require an \texttt{X-API-Key} header validated on every request. Rate limiting is enforced via \texttt{slowapi} per IP address (20 requests per minute on \texttt{/profile}, 10 on the costlier \texttt{/advice}); requests exceeding the limit receive a \texttt{429 Too Many Requests} response without consuming any computation. All responses are Pydantic-validated, ensuring schema consistency between the backend and the Streamlit frontend.
 
 \subsection{Data Pipeline: ValidatedDataLoader}
 Market data is downloaded from \texttt{yfinance} by the \textbf{ValidatedDataLoader} (\texttt{backend/data/loader.py}). The loader applies three sequential quality controls before returning data to the optimiser:
@@ -132,7 +132,7 @@ HRP \parencite{LopezdePrado2016} was selected over MVO for three structural reas
 Raw weights are tilted by risk profile: Conservative blends toward Minimum Variance; Aggressive toward Equal Risk Contribution \parencite{Maillard2010}; Balanced uses raw HRP weights.
 
 \subsection{Ledoit--Wolf Shrinkage and Constraints}
-The Oracle Approximating Shrinkage estimator \parencite{LedoitWolf2004} $\hat{\Sigma} = (1-\alpha)S + \alpha\mu_S I$ is applied before clustering to stabilise the distance matrix. Box constraints clip weights to $[5\%, 40\%]$ per asset and $[10\%, 60\%]$ per cluster; weights are renormalised after clipping.
+The Ledoit--Wolf shrinkage estimator \parencite{LedoitWolf2004} $\hat{\Sigma} = (1-\alpha)S + \alpha\mu_S I$ is applied before clustering to stabilise the distance matrix. Box constraints clip weights to $[5\%, 40\%]$ per asset and $[10\%, 60\%]$ per cluster; weights are renormalised after clipping.
 
 \subsection{Market Regime Detection}
 A dual-trigger detector flags \texttt{HIGH\_STRESS} when $\bar{\rho}_{\mathrm{LW}} > 0.75$ or $\mathrm{VIX} > 30$ (ADR-006). Under stress, HRP is replaced by a cluster-level Equal Risk Contribution portfolio and a banner is shown in the frontend.
