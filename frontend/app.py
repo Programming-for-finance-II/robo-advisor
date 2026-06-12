@@ -254,8 +254,11 @@ def _run_live_optimization(profile_label: str) -> dict:
             from scipy.cluster.hierarchy import fcluster, linkage
             from scipy.spatial.distance import squareform
 
-            from backend.optimizer.hrp import (_corr_to_distance, _cov_to_corr,
-                                               _get_quasi_diagonal_order)
+            from backend.optimizer.hrp import (
+                _corr_to_distance,
+                _cov_to_corr,
+                _get_quasi_diagonal_order,
+            )
 
             _corr_df = _cov_to_corr(cov)
             _dist = np.asarray(_corr_to_distance(_corr_df))
@@ -4967,7 +4970,8 @@ def render_compare() -> None:
         while _k < len(_TICKERS_HM):
             _kc = _HRP_TICKER_CLUSTER.get(_TICKERS_HM[_k], "Cash")
             _ke = _k
-            while _ke < len(_TICKERS_HM) and _HRP_TICKER_CLUSTER.get(_TICKERS_HM[_ke], "Cash") == _kc:
+            while (_ke < len(_TICKERS_HM)
+                   and _HRP_TICKER_CLUSTER.get(_TICKERS_HM[_ke], "Cash") == _kc):
                 _ke += 1
             if _ke - _k >= 2:
                 _vals = [_CORR[a][b] for a in range(_k, _ke) for b in range(_k, _ke) if a != b]
