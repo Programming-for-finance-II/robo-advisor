@@ -4009,10 +4009,9 @@ _STRATEGY_LABELS: dict[str, str] = {
 }
 
 # US-listed proxies the backtest uses for the EU ETFs that lack price history
-# back to 2008 (CSPX.L→SPY, AGGH.MI→AGG, XEON.MI→BIL). They are shown in a
-# distinct neutral colour and explained in an alert under the donuts.
+# back to 2008 (CSPX.L→SPY, AGGH.MI→AGG, XEON.MI→BIL). They keep their asset-class
+# colour in the donuts but get a diagonal hatch, explained in a note underneath.
 _PROXY_TICKERS: frozenset[str] = frozenset({"SPY", "AGG", "BIL"})
-_PROXY_COLOR: str = "#94a3b8"
 
 
 def render_backtesting() -> None:
@@ -4174,18 +4173,39 @@ def render_backtesting() -> None:
     _dd = _strats[best_dd]["max_drawdown"]
     _sharpe_name = _STRATEGY_LABELS.get(best_sharpe, best_sharpe)
     _dd_name = _STRATEGY_LABELS.get(best_dd, best_dd)
+    # In a real crisis every strategy can post a negative Sharpe; calling a
+    # negative number the "best risk-adjusted return" reads oddly, so when nobody
+    # came out positive we soften the phrasing to "most resilient / lost the
+    # least" and flag that every strategy still lost ground.
+    _positive = _sh > 0
     if best_sharpe == best_dd:
-        _takeaway = (
-            f"<strong>{_sharpe_name}</strong> held up best in this scenario — the "
-            f"highest risk-adjusted return (Sharpe {_sh:.2f}) and the smallest "
-            f"loss (max drawdown {_dd:.1%})."
-        )
+        if _positive:
+            _takeaway = (
+                f"<strong>{_sharpe_name}</strong> held up best in this scenario — the "
+                f"highest risk-adjusted return (Sharpe {_sh:.2f}) and the smallest "
+                f"loss (max drawdown {_dd:.1%})."
+            )
+        else:
+            _takeaway = (
+                f"<strong>{_sharpe_name}</strong> was the most resilient here — the "
+                f"smallest loss (max drawdown {_dd:.1%}) and the best risk-adjusted "
+                f"result of the group, though its Sharpe was still negative "
+                f"({_sh:.2f}): every strategy lost ground in this downturn."
+            )
     else:
-        _takeaway = (
-            f"<strong>{_sharpe_name}</strong> gave the best risk-adjusted return "
-            f"(Sharpe {_sh:.2f}), while <strong>{_dd_name}</strong> had the "
-            f"smallest loss (max drawdown {_dd:.1%})."
-        )
+        if _positive:
+            _takeaway = (
+                f"<strong>{_sharpe_name}</strong> gave the best risk-adjusted return "
+                f"(Sharpe {_sh:.2f}), while <strong>{_dd_name}</strong> had the "
+                f"smallest loss (max drawdown {_dd:.1%})."
+            )
+        else:
+            _takeaway = (
+                f"<strong>{_dd_name}</strong> lost the least in this scenario "
+                f"(max drawdown {_dd:.1%}); <strong>{_sharpe_name}</strong> had the "
+                f"best risk-adjusted result of the group, though every strategy "
+                f"posted a negative Sharpe ({_sh:.2f}) in this downturn."
+            )
     # Light, airy purple wash — no left accent bar and no icon, so the takeaway
     # reads as a plain highlighted note rather than a heavy callout.
     _tw_bg = "rgba(124,77,255,0.05)" if is_light() else "rgba(124,92,252,0.05)"
@@ -4239,14 +4259,25 @@ def render_backtesting() -> None:
                 _fig_alloc.update_traces(textposition="inside",
                                          insidetextorientation="horizontal",
                                          textfont_size=10)
-                # Recolour the US proxy slices (SPY/AGG/BIL) so they stand out from
-                # the primary EU ETFs; the alert below explains why.
+                # Mark the US proxy slices (SPY/AGG/BIL) with a diagonal hatch so
+                # they stand out from the primary EU ETFs *without* breaking the
+                # by-asset-class colour legend below: they keep their category
+                # colour (equity/bonds/cash) and just get a striped overlay. The
+                # alert below explains why.
                 _tk_order = [str(tk) for tk in _fig_alloc.data[0].customdata]
-                _base_colors = list(_fig_alloc.data[0].marker.colors)
-                _fig_alloc.data[0].marker.colors = [
-                    _PROXY_COLOR if tk in _PROXY_TICKERS else c
-                    for tk, c in zip(_tk_order, _base_colors)
-                ]
+                _fig_alloc.data[0].marker.pattern = dict(
+                    shape=["/" if tk in _PROXY_TICKERS else "" for tk in _tk_order],
+                    # "overlay" draws the hatch *on top* of the slice colour;
+                    # without it Plotly's default "replace" mode swaps the colour
+                    # out for the pattern background, so cash (blue) etc. went dark.
+                    fillmode="overlay",
+                    # Light, sparse stripes: the slice keeps its asset-class colour
+                    # (e.g. cash = blue) clearly visible, the hatch just flags "this
+                    # is a US proxy". A heavy/dark pattern muddied the colour.
+                    fgcolor="#0d1220",  # = slice border, so stripes read as thin cuts
+                    size=9,
+                    solidity=0.14,
+                )
                 _fig_alloc.update_layout(height=340, margin=dict(l=10, r=10, t=12, b=38))
                 st.plotly_chart(_fig_alloc, use_container_width=True,
                                 config={"displaylogo": False, "responsive": False})
@@ -4254,7 +4285,7 @@ def render_backtesting() -> None:
         st.markdown(
             f'<div style="font-size:0.84rem;line-height:1.55;'
             f'color:{t["text_secondary"]};margin-top:0.6rem;">'
-            f'<strong style="color:{t["text_primary"]};">About the grey '
+            f'<strong style="color:{t["text_primary"]};">About the striped '
             f'slices (SPY, AGG, BIL):</strong> these are US-listed stand-ins for '
             f'CSPX.L, AGGH.MI and XEON.MI. The backtest uses them for the early '
             f'years because those European ETFs have no price history back to 2008 — '
@@ -4323,11 +4354,13 @@ def render_backtesting() -> None:
         st.plotly_chart(fig, use_container_width=True, config={"displaylogo": False})
 
         # ── Drawdown chart ───────────────────────────────────────────────────
-        # Stronger fills so the drawdown reads as a coloured area, not thin lines.
+        # Lighter fills + bolder lines: the two areas overlap heavily, so a high
+        # fill opacity muddied the colours where they cross. The crisp line still
+        # reads the curve; the soft fill just hints at the shaded area below it.
         _DD_FILL: dict[str, str] = {
-            "HRP": "rgba(124,92,252,0.30)",
-            "MV":  "rgba(248,113,113,0.30)",
-            "1/N": "rgba(148,163,184,0.30)",
+            "HRP": "rgba(124,92,252,0.18)",
+            "MV":  "rgba(248,113,113,0.18)",
+            "1/N": "rgba(148,163,184,0.18)",
         }
         fig_dd = go.Figure()
         for strat in _BACKTEST_STRATEGIES:
@@ -4339,7 +4372,7 @@ def render_backtesting() -> None:
             fig_dd.add_trace(go.Scatter(
                 x=dates_dd, y=dd.tolist(),
                 mode="lines", name=_STRATEGY_LABELS.get(strat, strat),
-                line=dict(color=_STRATEGY_COLORS.get(strat, "#64748b"), width=1.5),
+                line=dict(color=_STRATEGY_COLORS.get(strat, "#64748b"), width=2.2),
                 fill="tozeroy",
                 fillcolor=_DD_FILL.get(strat, "rgba(0,0,0,0)"),
                 hovertemplate="%{y:.1f}%<extra>%{fullData.name}</extra>",
