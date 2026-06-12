@@ -67,7 +67,7 @@ Consolidated session logs, ordered by date and grouped by day, then by role (P1,
 # 28 April 2026 — Week 1 (Tuesday)
 
 ## P1 — Backend / Data Engineering
-**Estimated duration:** ~1.3 hours
+**Estimated duration:** ~1 hour
 
 ### What I did
 
@@ -381,7 +381,7 @@ Consolidated session logs, ordered by date and grouped by day, then by role (P1,
 ---
 
 ## P3 — ML / Risk Profiling
-**Estimated duration:** ~1.3 hours
+**Estimated duration:** ~1 hour
 
 ### What I did
 
@@ -2529,7 +2529,7 @@ It is Wednesday evening — `regime_detector.py` was planned for today and remai
 
 ## P1 — Backend / Data Engineering
 
-**Estimated duration:** ~1.3 hours
+**Estimated duration:** ~1 hour
 
 ### What I did
 
@@ -2588,7 +2588,7 @@ It is Wednesday evening — `regime_detector.py` was planned for today and remai
 
 ## P4 — Frontend / LLM / Docs
 
-**Estimated duration:** ~1.3 hours
+**Estimated duration:** ~1 hour
 
 ### What I did
 
@@ -2670,7 +2670,7 @@ It is Wednesday evening — `regime_detector.py` was planned for today and remai
 
 ## P4 — Frontend / LLM / Docs
 
-**Estimated duration:** ~1.3 hours
+**Estimated duration:** ~1 hour
 **Branch:** `p4/fix-main-ui-polish`
 
 ### What I did
@@ -2915,7 +2915,7 @@ It is Wednesday evening — `regime_detector.py` was planned for today and remai
 
 ## P1 — Backend / Data Engineering
 
-**Estimated duration:** ~1.3 hours
+**Estimated duration:** ~1 hour
 **Focus:** Frontend polish — Portfolio Dashboard
 
 ### What I did
@@ -2961,7 +2961,7 @@ It is Wednesday evening — `regime_detector.py` was planned for today and remai
 
 ## P4 — Frontend / LLM / Docs
 
-**Estimated duration:** ~1.3 hours
+**Estimated duration:** ~1 hour
 **Branch:** `fix/p4-compare-markowitz-explanation`
 
 ### What I did
