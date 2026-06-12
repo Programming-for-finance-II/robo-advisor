@@ -3593,7 +3593,7 @@ def render_chat() -> None:
         st.markdown(
             '<div class="ca-shell">'
             '<div class="ca-shell-head">'
-            '<span class="ca-shell-head-icon">✦</span>'
+            '<span class="ca-shell-head-icon">✨</span>'
             '<div>'
             '<div class="ca-shell-head-title">Conversation</div>'
             '<div class="ca-shell-head-sub">'
@@ -3606,7 +3606,7 @@ def render_chat() -> None:
         if not history:
             st.markdown(
                 '<div class="ca-hero">'
-                '<div class="ca-hero-orb">✦</div>'
+                '<div class="ca-hero-orb">✨</div>'
                 '<div class="ca-hero-title">'
                 "Hi — I'm your AI Finance Assistant."
                 '</div>'
