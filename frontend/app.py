@@ -1470,6 +1470,43 @@ _GATE_CSS = """
 </style>
 """
 
+# Light-theme override for the profile-required gate. Appended AFTER _GATE_CSS
+# (so it wins by source order) only when the light theme is active — flips the
+# dark hero surfaces, step cards, chips and text to readable light values while
+# keeping the purple orb glow and CTA gradient that read well on both themes.
+_GATE_CSS_LIGHT = """
+<style>
+.pg-wrap {
+    border: 1px solid #D8DEE9;
+    background:
+        radial-gradient(120% 90% at 50% -10%, rgba(124,77,255,0.10) 0%, transparent 55%),
+        linear-gradient(180deg, #ffffff 0%, #f1f4fa 100%);
+    box-shadow: 0 12px 32px rgba(15,23,42,0.08);
+}
+.pg-eyebrow { color: #6d4deb; }
+.pg-title { color: #0f172a; }
+.pg-body { color: #334155; }
+.pg-step {
+    background: #ffffff;
+    border: 1px solid #D8DEE9;
+    box-shadow: 0 4px 16px rgba(15,23,42,0.05);
+}
+.pg-step-num { color: #6d4deb; background: #EEE8FF; border-color: rgba(124,77,255,0.4); }
+.pg-step--active .pg-step-num {
+    color: #ffffff; background: linear-gradient(135deg,#8b6bff,#7c4dff);
+    border-color: transparent;
+}
+.pg-step-label { color: #111827; }
+.pg-step-sub { color: #64748B; }
+.pg-step-arrow { color: #94A3B8; }
+.pg-chip {
+    color: #334155;
+    background: #ffffff;
+    border: 1px solid #D8DEE9;
+}
+</style>
+"""
+
 # Small inline icons for the feature chips.
 _PG_ICON_CLOCK = (
     '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#a78bfa"'
@@ -1506,6 +1543,8 @@ def _render_profile_required_gate(
     """
     page_header(title, subtitle, icon=icon)
     st.markdown(_GATE_CSS, unsafe_allow_html=True)
+    if is_light():
+        st.markdown(_GATE_CSS_LIGHT, unsafe_allow_html=True)
 
     # The page the user is trying to reach becomes step 3's label.
     dest = title
