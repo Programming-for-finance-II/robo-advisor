@@ -4523,6 +4523,71 @@ def render_compare() -> None:
         unsafe_allow_html=True,
     )
 
+    # ── Overview: 100%-stacked risk, one row per method ──────────────────────
+    # An immediate read of concentration: a wide single segment (Markowitz on
+    # gold) vs many even slices (HRP). Coloured by the app's asset-class palette,
+    # with a lighter shade to separate assets inside the same class.
+    _SEG_COLOR: dict[str, str] = {
+        "CSPX.L": "#7c5cfc", "EFA": "#a78bfa",       # Equity (purple)
+        "GLD": "#f59e0b", "VNQ": "#fbbf24",          # Alternatives (amber)
+        "AGGH.MI": "#0dcfb0", "TLT": "#0a9e88", "TIP": "#5eead4",  # Bonds (teal)
+        "XEON.MI": "#3b82f6",                        # Cash (blue)
+    }
+    _SEG_SHORT: dict[str, str] = {
+        "CSPX.L": "US equity", "EFA": "Intl equity", "VNQ": "Real estate",
+        "GLD": "Gold", "AGGH.MI": "Euro bonds", "TLT": "Treasuries",
+        "TIP": "Infl. bonds", "XEON.MI": "Cash",
+    }
+    _methods = ["HRP", "Markowitz"]
+    fig_stack = go.Figure()
+    for t in all_tickers:
+        h = hrp_rc.get(t, 0.0) * 100
+        m = mv_rc.get(t, 0.0) * 100
+        short = _SEG_SHORT.get(t, t)
+        disp = _TICKER_DISPLAY_NAME.get(t, t)
+        # Label a segment inline only when it is wide enough to hold the text.
+        seg_text = [
+            f"{short} {h:.0f}%" if h >= 12 else "",
+            f"{short} {m:.0f}%" if m >= 12 else "",
+        ]
+        fig_stack.add_trace(go.Bar(
+            name=f"{disp} ({t})",
+            y=_methods,
+            x=[h, m],
+            orientation="h",
+            marker_color=_SEG_COLOR.get(t, "#64748b"),
+            text=seg_text,
+            textposition="inside",
+            insidetextanchor="middle",
+            textfont=dict(size=11, color="#0b1020"),
+            cliponaxis=False,
+            hovertemplate=f"{disp} ({t}) — %{{x:.1f}}%<extra>%{{y}}</extra>",
+        ))
+    fig_stack.update_layout(
+        barmode="stack",
+        height=210,
+        margin=dict(l=8, r=8, t=8, b=8),
+        xaxis=dict(range=[0, 100], ticksuffix="%"),
+        legend=dict(orientation="h", yanchor="bottom", y=-0.45,
+                    xanchor="center", x=0.5, font=dict(size=11)),
+    )
+    fig_stack.update_yaxes(autorange="reversed")  # HRP row on top
+    fig_stack = apply_plotly_theme(fig_stack)
+    fig_stack.update_layout(
+        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+        modebar_remove=[
+            "select2d", "lasso2d", "autoScale2d", "zoom2d", "pan2d",
+            "hoverClosestCartesian", "hoverCompareCartesian",
+            "toggleSpikelines", "zoomIn2d", "zoomOut2d",
+        ],
+        dragmode=False,
+    )
+    st.plotly_chart(fig_stack, use_container_width=True, config={"displaylogo": False})
+    st.caption(
+        "Each bar is 100% of that method's risk, split by asset — a wide segment "
+        "means risk is piled into one holding. Below: the same figures per asset."
+    )
+
     n_assets = len(all_tickers)
     equal_risk = 100.0 / n_assets if n_assets else 0.0
 
