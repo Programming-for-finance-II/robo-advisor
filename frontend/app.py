@@ -2154,7 +2154,7 @@ def _section_desc(text: str) -> None:
     t = get_theme_tokens()
     st.markdown(
         f'<div style="font-size:0.95rem;color:{t["text_secondary"]};line-height:1.6;'
-        f'margin-bottom:1.35rem;max-width:62rem;">{text}</div>',
+        f'margin-bottom:1.35rem;">{text}</div>',
         unsafe_allow_html=True,
     )
 
@@ -3767,7 +3767,7 @@ def render_backtesting() -> None:
             f'text-align:{"left" if i == 0 else "right"};font-size:0.82rem;'
             f'color:{t["text_primary"] if i == 0 else t["text_secondary"]};'
             f'font-weight:{"600" if i == 0 else "400"};'
-            f'border-top:1px solid {t["border_soft"]};white-space:nowrap;">{r[c]}</td>'
+            f'border-top:1px solid {t["border"]};white-space:nowrap;">{r[c]}</td>'
             for i, c in enumerate(_cols)
         )
         _body += f"<tr>{cells}</tr>"
