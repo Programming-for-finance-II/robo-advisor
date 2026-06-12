@@ -18,2261 +18,2261 @@
   "strategies": {
     "HRP": {
       "strategy": "HRP",
-      "cagr": -0.089522,
-      "annualised_volatility": 0.067553,
-      "sharpe_ratio": -1.325203,
-      "max_drawdown": -0.126721,
-      "calmar_ratio": -0.706451,
-      "total_transaction_cost": 0.000948,
+      "cagr": -0.068225,
+      "annualised_volatility": 0.038214,
+      "sharpe_ratio": -1.785351,
+      "max_drawdown": -0.090763,
+      "calmar_ratio": -0.751687,
+      "total_transaction_cost": 0.001392,
       "n_rebalances": 10,
       "equity_curve": [
         {
           "date": "2022-01-03",
-          "portfolio_value": 0.999202
+          "portfolio_value": 0.998849
         },
         {
           "date": "2022-01-04",
-          "portfolio_value": 0.998749
+          "portfolio_value": 0.997952
         },
         {
           "date": "2022-01-05",
-          "portfolio_value": 0.993628
+          "portfolio_value": 0.995689
         },
         {
           "date": "2022-01-06",
-          "portfolio_value": 0.991851
+          "portfolio_value": 0.993625
         },
         {
           "date": "2022-01-07",
-          "portfolio_value": 0.990487
+          "portfolio_value": 0.992729
         },
         {
           "date": "2022-01-10",
-          "portfolio_value": 0.989714
+          "portfolio_value": 0.992138
         },
         {
           "date": "2022-01-11",
-          "portfolio_value": 0.992895
+          "portfolio_value": 0.994035
         },
         {
           "date": "2022-01-12",
-          "portfolio_value": 0.993409
+          "portfolio_value": 0.994058
         },
         {
           "date": "2022-01-13",
-          "portfolio_value": 0.992175
+          "portfolio_value": 0.994183
         },
         {
           "date": "2022-01-14",
-          "portfolio_value": 0.99003
+          "portfolio_value": 0.992705
         },
         {
           "date": "2022-01-17",
-          "portfolio_value": 0.989566
+          "portfolio_value": 0.991973
         },
         {
           "date": "2022-01-18",
-          "portfolio_value": 0.985004
+          "portfolio_value": 0.990029
         },
         {
           "date": "2022-01-19",
-          "portfolio_value": 0.984157
+          "portfolio_value": 0.989844
         },
         {
           "date": "2022-01-20",
-          "portfolio_value": 0.982291
+          "portfolio_value": 0.989302
         },
         {
           "date": "2022-01-21",
-          "portfolio_value": 0.980863
+          "portfolio_value": 0.990049
         },
         {
           "date": "2022-01-24",
-          "portfolio_value": 0.98089
+          "portfolio_value": 0.990141
         },
         {
           "date": "2022-01-25",
-          "portfolio_value": 0.979026
+          "portfolio_value": 0.98953
         },
         {
           "date": "2022-01-26",
-          "portfolio_value": 0.975646
+          "portfolio_value": 0.987504
         },
         {
           "date": "2022-01-27",
-          "portfolio_value": 0.974001
+          "portfolio_value": 0.986126
         },
         {
           "date": "2022-01-28",
-          "portfolio_value": 0.978514
+          "portfolio_value": 0.987428
         },
         {
           "date": "2022-01-31",
-          "portfolio_value": 0.981411
+          "portfolio_value": 0.987827
         },
         {
           "date": "2022-02-01",
-          "portfolio_value": 0.981845
+          "portfolio_value": 0.987503
         },
         {
           "date": "2022-02-02",
-          "portfolio_value": 0.984756
+          "portfolio_value": 0.988919
         },
         {
           "date": "2022-02-03",
-          "portfolio_value": 0.978843
+          "portfolio_value": 0.985379
         },
         {
           "date": "2022-02-04",
-          "portfolio_value": 0.977033
+          "portfolio_value": 0.983465
         },
         {
           "date": "2022-02-07",
-          "portfolio_value": 0.976754
+          "portfolio_value": 0.983168
         },
         {
           "date": "2022-02-08",
-          "portfolio_value": 0.977163
+          "portfolio_value": 0.983034
         },
         {
           "date": "2022-02-09",
-          "portfolio_value": 0.981334
+          "portfolio_value": 0.984728
         },
         {
           "date": "2022-02-10",
-          "portfolio_value": 0.97488
+          "portfolio_value": 0.981006
         },
         {
           "date": "2022-02-11",
-          "portfolio_value": 0.973392
+          "portfolio_value": 0.980995
         },
         {
           "date": "2022-02-14",
-          "portfolio_value": 0.971582
+          "portfolio_value": 0.980276
         },
         {
           "date": "2022-02-15",
-          "portfolio_value": 0.97322
+          "portfolio_value": 0.980282
         },
         {
           "date": "2022-02-16",
-          "portfolio_value": 0.974766
+          "portfolio_value": 0.981119
         },
         {
           "date": "2022-02-17",
-          "portfolio_value": 0.973048
+          "portfolio_value": 0.982039
         },
         {
           "date": "2022-02-18",
-          "portfolio_value": 0.972525
+          "portfolio_value": 0.982051
         },
         {
           "date": "2022-02-21",
-          "portfolio_value": 0.972735
+          "portfolio_value": 0.982374
         },
         {
           "date": "2022-02-22",
-          "portfolio_value": 0.970589
+          "portfolio_value": 0.981114
         },
         {
           "date": "2022-02-23",
-          "portfolio_value": 0.966944
+          "portfolio_value": 0.980478
         },
         {
           "date": "2022-02-24",
-          "portfolio_value": 0.96833
+          "portfolio_value": 0.980062
         },
         {
           "date": "2022-02-25",
-          "portfolio_value": 0.972887
+          "portfolio_value": 0.981153
         },
         {
           "date": "2022-02-28",
-          "portfolio_value": 0.974479
+          "portfolio_value": 0.983802
         },
         {
           "date": "2022-03-01",
-          "portfolio_value": 0.975482
+          "portfolio_value": 0.987623
         },
         {
           "date": "2022-03-02",
-          "portfolio_value": 0.975885
+          "portfolio_value": 0.986435
         },
         {
           "date": "2022-03-03",
-          "portfolio_value": 0.973877
+          "portfolio_value": 0.983198
         },
         {
           "date": "2022-03-04",
-          "portfolio_value": 0.975136
+          "portfolio_value": 0.985394
         },
         {
           "date": "2022-03-07",
-          "portfolio_value": 0.968811
+          "portfolio_value": 0.982896
         },
         {
           "date": "2022-03-08",
-          "portfolio_value": 0.969841
+          "portfolio_value": 0.984958
         },
         {
           "date": "2022-03-09",
-          "portfolio_value": 0.971198
+          "portfolio_value": 0.982084
         },
         {
           "date": "2022-03-10",
-          "portfolio_value": 0.967958
+          "portfolio_value": 0.978973
         },
         {
           "date": "2022-03-11",
-          "portfolio_value": 0.96624
+          "portfolio_value": 0.979346
         },
         {
           "date": "2022-03-14",
-          "portfolio_value": 0.961441
+          "portfolio_value": 0.975556
         },
         {
           "date": "2022-03-15",
-          "portfolio_value": 0.96356
+          "portfolio_value": 0.975524
         },
         {
           "date": "2022-03-16",
-          "portfolio_value": 0.968658
+          "portfolio_value": 0.976558
         },
         {
           "date": "2022-03-17",
-          "portfolio_value": 0.972064
+          "portfolio_value": 0.978803
         },
         {
           "date": "2022-03-18",
-          "portfolio_value": 0.974374
+          "portfolio_value": 0.979748
         },
         {
           "date": "2022-03-21",
-          "portfolio_value": 0.97098
+          "portfolio_value": 0.976601
         },
         {
           "date": "2022-03-22",
-          "portfolio_value": 0.970593
+          "portfolio_value": 0.97488
         },
         {
           "date": "2022-03-23",
-          "portfolio_value": 0.971107
+          "portfolio_value": 0.976735
         },
         {
           "date": "2022-03-24",
-          "portfolio_value": 0.972911
+          "portfolio_value": 0.976658
         },
         {
           "date": "2022-03-25",
-          "portfolio_value": 0.971924
+          "portfolio_value": 0.974541
         },
         {
           "date": "2022-03-28",
-          "portfolio_value": 0.972488
+          "portfolio_value": 0.973813
         },
         {
           "date": "2022-03-29",
-          "portfolio_value": 0.976814
+          "portfolio_value": 0.974868
         },
         {
           "date": "2022-03-30",
-          "portfolio_value": 0.97723
+          "portfolio_value": 0.976288
         },
         {
           "date": "2022-03-31",
-          "portfolio_value": 0.974723
+          "portfolio_value": 0.976497
         },
         {
           "date": "2022-04-01",
-          "portfolio_value": 0.975232
+          "portfolio_value": 0.974808
         },
         {
           "date": "2022-04-04",
-          "portfolio_value": 0.976317
+          "portfolio_value": 0.975752
         },
         {
           "date": "2022-04-05",
-          "portfolio_value": 0.970814
+          "portfolio_value": 0.972074
         },
         {
           "date": "2022-04-06",
-          "portfolio_value": 0.968387
+          "portfolio_value": 0.969971
         },
         {
           "date": "2022-04-07",
-          "portfolio_value": 0.968113
+          "portfolio_value": 0.969834
         },
         {
           "date": "2022-04-08",
-          "portfolio_value": 0.96711
+          "portfolio_value": 0.968985
         },
         {
           "date": "2022-04-11",
-          "portfolio_value": 0.962652
+          "portfolio_value": 0.967021
         },
         {
           "date": "2022-04-12",
-          "portfolio_value": 0.962463
+          "portfolio_value": 0.967505
         },
         {
           "date": "2022-04-13",
-          "portfolio_value": 0.965235
+          "portfolio_value": 0.968711
         },
         {
           "date": "2022-04-14",
-          "portfolio_value": 0.961007
+          "portfolio_value": 0.966225
         },
         {
           "date": "2022-04-18",
-          "portfolio_value": 0.960399
+          "portfolio_value": 0.966002
         },
         {
           "date": "2022-04-19",
-          "portfolio_value": 0.960939
+          "portfolio_value": 0.963571
         },
         {
           "date": "2022-04-20",
-          "portfolio_value": 0.964223
+          "portfolio_value": 0.965605
         },
         {
           "date": "2022-04-21",
-          "portfolio_value": 0.960564
+          "portfolio_value": 0.963842
         },
         {
           "date": "2022-04-22",
-          "portfolio_value": 0.954447
+          "portfolio_value": 0.96155
         },
         {
           "date": "2022-04-25",
-          "portfolio_value": 0.95533
+          "portfolio_value": 0.962568
         },
         {
           "date": "2022-04-26",
-          "portfolio_value": 0.950745
+          "portfolio_value": 0.961596
         },
         {
           "date": "2022-04-27",
-          "portfolio_value": 0.949602
+          "portfolio_value": 0.960923
         },
         {
           "date": "2022-04-28",
-          "portfolio_value": 0.953916
+          "portfolio_value": 0.961238
         },
         {
           "date": "2022-04-29",
-          "portfolio_value": 0.945497
+          "portfolio_value": 0.958787
         },
         {
           "date": "2022-05-02",
-          "portfolio_value": 0.941162
+          "portfolio_value": 0.954953
         },
         {
           "date": "2022-05-03",
-          "portfolio_value": 0.943805
+          "portfolio_value": 0.956636
         },
         {
           "date": "2022-05-04",
-          "portfolio_value": 0.949236
+          "portfolio_value": 0.957826
         },
         {
           "date": "2022-05-05",
-          "portfolio_value": 0.938934
+          "portfolio_value": 0.952783
         },
         {
           "date": "2022-05-06",
-          "portfolio_value": 0.93659
+          "portfolio_value": 0.952343
         },
         {
           "date": "2022-05-09",
-          "portfolio_value": 0.928756
+          "portfolio_value": 0.949309
         },
         {
           "date": "2022-05-10",
-          "portfolio_value": 0.928995
+          "portfolio_value": 0.950228
         },
         {
           "date": "2022-05-11",
-          "portfolio_value": 0.928716
+          "portfolio_value": 0.950767
         },
         {
           "date": "2022-05-12",
-          "portfolio_value": 0.928954
+          "portfolio_value": 0.951851
         },
         {
           "date": "2022-05-13",
-          "portfolio_value": 0.933107
+          "portfolio_value": 0.953061
         },
         {
           "date": "2022-05-16",
-          "portfolio_value": 0.93288
+          "portfolio_value": 0.953558
         },
         {
           "date": "2022-05-17",
-          "portfolio_value": 0.934601
+          "portfolio_value": 0.952352
         },
         {
           "date": "2022-05-18",
-          "portfolio_value": 0.92911
+          "portfolio_value": 0.951389
         },
         {
           "date": "2022-05-19",
-          "portfolio_value": 0.930244
+          "portfolio_value": 0.953414
         },
         {
           "date": "2022-05-20",
-          "portfolio_value": 0.931475
+          "portfolio_value": 0.953573
         },
         {
           "date": "2022-05-23",
-          "portfolio_value": 0.933824
+          "portfolio_value": 0.953908
         },
         {
           "date": "2022-05-24",
-          "portfolio_value": 0.936002
+          "portfolio_value": 0.956235
         },
         {
           "date": "2022-05-25",
-          "portfolio_value": 0.93749
+          "portfolio_value": 0.956592
         },
         {
           "date": "2022-05-26",
-          "portfolio_value": 0.940087
+          "portfolio_value": 0.95739
         },
         {
           "date": "2022-05-27",
-          "portfolio_value": 0.945289
+          "portfolio_value": 0.959119
         },
         {
           "date": "2022-05-30",
-          "portfolio_value": 0.94474
+          "portfolio_value": 0.958204
         },
         {
           "date": "2022-05-31",
-          "portfolio_value": 0.940545
+          "portfolio_value": 0.955644
         },
         {
           "date": "2022-06-01",
-          "portfolio_value": 0.937903
+          "portfolio_value": 0.953535
         },
         {
           "date": "2022-06-02",
-          "portfolio_value": 0.942733
+          "portfolio_value": 0.955695
         },
         {
           "date": "2022-06-03",
-          "portfolio_value": 0.938945
+          "portfolio_value": 0.954499
         },
         {
           "date": "2022-06-06",
-          "portfolio_value": 0.936638
+          "portfolio_value": 0.952011
         },
         {
           "date": "2022-06-07",
-          "portfolio_value": 0.940365
+          "portfolio_value": 0.954172
         },
         {
           "date": "2022-06-08",
-          "portfolio_value": 0.936133
+          "portfolio_value": 0.95219
         },
         {
           "date": "2022-06-09",
-          "portfolio_value": 0.930354
+          "portfolio_value": 0.949341
         },
         {
           "date": "2022-06-10",
-          "portfolio_value": 0.923691
+          "portfolio_value": 0.945667
         },
         {
           "date": "2022-06-13",
-          "portfolio_value": 0.909347
+          "portfolio_value": 0.937313
         },
         {
           "date": "2022-06-14",
-          "portfolio_value": 0.90531
+          "portfolio_value": 0.933432
         },
         {
           "date": "2022-06-15",
-          "portfolio_value": 0.911936
+          "portfolio_value": 0.937394
         },
         {
           "date": "2022-06-16",
-          "portfolio_value": 0.90739
+          "portfolio_value": 0.937223
         },
         {
           "date": "2022-06-17",
-          "portfolio_value": 0.908355
+          "portfolio_value": 0.938175
         },
         {
           "date": "2022-06-20",
-          "portfolio_value": 0.907193
+          "portfolio_value": 0.936126
         },
         {
           "date": "2022-06-21",
-          "portfolio_value": 0.910482
+          "portfolio_value": 0.937291
         },
         {
           "date": "2022-06-22",
-          "portfolio_value": 0.912872
+          "portfolio_value": 0.938523
         },
         {
           "date": "2022-06-23",
-          "portfolio_value": 0.9168
+          "portfolio_value": 0.941767
         },
         {
           "date": "2022-06-24",
-          "portfolio_value": 0.921835
+          "portfolio_value": 0.942991
         },
         {
           "date": "2022-06-27",
-          "portfolio_value": 0.919186
+          "portfolio_value": 0.940251
         },
         {
           "date": "2022-06-28",
-          "portfolio_value": 0.915563
+          "portfolio_value": 0.938542
         },
         {
           "date": "2022-06-29",
-          "portfolio_value": 0.916627
+          "portfolio_value": 0.939984
         },
         {
           "date": "2022-06-30",
-          "portfolio_value": 0.916397
+          "portfolio_value": 0.94117
         },
         {
           "date": "2022-07-01",
-          "portfolio_value": 0.920899
+          "portfolio_value": 0.944491
         },
         {
           "date": "2022-07-04",
-          "portfolio_value": 0.920177
+          "portfolio_value": 0.943121
         },
         {
           "date": "2022-07-05",
-          "portfolio_value": 0.919569
+          "portfolio_value": 0.943533
         },
         {
           "date": "2022-07-06",
-          "portfolio_value": 0.91711
+          "portfolio_value": 0.941166
         },
         {
           "date": "2022-07-07",
-          "portfolio_value": 0.918565
+          "portfolio_value": 0.940656
         },
         {
           "date": "2022-07-08",
-          "portfolio_value": 0.917054
+          "portfolio_value": 0.939389
         },
         {
           "date": "2022-07-11",
-          "portfolio_value": 0.916106
+          "portfolio_value": 0.939617
         },
         {
           "date": "2022-07-12",
-          "portfolio_value": 0.915966
+          "portfolio_value": 0.941065
         },
         {
           "date": "2022-07-13",
-          "portfolio_value": 0.915865
+          "portfolio_value": 0.941035
         },
         {
           "date": "2022-07-14",
-          "portfolio_value": 0.91296
+          "portfolio_value": 0.939222
         },
         {
           "date": "2022-07-15",
-          "portfolio_value": 0.917825
+          "portfolio_value": 0.941651
         },
         {
           "date": "2022-07-18",
-          "portfolio_value": 0.915345
+          "portfolio_value": 0.939976
         },
         {
           "date": "2022-07-19",
-          "portfolio_value": 0.920824
+          "portfolio_value": 0.941519
         },
         {
           "date": "2022-07-20",
-          "portfolio_value": 0.920633
+          "portfolio_value": 0.940813
         },
         {
           "date": "2022-07-21",
-          "portfolio_value": 0.925351
+          "portfolio_value": 0.943743
         },
         {
           "date": "2022-07-22",
-          "portfolio_value": 0.927767
+          "portfolio_value": 0.947725
         },
         {
           "date": "2022-07-25",
-          "portfolio_value": 0.926957
+          "portfolio_value": 0.946513
         },
         {
           "date": "2022-07-26",
-          "portfolio_value": 0.925515
+          "portfolio_value": 0.946914
         },
         {
           "date": "2022-07-27",
-          "portfolio_value": 0.930594
+          "portfolio_value": 0.949228
         },
         {
           "date": "2022-07-28",
-          "portfolio_value": 0.936777
+          "portfolio_value": 0.953339
         },
         {
           "date": "2022-07-29",
-          "portfolio_value": 0.94081
+          "portfolio_value": 0.956567
         },
         {
           "date": "2022-08-01",
-          "portfolio_value": 0.941497
+          "portfolio_value": 0.956533
         },
         {
           "date": "2022-08-02",
-          "portfolio_value": 0.936081
+          "portfolio_value": 0.952555
         },
         {
           "date": "2022-08-03",
-          "portfolio_value": 0.939207
+          "portfolio_value": 0.952822
         },
         {
           "date": "2022-08-04",
-          "portfolio_value": 0.940932
+          "portfolio_value": 0.955161
         },
         {
           "date": "2022-08-05",
-          "portfolio_value": 0.936639
+          "portfolio_value": 0.950795
         },
         {
           "date": "2022-08-08",
-          "portfolio_value": 0.939169
+          "portfolio_value": 0.952567
         },
         {
           "date": "2022-08-09",
-          "portfolio_value": 0.938404
+          "portfolio_value": 0.95194
         },
         {
           "date": "2022-08-10",
-          "portfolio_value": 0.942686
+          "portfolio_value": 0.95394
         },
         {
           "date": "2022-08-11",
-          "portfolio_value": 0.94036
+          "portfolio_value": 0.95235
         },
         {
           "date": "2022-08-12",
-          "portfolio_value": 0.944713
+          "portfolio_value": 0.953415
         },
         {
           "date": "2022-08-15",
-          "portfolio_value": 0.944245
+          "portfolio_value": 0.952521
         },
         {
           "date": "2022-08-16",
-          "portfolio_value": 0.944333
+          "portfolio_value": 0.952285
         },
         {
           "date": "2022-08-17",
-          "portfolio_value": 0.941104
+          "portfolio_value": 0.950137
         },
         {
           "date": "2022-08-18",
-          "portfolio_value": 0.941361
+          "portfolio_value": 0.95081
         },
         {
           "date": "2022-08-19",
-          "portfolio_value": 0.935908
+          "portfolio_value": 0.947073
         },
         {
           "date": "2022-08-22",
-          "portfolio_value": 0.93017
+          "portfolio_value": 0.944334
         },
         {
           "date": "2022-08-23",
-          "portfolio_value": 0.929607
+          "portfolio_value": 0.945017
         },
         {
           "date": "2022-08-24",
-          "portfolio_value": 0.929283
+          "portfolio_value": 0.943703
         },
         {
           "date": "2022-08-25",
-          "portfolio_value": 0.933523
+          "portfolio_value": 0.945215
         },
         {
           "date": "2022-08-26",
-          "portfolio_value": 0.926619
+          "portfolio_value": 0.94298
         },
         {
           "date": "2022-08-29",
-          "portfolio_value": 0.923723
+          "portfolio_value": 0.940667
         },
         {
           "date": "2022-08-30",
-          "portfolio_value": 0.921132
+          "portfolio_value": 0.939943
         },
         {
           "date": "2022-08-31",
-          "portfolio_value": 0.917749
+          "portfolio_value": 0.937624
         },
         {
           "date": "2022-09-01",
-          "portfolio_value": 0.91474
+          "portfolio_value": 0.934304
         },
         {
           "date": "2022-09-02",
-          "portfolio_value": 0.913933
+          "portfolio_value": 0.935653
         },
         {
           "date": "2022-09-05",
-          "portfolio_value": 0.913672
+          "portfolio_value": 0.935081
         },
         {
           "date": "2022-09-06",
-          "portfolio_value": 0.911019
+          "portfolio_value": 0.933055
         },
         {
           "date": "2022-09-07",
-          "portfolio_value": 0.91648
+          "portfolio_value": 0.935015
         },
         {
           "date": "2022-09-08",
-          "portfolio_value": 0.915967
+          "portfolio_value": 0.934063
         },
         {
           "date": "2022-09-09",
-          "portfolio_value": 0.919981
+          "portfolio_value": 0.935245
         },
         {
           "date": "2022-09-12",
-          "portfolio_value": 0.922212
+          "portfolio_value": 0.936072
         },
         {
           "date": "2022-09-13",
-          "portfolio_value": 0.912477
+          "portfolio_value": 0.933173
         },
         {
           "date": "2022-09-14",
-          "portfolio_value": 0.912568
+          "portfolio_value": 0.93331
         },
         {
           "date": "2022-09-15",
-          "portfolio_value": 0.908441
+          "portfolio_value": 0.931479
         },
         {
           "date": "2022-09-16",
-          "portfolio_value": 0.906884
+          "portfolio_value": 0.931087
         },
         {
           "date": "2022-09-19",
-          "portfolio_value": 0.907771
+          "portfolio_value": 0.93102
         },
         {
           "date": "2022-09-20",
-          "portfolio_value": 0.903275
+          "portfolio_value": 0.929638
         },
         {
           "date": "2022-09-21",
-          "portfolio_value": 0.898837
+          "portfolio_value": 0.924615
         },
         {
           "date": "2022-09-22",
-          "portfolio_value": 0.894311
+          "portfolio_value": 0.921914
         },
         {
           "date": "2022-09-23",
-          "portfolio_value": 0.888936
+          "portfolio_value": 0.918717
         },
         {
           "date": "2022-09-26",
-          "portfolio_value": 0.881516
+          "portfolio_value": 0.91314
         },
         {
           "date": "2022-09-27",
-          "portfolio_value": 0.877487
+          "portfolio_value": 0.910116
         },
         {
           "date": "2022-09-28",
-          "portfolio_value": 0.887441
+          "portfolio_value": 0.917187
         },
         {
           "date": "2022-09-29",
-          "portfolio_value": 0.881351
+          "portfolio_value": 0.914045
         },
         {
           "date": "2022-09-30",
-          "portfolio_value": 0.87961
+          "portfolio_value": 0.91476
         },
         {
           "date": "2022-10-03",
-          "portfolio_value": 0.888458
+          "portfolio_value": 0.920303
         },
         {
           "date": "2022-10-04",
-          "portfolio_value": 0.89656
+          "portfolio_value": 0.924561
         },
         {
           "date": "2022-10-05",
-          "portfolio_value": 0.891633
+          "portfolio_value": 0.919273
         },
         {
           "date": "2022-10-06",
-          "portfolio_value": 0.887161
+          "portfolio_value": 0.917224
         },
         {
           "date": "2022-10-07",
-          "portfolio_value": 0.880154
+          "portfolio_value": 0.914235
         },
         {
           "date": "2022-10-10",
-          "portfolio_value": 0.875642
+          "portfolio_value": 0.91078
         },
         {
           "date": "2022-10-11",
-          "portfolio_value": 0.875862
+          "portfolio_value": 0.911721
         },
         {
           "date": "2022-10-12",
-          "portfolio_value": 0.874949
+          "portfolio_value": 0.910667
         },
         {
           "date": "2022-10-13",
-          "portfolio_value": 0.878945
+          "portfolio_value": 0.911373
         },
         {
           "date": "2022-10-14",
-          "portfolio_value": 0.872583
+          "portfolio_value": 0.908352
         },
         {
           "date": "2022-10-17",
-          "portfolio_value": 0.879381
+          "portfolio_value": 0.911592
         },
         {
           "date": "2022-10-18",
-          "portfolio_value": 0.881379
+          "portfolio_value": 0.911204
         },
         {
           "date": "2022-10-19",
-          "portfolio_value": 0.876289
+          "portfolio_value": 0.908894
         },
         {
           "date": "2022-10-20",
-          "portfolio_value": 0.873873
+          "portfolio_value": 0.90819
         },
         {
           "date": "2022-10-21",
-          "portfolio_value": 0.877403
+          "portfolio_value": 0.908721
         },
         {
           "date": "2022-10-24",
-          "portfolio_value": 0.878534
+          "portfolio_value": 0.909454
         },
         {
           "date": "2022-10-25",
-          "portfolio_value": 0.887018
+          "portfolio_value": 0.914603
         },
         {
           "date": "2022-10-26",
-          "portfolio_value": 0.887732
+          "portfolio_value": 0.915292
         },
         {
           "date": "2022-10-27",
-          "portfolio_value": 0.888683
+          "portfolio_value": 0.917734
         },
         {
           "date": "2022-10-28",
-          "portfolio_value": 0.891654
+          "portfolio_value": 0.916756
         },
         {
           "date": "2022-10-31",
-          "portfolio_value": 0.889188
+          "portfolio_value": 0.915444
         },
         {
           "date": "2022-11-01",
-          "portfolio_value": 0.889804
+          "portfolio_value": 0.915426
         },
         {
           "date": "2022-11-02",
-          "portfolio_value": 0.88501
+          "portfolio_value": 0.916415
         },
         {
           "date": "2022-11-03",
-          "portfolio_value": 0.880429
+          "portfolio_value": 0.910932
         },
         {
           "date": "2022-11-04",
-          "portfolio_value": 0.886324
+          "portfolio_value": 0.915231
         },
         {
           "date": "2022-11-07",
-          "portfolio_value": 0.88617
+          "portfolio_value": 0.913823
         },
         {
           "date": "2022-11-08",
-          "portfolio_value": 0.890545
+          "portfolio_value": 0.917925
         },
         {
           "date": "2022-11-09",
-          "portfolio_value": 0.886693
+          "portfolio_value": 0.916744
         },
         {
           "date": "2022-11-10",
-          "portfolio_value": 0.906739
+          "portfolio_value": 0.927014
         },
         {
           "date": "2022-11-11",
-          "portfolio_value": 0.908542
+          "portfolio_value": 0.926968
         },
         {
           "date": "2022-11-14",
-          "portfolio_value": 0.905122
+          "portfolio_value": 0.925996
         },
         {
           "date": "2022-11-15",
-          "portfolio_value": 0.909149
+          "portfolio_value": 0.928392
         },
         {
           "date": "2022-11-16",
-          "portfolio_value": 0.909727
+          "portfolio_value": 0.929999
         },
         {
           "date": "2022-11-17",
-          "portfolio_value": 0.907232
+          "portfolio_value": 0.928489
         },
         {
           "date": "2022-11-18",
-          "portfolio_value": 0.907592
+          "portfolio_value": 0.928053
         },
         {
           "date": "2022-11-21",
-          "portfolio_value": 0.907421
+          "portfolio_value": 0.928158
         },
         {
           "date": "2022-11-22",
-          "portfolio_value": 0.911292
+          "portfolio_value": 0.929569
         },
         {
           "date": "2022-11-23",
-          "portfolio_value": 0.914902
+          "portfolio_value": 0.932085
         },
         {
           "date": "2022-11-24",
-          "portfolio_value": 0.915575
+          "portfolio_value": 0.933503
         },
         {
           "date": "2022-11-25",
-          "portfolio_value": 0.915432
+          "portfolio_value": 0.932383
         },
         {
           "date": "2022-11-28",
-          "portfolio_value": 0.910942
+          "portfolio_value": 0.931005
         },
         {
           "date": "2022-11-29",
-          "portfolio_value": 0.911362
+          "portfolio_value": 0.931415
         },
         {
           "date": "2022-11-30",
-          "portfolio_value": 0.918571
+          "portfolio_value": 0.933467
         },
         {
           "date": "2022-12-01",
-          "portfolio_value": 0.923873
+          "portfolio_value": 0.938826
         },
         {
           "date": "2022-12-02",
-          "portfolio_value": 0.924294
+          "portfolio_value": 0.939019
         },
         {
           "date": "2022-12-05",
-          "portfolio_value": 0.918508
+          "portfolio_value": 0.936992
         },
         {
           "date": "2022-12-06",
-          "portfolio_value": 0.917104
+          "portfolio_value": 0.93715
         },
         {
           "date": "2022-12-07",
-          "portfolio_value": 0.919659
+          "portfolio_value": 0.939079
         },
         {
           "date": "2022-12-08",
-          "portfolio_value": 0.920852
+          "portfolio_value": 0.938921
         },
         {
           "date": "2022-12-09",
-          "portfolio_value": 0.918091
+          "portfolio_value": 0.937812
         },
         {
           "date": "2022-12-12",
-          "portfolio_value": 0.919653
+          "portfolio_value": 0.937066
         },
         {
           "date": "2022-12-13",
-          "portfolio_value": 0.924662
+          "portfolio_value": 0.94023
         },
         {
           "date": "2022-12-14",
-          "portfolio_value": 0.922979
+          "portfolio_value": 0.938871
         },
         {
           "date": "2022-12-15",
-          "portfolio_value": 0.917131
+          "portfolio_value": 0.936317
         },
         {
           "date": "2022-12-16",
-          "portfolio_value": 0.913276
+          "portfolio_value": 0.935205
         },
         {
           "date": "2022-12-19",
-          "portfolio_value": 0.909515
+          "portfolio_value": 0.932954
         },
         {
           "date": "2022-12-20",
-          "portfolio_value": 0.908714
+          "portfolio_value": 0.931925
         },
         {
           "date": "2022-12-21",
-          "portfolio_value": 0.911892
+          "portfolio_value": 0.933099
         },
         {
           "date": "2022-12-22",
-          "portfolio_value": 0.909583
+          "portfolio_value": 0.933405
         },
         {
           "date": "2022-12-23",
-          "portfolio_value": 0.909203
+          "portfolio_value": 0.931724
         },
         {
           "date": "2022-12-27",
-          "portfolio_value": 0.907438
+          "portfolio_value": 0.930388
         },
         {
           "date": "2022-12-28",
-          "portfolio_value": 0.903919
+          "portfolio_value": 0.929787
         },
         {
           "date": "2022-12-29",
-          "portfolio_value": 0.908785
+          "portfolio_value": 0.930469
         }
       ],
       "rebalance_log": [
         {
           "date": "2022-01-03",
           "weights": {
-            "VNQ": 0.053391,
-            "EFA": 0.053391,
-            "CSPX.L": 0.053391,
-            "SPY": 0.053391,
-            "XEON.MI": 0.400004,
-            "GLD": 0.053391,
-            "AGGH.MI": 0.221137,
-            "TIP": 0.058512,
-            "TLT": 0.053391
+            "VNQ": 0.019188,
+            "EFA": 0.039121,
+            "CSPX.L": 0.005974,
+            "SPY": 0.005974,
+            "XEON.MI": 0.45,
+            "GLD": 0.031881,
+            "AGGH.MI": 0.34797,
+            "TIP": 0.095555,
+            "TLT": 0.004336
           },
-          "turnover": 0.797838,
-          "transaction_cost": 0.000798
+          "turnover": 1.151496,
+          "transaction_cost": 0.001151
         },
         {
           "date": "2022-01-31",
           "weights": {
-            "VNQ": 0.053901,
-            "EFA": 0.053901,
-            "CSPX.L": 0.053901,
-            "SPY": 0.053901,
-            "XEON.MI": 0.400005,
-            "GLD": 0.053901,
-            "AGGH.MI": 0.222688,
-            "TIP": 0.053901,
-            "TLT": 0.053901
+            "VNQ": 0.011578,
+            "EFA": 0.040867,
+            "CSPX.L": 0.005163,
+            "SPY": 0.005163,
+            "XEON.MI": 0.45,
+            "GLD": 0.039614,
+            "AGGH.MI": 0.359969,
+            "TIP": 0.083543,
+            "TLT": 0.004103
           },
-          "turnover": 0.009222,
-          "transaction_cost": 9e-06
+          "turnover": 0.042955,
+          "transaction_cost": 4.3e-05
         },
         {
           "date": "2022-02-28",
           "weights": {
-            "VNQ": 0.054882,
-            "EFA": 0.054882,
-            "CSPX.L": 0.054882,
-            "SPY": 0.054882,
-            "XEON.MI": 0.400006,
-            "GLD": 0.054882,
-            "AGGH.MI": 0.215821,
-            "TIP": 0.054882,
-            "TLT": 0.054882
+            "VNQ": 0.01002,
+            "EFA": 0.042047,
+            "CSPX.L": 0.004645,
+            "SPY": 0.004645,
+            "XEON.MI": 0.45,
+            "GLD": 0.041316,
+            "AGGH.MI": 0.357595,
+            "TIP": 0.085671,
+            "TLT": 0.00406
           },
-          "turnover": 0.013733,
-          "transaction_cost": 1.4e-05
+          "turnover": 0.01002,
+          "transaction_cost": 1e-05
         },
         {
           "date": "2022-03-31",
           "weights": {
-            "VNQ": 0.056179,
-            "EFA": 0.056179,
-            "CSPX.L": 0.056179,
-            "SPY": 0.056179,
-            "XEON.MI": 0.400008,
-            "GLD": 0.056179,
-            "AGGH.MI": 0.20674,
-            "TIP": 0.056179,
-            "TLT": 0.056179
+            "VNQ": 0.011911,
+            "EFA": 0.045022,
+            "CSPX.L": 0.004061,
+            "SPY": 0.004061,
+            "XEON.MI": 0.45,
+            "GLD": 0.041233,
+            "AGGH.MI": 0.353848,
+            "TIP": 0.085072,
+            "TLT": 0.004792
           },
-          "turnover": 0.018163,
-          "transaction_cost": 1.8e-05
+          "turnover": 0.011195,
+          "transaction_cost": 1.1e-05
         },
         {
           "date": "2022-05-31",
           "weights": {
-            "VNQ": 0.056713,
-            "EFA": 0.056713,
-            "CSPX.L": 0.056713,
-            "SPY": 0.056713,
-            "XEON.MI": 0.400008,
-            "GLD": 0.056713,
-            "AGGH.MI": 0.203003,
-            "TIP": 0.056713,
-            "TLT": 0.056713
+            "VNQ": 0.008083,
+            "EFA": 0.04644,
+            "CSPX.L": 0.003537,
+            "SPY": 0.003537,
+            "XEON.MI": 0.45,
+            "GLD": 0.045432,
+            "AGGH.MI": 0.346736,
+            "TIP": 0.091198,
+            "TLT": 0.005036
           },
-          "turnover": 0.007473,
-          "transaction_cost": 7e-06
+          "turnover": 0.023972,
+          "transaction_cost": 2.4e-05
         },
         {
           "date": "2022-06-30",
           "weights": {
-            "VNQ": 0.058388,
-            "EFA": 0.058388,
-            "CSPX.L": 0.058388,
-            "SPY": 0.058388,
-            "XEON.MI": 0.400011,
-            "GLD": 0.058388,
-            "AGGH.MI": 0.191272,
-            "TIP": 0.058388,
-            "TLT": 0.058388
+            "VNQ": 0.005797,
+            "EFA": 0.046418,
+            "CSPX.L": 0.004035,
+            "SPY": 0.004035,
+            "XEON.MI": 0.45,
+            "GLD": 0.048691,
+            "AGGH.MI": 0.354051,
+            "TIP": 0.082037,
+            "TLT": 0.004936
           },
-          "turnover": 0.023463,
+          "turnover": 0.023138,
           "transaction_cost": 2.3e-05
         },
         {
           "date": "2022-08-31",
           "weights": {
-            "VNQ": 0.060795,
-            "EFA": 0.060795,
-            "CSPX.L": 0.060795,
-            "SPY": 0.060795,
-            "XEON.MI": 0.400014,
-            "GLD": 0.060795,
-            "AGGH.MI": 0.174425,
-            "TIP": 0.060795,
-            "TLT": 0.060795
+            "VNQ": 0.004355,
+            "EFA": 0.048665,
+            "CSPX.L": 0.003959,
+            "SPY": 0.003959,
+            "XEON.MI": 0.45,
+            "GLD": 0.052227,
+            "AGGH.MI": 0.356354,
+            "TIP": 0.075973,
+            "TLT": 0.004508
           },
-          "turnover": 0.033694,
-          "transaction_cost": 3.4e-05
+          "turnover": 0.01617,
+          "transaction_cost": 1.6e-05
         },
         {
           "date": "2022-09-30",
           "weights": {
-            "VNQ": 0.06174,
-            "EFA": 0.06174,
-            "CSPX.L": 0.06174,
-            "SPY": 0.06174,
-            "XEON.MI": 0.400015,
-            "GLD": 0.06174,
-            "AGGH.MI": 0.167808,
-            "TIP": 0.06174,
-            "TLT": 0.06174
+            "VNQ": 0.00366,
+            "EFA": 0.048018,
+            "CSPX.L": 0.004619,
+            "SPY": 0.004619,
+            "XEON.MI": 0.45,
+            "GLD": 0.053595,
+            "AGGH.MI": 0.370332,
+            "TIP": 0.060923,
+            "TLT": 0.004234
           },
-          "turnover": 0.013233,
-          "transaction_cost": 1.3e-05
+          "turnover": 0.033333,
+          "transaction_cost": 3.3e-05
         },
         {
           "date": "2022-10-31",
           "weights": {
-            "VNQ": 0.062751,
-            "EFA": 0.062751,
-            "CSPX.L": 0.062751,
-            "SPY": 0.062751,
-            "XEON.MI": 0.400016,
-            "GLD": 0.062751,
-            "AGGH.MI": 0.160723,
-            "TIP": 0.062751,
-            "TLT": 0.062751
+            "VNQ": 0.003311,
+            "EFA": 0.046694,
+            "CSPX.L": 0.005153,
+            "SPY": 0.005153,
+            "XEON.MI": 0.45,
+            "GLD": 0.053689,
+            "AGGH.MI": 0.358236,
+            "TIP": 0.073712,
+            "TLT": 0.004052
           },
-          "turnover": 0.01417,
-          "transaction_cost": 1.4e-05
+          "turnover": 0.027902,
+          "transaction_cost": 2.8e-05
         },
         {
           "date": "2022-11-30",
           "weights": {
-            "VNQ": 0.061505,
-            "EFA": 0.061505,
-            "CSPX.L": 0.061505,
-            "SPY": 0.061505,
-            "XEON.MI": 0.400014,
-            "GLD": 0.061505,
-            "AGGH.MI": 0.169449,
-            "TIP": 0.061505,
-            "TLT": 0.061505
+            "VNQ": 0.004308,
+            "EFA": 0.038454,
+            "CSPX.L": 0.008302,
+            "SPY": 0.008302,
+            "XEON.MI": 0.45,
+            "GLD": 0.050749,
+            "AGGH.MI": 0.343603,
+            "TIP": 0.091207,
+            "TLT": 0.005076
           },
-          "turnover": 0.017452,
-          "transaction_cost": 1.7e-05
+          "turnover": 0.051628,
+          "transaction_cost": 5.2e-05
         }
       ]
     },
     "MV": {
       "strategy": "MV",
-      "cagr": -0.120099,
-      "annualised_volatility": 0.103709,
-      "sharpe_ratio": -1.158045,
-      "max_drawdown": -0.152093,
-      "calmar_ratio": -0.789644,
-      "total_transaction_cost": 0.00267,
+      "cagr": -0.106127,
+      "annualised_volatility": 0.101403,
+      "sharpe_ratio": -1.046583,
+      "max_drawdown": -0.139106,
+      "calmar_ratio": -0.762922,
+      "total_transaction_cost": 0.002233,
       "n_rebalances": 10,
       "equity_curve": [
         {
           "date": "2022-01-03",
-          "portfolio_value": 0.999187
+          "portfolio_value": 1.0
         },
         {
           "date": "2022-01-04",
-          "portfolio_value": 0.998098
+          "portfolio_value": 1.000054
         },
         {
           "date": "2022-01-05",
-          "portfolio_value": 0.981596
+          "portfolio_value": 0.989709
         },
         {
           "date": "2022-01-06",
-          "portfolio_value": 0.979988
+          "portfolio_value": 0.987163
         },
         {
           "date": "2022-01-07",
-          "portfolio_value": 0.976553
+          "portfolio_value": 0.985208
         },
         {
           "date": "2022-01-10",
-          "portfolio_value": 0.974206
+          "portfolio_value": 0.983926
         },
         {
           "date": "2022-01-11",
-          "portfolio_value": 0.978914
+          "portfolio_value": 0.990169
         },
         {
           "date": "2022-01-12",
-          "portfolio_value": 0.978692
+          "portfolio_value": 0.99117
         },
         {
           "date": "2022-01-13",
-          "portfolio_value": 0.976336
+          "portfolio_value": 0.987954
         },
         {
           "date": "2022-01-14",
-          "portfolio_value": 0.97082
+          "portfolio_value": 0.984254
         },
         {
           "date": "2022-01-17",
-          "portfolio_value": 0.970717
+          "portfolio_value": 0.984022
         },
         {
           "date": "2022-01-18",
-          "portfolio_value": 0.961961
+          "portfolio_value": 0.975028
         },
         {
           "date": "2022-01-19",
-          "portfolio_value": 0.956147
+          "portfolio_value": 0.973436
         },
         {
           "date": "2022-01-20",
-          "portfolio_value": 0.950159
+          "portfolio_value": 0.969643
         },
         {
           "date": "2022-01-21",
-          "portfolio_value": 0.948215
+          "portfolio_value": 0.9656
         },
         {
           "date": "2022-01-24",
-          "portfolio_value": 0.949329
+          "portfolio_value": 0.965615
         },
         {
           "date": "2022-01-25",
-          "portfolio_value": 0.945804
+          "portfolio_value": 0.961868
         },
         {
           "date": "2022-01-26",
-          "portfolio_value": 0.936665
+          "portfolio_value": 0.955435
         },
         {
           "date": "2022-01-27",
-          "portfolio_value": 0.930693
+          "portfolio_value": 0.952871
         },
         {
           "date": "2022-01-28",
-          "portfolio_value": 0.946329
+          "portfolio_value": 0.962015
         },
         {
           "date": "2022-01-31",
-          "portfolio_value": 0.956494
+          "portfolio_value": 0.971986
         },
         {
           "date": "2022-02-01",
-          "portfolio_value": 0.957058
+          "portfolio_value": 0.972559
         },
         {
           "date": "2022-02-02",
-          "portfolio_value": 0.965558
+          "portfolio_value": 0.981197
         },
         {
           "date": "2022-02-03",
-          "portfolio_value": 0.952867
+          "portfolio_value": 0.968301
         },
         {
           "date": "2022-02-04",
-          "portfolio_value": 0.94945
+          "portfolio_value": 0.964828
         },
         {
           "date": "2022-02-07",
-          "portfolio_value": 0.948361
+          "portfolio_value": 0.963722
         },
         {
           "date": "2022-02-08",
-          "portfolio_value": 0.948892
+          "portfolio_value": 0.964261
         },
         {
           "date": "2022-02-09",
-          "portfolio_value": 0.962796
+          "portfolio_value": 0.97839
         },
         {
           "date": "2022-02-10",
-          "portfolio_value": 0.946314
+          "portfolio_value": 0.961641
         },
         {
           "date": "2022-02-11",
-          "portfolio_value": 0.938493
+          "portfolio_value": 0.953693
         },
         {
           "date": "2022-02-14",
-          "portfolio_value": 0.933357
+          "portfolio_value": 0.948474
         },
         {
           "date": "2022-02-15",
-          "portfolio_value": 0.940891
+          "portfolio_value": 0.95613
         },
         {
           "date": "2022-02-16",
-          "portfolio_value": 0.943993
+          "portfolio_value": 0.959283
         },
         {
           "date": "2022-02-17",
-          "portfolio_value": 0.934437
+          "portfolio_value": 0.949572
         },
         {
           "date": "2022-02-18",
-          "portfolio_value": 0.930783
+          "portfolio_value": 0.945859
         },
         {
           "date": "2022-02-21",
-          "portfolio_value": 0.930825
+          "portfolio_value": 0.945901
         },
         {
           "date": "2022-02-22",
-          "portfolio_value": 0.926167
+          "portfolio_value": 0.941168
         },
         {
           "date": "2022-02-23",
-          "portfolio_value": 0.914321
+          "portfolio_value": 0.92913
         },
         {
           "date": "2022-02-24",
-          "portfolio_value": 0.923873
+          "portfolio_value": 0.938837
         },
         {
           "date": "2022-02-25",
-          "portfolio_value": 0.939863
+          "portfolio_value": 0.955085
         },
         {
           "date": "2022-02-28",
-          "portfolio_value": 0.935197
+          "portfolio_value": 0.950344
         },
         {
           "date": "2022-03-01",
-          "portfolio_value": 0.930126
+          "portfolio_value": 0.945191
         },
         {
           "date": "2022-03-02",
-          "portfolio_value": 0.940304
+          "portfolio_value": 0.955534
         },
         {
           "date": "2022-03-03",
-          "portfolio_value": 0.941409
+          "portfolio_value": 0.956657
         },
         {
           "date": "2022-03-04",
-          "portfolio_value": 0.941672
+          "portfolio_value": 0.956925
         },
         {
           "date": "2022-03-07",
-          "portfolio_value": 0.924772
+          "portfolio_value": 0.93975
         },
         {
           "date": "2022-03-08",
-          "portfolio_value": 0.92232
+          "portfolio_value": 0.937259
         },
         {
           "date": "2022-03-09",
-          "portfolio_value": 0.934702
+          "portfolio_value": 0.949841
         },
         {
           "date": "2022-03-10",
-          "portfolio_value": 0.932856
+          "portfolio_value": 0.947965
         },
         {
           "date": "2022-03-11",
-          "portfolio_value": 0.926075
+          "portfolio_value": 0.941075
         },
         {
           "date": "2022-03-14",
-          "portfolio_value": 0.918972
+          "portfolio_value": 0.933857
         },
         {
           "date": "2022-03-15",
-          "portfolio_value": 0.926747
+          "portfolio_value": 0.941758
         },
         {
           "date": "2022-03-16",
-          "portfolio_value": 0.939378
+          "portfolio_value": 0.954593
         },
         {
           "date": "2022-03-17",
-          "portfolio_value": 0.949671
+          "portfolio_value": 0.965052
         },
         {
           "date": "2022-03-18",
-          "portfolio_value": 0.953406
+          "portfolio_value": 0.968849
         },
         {
           "date": "2022-03-21",
-          "portfolio_value": 0.949223
+          "portfolio_value": 0.964598
         },
         {
           "date": "2022-03-22",
-          "portfolio_value": 0.9526
+          "portfolio_value": 0.968029
         },
         {
           "date": "2022-03-23",
-          "portfolio_value": 0.946441
+          "portfolio_value": 0.96177
         },
         {
           "date": "2022-03-24",
-          "portfolio_value": 0.953188
+          "portfolio_value": 0.968627
         },
         {
           "date": "2022-03-25",
-          "portfolio_value": 0.957979
+          "portfolio_value": 0.973496
         },
         {
           "date": "2022-03-28",
-          "portfolio_value": 0.963435
+          "portfolio_value": 0.97904
         },
         {
           "date": "2022-03-29",
-          "portfolio_value": 0.979595
+          "portfolio_value": 0.995462
         },
         {
           "date": "2022-03-30",
-          "portfolio_value": 0.975892
+          "portfolio_value": 0.991698
         },
         {
           "date": "2022-03-31",
-          "portfolio_value": 0.96869
+          "portfolio_value": 0.984379
         },
         {
           "date": "2022-04-01",
-          "portfolio_value": 0.975104
+          "portfolio_value": 0.990898
         },
         {
           "date": "2022-04-04",
-          "portfolio_value": 0.975133
+          "portfolio_value": 0.990927
         },
         {
           "date": "2022-04-05",
-          "portfolio_value": 0.968063
+          "portfolio_value": 0.983743
         },
         {
           "date": "2022-04-06",
-          "portfolio_value": 0.970892
+          "portfolio_value": 0.986617
         },
         {
           "date": "2022-04-07",
-          "portfolio_value": 0.968098
+          "portfolio_value": 0.983778
         },
         {
           "date": "2022-04-08",
-          "portfolio_value": 0.9694
+          "portfolio_value": 0.985101
         },
         {
           "date": "2022-04-11",
-          "portfolio_value": 0.963245
+          "portfolio_value": 0.978847
         },
         {
           "date": "2022-04-12",
-          "portfolio_value": 0.963814
+          "portfolio_value": 0.979425
         },
         {
           "date": "2022-04-13",
-          "portfolio_value": 0.969408
+          "portfolio_value": 0.985109
         },
         {
           "date": "2022-04-14",
-          "portfolio_value": 0.964267
+          "portfolio_value": 0.979885
         },
         {
           "date": "2022-04-18",
-          "portfolio_value": 0.962956
+          "portfolio_value": 0.978553
         },
         {
           "date": "2022-04-19",
-          "portfolio_value": 0.968617
+          "portfolio_value": 0.984306
         },
         {
           "date": "2022-04-20",
-          "portfolio_value": 0.977927
+          "portfolio_value": 0.993766
         },
         {
           "date": "2022-04-21",
-          "portfolio_value": 0.972006
+          "portfolio_value": 0.98775
         },
         {
           "date": "2022-04-22",
-          "portfolio_value": 0.958804
+          "portfolio_value": 0.974333
         },
         {
           "date": "2022-04-25",
-          "portfolio_value": 0.954559
+          "portfolio_value": 0.97002
         },
         {
           "date": "2022-04-26",
-          "portfolio_value": 0.945186
+          "portfolio_value": 0.960496
         },
         {
           "date": "2022-04-27",
-          "portfolio_value": 0.940657
+          "portfolio_value": 0.955893
         },
         {
           "date": "2022-04-28",
-          "portfolio_value": 0.952042
+          "portfolio_value": 0.967462
         },
         {
           "date": "2022-04-29",
-          "portfolio_value": 0.929397
+          "portfolio_value": 0.94445
         },
         {
           "date": "2022-05-02",
-          "portfolio_value": 0.914873
+          "portfolio_value": 0.929691
         },
         {
           "date": "2022-05-03",
-          "portfolio_value": 0.921363
+          "portfolio_value": 0.936286
         },
         {
           "date": "2022-05-04",
-          "portfolio_value": 0.931955
+          "portfolio_value": 0.94705
         },
         {
           "date": "2022-05-05",
-          "portfolio_value": 0.914281
+          "portfolio_value": 0.92909
         },
         {
           "date": "2022-05-06",
-          "portfolio_value": 0.908583
+          "portfolio_value": 0.923299
         },
         {
           "date": "2022-05-09",
-          "portfolio_value": 0.885207
+          "portfolio_value": 0.899545
         },
         {
           "date": "2022-05-10",
-          "portfolio_value": 0.877821
+          "portfolio_value": 0.892039
         },
         {
           "date": "2022-05-11",
-          "portfolio_value": 0.87853
+          "portfolio_value": 0.892759
         },
         {
           "date": "2022-05-12",
-          "portfolio_value": 0.877702
+          "portfolio_value": 0.891919
         },
         {
           "date": "2022-05-13",
-          "portfolio_value": 0.888021
+          "portfolio_value": 0.902404
         },
         {
           "date": "2022-05-16",
-          "portfolio_value": 0.887577
+          "portfolio_value": 0.901953
         },
         {
           "date": "2022-05-17",
-          "portfolio_value": 0.892699
+          "portfolio_value": 0.907158
         },
         {
           "date": "2022-05-18",
-          "portfolio_value": 0.879051
+          "portfolio_value": 0.89329
         },
         {
           "date": "2022-05-19",
-          "portfolio_value": 0.88074
+          "portfolio_value": 0.895005
         },
         {
           "date": "2022-05-20",
-          "portfolio_value": 0.883949
+          "portfolio_value": 0.898267
         },
         {
           "date": "2022-05-23",
-          "portfolio_value": 0.890536
+          "portfolio_value": 0.90496
         },
         {
           "date": "2022-05-24",
-          "portfolio_value": 0.895787
+          "portfolio_value": 0.910296
         },
         {
           "date": "2022-05-25",
-          "portfolio_value": 0.898539
+          "portfolio_value": 0.913093
         },
         {
           "date": "2022-05-26",
-          "portfolio_value": 0.900826
+          "portfolio_value": 0.915417
         },
         {
           "date": "2022-05-27",
-          "portfolio_value": 0.913674
+          "portfolio_value": 0.928473
         },
         {
           "date": "2022-05-30",
-          "portfolio_value": 0.913553
+          "portfolio_value": 0.92835
         },
         {
           "date": "2022-05-31",
-          "portfolio_value": 0.908784
+          "portfolio_value": 0.923504
         },
         {
           "date": "2022-06-01",
-          "portfolio_value": 0.906256
+          "portfolio_value": 0.920935
         },
         {
           "date": "2022-06-02",
-          "portfolio_value": 0.910384
+          "portfolio_value": 0.92513
         },
         {
           "date": "2022-06-03",
-          "portfolio_value": 0.907073
+          "portfolio_value": 0.921765
         },
         {
           "date": "2022-06-06",
-          "portfolio_value": 0.904776
+          "portfolio_value": 0.919431
         },
         {
           "date": "2022-06-07",
-          "portfolio_value": 0.908203
+          "portfolio_value": 0.922913
         },
         {
           "date": "2022-06-08",
-          "portfolio_value": 0.904433
+          "portfolio_value": 0.919082
         },
         {
           "date": "2022-06-09",
-          "portfolio_value": 0.899245
+          "portfolio_value": 0.91381
         },
         {
           "date": "2022-06-10",
-          "portfolio_value": 0.893075
+          "portfolio_value": 0.90754
         },
         {
           "date": "2022-06-13",
-          "portfolio_value": 0.880193
+          "portfolio_value": 0.89445
         },
         {
           "date": "2022-06-14",
-          "portfolio_value": 0.876412
+          "portfolio_value": 0.890607
         },
         {
           "date": "2022-06-15",
-          "portfolio_value": 0.882257
+          "portfolio_value": 0.896547
         },
         {
           "date": "2022-06-16",
-          "portfolio_value": 0.878561
+          "portfolio_value": 0.892791
         },
         {
           "date": "2022-06-17",
-          "portfolio_value": 0.879635
+          "portfolio_value": 0.893882
         },
         {
           "date": "2022-06-20",
-          "portfolio_value": 0.878249
+          "portfolio_value": 0.892474
         },
         {
           "date": "2022-06-21",
-          "portfolio_value": 0.881202
+          "portfolio_value": 0.895474
         },
         {
           "date": "2022-06-22",
-          "portfolio_value": 0.883373
+          "portfolio_value": 0.897681
         },
         {
           "date": "2022-06-23",
-          "portfolio_value": 0.887316
+          "portfolio_value": 0.901688
         },
         {
           "date": "2022-06-24",
-          "portfolio_value": 0.891519
+          "portfolio_value": 0.905958
         },
         {
           "date": "2022-06-27",
-          "portfolio_value": 0.888919
+          "portfolio_value": 0.903317
         },
         {
           "date": "2022-06-28",
-          "portfolio_value": 0.885669
+          "portfolio_value": 0.900014
         },
         {
           "date": "2022-06-29",
-          "portfolio_value": 0.886925
+          "portfolio_value": 0.901291
         },
         {
           "date": "2022-06-30",
-          "portfolio_value": 0.887173
+          "portfolio_value": 0.901542
         },
         {
           "date": "2022-07-01",
-          "portfolio_value": 0.891323
+          "portfolio_value": 0.90576
         },
         {
           "date": "2022-07-04",
-          "portfolio_value": 0.89041
+          "portfolio_value": 0.904832
         },
         {
           "date": "2022-07-05",
-          "portfolio_value": 0.89047
+          "portfolio_value": 0.904893
         },
         {
           "date": "2022-07-06",
-          "portfolio_value": 0.888237
+          "portfolio_value": 0.902623
         },
         {
           "date": "2022-07-07",
-          "portfolio_value": 0.889166
+          "portfolio_value": 0.903568
         },
         {
           "date": "2022-07-08",
-          "portfolio_value": 0.88763
+          "portfolio_value": 0.902007
         },
         {
           "date": "2022-07-11",
-          "portfolio_value": 0.887101
+          "portfolio_value": 0.90147
         },
         {
           "date": "2022-07-12",
-          "portfolio_value": 0.887372
+          "portfolio_value": 0.901744
         },
         {
           "date": "2022-07-13",
-          "portfolio_value": 0.887172
+          "portfolio_value": 0.901542
         },
         {
           "date": "2022-07-14",
-          "portfolio_value": 0.884688
+          "portfolio_value": 0.899018
         },
         {
           "date": "2022-07-15",
-          "portfolio_value": 0.888986
+          "portfolio_value": 0.903385
         },
         {
           "date": "2022-07-18",
-          "portfolio_value": 0.886547
+          "portfolio_value": 0.900906
         },
         {
           "date": "2022-07-19",
-          "portfolio_value": 0.891104
+          "portfolio_value": 0.905537
         },
         {
           "date": "2022-07-20",
-          "portfolio_value": 0.890954
+          "portfolio_value": 0.905385
         },
         {
           "date": "2022-07-21",
-          "portfolio_value": 0.895125
+          "portfolio_value": 0.909624
         },
         {
           "date": "2022-07-22",
-          "portfolio_value": 0.897876
+          "portfolio_value": 0.912419
         },
         {
           "date": "2022-07-25",
-          "portfolio_value": 0.896919
+          "portfolio_value": 0.911446
         },
         {
           "date": "2022-07-26",
-          "portfolio_value": 0.896005
+          "portfolio_value": 0.910518
         },
         {
           "date": "2022-07-27",
-          "portfolio_value": 0.900233
+          "portfolio_value": 0.914814
         },
         {
           "date": "2022-07-28",
-          "portfolio_value": 0.90588
+          "portfolio_value": 0.920552
         },
         {
           "date": "2022-07-29",
-          "portfolio_value": 0.909653
+          "portfolio_value": 0.924386
         },
         {
           "date": "2022-08-01",
-          "portfolio_value": 0.910134
+          "portfolio_value": 0.924875
         },
         {
           "date": "2022-08-02",
-          "portfolio_value": 0.905219
+          "portfolio_value": 0.91988
         },
         {
           "date": "2022-08-03",
-          "portfolio_value": 0.907631
+          "portfolio_value": 0.922332
         },
         {
           "date": "2022-08-04",
-          "portfolio_value": 0.909379
+          "portfolio_value": 0.924108
         },
         {
           "date": "2022-08-05",
-          "portfolio_value": 0.905214
+          "portfolio_value": 0.919876
         },
         {
           "date": "2022-08-08",
-          "portfolio_value": 0.907457
+          "portfolio_value": 0.922155
         },
         {
           "date": "2022-08-09",
-          "portfolio_value": 0.90675
+          "portfolio_value": 0.921437
         },
         {
           "date": "2022-08-10",
-          "portfolio_value": 0.910552
+          "portfolio_value": 0.9253
         },
         {
           "date": "2022-08-11",
-          "portfolio_value": 0.908378
+          "portfolio_value": 0.923091
         },
         {
           "date": "2022-08-12",
-          "portfolio_value": 0.911914
+          "portfolio_value": 0.926684
         },
         {
           "date": "2022-08-15",
-          "portfolio_value": 0.911527
+          "portfolio_value": 0.926291
         },
         {
           "date": "2022-08-16",
-          "portfolio_value": 0.911562
+          "portfolio_value": 0.926327
         },
         {
           "date": "2022-08-17",
-          "portfolio_value": 0.908624
+          "portfolio_value": 0.923341
         },
         {
           "date": "2022-08-18",
-          "portfolio_value": 0.908973
+          "portfolio_value": 0.923696
         },
         {
           "date": "2022-08-19",
-          "portfolio_value": 0.903889
+          "portfolio_value": 0.918529
         },
         {
           "date": "2022-08-22",
-          "portfolio_value": 0.898864
+          "portfolio_value": 0.913423
         },
         {
           "date": "2022-08-23",
-          "portfolio_value": 0.898465
+          "portfolio_value": 0.913018
         },
         {
           "date": "2022-08-24",
-          "portfolio_value": 0.897846
+          "portfolio_value": 0.912389
         },
         {
           "date": "2022-08-25",
-          "portfolio_value": 0.901445
+          "portfolio_value": 0.916046
         },
         {
           "date": "2022-08-26",
-          "portfolio_value": 0.895742
+          "portfolio_value": 0.91025
         },
         {
           "date": "2022-08-29",
-          "portfolio_value": 0.892924
+          "portfolio_value": 0.907387
         },
         {
           "date": "2022-08-30",
-          "portfolio_value": 0.890838
+          "portfolio_value": 0.905266
         },
         {
           "date": "2022-08-31",
-          "portfolio_value": 0.887919
+          "portfolio_value": 0.9023
         },
         {
           "date": "2022-09-01",
-          "portfolio_value": 0.885035
+          "portfolio_value": 0.89937
         },
         {
           "date": "2022-09-02",
-          "portfolio_value": 0.884671
+          "portfolio_value": 0.899
         },
         {
           "date": "2022-09-05",
-          "portfolio_value": 0.884298
+          "portfolio_value": 0.89862
         },
         {
           "date": "2022-09-06",
-          "portfolio_value": 0.881929
+          "portfolio_value": 0.896214
         },
         {
           "date": "2022-09-07",
-          "portfolio_value": 0.886417
+          "portfolio_value": 0.900775
         },
         {
           "date": "2022-09-08",
-          "portfolio_value": 0.885944
+          "portfolio_value": 0.900294
         },
         {
           "date": "2022-09-09",
-          "portfolio_value": 0.889005
+          "portfolio_value": 0.903404
         },
         {
           "date": "2022-09-12",
-          "portfolio_value": 0.890794
+          "portfolio_value": 0.905222
         },
         {
           "date": "2022-09-13",
-          "portfolio_value": 0.883061
+          "portfolio_value": 0.897364
         },
         {
           "date": "2022-09-14",
-          "portfolio_value": 0.883133
+          "portfolio_value": 0.897437
         },
         {
           "date": "2022-09-15",
-          "portfolio_value": 0.879848
+          "portfolio_value": 0.894099
         },
         {
           "date": "2022-09-16",
-          "portfolio_value": 0.878608
+          "portfolio_value": 0.892839
         },
         {
           "date": "2022-09-19",
-          "portfolio_value": 0.879315
+          "portfolio_value": 0.893557
         },
         {
           "date": "2022-09-20",
-          "portfolio_value": 0.875733
+          "portfolio_value": 0.889917
         },
         {
           "date": "2022-09-21",
-          "portfolio_value": 0.870877
+          "portfolio_value": 0.884982
         },
         {
           "date": "2022-09-22",
-          "portfolio_value": 0.866834
+          "portfolio_value": 0.880874
         },
         {
           "date": "2022-09-23",
-          "portfolio_value": 0.862388
+          "portfolio_value": 0.876356
         },
         {
           "date": "2022-09-26",
-          "portfolio_value": 0.855667
+          "portfolio_value": 0.869526
         },
         {
           "date": "2022-09-27",
-          "portfolio_value": 0.85182
+          "portfolio_value": 0.865617
         },
         {
           "date": "2022-09-28",
-          "portfolio_value": 0.860726
+          "portfolio_value": 0.874667
         },
         {
           "date": "2022-09-29",
-          "portfolio_value": 0.85547
+          "portfolio_value": 0.869326
         },
         {
           "date": "2022-09-30",
-          "portfolio_value": 0.854524
+          "portfolio_value": 0.868365
         },
         {
           "date": "2022-10-03",
-          "portfolio_value": 0.862182
+          "portfolio_value": 0.876147
         },
         {
           "date": "2022-10-04",
-          "portfolio_value": 0.868905
+          "portfolio_value": 0.882979
         },
         {
           "date": "2022-10-05",
-          "portfolio_value": 0.863881
+          "portfolio_value": 0.877873
         },
         {
           "date": "2022-10-06",
-          "portfolio_value": 0.860108
+          "portfolio_value": 0.874039
         },
         {
           "date": "2022-10-07",
-          "portfolio_value": 0.854207
+          "portfolio_value": 0.868043
         },
         {
           "date": "2022-10-10",
-          "portfolio_value": 0.850093
+          "portfolio_value": 0.863862
         },
         {
           "date": "2022-10-11",
-          "portfolio_value": 0.850617
+          "portfolio_value": 0.864394
         },
         {
           "date": "2022-10-12",
-          "portfolio_value": 0.849524
+          "portfolio_value": 0.863283
         },
         {
           "date": "2022-10-13",
-          "portfolio_value": 0.85265
+          "portfolio_value": 0.86646
         },
         {
           "date": "2022-10-14",
-          "portfolio_value": 0.847218
+          "portfolio_value": 0.86094
         },
         {
           "date": "2022-10-17",
-          "portfolio_value": 0.853023
+          "portfolio_value": 0.866839
         },
         {
           "date": "2022-10-18",
-          "portfolio_value": 0.854363
+          "portfolio_value": 0.868201
         },
         {
           "date": "2022-10-19",
-          "portfolio_value": 0.850195
+          "portfolio_value": 0.863966
         },
         {
           "date": "2022-10-20",
-          "portfolio_value": 0.848187
+          "portfolio_value": 0.861925
         },
         {
           "date": "2022-10-21",
-          "portfolio_value": 0.850549
+          "portfolio_value": 0.864326
         },
         {
           "date": "2022-10-24",
-          "portfolio_value": 0.851634
+          "portfolio_value": 0.865428
         },
         {
           "date": "2022-10-25",
-          "portfolio_value": 0.859302
+          "portfolio_value": 0.87322
         },
         {
           "date": "2022-10-26",
-          "portfolio_value": 0.859886
+          "portfolio_value": 0.873813
         },
         {
           "date": "2022-10-27",
-          "portfolio_value": 0.861368
+          "portfolio_value": 0.875319
         },
         {
           "date": "2022-10-28",
-          "portfolio_value": 0.863355
+          "portfolio_value": 0.877339
         },
         {
           "date": "2022-10-31",
-          "portfolio_value": 0.861369
+          "portfolio_value": 0.87532
         },
         {
           "date": "2022-11-01",
-          "portfolio_value": 0.861588
+          "portfolio_value": 0.875543
         },
         {
           "date": "2022-11-02",
-          "portfolio_value": 0.858654
+          "portfolio_value": 0.872562
         },
         {
           "date": "2022-11-03",
-          "portfolio_value": 0.853819
+          "portfolio_value": 0.867648
         },
         {
           "date": "2022-11-04",
-          "portfolio_value": 0.85859
+          "portfolio_value": 0.872497
         },
         {
           "date": "2022-11-07",
-          "portfolio_value": 0.858012
+          "portfolio_value": 0.871909
         },
         {
           "date": "2022-11-08",
-          "portfolio_value": 0.862117
+          "portfolio_value": 0.87608
         },
         {
           "date": "2022-11-09",
-          "portfolio_value": 0.859148
+          "portfolio_value": 0.873064
         },
         {
           "date": "2022-11-10",
-          "portfolio_value": 0.875986
+          "portfolio_value": 0.890174
         },
         {
           "date": "2022-11-11",
-          "portfolio_value": 0.876963
+          "portfolio_value": 0.891168
         },
         {
           "date": "2022-11-14",
-          "portfolio_value": 0.874363
+          "portfolio_value": 0.888525
         },
         {
           "date": "2022-11-15",
-          "portfolio_value": 0.877885
+          "portfolio_value": 0.892104
         },
         {
           "date": "2022-11-16",
-          "portfolio_value": 0.878829
+          "portfolio_value": 0.893064
         },
         {
           "date": "2022-11-17",
-          "portfolio_value": 0.876751
+          "portfolio_value": 0.890952
         },
         {
           "date": "2022-11-18",
-          "portfolio_value": 0.877053
+          "portfolio_value": 0.891259
         },
         {
           "date": "2022-11-21",
-          "portfolio_value": 0.877036
+          "portfolio_value": 0.891242
         },
         {
           "date": "2022-11-22",
-          "portfolio_value": 0.880102
+          "portfolio_value": 0.894357
         },
         {
           "date": "2022-11-23",
-          "portfolio_value": 0.883271
+          "portfolio_value": 0.897577
         },
         {
           "date": "2022-11-24",
-          "portfolio_value": 0.884229
+          "portfolio_value": 0.898551
         },
         {
           "date": "2022-11-25",
-          "portfolio_value": 0.883689
+          "portfolio_value": 0.898002
         },
         {
           "date": "2022-11-28",
-          "portfolio_value": 0.880201
+          "portfolio_value": 0.894458
         },
         {
           "date": "2022-11-29",
-          "portfolio_value": 0.880639
+          "portfolio_value": 0.894902
         },
         {
           "date": "2022-11-30",
-          "portfolio_value": 0.886023
+          "portfolio_value": 0.900374
         },
         {
           "date": "2022-12-01",
-          "portfolio_value": 0.891138
+          "portfolio_value": 0.905571
         },
         {
           "date": "2022-12-02",
-          "portfolio_value": 0.891397
+          "portfolio_value": 0.905835
         },
         {
           "date": "2022-12-05",
-          "portfolio_value": 0.886987
+          "portfolio_value": 0.901353
         },
         {
           "date": "2022-12-06",
-          "portfolio_value": 0.886033
+          "portfolio_value": 0.900384
         },
         {
           "date": "2022-12-07",
-          "portfolio_value": 0.88834
+          "portfolio_value": 0.902728
         },
         {
           "date": "2022-12-08",
-          "portfolio_value": 0.88913
+          "portfolio_value": 0.903531
         },
         {
           "date": "2022-12-09",
-          "portfolio_value": 0.886856
+          "portfolio_value": 0.901221
         },
         {
           "date": "2022-12-12",
-          "portfolio_value": 0.887867
+          "portfolio_value": 0.902248
         },
         {
           "date": "2022-12-13",
-          "portfolio_value": 0.892228
+          "portfolio_value": 0.906679
         },
         {
           "date": "2022-12-14",
-          "portfolio_value": 0.89065
+          "portfolio_value": 0.905076
         },
         {
           "date": "2022-12-15",
-          "portfolio_value": 0.885902
+          "portfolio_value": 0.900251
         },
         {
           "date": "2022-12-16",
-          "portfolio_value": 0.882721
+          "portfolio_value": 0.897018
         },
         {
           "date": "2022-12-19",
-          "portfolio_value": 0.879292
+          "portfolio_value": 0.893534
         },
         {
           "date": "2022-12-20",
-          "portfolio_value": 0.878113
+          "portfolio_value": 0.892336
         },
         {
           "date": "2022-12-21",
-          "portfolio_value": 0.880642
+          "portfolio_value": 0.894906
         },
         {
           "date": "2022-12-22",
-          "portfolio_value": 0.879378
+          "portfolio_value": 0.893621
         },
         {
           "date": "2022-12-23",
-          "portfolio_value": 0.878548
+          "portfolio_value": 0.892778
         },
         {
           "date": "2022-12-27",
-          "portfolio_value": 0.876739
+          "portfolio_value": 0.890939
         },
         {
           "date": "2022-12-28",
-          "portfolio_value": 0.87414
+          "portfolio_value": 0.888298
         },
         {
           "date": "2022-12-29",
-          "portfolio_value": 0.87767
+          "portfolio_value": 0.891885
         }
       ],
       "rebalance_log": [
         {
           "date": "2022-01-03",
           "weights": {
-            "AGGH.MI": 0.05,
-            "CSPX.L": 0.06068,
-            "EFA": 0.05,
-            "GLD": 0.05,
-            "TIP": 0.22864,
-            "TLT": 0.05,
-            "VNQ": 0.4,
-            "XEON.MI": 0.05,
-            "SPY": 0.06068
+            "AGGH.MI": 0.111111,
+            "CSPX.L": 0.111111,
+            "EFA": 0.111111,
+            "GLD": 0.111111,
+            "TIP": 0.111111,
+            "TLT": 0.111111,
+            "VNQ": 0.111111,
+            "XEON.MI": 0.111111,
+            "SPY": 0.111111
           },
-          "turnover": 0.812836,
-          "transaction_cost": 0.000813
+          "turnover": 0.0,
+          "transaction_cost": 0.0
         },
         {
           "date": "2022-01-31",
@@ -2287,8 +2287,8 @@
             "XEON.MI": 0.05,
             "SPY": 0.15
           },
-          "turnover": 0.35728,
-          "transaction_cost": 0.000357
+          "turnover": 0.733333,
+          "transaction_cost": 0.000733
         },
         {
           "date": "2022-02-28",
@@ -2424,7 +2424,7 @@
       "strategy": "1/N",
       "cagr": -0.137494,
       "annualised_volatility": 0.119492,
-      "sharpe_ratio": -1.150655,
+      "sharpe_ratio": -1.150656,
       "max_drawdown": -0.195792,
       "calmar_ratio": -0.702245,
       "total_transaction_cost": 0.0,
@@ -2496,7 +2496,7 @@
         },
         {
           "date": "2022-01-25",
-          "portfolio_value": 0.961869
+          "portfolio_value": 0.961868
         },
         {
           "date": "2022-01-26",
@@ -2524,7 +2524,7 @@
         },
         {
           "date": "2022-02-03",
-          "portfolio_value": 0.965003
+          "portfolio_value": 0.965002
         },
         {
           "date": "2022-02-04",
@@ -2652,7 +2652,7 @@
         },
         {
           "date": "2022-03-21",
-          "portfolio_value": 0.959017
+          "portfolio_value": 0.959016
         },
         {
           "date": "2022-03-22",
@@ -2684,7 +2684,7 @@
         },
         {
           "date": "2022-03-31",
-          "portfolio_value": 0.966918
+          "portfolio_value": 0.966917
         },
         {
           "date": "2022-04-01",
@@ -2716,7 +2716,7 @@
         },
         {
           "date": "2022-04-12",
-          "portfolio_value": 0.94815
+          "portfolio_value": 0.948149
         },
         {
           "date": "2022-04-13",
@@ -2740,7 +2740,7 @@
         },
         {
           "date": "2022-04-21",
-          "portfolio_value": 0.947719
+          "portfolio_value": 0.947718
         },
         {
           "date": "2022-04-22",
@@ -2768,7 +2768,7 @@
         },
         {
           "date": "2022-05-02",
-          "portfolio_value": 0.911513
+          "portfolio_value": 0.911512
         },
         {
           "date": "2022-05-03",
@@ -2784,7 +2784,7 @@
         },
         {
           "date": "2022-05-06",
-          "portfolio_value": 0.904078
+          "portfolio_value": 0.904077
         },
         {
           "date": "2022-05-09",
@@ -2804,7 +2804,7 @@
         },
         {
           "date": "2022-05-13",
-          "portfolio_value": 0.89543
+          "portfolio_value": 0.895429
         },
         {
           "date": "2022-05-16",
@@ -2948,7 +2948,7 @@
         },
         {
           "date": "2022-07-04",
-          "portfolio_value": 0.876139
+          "portfolio_value": 0.876138
         },
         {
           "date": "2022-07-05",
@@ -2968,7 +2968,7 @@
         },
         {
           "date": "2022-07-11",
-          "portfolio_value": 0.868473
+          "portfolio_value": 0.868472
         },
         {
           "date": "2022-07-12",
@@ -3016,7 +3016,7 @@
         },
         {
           "date": "2022-07-27",
-          "portfolio_value": 0.891552
+          "portfolio_value": 0.891551
         },
         {
           "date": "2022-07-28",
@@ -3032,11 +3032,11 @@
         },
         {
           "date": "2022-08-02",
-          "portfolio_value": 0.900284
+          "portfolio_value": 0.900283
         },
         {
           "date": "2022-08-03",
-          "portfolio_value": 0.906449
+          "portfolio_value": 0.906448
         },
         {
           "date": "2022-08-04",
@@ -3064,7 +3064,7 @@
         },
         {
           "date": "2022-08-12",
-          "portfolio_value": 0.917466
+          "portfolio_value": 0.917465
         },
         {
           "date": "2022-08-15",
@@ -3128,7 +3128,7 @@
         },
         {
           "date": "2022-09-05",
-          "portfolio_value": 0.867085
+          "portfolio_value": 0.867084
         },
         {
           "date": "2022-09-06",
@@ -3192,7 +3192,7 @@
         },
         {
           "date": "2022-09-27",
-          "portfolio_value": 0.811784
+          "portfolio_value": 0.811783
         },
         {
           "date": "2022-09-28",
@@ -3364,7 +3364,7 @@
         },
         {
           "date": "2022-11-25",
-          "portfolio_value": 0.870367
+          "portfolio_value": 0.870366
         },
         {
           "date": "2022-11-28",
