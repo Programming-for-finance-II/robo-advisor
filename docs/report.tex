@@ -131,10 +131,10 @@ HRP \parencite{LopezdePrado2016} was selected over MVO for three structural reas
 \[
   \alpha_L = 1 - \frac{V_L}{V_L + V_R}, \qquad V_k = \mathbf{w}_k^\top \hat{\Sigma}_k\,\mathbf{w}_k
 \]
-Raw weights are tilted by risk profile: Conservative blends toward Minimum Variance; Aggressive toward Equal Risk Contribution \parencite{Maillard2010}; Balanced uses raw HRP weights.
+Raw weights are tilted by risk profile: Conservative blends toward Minimum Variance; Aggressive toward a volatility-proportional target (weights proportional to asset volatility — the $\mu$-free, risk-seeking symmetric opposite of minimum variance); Moderate uses raw HRP weights. Equal Risk Contribution \parencite{Maillard2010} was considered for the Aggressive tilt but rejected because ERC is a risk-\emph{balancing} construction that empirically converged toward minimum variance, inverting the intended ordering (ADR-008).
 
 \subsection{Ledoit--Wolf Shrinkage and Constraints}
-The Ledoit--Wolf shrinkage estimator \parencite{LedoitWolf2004} $\hat{\Sigma} = (1-\alpha)S + \alpha\mu_S I$ is applied before clustering to stabilise the distance matrix. Box constraints clip weights to $[5\%, 40\%]$ per asset and $[10\%, 60\%]$ per cluster; weights are renormalised after clipping.
+The Ledoit--Wolf shrinkage estimator \parencite{LedoitWolf2004} $\hat{\Sigma} = (1-\alpha)S + \alpha\mu_S I$ is applied before clustering to stabilise the distance matrix. Box constraints are applied per profile via Strategic Asset Allocation bands: the Moderate profile uses $[5\%, 40\%]$ per asset; the Aggressive profile widens the equity cluster floor to $45\%$ and caps cash at $10\%$; the Conservative profile enforces a safe-haven floor of $25\%$ and caps equity at $25\%$ (ADR-008). Weights are renormalised after clipping via an iterative projection.
 
 \subsection{Market Regime Detection}
 A dual-trigger detector flags \texttt{HIGH\_STRESS} when $\bar{\rho}_{\mathrm{LW}} > 0.75$ or $\mathrm{VIX} > 30$ (ADR-006). When triggered, the frontend surfaces a warning banner cautioning that diversification benefits are reduced in the prevailing regime. A cluster-level Equal Risk Contribution allocation (\texttt{get\_erc\_cluster\_weights}) is implemented as the defensive response for this regime; wiring it into the automatic serving path is left as future work.
@@ -216,7 +216,7 @@ No single strategy dominates across all seven episodes, and the broadened covera
 
 \textbf{SCF US-centrism.} The risk profiler is trained on US household data. European investors may exhibit materially different risk preferences, savings rates, and financial literacy patterns. The EU Awareness layer communicates this explicitly at the point of recommendation, but does not correct the underlying distributional mismatch.
 
-\textbf{HRP opacity.} The recursive bisection algorithm produces weights that cannot be summarised by a simple rule. The LLM narrator and the MVO comparison tab partially mitigate this, but residual opacity is a fundamental limitation acknowledged in ADR-001.
+\textbf{HRP opacity.} The recursive bisection algorithm produces weights that cannot be summarised by a simple rule. The LLM narrator and the dedicated HRP vs.\ Markowitz comparison page partially mitigate this, but residual opacity is a fundamental limitation acknowledged in ADR-001.
 
 \textbf{Validator false positives.} The substring check for \textit{safe} also matches the cluster label \textit{safe\_haven}, triggering unnecessary fallback responses. Whole-word matching is deferred to future work. The EU Awareness check (Step~5) is keyword-based rather than semantic and may fail on paraphrased compliant responses.
 
