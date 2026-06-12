@@ -1227,7 +1227,9 @@
           "turnover": 0.111164,
           "transaction_cost": 0.000111
         }
-      ]
+      ],
+      "var_95_daily": -0.005465,
+      "cvar_95_daily": -0.008625
     },
     "MV": {
       "strategy": "MV",
@@ -2439,7 +2441,9 @@
           "turnover": 0.30138,
           "transaction_cost": 0.000301
         }
-      ]
+      ],
+      "var_95_daily": -0.008025,
+      "cvar_95_daily": -0.011915
     },
     "1/N": {
       "strategy": "1/N",
@@ -3651,7 +3655,9 @@
           "turnover": 0.0,
           "transaction_cost": 0.0
         }
-      ]
+      ],
+      "var_95_daily": -0.008113,
+      "cvar_95_daily": -0.012374
     }
   }
 }
