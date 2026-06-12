@@ -2992,8 +2992,8 @@ def _render_hrp_tab(portfolio: dict) -> None:
             # backgrounds are cleared to transparent so the donut sits directly
             # on the page with no dark panel behind it.
             fig_donut.update_layout(
-                height=420,
-                margin=dict(l=10, r=10, t=30, b=72),
+                height=460,
+                margin=dict(l=10, r=10, t=30, b=124),
                 paper_bgcolor="rgba(0,0,0,0)",
                 plot_bgcolor="rgba(0,0,0,0)",
             )

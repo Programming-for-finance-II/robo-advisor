@@ -147,8 +147,8 @@ def plot_weights_donut(weights: dict[str, float]) -> go.Figure:
                 text=cluster_legend,
                 # Sit the legend well clear of the ring: thin-slice outside
                 # labels can reach the bottom of the donut, so the legend is
-                # pushed further down to avoid touching them.
-                x=0.5, y=-0.14,
+                # pushed well below them to avoid touching at any viewport width.
+                x=0.5, y=-0.30,
                 xanchor="center", yanchor="top",
                 showarrow=False,
                 font=dict(size=11),
