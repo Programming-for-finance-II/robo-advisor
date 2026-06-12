@@ -235,6 +235,22 @@ def _run_live_optimization(profile_label: str) -> dict:
     except Exception:
         mv_fields = {}
 
+    # Real correlation matrix, derived from the SAME covariance HRP uses, for the
+    # Asset Correlation Matrix view. Defensive: fall back to the stylised
+    # illustration on the compare page if anything here fails.
+    try:
+        import numpy as np
+
+        _cm = cov.values
+        _std = np.sqrt(np.diag(_cm))
+        _corr_mat = _cm / np.outer(_std, _std)
+        correlation = {
+            "tickers": list(cov.columns),
+            "matrix": np.clip(_corr_mat, -1.0, 1.0).tolist(),
+        }
+    except Exception:
+        correlation = None
+
     # Real cluster structure for the "How your money is grouped" view.
     # Defensive: a failure here must not break the whole live path — the
     # grouping view falls back gracefully when this is absent.
@@ -271,6 +287,7 @@ def _run_live_optimization(profile_label: str) -> dict:
         "stress_regime": regime_result.regime,
         "avg_correlation": regime_result.avg_correlation,
         "cluster_structure": cluster_structure,
+        "correlation": correlation,
         "source": "live",
         **mv_fields,
     }
@@ -4834,36 +4851,52 @@ def render_compare() -> None:
         f"<p style='color:{thm['text_secondary']};font-size:0.82rem;"
         "line-height:1.55;margin-bottom:0.5rem;'>"
         "Diversification is not only about holding many ETFs, but about combining assets that "
-        "behave differently. This matrix shows the correlation structure of the ETF universe and "
-        "explains why HRP groups some assets together while separating others."
+        "behave differently. This matrix shows how the ETFs move relative to each other; the "
+        "outlined blocks are the groups HRP clusters together."
         "</p>",
         unsafe_allow_html=True,
     )
-    st.caption(
-        "How to read it: values in the matrix close to 1 indicate assets moving together, "
-        "while values near 0 or below 0 indicate stronger diversification potential."
-    )
 
-    _TICKERS_HM = ["CSPX.L", "EFA", "GLD", "VNQ", "AGGH.MI", "TLT", "TIP", "XEON.MI"]
-    _CORR = np.array([
-        [ 1.00,  0.85,  0.05,  0.55, -0.15, -0.20, -0.05,  0.02],
-        [ 0.85,  1.00,  0.08,  0.52, -0.12, -0.18, -0.03,  0.01],
-        [ 0.05,  0.08,  1.00,  0.18,  0.22,  0.28,  0.30,  0.02],
-        [ 0.55,  0.52,  0.18,  1.00, -0.02,  0.05,  0.10,  0.01],
-        [-0.15, -0.12,  0.22, -0.02,  1.00,  0.82,  0.78,  0.05],
-        [-0.20, -0.18,  0.28,  0.05,  0.82,  1.00,  0.75,  0.04],
-        [-0.05, -0.03,  0.30,  0.10,  0.78,  0.75,  1.00,  0.03],
-        [ 0.02,  0.01,  0.02,  0.01,  0.05,  0.04,  0.03,  1.00],
-    ])
+    # Real correlation matrix from live prices when available; otherwise a
+    # stylised illustration, flagged honestly in the caption below.
+    _corr_live = portfolio.get("correlation") if isinstance(portfolio, dict) else None
+    if _corr_live and _corr_live.get("matrix") and _corr_live.get("tickers"):
+        _TICKERS_HM = list(_corr_live["tickers"])
+        _CORR = np.array(_corr_live["matrix"], dtype=float)
+        _corr_is_live = True
+    else:
+        _TICKERS_HM = ["CSPX.L", "EFA", "GLD", "VNQ", "AGGH.MI", "TLT", "TIP", "XEON.MI"]
+        _CORR = np.array([
+            [ 1.00,  0.85,  0.05,  0.55, -0.15, -0.20, -0.05,  0.02],
+            [ 0.85,  1.00,  0.08,  0.52, -0.12, -0.18, -0.03,  0.01],
+            [ 0.05,  0.08,  1.00,  0.18,  0.22,  0.28,  0.30,  0.02],
+            [ 0.55,  0.52,  0.18,  1.00, -0.02,  0.05,  0.10,  0.01],
+            [-0.15, -0.12,  0.22, -0.02,  1.00,  0.82,  0.78,  0.05],
+            [-0.20, -0.18,  0.28,  0.05,  0.82,  1.00,  0.75,  0.04],
+            [-0.05, -0.03,  0.30,  0.10,  0.78,  0.75,  1.00,  0.03],
+            [ 0.02,  0.01,  0.02,  0.01,  0.05,  0.04,  0.03,  1.00],
+        ])
+        _corr_is_live = False
+
+    # Order assets by HRP cluster so same-class assets sit together and the
+    # within-cluster blocks become visible on the diagonal.
+    _CLS_ORDER = {"Equity": 0, "Alternatives": 1, "Bonds": 2, "Cash": 3}
+    _order = sorted(
+        range(len(_TICKERS_HM)),
+        key=lambda i: (_CLS_ORDER.get(_HRP_TICKER_CLUSTER.get(_TICKERS_HM[i], "Cash"), 9),
+                       _TICKERS_HM[i]),
+    )
+    _TICKERS_HM = [_TICKERS_HM[i] for i in _order]
+    _CORR = _CORR[np.ix_(_order, _order)]
 
     fig_hm = go.Figure(go.Heatmap(
         z=_CORR.tolist(),
         x=_TICKERS_HM,
         y=_TICKERS_HM,
         colorscale=[
-            [0.00, "#f87171"],
-            [0.50, "#f1f4fa" if is_light() else "#111827"],
-            [1.00, "#7c5cfc"],
+            [0.00, "#2f6fb0"],   # negative correlation — assets hedge (diversifying)
+            [0.50, "#eef1f6" if is_light() else "#0e1626"],  # ~zero
+            [1.00, "#e0883a"],   # positive correlation — assets move together
         ],
         zmin=-1,
         zmax=1,
@@ -4878,7 +4911,27 @@ def render_compare() -> None:
             len=0.85,
         ),
     ))
-    fig_hm.update_layout(height=420, margin=dict(l=8, r=8, t=8, b=8))
+
+    # Outline each HRP cluster as a block on the diagonal, so the grouping the
+    # intro describes is actually visible on the chart.
+    _outline = "#334155" if is_light() else "#f8fafc"
+    _n = len(_TICKERS_HM)
+    _i = 0
+    while _i < _n:
+        _c = _HRP_TICKER_CLUSTER.get(_TICKERS_HM[_i], "Cash")
+        _j = _i
+        while _j < _n and _HRP_TICKER_CLUSTER.get(_TICKERS_HM[_j], "Cash") == _c:
+            _j += 1
+        fig_hm.add_shape(
+            type="rect",
+            x0=_i - 0.5, x1=_j - 0.5, y0=_i - 0.5, y1=_j - 0.5,
+            line=dict(color=_outline, width=2),
+            fillcolor="rgba(0,0,0,0)",
+            layer="above",
+        )
+        _i = _j
+
+    fig_hm.update_layout(height=440, margin=dict(l=8, r=8, t=8, b=8))
     fig_hm = apply_plotly_theme(fig_hm)
     fig_hm.update_layout(
         paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
@@ -4891,10 +4944,16 @@ def render_compare() -> None:
         dragmode="pan",
     )
     st.plotly_chart(fig_hm, use_container_width=True, config={"displaylogo": False})
+    _hm_note = (
+        ""
+        if _corr_is_live
+        else " Figures shown are a stylised illustration (live prices unavailable)."
+    )
     st.caption(
-        "Correlation matrix used by HRP to build the hierarchical cluster tree. "
-        "Negative equity–bond correlation (flight-to-quality) is the key diversification driver. "
-        "The matrix shown is a stylised illustration."
+        "Correlation of daily returns — the same matrix HRP uses to build its "
+        "cluster tree. Blue = assets that hedge each other (diversifying); "
+        "orange = assets that move together. Outlined blocks are HRP's clusters."
+        + _hm_note
     )
 
 
