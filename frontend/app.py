@@ -4894,9 +4894,9 @@ def render_compare() -> None:
         x=_TICKERS_HM,
         y=_TICKERS_HM,
         colorscale=[
-            [0.00, "#2f6fb0"],   # negative correlation — assets hedge (diversifying)
+            [0.00, "#0dcfb0"],   # negative correlation — assets hedge (diversifying)
             [0.50, "#eef1f6" if is_light() else "#0e1626"],  # ~zero
-            [1.00, "#e0883a"],   # positive correlation — assets move together
+            [1.00, "#7c5cfc"],   # positive correlation — assets move together
         ],
         zmin=-1,
         zmax=1,
@@ -4951,8 +4951,8 @@ def render_compare() -> None:
     )
     st.caption(
         "Correlation of daily returns — the same matrix HRP uses to build its "
-        "cluster tree. Blue = assets that hedge each other (diversifying); "
-        "orange = assets that move together. Outlined blocks are HRP's clusters."
+        "cluster tree. Teal = assets that hedge each other (diversifying); "
+        "purple = assets that move together. Outlined blocks are HRP's clusters."
         + _hm_note
     )
 
