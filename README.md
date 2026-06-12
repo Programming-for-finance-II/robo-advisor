@@ -207,26 +207,42 @@ SQLite data persists in a Docker volume between restarts.
 
 ### Step-by-step flow
 
+The app has six pages, reachable from the top navigation bar:
+**Questionnaire · Portfolio Dashboard · Compare Markowitz · Chat Advisor · Backtesting · Settings.**
+
 1. **Questionnaire** — answer 10 risk profiling questions (Grable-Lytton scale, 1999).
    Q7 ("safety net money") triggers a MiFID II hard override to CONSERVATIVE
-   regardless of other answers.
+   regardless of other answers. On submission you immediately see your
+   **investor profile** (`CONSERVATIVE` / `MODERATE` / `AGGRESSIVE`) with a model
+   confidence score and the top behavioural drivers (SHAP values in Phase B,
+   importance scores in Phase A).
 
-2. **Profile Result** — view your investor profile (`CONSERVATIVE` / `MODERATE` /
-   `AGGRESSIVE`) with model confidence score and top behavioural drivers
-   (SHAP values in Phase B, importance scores in Phase A).
-
-3. **Portfolio Dashboard** — explore your HRP-optimised portfolio with:
+2. **Portfolio Dashboard** — explore your HRP-optimised portfolio with:
+   - Allocation donut chart with tickers and weights
+   - Cluster grouping view (how your money is grouped) and HRP methodology cards
+   - Key metrics cards (expected return, volatility, Sharpe, max drawdown)
    - Risk contribution breakdown (Plotly bar chart)
    - UCITS badges 🇪🇺 in the weights table
-   - EU Investor Note banner
-   - Stress Regime banner (visible only when correlations spike above 0.75)
+   - EU Investor Note banner and Stress Regime banner (shown only when
+     correlations spike above 0.75)
+   - **ETF Explorer** — price chart, TER/AUM, ESG scores and analyst consensus
+     for all 8 ETFs
 
-4. **Markowitz Tab** — compare HRP allocation against the Mean-Variance benchmark.
-   Includes efficient frontier chart and weight divergence table.
+3. **Compare Markowitz** — a deep-dive page comparing HRP against the
+   Mean-Variance benchmark: radar chart across key indicators and a
+   weight-divergence breakdown, with a collapsible explainer of why the two
+   methods are compared.
 
-5. **Chat Advisor** — ask natural-language questions about your portfolio.
+4. **Chat Advisor** — ask natural-language questions about your portfolio.
    Answers go through a 3-stage safety pipeline (input sanitiser → narrator →
    5-step validator) and always include an educational disclaimer.
+
+5. **Backtesting** — replay each strategy on real historical prices across stress
+   scenarios (GFC 2008, COVID 2020, rate hike 2022), comparing HRP vs
+   Mean-Variance (MV) vs equal-weight (1/N).
+
+6. **Settings** — switch between **Dark and Light theme** (instant, no restart),
+   and view the data source and about information.
 
 See [`docs/user_guide.md`](docs/user_guide.md) for the complete user guide with
 API examples and known limitations.
