@@ -14,16 +14,7 @@ optimises portfolios via Hierarchical Risk Parity (López de Prado, 2016),
 and generates natural-language explanations through a constrained LLM narrator
 (Claude API) that is mathematically prevented from inventing numbers.
 
-**Team:** P1 Backend/Data · P2 Quant/Optimizer · P3 ML/Profiling · P4 Frontend/LLM/Docs  
 **Course:** Programming in Finance II — Prof. P. Gruber — USI 2026
-
----
-
-## Live Demo
-
-🌐 **[https://robo-advisor-usi.streamlit.app/](https://robo-advisor-usi.streamlit.app/)**
-
-> The app may take 10–30 seconds to wake up after a period of inactivity (Streamlit Cloud cold start).
 
 ---
 
@@ -35,6 +26,14 @@ and generates natural-language explanations through a constrained LLM narrator
 | **P2** | Emma Erba | Quant / Portfolio Optimization |
 | **P3** | Matteo Buttiglieri | ML / Risk Profiling |
 | **P4** | Elena Trombini | Frontend / LLM / Docs |
+
+---
+
+## Live Demo
+
+🌐 **[https://robo-advisor-usi.streamlit.app/](https://robo-advisor-usi.streamlit.app/)**
+
+> The app may take 10–30 seconds to wake up after a period of inactivity (Streamlit Cloud cold start).
 
 ---
 
