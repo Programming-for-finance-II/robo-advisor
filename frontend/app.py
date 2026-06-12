@@ -232,6 +232,22 @@ def _run_live_optimization(profile_label: str) -> dict:
             "mv_expected_return": mv_result["expected_return"],
             "mv_sharpe_ratio": mv_result["sharpe_ratio"],
         }
+        # Historical max drawdown of the MV portfolio, same method as HRP's, so
+        # the compare scorecard can show a real figure for both methods.
+        try:
+            import numpy as np
+
+            _mw = mv_result["weights"]
+            _mc = [t for t in _mw if t in prices.columns]
+            _mr = prices[_mc].pct_change().dropna()
+            _mwv = np.array([_mw[t] for t in _mc], dtype=float)
+            _mwv = _mwv / _mwv.sum() if _mwv.sum() > 0 else _mwv
+            _meq = np.cumprod(1.0 + (_mr.to_numpy() @ _mwv))
+            mv_fields["mv_max_drawdown"] = float(
+                (_meq / np.maximum.accumulate(_meq) - 1.0).min()
+            )
+        except Exception:
+            pass
     except Exception:
         mv_fields = {}
 
@@ -4611,17 +4627,14 @@ def render_compare() -> None:
             st.session_state["portfolio_data"] = portfolio
             st.session_state["portfolio_profile"] = profile_label
             st.session_state["recommendation_id"] = portfolio["recommendation_id"]
-    hrp_weights: dict[str, float] = portfolio["weights"]
     hrp_rc: dict[str, float] = portfolio["risk_contributions"]
     _MAX_DD_FALLBACK = {"CONSERVATIVE": -0.112, "MODERATE": -0.187, "AGGRESSIVE": -0.312}
     hrp_vol: float = portfolio.get("expected_volatility") or 0.094
-    hrp_ret: float = portfolio.get("expected_return") or 0.068
     hrp_max_dd: float = portfolio.get("max_drawdown") or _MAX_DD_FALLBACK.get(profile_label, -0.187)
 
+    # Mock MV weights are kept only as the offline fallback for the risk-contribution
+    # chart below; the scorecard and section 2 use the real Markowitz figures.
     mv_weights: dict[str, float] = _MOCK_MV_WEIGHTS
-    mv_vol: float = hrp_vol * 0.92
-    mv_ret: float = hrp_ret * 0.78
-    mv_max_dd: float = hrp_max_dd * 0.85
 
     _CLUSTER_VOL: dict[str, float] = {
         "CSPX.L": 0.162, "EFA": 0.162,
@@ -4644,169 +4657,118 @@ def render_compare() -> None:
     st.markdown(f"**Active profile: {profile_label}**")
     st.markdown("---")
 
-    # ── 1. Radar chart ────────────────────────────────────────────────────────
-    _section_header("1", "Portfolio Quality Comparison")
+    # ── 1. Key metrics scorecard ──────────────────────────────────────────────
+    _section_header("1", "Key Metrics")
     st.markdown(
         f"<p style='color:{thm['text_secondary']};font-size:0.82rem;"
         "line-height:1.55;margin-bottom:0.5rem;'>"
-        "This chart summarizes the trade-offs between the recommended HRP portfolio and the "
-        "classical Markowitz benchmark. Each dimension is normalized from 0 to 1, where higher "
-        "values indicate a stronger result. The goal is to help users understand whether the HRP "
-        "allocation is more diversified, more defensive, or more robust than the traditional "
-        "mean-variance alternative."
+        "A side-by-side scorecard on real numbers. Markowitz optimises the in-sample "
+        "figures directly, while HRP trades a little of that efficiency for a more robust, "
+        "less concentrated portfolio."
         "</p>",
         unsafe_allow_html=True,
     )
 
-    def _hhi(w: dict) -> float:
-        return sum(v ** 2 for v in w.values())
+    # Real metrics for both methods. Markowitz scalars come from the live optimizer;
+    # HRP has no Sharpe/return by design. Concentration metrics use the same risk
+    # contributions shown in section 2 (real when live, offline estimate otherwise).
+    def _eff_bets(rc: dict) -> float:
+        _ss = sum(v * v for v in rc.values())
+        return (1.0 / _ss) if _ss > 0 else 0.0
 
-    def _ucits_cov(w: dict) -> float:
-        return sum(v for t, v in w.items() if t in _UCITS_TICKERS)
+    def _top_risk(rc: dict) -> float:
+        return max(rc.values()) * 100 if rc else 0.0
 
-    hrp_scores = [
-        max(0.0, 1.0 - (hrp_vol - 0.03) / 0.17),
-        1.0 - _hhi(hrp_weights),
-        _ucits_cov(hrp_weights),
-        max(0.0, 1.0 + hrp_max_dd),
-        min(1.0, hrp_ret / 0.12),
+    hrp_bets, mv_bets = _eff_bets(hrp_rc), _eff_bets(mv_rc)
+    hrp_top, mv_top = _top_risk(hrp_rc), _top_risk(mv_rc)
+    mv_vol = portfolio.get("mv_expected_volatility")
+    mv_dd = portfolio.get("mv_max_drawdown")
+    mv_sharpe = portfolio.get("mv_sharpe_ratio")
+
+    def _num(v, fmt):
+        return fmt.format(v) if isinstance(v, (int, float)) else "—"
+
+    # (label, sublabel, hrp_text, mv_text, winner) — winner in {"hrp", "mv", None}.
+    _rows = [
+        ("Annual volatility", "lower is better",
+         _num(hrp_vol, "{:.1%}"), _num(mv_vol, "{:.1%}"),
+         ("hrp" if hrp_vol < mv_vol else "mv") if isinstance(mv_vol, (int, float)) else None),
+        ("Max drawdown", "less negative is better",
+         _num(hrp_max_dd, "{:.1%}"), _num(mv_dd, "{:.1%}"),
+         ("hrp" if hrp_max_dd > mv_dd else "mv") if isinstance(mv_dd, (int, float)) else None),
+        ("Largest single-asset risk", "lower = less concentrated",
+         f"{hrp_top:.0f}%", f"{mv_top:.0f}%",
+         "hrp" if hrp_top < mv_top else "mv"),
+        ("Effective number of bets", "higher = more diversified",
+         f"{hrp_bets:.1f}", f"{mv_bets:.1f}",
+         "hrp" if hrp_bets > mv_bets else "mv"),
+        ("Sharpe ratio", "return per unit of risk",
+         "—", _num(mv_sharpe, "{:.2f}"), None),
     ]
-    mv_scores = [
-        max(0.0, 1.0 - (mv_vol - 0.03) / 0.17),
-        1.0 - _hhi(mv_weights),
-        _ucits_cov(mv_weights),
-        max(0.0, 1.0 + mv_max_dd),
-        min(1.0, mv_ret / 0.12),
-    ]
 
-    categories = [
-        "Low Risk",
-        "Diversification",
-        "UCITS Coverage",
-        "Drawdown Protection",
-        "Return Potential",
-    ]
+    def _cell(text, side, winner):
+        if winner == side and text != "—":
+            _col = "#7c5cfc" if side == "hrp" else "#f87171"
+            _bg = "rgba(124,92,252,0.18)" if side == "hrp" else "rgba(248,113,113,0.16)"
+            return (f"<span style='display:inline-block;padding:2px 9px;border-radius:999px;"
+                    f"background:{_bg};color:{_col};font-weight:500;'>{text}</span>")
+        return text
 
-    # Stronger fills on the light surface — 15% opacity washes out to almost
-    # nothing on white, so the two shapes are hard to tell apart.
-    _hrp_fill = "rgba(124,92,252,0.30)" if is_light() else "rgba(124,92,252,0.15)"
-    _mv_fill = "rgba(248,113,113,0.28)" if is_light() else "rgba(248,113,113,0.15)"
-    fig_radar = go.Figure()
-    fig_radar.add_trace(go.Scatterpolar(
-        r=hrp_scores + [hrp_scores[0]],
-        theta=categories + [categories[0]],
-        fill="toself",
-        name="HRP (default)",
-        line=dict(color="#7c5cfc", width=2.5),
-        fillcolor=_hrp_fill,
-    ))
-    fig_radar.add_trace(go.Scatterpolar(
-        r=mv_scores + [mv_scores[0]],
-        theta=categories + [categories[0]],
-        fill="toself",
-        name="Markowitz MV",
-        line=dict(color="#f87171", width=2.5),
-        fillcolor=_mv_fill,
-    ))
-    fig_radar.update_layout(
-        polar=dict(
-            bgcolor="rgba(0,0,0,0)",
-            radialaxis=dict(
-                visible=True,
-                range=[0, 1],
-                tickvals=[0.5, 1.0],
-                color="#475569",
-                gridcolor="#1e2640",
-                tickfont=dict(size=8, color="#475569"),
-            ),
-            angularaxis=dict(color="#94a3b8", gridcolor="#1e2640"),
-        ),
-        legend=dict(orientation="h", yanchor="bottom", y=1.06, xanchor="center", x=0.5),
-        height=440,
-        margin=dict(l=40, r=40, t=60, b=40),
+    _td = (f"padding:9px 10px;border-top:0.5px solid {thm['border']};text-align:right;"
+           f"font-variant-numeric:tabular-nums;color:{thm['text_primary']};")
+    _trs = "".join(
+        f"<tr>"
+        f"<td style='padding:9px 10px;border-top:0.5px solid {thm['border']};'>"
+        f"<span style='color:{thm['text_secondary']};font-size:0.85rem;'>{_lab}</span><br>"
+        f"<span style='font-size:0.7rem;color:{thm['text_muted']};'>{_sub}</span></td>"
+        f"<td style='{_td}'>{_cell(_h, 'hrp', _w)}</td>"
+        f"<td style='{_td}'>{_cell(_m, 'mv', _w)}</td>"
+        f"</tr>"
+        for _lab, _sub, _h, _m, _w in _rows
     )
-    fig_radar = apply_plotly_theme(fig_radar)
-    _grid = "#cbd5e1" if is_light() else "#1e2640"
-    fig_radar.update_layout(
-        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-        polar=dict(
-            radialaxis=dict(gridcolor=_grid),
-            angularaxis=dict(gridcolor=_grid),
-        ),
-        modebar_remove=[
-            "select2d", "lasso2d", "autoScale2d",
-            "hoverClosestCartesian", "hoverCompareCartesian",
-            "toggleSpikelines", "zoomIn2d", "zoomOut2d",
-        ],
-        modebar_add=["resetScale2d"],
-        dragmode="pan",
-    )
-    _indicators = [
-        ("#34d399", _ICON_BARS, "Diversification"),
-        ("#94a3b8", _ICON_SHIELD, "Low Risk (Volatility)"),
-        ("#a78bfa", _ICON_TREND, "Return Potential"),
-        ("#f87171", _ICON_SHIELD, "Drawdown Protection"),
-        ("#60a5fa", _ICON_GLOBE, "UCITS Coverage"),
-    ]
-    _ind_rows = "".join(
-        f'<div style="display:flex;align-items:center;gap:0.55rem;'
-        f'padding:0.5rem 0;border-top:1px solid {thm["border"]};">'
-        f'<span style="width:1.7rem;height:1.7rem;flex-shrink:0;border-radius:7px;'
-        f'display:inline-flex;align-items:center;justify-content:center;'
-        f'background:{color}1a;border:1px solid {color}40;color:{color};">{icon}</span>'
-        f'<span style="flex:1;font-size:0.8rem;color:{thm["text_secondary"]};">{label}</span>'
-        f'<span style="font-size:0.72rem;font-weight:600;color:{thm["text_muted"]};">Higher</span>'
-        f'</div>'
-        for color, icon, label in _indicators
+    st.markdown(
+        f"<table style='width:100%;border-collapse:collapse;'>"
+        f"<thead><tr>"
+        f"<th style='text-align:left;padding:8px 10px;font-size:0.72rem;font-weight:600;"
+        f"letter-spacing:0.04em;color:{thm['text_muted']};'>METRIC</th>"
+        f"<th style='text-align:right;padding:8px 10px;font-size:0.85rem;font-weight:600;"
+        f"color:#7c5cfc;'>HRP</th>"
+        f"<th style='text-align:right;padding:8px 10px;font-size:0.85rem;font-weight:600;"
+        f"color:#f87171;'>Markowitz</th>"
+        f"</tr></thead><tbody>{_trs}</tbody></table>",
+        unsafe_allow_html=True,
     )
 
-    _col_chart, _col_ind = st.columns(
-        [2, 1], gap="medium", vertical_alignment="center"
-    )
-    with _col_chart:
-        st.plotly_chart(
-            fig_radar, use_container_width=True, config={"displaylogo": False}
+    # Data-driven explanation of why each method wins different metrics.
+    if mv_rc_is_live and isinstance(mv_sharpe, (int, float)):
+        _why = (
+            f"Markowitz optimises the in-sample risk and return directly — that is why it "
+            f"reports a Sharpe of {mv_sharpe:.2f} (which HRP doesn't compute) and edges HRP on "
+            f"the efficiency metrics. But it gets there by concentrating: {mv_bets:.1f} effective "
+            f"bets with {mv_top:.0f}% of risk in a single asset, versus HRP's {hrp_bets:.1f} and "
+            f"{hrp_top:.0f}%. HRP spreads risk wider, trading a little efficiency for robustness "
+            f"when those estimates turn out wrong."
         )
-    with _col_ind:
-        _ind_head_bg = (
-            "linear-gradient(135deg,#f8fafc 0%,#ede9fe 55%,#f1f4fa 100%)"
-            if is_light() else
-            "linear-gradient(135deg,#0f172a 0%,#1e1b4b 55%,#0d1220 100%)"
+    else:
+        _why = (
+            "Markowitz chases in-sample efficiency and concentrates risk; HRP spreads it across "
+            "more positions for robustness — which is why each one wins different metrics."
         )
-        st.markdown(
-            f'<div style="background:{thm["bg_card"]};border:1px solid {thm["border"]};'
-            f'border-radius:14px;overflow:hidden;box-shadow:{thm["shadow"]};">'
-            f'<div style="display:flex;align-items:center;gap:0.65rem;'
-            f'padding:0.85rem 1.05rem;background:{_ind_head_bg};'
-            f'border-bottom:1px solid {thm["border"]};">'
-            f'<span style="font-family:\'Space Grotesk\',sans-serif;'
-            f'font-size:0.78rem;font-weight:700;color:{thm["accent_text"]};'
-            f'background:rgba(124,92,252,0.18);'
-            f'border:1px solid rgba(124,92,252,0.3);border-radius:6px;'
-            f'min-width:1.85rem;height:1.85rem;display:inline-flex;'
-            f'align-items:center;justify-content:center;flex-shrink:0;">i</span>'
-            f'<span style="font-family:\'Space Grotesk\',sans-serif;'
-            f'font-size:0.92rem;font-weight:600;color:{thm["text_primary"]};">Indicators</span>'
-            f'</div>'
-            f'<div style="padding:0.9rem 1.05rem 1rem;">'
-            f'<div style="display:flex;align-items:center;'
-            f'justify-content:space-between;font-family:\'Space Grotesk\',sans-serif;'
-            f'font-size:0.62rem;letter-spacing:0.14em;text-transform:uppercase;'
-            f'color:{thm["text_muted"]};font-weight:600;margin-bottom:0.2rem;">'
-            f'<span>Indicator</span><span>Better</span></div>'
-            f'{_ind_rows}'
-            f'<div style="font-size:0.68rem;color:{thm["text_muted"]};margin-top:0.6rem;'
-            f'line-height:1.45;">Scores normalised to [0, 1]; 1 = best.</div>'
-            f'</div></div>',
-            unsafe_allow_html=True,
-        )
+    st.markdown(
+        f"<p style='color:{thm['text_secondary']};font-size:0.82rem;"
+        f"line-height:1.55;margin:0.7rem 0 0.2rem;'>{_why}</p>",
+        unsafe_allow_html=True,
+    )
 
+    _sc_note = (
+        ""
+        if mv_rc_is_live
+        else " Markowitz figures shown are an illustrative offline estimate."
+    )
     st.caption(
-        "All axes normalised to [0, 1]. "
-        "Low Risk = 1 − σ (normalised). "
-        "Diversification = 1 − HHI (Herfindahl index). "
-        "Drawdown Protection = 1 − |max DD|. "
-        "Figures shown are illustrative."
+        "Highlighted = better on that metric. HRP reports no Sharpe because it deliberately "
+        "doesn't estimate returns — avoiding the unstable estimate that makes Markowitz "
+        "over-concentrate in the first place." + _sc_note
     )
 
     # ── 2. Risk contributions ─────────────────────────────────────────────────
