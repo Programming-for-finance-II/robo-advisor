@@ -3897,6 +3897,7 @@ _SCENARIO_LABELS: dict[str, str] = {
     "selloff_2018":   "Rate-Fear Selloff (2018)",
     "covid_2020":     "COVID-19 Crash (2020)",
     "recovery_2021":  "Post-COVID Bull (2021)",
+    "ukraine_2022":   "Ukraine Invasion Shock (2022)",
     "rate_hike_2022": "Rate Hike Cycle (2022)",
 }
 
@@ -3939,6 +3940,10 @@ _SCENARIO_CONTEXT: dict[str, str] = {
     "recovery_2021": (
         "Large fiscal and monetary stimulus fuelled a strong, low-volatility equity "
         "rally through 2021 as economies reopened."
+    ),
+    "ukraine_2022": (
+        "Russia's invasion of Ukraine in February 2022 jolted markets and spiked "
+        "energy and commodity prices, adding to an already fragile start to the year."
     ),
     "rate_hike_2022": (
         "Central banks raised interest rates aggressively to curb inflation, pulling "

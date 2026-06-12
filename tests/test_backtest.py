@@ -261,14 +261,21 @@ import json as _json  # noqa: E402
 from backend.schemas.mock_data import get_mock_payload  # noqa: E402
 
 _BT_DIR = Path(__file__).resolve().parents[1] / "backtest_output"
-# (mock profile, backtest profile, payload field, backtest scenario key)
+_PROFILE_PAIRS = [
+    ("conservative", "conservative"),
+    ("balanced", "moderate"),
+    ("aggressive", "aggressive"),
+]
+# (payload stress field, backtest scenario key)
+_STRESS_FIELDS = [
+    ("covid_march_2020", "covid_2020"),
+    ("ukraine_feb_2022", "ukraine_2022"),
+    ("rates_hike_2022", "rate_hike_2022"),
+]
 _STRESS_PAIRS = [
-    ("conservative", "conservative", "covid_march_2020", "covid_2020"),
-    ("balanced", "moderate", "covid_march_2020", "covid_2020"),
-    ("aggressive", "aggressive", "covid_march_2020", "covid_2020"),
-    ("conservative", "conservative", "rates_hike_2022", "rate_hike_2022"),
-    ("balanced", "moderate", "rates_hike_2022", "rate_hike_2022"),
-    ("aggressive", "aggressive", "rates_hike_2022", "rate_hike_2022"),
+    (mp, bp, field, scen)
+    for mp, bp in _PROFILE_PAIRS
+    for field, scen in _STRESS_FIELDS
 ]
 
 
@@ -283,3 +290,29 @@ def test_mock_stress_matches_real_backtest(mock_p, bt_p, field, scenario) -> Non
         f"shows {real_dd:+.4f} — the Chat Advisor would contradict the "
         "Backtesting page"
     )
+
+
+@pytest.mark.parametrize("mock_p, bt_p", _PROFILE_PAIRS)
+def test_mock_headline_metrics_match_full_period_backtest(mock_p, bt_p) -> None:
+    """risk_metrics and backtest_summary in the chat payload must equal the real
+    full-history HRP backtest, so the advisor never invents headline figures."""
+    hrp = _json.loads(
+        (_BT_DIR / f"backtest_summary_{bt_p}.json").read_text()
+    )["full_period"]["strategies"]["HRP"]
+    payload = get_mock_payload(mock_p)
+    rm, bs = payload.risk_metrics, payload.backtest_summary
+
+    checks = {
+        "expected_return": (rm.expected_annual_return, hrp["cagr"]),
+        "volatility": (rm.annual_volatility, hrp["annualised_volatility"]),
+        "sharpe": (rm.sharpe_ratio, hrp["sharpe_ratio"]),
+        "max_drawdown": (rm.max_drawdown_historical, hrp["max_drawdown"]),
+        "var_95": (rm.var_95_daily, hrp["var_95_daily"]),
+        "cvar_95": (rm.cvar_95_daily, hrp["cvar_95_daily"]),
+        "summary_cagr": (bs.cagr, hrp["cagr"]),
+        "summary_maxdd": (bs.max_drawdown, hrp["max_drawdown"]),
+    }
+    for name, (quoted, real) in checks.items():
+        assert abs(quoted - round(float(real), 6)) < 1e-6, (
+            f"{mock_p}/{name}: payload {quoted} != backtest {real}"
+        )
