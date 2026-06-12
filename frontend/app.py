@@ -4784,17 +4784,7 @@ def render_compare() -> None:
         f'</div>'
         for _lab, _sub, _h, _m, _w in _rows
     )
-    # Verdict cards beside the table: keyword chips for fast scanning plus one
-    # data-driven line each. Readable, no fading captions.
-    if mv_rc_is_live and isinstance(mv_sharpe, (int, float)):
-        _hrp_line = (f"Risk across <b>{hrp_bets:.1f}</b> effective bets; "
-                     f"adapts to your profile.")
-        _mv_line = (f"<b>{mv_sharpe:.2f}</b> Sharpe, lower volatility — but "
-                    f"<b>{mv_top:.0f}%</b> of risk in one asset.")
-    else:
-        _hrp_line = "Risk spread across more positions; adapts to your profile."
-        _mv_line = "More efficient in-sample, but concentrated in a few positions."
-
+    # Verdict cards beside the table: just keyword chips for fast scanning.
     def _chips(words, bg, col):
         return "".join(
             f'<span style="display:inline-block;font-size:0.66rem;font-weight:600;'
@@ -4866,17 +4856,13 @@ def render_compare() -> None:
             f'border-left:3px solid #7c5cfc;border-radius:10px;padding:0.7rem 0.85rem;'
             f'margin-bottom:0.6rem;">'
             f'<div style="font-weight:600;color:#7c5cfc;font-size:0.9rem;'
-            f'margin-bottom:0.4rem;">HRP</div>'
-            f'<div style="margin-bottom:0.4rem;">{_hrp_chips}</div>'
-            f'<div style="color:{thm["text_secondary"]};font-size:0.8rem;'
-            f'line-height:1.45;">{_hrp_line}</div></div>'
+            f'margin-bottom:0.45rem;">HRP</div>'
+            f'<div>{_hrp_chips}</div></div>'
             f'<div style="background:{thm["bg_card"]};border:1px solid {thm["border"]};'
             f'border-left:3px solid #f87171;border-radius:10px;padding:0.7rem 0.85rem;">'
             f'<div style="font-weight:600;color:#f87171;font-size:0.9rem;'
-            f'margin-bottom:0.4rem;">Markowitz</div>'
-            f'<div style="margin-bottom:0.4rem;">{_mv_chips}</div>'
-            f'<div style="color:{thm["text_secondary"]};font-size:0.8rem;'
-            f'line-height:1.45;">{_mv_line}</div></div>',
+            f'margin-bottom:0.45rem;">Markowitz</div>'
+            f'<div>{_mv_chips}</div></div>',
             unsafe_allow_html=True,
         )
 
@@ -5246,7 +5232,7 @@ def render_compare() -> None:
     _mc = (f"background:{thm['bg_card']};border:1px solid {thm['border']};"
            "border-radius:10px;padding:0.7rem 0.85rem;")
     _mtxt = f"font-size:0.82rem;color:{thm['text_secondary']};line-height:1.5;"
-    with st.expander("How to interpret this graph?"):
+    with st.expander("🔍 How to read this graph — colours, clusters & the two methods"):
         st.markdown(
             f'<div style="margin-bottom:0.7rem;">'
             f'<span style="{_pill}background:rgba(124,92,252,0.18);color:#a78bfa;">'
