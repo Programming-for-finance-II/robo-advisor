@@ -4605,53 +4605,67 @@ def render_compare() -> None:
         f'</div>'
         for _lab, _sub, _h, _m, _w in _rows
     )
-    st.markdown(
-        f'<div style="max-width:600px;margin:0 auto;background:{thm["bg_card"]};'
-        f'border:1px solid {thm["border"]};border-radius:12px;'
-        f'padding:0.9rem 1rem;box-shadow:{thm["shadow"]};">'
-        + _hdr + _body + '</div>',
-        unsafe_allow_html=True,
-    )
-
-    # Glanceable, data-driven verdict: each method's strength in its accent
-    # colour with the key numbers — readable, no fading captions.
+    # Verdict cards (to the right of the table): keyword chips for fast scanning
+    # plus one data-driven line each. Readable, no fading captions.
     if mv_rc_is_live and isinstance(mv_sharpe, (int, float)):
-        _hrp_line = (f"Risk spread across <b>{hrp_bets:.1f}</b> effective bets "
-                     f"(vs {mv_bets:.1f}), and it adapts to your risk profile.")
-        _mv_line = (f"Lower in-sample volatility and a <b>{mv_sharpe:.2f}</b> Sharpe — "
-                    f"but <b>{mv_top:.0f}%</b> of risk sits in one asset.")
+        _hrp_line = (f"Risk across <b>{hrp_bets:.1f}</b> effective bets; "
+                     f"adapts to your profile.")
+        _mv_line = (f"<b>{mv_sharpe:.2f}</b> Sharpe, lower volatility — but "
+                    f"<b>{mv_top:.0f}%</b> of risk in one asset.")
     else:
-        _hrp_line = "Risk spread across more positions, and it adapts to your risk profile."
-        _mv_line = "Chases in-sample efficiency, but concentrates risk in a few positions."
+        _hrp_line = "Risk spread across more positions; adapts to your profile."
+        _mv_line = "More efficient in-sample, but concentrated in a few positions."
 
-    st.markdown(
-        f'<div style="max-width:600px;margin:0.8rem auto 0;display:grid;'
-        f'grid-template-columns:1fr 1fr;gap:0.7rem;">'
-        f'<div style="background:{thm["bg_card"]};border:1px solid {thm["border"]};'
-        f'border-left:3px solid #7c5cfc;border-radius:10px;padding:0.75rem 0.9rem;">'
-        f'<div style="font-weight:600;color:#7c5cfc;font-size:0.88rem;'
-        f'margin-bottom:0.3rem;">HRP — more robust</div>'
-        f'<div style="color:{thm["text_secondary"]};font-size:0.84rem;'
-        f'line-height:1.5;">{_hrp_line}</div></div>'
-        f'<div style="background:{thm["bg_card"]};border:1px solid {thm["border"]};'
-        f'border-left:3px solid #f87171;border-radius:10px;padding:0.75rem 0.9rem;">'
-        f'<div style="font-weight:600;color:#f87171;font-size:0.88rem;'
-        f'margin-bottom:0.3rem;">Markowitz — more efficient</div>'
-        f'<div style="color:{thm["text_secondary"]};font-size:0.84rem;'
-        f'line-height:1.5;">{_mv_line}</div></div>'
-        f'</div>',
-        unsafe_allow_html=True,
-    )
+    def _chips(words, bg, col):
+        return "".join(
+            f'<span style="display:inline-block;font-size:0.66rem;font-weight:600;'
+            f'padding:2px 7px;border-radius:999px;margin:0 0.25rem 0.3rem 0;'
+            f'background:{bg};color:{col};">{w}</span>'
+            for w in words
+        )
+
+    _hrp_chips = _chips(("Robust", "Diversified", "Adapts to you"),
+                        "rgba(124,92,252,0.16)", "#a78bfa")
+    _mv_chips = _chips(("Efficient", "Higher Sharpe", "Concentrated"),
+                       "rgba(248,113,113,0.16)", "#f87171")
+
+    _col_tbl, _col_sum = st.columns([1.8, 1], gap="medium", vertical_alignment="center")
+    with _col_tbl:
+        st.markdown(
+            f'<div style="background:{thm["bg_card"]};border:1px solid {thm["border"]};'
+            f'border-radius:12px;padding:0.9rem 1rem;box-shadow:{thm["shadow"]};">'
+            + _hdr + _body + '</div>',
+            unsafe_allow_html=True,
+        )
+    with _col_sum:
+        st.markdown(
+            f'<div style="background:{thm["bg_card"]};border:1px solid {thm["border"]};'
+            f'border-left:3px solid #7c5cfc;border-radius:10px;padding:0.7rem 0.85rem;'
+            f'margin-bottom:0.6rem;">'
+            f'<div style="font-weight:600;color:#7c5cfc;font-size:0.9rem;'
+            f'margin-bottom:0.4rem;">HRP</div>'
+            f'<div style="margin-bottom:0.4rem;">{_hrp_chips}</div>'
+            f'<div style="color:{thm["text_secondary"]};font-size:0.8rem;'
+            f'line-height:1.45;">{_hrp_line}</div></div>'
+            f'<div style="background:{thm["bg_card"]};border:1px solid {thm["border"]};'
+            f'border-left:3px solid #f87171;border-radius:10px;padding:0.7rem 0.85rem;">'
+            f'<div style="font-weight:600;color:#f87171;font-size:0.9rem;'
+            f'margin-bottom:0.4rem;">Markowitz</div>'
+            f'<div style="margin-bottom:0.4rem;">{_mv_chips}</div>'
+            f'<div style="color:{thm["text_secondary"]};font-size:0.8rem;'
+            f'line-height:1.45;">{_mv_line}</div></div>',
+            unsafe_allow_html=True,
+        )
+
     _sc_extra = (
         "" if mv_rc_is_live
         else " · figures are an illustrative offline estimate"
     )
     st.markdown(
-        f'<div style="max-width:600px;margin:0.55rem auto 0;font-size:0.78rem;'
-        f'color:{thm["text_muted"]};line-height:1.5;">'
-        f"The coloured value wins each metric. HRP shows no Sharpe — by design it "
-        f"doesn't estimate returns, which keeps it from over-concentrating like "
-        f"Markowitz{_sc_extra}.</div>",
+        f'<div style="margin:0.6rem 0 0;font-size:0.78rem;color:{thm["text_muted"]};'
+        f'line-height:1.5;">The coloured value wins each metric. HRP shows no Sharpe — '
+        f"by design it doesn't estimate returns, which keeps it from over-concentrating "
+        f'like Markowitz{_sc_extra}.</div>',
         unsafe_allow_html=True,
     )
 
