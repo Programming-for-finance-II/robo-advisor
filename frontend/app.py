@@ -3528,6 +3528,12 @@ _STRATEGY_COLORS: dict[str, str] = {
 def render_backtesting() -> None:
     page_header("Backtesting", "Walk-forward simulation · HRP vs MV vs 1/N", icon="📈")
 
+    # On a hard reload, st.session_state is reset and only the Questionnaire page
+    # rehydrates the saved profile. Restore it here too so a direct reload of /
+    # this page reflects the user's real profile instead of falling back to
+    # MODERATE.
+    _restore_persisted_profile()
+
     profile_data = st.session_state.get("profile", {})
     profile_label = profile_data.get("profile_label", "MODERATE").lower()
 
